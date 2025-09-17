@@ -240,7 +240,7 @@ export default function SourceImagesPage({ params }: PageProps) {
 
               <h2 className="text-2xl font-bold mb-3">Upload Screenshots from Your App</h2>
               <p className="text-muted-foreground max-w-md mb-8">
-                We'll use these screenshots to generate stunning App Store Screenshots with AI.
+                We&apos;ll use these screenshots to generate stunning App Store Screenshots with AI.
               </p>
 
               <div className="space-y-3 mb-8">

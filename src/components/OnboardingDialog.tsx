@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   Upload,
-  Wand2,
   Sparkles,
   Download,
   ArrowRight,
@@ -102,7 +101,7 @@ const steps = [
     illustration: (
       <div className="space-y-4">
         <div className="p-3 bg-muted/50 rounded-lg">
-          <p className="text-sm font-medium mb-2">✨ "Add festive holiday theme"</p>
+          <p className="text-sm font-medium mb-2">✨ &quot;Add festive holiday theme&quot;</p>
           <div className="flex gap-2">
             {[1, 2, 3].map((i) => (
               <div
@@ -113,7 +112,7 @@ const steps = [
           </div>
         </div>
         <div className="p-3 bg-muted/50 rounded-lg">
-          <p className="text-sm font-medium mb-2">🌍 "Translate to Spanish"</p>
+          <p className="text-sm font-medium mb-2">🌍 &quot;Translate to Spanish&quot;</p>
           <div className="flex gap-2">
             {[1, 2, 3].map((i) => (
               <div
@@ -143,7 +142,7 @@ const steps = [
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium">iOS App Store</p>
-            <p className="text-xs text-muted-foreground">6.7", 6.5", 5.5" displays</p>
+            <p className="text-xs text-muted-foreground">6.7&quot;, 6.5&quot;, 5.5&quot; displays</p>
           </div>
           <Check className="w-5 h-5 text-green-500" />
         </div>

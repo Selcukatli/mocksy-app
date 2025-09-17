@@ -1,14 +1,14 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAppStore } from '@/stores/appStore';
+import { useMockDataStore } from '@/stores/mockDataStore';
+import { useEditorStore } from '@/stores/editorStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
-  Save,
   Download,
-  Share2,
-  Settings,
   Plus,
   Trash2,
   Image as ImageIcon,
@@ -24,11 +24,8 @@ import {
   Edit3,
   Palette,
   Languages,
-  Calendar,
-  Wand2,
   FolderOpen,
   Layout,
-  Type,
 } from 'lucide-react';
 
 interface PageProps {
@@ -38,17 +35,6 @@ interface PageProps {
   }>;
 }
 
-interface Screenshot {
-  id: string;
-  slotNumber: number;
-  imageUrl?: string;
-  title?: string;
-  subtitle?: string;
-  deviceFrame?: string;
-  vibe?: string;
-  language?: string;
-  isEmpty?: boolean;
-}
 
 export default function SetPage({ params }: PageProps) {
   const resolvedParams = use(params);
@@ -56,43 +42,131 @@ export default function SetPage({ params }: PageProps) {
   const setId = resolvedParams['set-id'];
   const router = useRouter();
 
-  const isNewSet = setId === 'new';
-  const [setName, setSetName] = useState(isNewSet ? 'Untitled Set' : 'Holiday Season 2024');
-  const [isEditingName, setIsEditingName] = useState(isNewSet);
+  // Store hooks
+  const {
+    getApp, getSet, getScreenshotsForSet,
+    createSet, updateScreenshot
+  } = useAppStore();
+
+  const { themes, layouts } = useMockDataStore();
+
+  const {
+    activeScreenshotId,
+    isReviseOpen,
+    isSourceImagePanelOpen,
+    isThemePanelOpen,
+    isLayoutPanelOpen,
+    selectedThemeId,
+    setActiveSlot,
+    closeRevisePanel,
+    openSourceImagePanel,
+    closeSourceImagePanel,
+    openThemePanel,
+    closeThemePanel,
+    openLayoutPanel,
+    closeLayoutPanel,
+    updateTempScreenshot,
+    selectTheme,
+    selectLayout,
+  } = useEditorStore();
+
+  // Local UI state
+  const [isEditingName, setIsEditingName] = useState(false);
   const [selectedScreenshots, setSelectedScreenshots] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedSlot, setSelectedSlot] = useState<Screenshot | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [showSourceImagePanel, setShowSourceImagePanel] = useState(false);
-  const [showThemePanel, setShowThemePanel] = useState(false);
-  const [showLayoutPanel, setShowLayoutPanel] = useState(false);
   const [headerText, setHeaderText] = useState('');
   const [subtitleText, setSubtitleText] = useState('');
   const [showSubtitle, setShowSubtitle] = useState(false);
 
-  // App Store requires up to 10 screenshots per device type
-  // Initialize with 10 slots, some filled, some empty
-  const screenshots: Screenshot[] = [
-    { id: '1', slotNumber: 1, title: 'Home Screen', subtitle: 'Welcome message', deviceFrame: 'iPhone 15 Pro', vibe: 'Snap Style', language: 'English' },
-    { id: '2', slotNumber: 2, title: 'Dashboard', subtitle: 'Analytics view', deviceFrame: 'iPhone 15 Pro', vibe: 'Snap Style', language: 'English' },
-    { id: '3', slotNumber: 3, title: 'Profile', subtitle: 'User settings', deviceFrame: 'iPhone 15 Pro', vibe: 'Snap Style', language: 'English' },
-    { id: '4', slotNumber: 4, isEmpty: true },
-    { id: '5', slotNumber: 5, isEmpty: true },
-    { id: '6', slotNumber: 6, isEmpty: true },
-    { id: '7', slotNumber: 7, isEmpty: true },
-    { id: '8', slotNumber: 8, isEmpty: true },
-    { id: '9', slotNumber: 9, isEmpty: true },
-    { id: '10', slotNumber: 10, isEmpty: true },
-  ];
+  // Get current app and set data
+  const [app, setApp] = useState<ReturnType<typeof getApp> | null>(null);
+  const [currentSet, setCurrentSet] = useState<ReturnType<typeof getSet> | null>(null);
+  const [setName, setSetName] = useState('');
+  const isNewSet = setId === 'new';
 
-  const handleSlotClick = (screenshot: Screenshot) => {
-    setSelectedSlot(screenshot);
-    setHeaderText(screenshot.title || '');
-    setSubtitleText(screenshot.subtitle || '');
-    setShowSubtitle(!!screenshot.subtitle);
-    setIsModalOpen(true);
+  // Initialize app after mount to avoid hydration issues
+  useEffect(() => {
+    const existingApp = getApp(appId);
+    if (!existingApp) {
+      console.log('App does not exist, redirecting to home...');
+      router.push('/home');
+    } else {
+      setApp(existingApp);
+    }
+  }, [appId, getApp, router]);
+
+  useEffect(() => {
+    if (!app) return;
+
+    if (isNewSet) {
+      // Handle new set creation in the next effect
+      return;
+    }
+
+    const existingSet = getSet(setId);
+    if (!existingSet) {
+      console.log('Set does not exist, redirecting to app page...');
+      router.push(`/app/${appId}`);
+    } else {
+      setCurrentSet(existingSet);
+      setSetName(existingSet.name);
+    }
+  }, [app, appId, setId, isNewSet, getSet, router]);
+
+  // Initialize set if new
+  useEffect(() => {
+    if (isNewSet && app && !currentSet) {
+      console.log('Creating new set...');
+      const newSet = createSet(appId, 'Untitled Set');
+      setCurrentSet(newSet);
+      setSetName(newSet.name);
+      setIsEditingName(true);
+      // Replace URL with actual set ID
+      router.replace(`/app/${appId}/set/${newSet.id}`);
+    } else if (currentSet && !setName) {
+      setSetName(currentSet.name);
+    }
+    // Removed the else if that was creating sets for non-existent set IDs
+  }, [isNewSet, app, currentSet, appId, createSet, router, setName]);
+
+  // Get screenshots for current set
+  const screenshots = currentSet ? getScreenshotsForSet(currentSet.id) : [];
+
+  // Debug logging
+  console.log('Current Set:', currentSet);
+  console.log('Screenshots array:', screenshots);
+  console.log('Screenshots length:', screenshots.length);
+
+  const selectedSlot = activeScreenshotId ?
+    screenshots.find(s => s.id === activeScreenshotId) || null :
+    null;
+
+  const handleSlotClick = (screenshot: typeof screenshots[0]) => {
+    if (currentSet) {
+      setActiveSlot(currentSet.id, screenshot.id, screenshot.slotNumber);
+      setHeaderText(screenshot.title || '');
+      setSubtitleText(screenshot.subtitle || '');
+      setShowSubtitle(!!screenshot.subtitle);
+      updateTempScreenshot({ title: screenshot.title, subtitle: screenshot.subtitle });
+    }
   };
+
+  const handleClearSlot = () => {
+    if (selectedSlot) {
+      updateScreenshot(selectedSlot.id, {
+        imageUrl: undefined,
+        title: undefined,
+        subtitle: undefined,
+        themeId: undefined,
+        layoutId: undefined,
+        isEmpty: true,
+      });
+      setShowClearConfirm(false);
+      closeRevisePanel();
+    }
+  };
+
 
   const toggleScreenshotSelection = (id: string) => {
     const newSelection = new Set(selectedScreenshots);
@@ -167,7 +241,7 @@ export default function SetPage({ params }: PageProps) {
                   </div>
                 )}
                 <span className="text-sm text-muted-foreground">
-                  {screenshots.length} screenshots
+                  {screenshots.filter(s => !s.isEmpty).length} of 10 filled
                 </span>
               </div>
             </div>
@@ -369,11 +443,11 @@ export default function SetPage({ params }: PageProps) {
                         )}
 
                         {/* Badges */}
-                        {(screenshot.vibe || screenshot.language) && (
+                        {(screenshot.themeId || screenshot.language) && (
                           <div className="absolute bottom-3 left-3 flex gap-1">
-                            {screenshot.vibe && (
+                            {screenshot.themeId && (
                               <span className="px-2 py-0.5 bg-purple-500/90 backdrop-blur-sm text-white text-xs rounded-full">
-                                {screenshot.vibe}
+                                {themes.find(t => t.id === screenshot.themeId)?.name}
                               </span>
                             )}
                             {screenshot.language && screenshot.language !== 'English' && (
@@ -390,7 +464,7 @@ export default function SetPage({ params }: PageProps) {
                     {!screenshot.isEmpty && (
                       <div className="mt-2">
                         <p className="text-sm font-medium truncate">{screenshot.title || `Screenshot ${screenshot.slotNumber}`}</p>
-                        <p className="text-xs text-muted-foreground truncate">{screenshot.deviceFrame || 'No device'}</p>
+                        <p className="text-xs text-muted-foreground truncate">{screenshot.deviceFrameId || 'No device'}</p>
                       </div>
                     )}
                   </motion.div>
@@ -498,11 +572,11 @@ export default function SetPage({ params }: PageProps) {
                       <>
                         <p className="font-medium">{screenshot.title || `Screenshot ${screenshot.slotNumber}`}</p>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                          {screenshot.deviceFrame && <span>{screenshot.deviceFrame}</span>}
-                          {screenshot.vibe && (
+                          {screenshot.deviceFrameId && <span>{screenshot.deviceFrameId}</span>}
+                          {screenshot.themeId && (
                             <>
                               <span>•</span>
-                              <span>{screenshot.vibe}</span>
+                              <span>{themes.find(t => t.id === screenshot.themeId)?.name}</span>
                             </>
                           )}
                           {screenshot.language && (
@@ -559,7 +633,7 @@ export default function SetPage({ params }: PageProps) {
 
       {/* Side Panel / Sheet */}
       <AnimatePresence>
-        {isModalOpen && selectedSlot && (
+        {isReviseOpen && selectedSlot && (
           <>
             {/* Backdrop */}
             <motion.div
@@ -567,7 +641,7 @@ export default function SetPage({ params }: PageProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
-              onClick={() => setIsModalOpen(false)}
+              onClick={closeRevisePanel}
             />
 
             {/* Side Panel */}
@@ -604,7 +678,7 @@ export default function SetPage({ params }: PageProps) {
                     </button>
                   )}
                   <button
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={closeRevisePanel}
                     className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
                   >
                     <X className="w-5 h-5" />
@@ -622,9 +696,7 @@ export default function SetPage({ params }: PageProps) {
                       <div className="grid gap-3">
                         {/* Pick Screenshot from App */}
                         <button
-                          onClick={() => {
-                            setShowSourceImagePanel(true);
-                          }}
+                          onClick={openSourceImagePanel}
                           className="w-full p-4 bg-card border rounded-xl hover:bg-muted/30 hover:border-primary/50 transition-all text-left group"
                         >
                           <div className="flex items-start gap-3">
@@ -643,9 +715,7 @@ export default function SetPage({ params }: PageProps) {
 
                         {/* Generate with Theme */}
                         <button
-                          onClick={() => {
-                            setShowThemePanel(true);
-                          }}
+                          onClick={openThemePanel}
                           className="w-full p-4 bg-card border rounded-xl hover:bg-muted/30 hover:border-primary/50 transition-all text-left group"
                         >
                           <div className="flex items-start gap-3">
@@ -722,9 +792,7 @@ export default function SetPage({ params }: PageProps) {
                         <div className="grid gap-3">
                           {/* Replace Screenshot */}
                           <button
-                            onClick={() => {
-                              setShowSourceImagePanel(true);
-                            }}
+                            onClick={openSourceImagePanel}
                             className="w-full p-4 bg-card border rounded-xl hover:bg-muted/30 hover:border-primary/50 transition-all text-left group"
                           >
                             <div className="flex items-start gap-3">
@@ -743,9 +811,7 @@ export default function SetPage({ params }: PageProps) {
 
                           {/* Pick/Change Theme */}
                           <button
-                            onClick={() => {
-                              setShowThemePanel(true);
-                            }}
+                            onClick={openThemePanel}
                             className="w-full p-4 bg-card border rounded-xl hover:bg-muted/30 hover:border-primary/50 transition-all text-left group"
                           >
                             <div className="flex items-start gap-3">
@@ -754,10 +820,10 @@ export default function SetPage({ params }: PageProps) {
                               </div>
                               <div className="flex-1">
                                 <p className="font-medium mb-0.5">
-                                  {selectedSlot.vibe ? selectedSlot.vibe : 'Pick Theme'}
+                                  {selectedThemeId ? themes.find(t => t.id === selectedThemeId)?.name : 'Pick Theme'}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                  {selectedSlot.vibe ? 'Change the theme' : 'Choose a visual theme'}
+                                  {selectedThemeId ? 'Change the theme' : 'Choose a visual theme'}
                                 </p>
                               </div>
                               <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors mt-2" />
@@ -766,9 +832,7 @@ export default function SetPage({ params }: PageProps) {
 
                           {/* Change Layout */}
                           <button
-                            onClick={() => {
-                              setShowLayoutPanel(true);
-                            }}
+                            onClick={openLayoutPanel}
                             className="w-full p-4 bg-card border rounded-xl hover:bg-muted/30 hover:border-primary/50 transition-all text-left group"
                           >
                             <div className="flex items-start gap-3">
@@ -832,13 +896,9 @@ export default function SetPage({ params }: PageProps) {
                       // Filled Slot Preview
                       <div className="bg-card border rounded-xl overflow-hidden">
                         <div className={`aspect-[9/16] flex items-center justify-center relative ${
-                          selectedSlot.vibe === 'Snap Style'
-                            ? 'bg-gradient-to-br from-pink-500/20 via-orange-500/20 to-yellow-500/20'
-                            : selectedSlot.vibe === 'Watercolor'
-                            ? 'bg-gradient-to-br from-blue-500/20 via-cyan-500/20 to-teal-500/20'
-                            : selectedSlot.vibe === 'GenZ Medley'
-                            ? 'bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-rose-500/20'
-                            : 'bg-gradient-to-br from-muted to-muted/50'
+                          selectedSlot.themeId ?
+                            `bg-gradient-to-br ${themes.find(t => t.id === selectedSlot.themeId)?.gradient || 'from-muted to-muted/50'}` :
+                            'bg-gradient-to-br from-muted to-muted/50'
                         }`}>
                           {/* Show contextual content based on whether there's an actual screenshot */}
                           {selectedSlot.imageUrl ? (
@@ -860,9 +920,9 @@ export default function SetPage({ params }: PageProps) {
                             )}
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            {selectedSlot.vibe && (
+                            {selectedSlot.themeId && (
                               <span className="px-2 py-1 bg-purple-500/10 text-purple-600 text-xs rounded-full">
-                                {selectedSlot.vibe}
+                                {themes.find(t => t.id === selectedSlot.themeId)?.name}
                               </span>
                             )}
                             {selectedSlot.language && (
@@ -870,9 +930,9 @@ export default function SetPage({ params }: PageProps) {
                                 {selectedSlot.language}
                               </span>
                             )}
-                            {selectedSlot.deviceFrame && (
+                            {selectedSlot.deviceFrameId && (
                               <span className="px-2 py-1 bg-green-500/10 text-green-600 text-xs rounded-full">
-                                {selectedSlot.deviceFrame}
+                                {selectedSlot.deviceFrameId}
                               </span>
                             )}
                           </div>
@@ -944,11 +1004,7 @@ export default function SetPage({ params }: PageProps) {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    console.log('Clear screenshot from slot', selectedSlot?.slotNumber);
-                    setShowClearConfirm(false);
-                    setIsModalOpen(false);
-                  }}
+                  onClick={handleClearSlot}
                   className="px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
                 >
                   Clear Screenshot
@@ -961,14 +1017,14 @@ export default function SetPage({ params }: PageProps) {
 
       {/* Source Images Stacked Panel */}
       <AnimatePresence>
-        {showSourceImagePanel && (
+        {isSourceImagePanelOpen && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[70]"
-              onClick={() => setShowSourceImagePanel(false)}
+              onClick={closeSourceImagePanel}
             />
             <motion.div
               initial={{ x: '100%' }}
@@ -986,7 +1042,7 @@ export default function SetPage({ params }: PageProps) {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowSourceImagePanel(false)}
+                  onClick={closeSourceImagePanel}
                   className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
@@ -1036,7 +1092,7 @@ export default function SetPage({ params }: PageProps) {
                       onClick={() => {
                         // Select this image for the slot
                         console.log('Selected image:', image.id, 'for slot:', selectedSlot?.slotNumber);
-                        setShowSourceImagePanel(false);
+                        closeSourceImagePanel();
                       }}
                       className="group relative aspect-[9/16] bg-card border rounded-lg overflow-hidden hover:border-primary hover:shadow-lg transition-all"
                     >
@@ -1057,7 +1113,7 @@ export default function SetPage({ params }: PageProps) {
               {/* Footer Actions */}
               <div className="border-t px-6 py-4 flex items-center justify-between">
                 <button
-                  onClick={() => setShowSourceImagePanel(false)}
+                  onClick={closeSourceImagePanel}
                   className="px-4 py-2 text-sm hover:bg-muted/50 rounded-lg transition-colors"
                 >
                   Cancel
@@ -1078,14 +1134,14 @@ export default function SetPage({ params }: PageProps) {
 
       {/* Theme Selection Panel */}
       <AnimatePresence>
-        {showThemePanel && (
+        {isThemePanelOpen && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[72]"
-              onClick={() => setShowThemePanel(false)}
+              onClick={closeThemePanel}
             />
             <motion.div
               initial={{ x: '100%' }}
@@ -1103,7 +1159,7 @@ export default function SetPage({ params }: PageProps) {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowThemePanel(false)}
+                  onClick={closeThemePanel}
                   className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
@@ -1113,23 +1169,18 @@ export default function SetPage({ params }: PageProps) {
               {/* Themes Grid */}
               <div className="flex-1 overflow-y-auto p-6">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {[
-                    { name: 'Snap Style', gradient: 'from-pink-500 via-orange-500 to-yellow-500', description: 'Bold & Social' },
-                    { name: 'Watercolor', gradient: 'from-blue-500 via-cyan-500 to-teal-500', description: 'Artistic & Fluid' },
-                    { name: 'GenZ Medley', gradient: 'from-purple-500 via-pink-500 to-rose-500', description: 'Trendy & Vibrant' },
-                    { name: 'Minimal', gradient: 'from-gray-200 via-gray-100 to-white', description: 'Clean & Simple' },
-                    { name: 'Dark Mode', gradient: 'from-gray-900 via-gray-800 to-black', description: 'Sleek & Modern' },
-                    { name: 'Nature', gradient: 'from-green-500 via-emerald-500 to-teal-500', description: 'Fresh & Organic' },
-                  ].map((theme) => (
+                  {themes.map((theme) => (
                     <button
-                      key={theme.name}
+                      key={theme.id}
                       onClick={() => {
-                        // Update the theme for the selected slot
-                        console.log('Selected theme:', theme.name);
-                        setShowThemePanel(false);
+                        selectTheme(theme.id);
+                        if (selectedSlot) {
+                          updateScreenshot(selectedSlot.id, { themeId: theme.id });
+                        }
+                        closeThemePanel();
                       }}
                       className={`group relative aspect-[9/16] rounded-xl overflow-hidden border-2 transition-all ${
-                        selectedSlot?.vibe === theme.name
+                        selectedThemeId === theme.id
                           ? 'border-primary shadow-lg scale-[0.98]'
                           : 'border-border hover:border-primary/50 hover:shadow-lg'
                       }`}
@@ -1140,7 +1191,7 @@ export default function SetPage({ params }: PageProps) {
                         <p className="font-medium text-sm mb-1">{theme.name}</p>
                         <p className="text-xs text-muted-foreground">{theme.description}</p>
                       </div>
-                      {selectedSlot?.vibe === theme.name && (
+                      {selectedThemeId === theme.id && (
                         <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                           <Check className="w-3.5 h-3.5" />
                         </div>
@@ -1156,14 +1207,14 @@ export default function SetPage({ params }: PageProps) {
 
       {/* Layout Selection Panel */}
       <AnimatePresence>
-        {showLayoutPanel && (
+        {isLayoutPanelOpen && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[74]"
-              onClick={() => setShowLayoutPanel(false)}
+              onClick={closeLayoutPanel}
             />
             <motion.div
               initial={{ x: '100%' }}
@@ -1181,7 +1232,7 @@ export default function SetPage({ params }: PageProps) {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowLayoutPanel(false)}
+                  onClick={closeLayoutPanel}
                   className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
@@ -1191,20 +1242,15 @@ export default function SetPage({ params }: PageProps) {
               {/* Layout Options */}
               <div className="flex-1 overflow-y-auto p-6">
                 <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { name: 'Text Above', icon: '▭\n━', description: 'Header text above device' },
-                    { name: 'Text Below', icon: '━\n▭', description: 'Header text below device' },
-                    { name: 'Text Left', icon: '━ ▭', description: 'Text on the left side' },
-                    { name: 'Text Right', icon: '▭ ━', description: 'Text on the right side' },
-                    { name: 'Text Overlay', icon: '▣', description: 'Text overlaid on device' },
-                    { name: 'Device Only', icon: '▭', description: 'No text, just device' },
-                  ].map((layout) => (
+                  {layouts.map((layout) => (
                     <button
-                      key={layout.name}
+                      key={layout.id}
                       onClick={() => {
-                        // Update the layout
-                        console.log('Selected layout:', layout.name);
-                        setShowLayoutPanel(false);
+                        selectLayout(layout.id);
+                        if (selectedSlot) {
+                          updateScreenshot(selectedSlot.id, { layoutId: layout.id });
+                        }
+                        closeLayoutPanel();
                       }}
                       className="group p-6 bg-card border rounded-xl hover:bg-muted/30 hover:border-primary/50 transition-all"
                     >

@@ -6,11 +6,14 @@ import {
   Languages,
   Wand2,
   ArrowRight,
-  FileImage,
-  Layout
+  Layout,
+  Clock,
+  Package,
+  Folder
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useAppStore } from '@/stores/appStore';
 
 const containerAnimation = {
   hidden: { opacity: 0 },
@@ -28,6 +31,56 @@ const itemAnimation = {
 };
 
 export default function HomePage() {
+  const { apps, sets, getScreenshotsForSet, clearAllData } = useAppStore();
+
+  // Add a clear button for development (you can remove this later)
+  const handleClearData = () => {
+    if (window.confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+      clearAllData();
+      window.location.reload();
+    }
+  };
+
+  // Get recent sets (last 4)
+  const recentSets = [...sets]
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 4)
+    .map(set => {
+      const app = apps.find(a => a.id === set.appId);
+      const screenshots = getScreenshotsForSet(set.id);
+      const filledCount = screenshots.filter(s => !s.isEmpty).length;
+      return { ...set, app, filledCount, totalCount: screenshots.length };
+    });
+
+  // Function to get app icon (use first letter if no icon)
+  const getAppIcon = (app: typeof apps[0]) => {
+    if (app.icon) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={app.icon} alt={app.name} className="w-full h-full object-cover rounded-xl" />
+      );
+    }
+    return (
+      <span className="text-2xl font-bold text-primary">
+        {app.name.charAt(0).toUpperCase()}
+      </span>
+    );
+  };
+
+  // Function to get relative time
+  const getRelativeTime = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - new Date(date).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffMins > 0) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    return 'just now';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="p-8 max-w-7xl mx-auto">
@@ -41,10 +94,21 @@ export default function HomePage() {
           <h1 className="text-5xl md:text-6xl font-bold bg-[linear-gradient(to_right,theme(colors.blue.600),theme(colors.purple.600),theme(colors.pink.600),theme(colors.orange.600),theme(colors.blue.600))] dark:bg-[linear-gradient(to_right,theme(colors.blue.400),theme(colors.purple.400),theme(colors.pink.400),theme(colors.orange.400),theme(colors.blue.400))] bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient">
             Welcome to Mocksy
           </h1>
-          <p className="text-lg text-muted-foreground lg:max-w-md">
-            Create stunning app store screenshots with AI-powered editing and translation.
-            Transform your app&apos;s presentation in seconds.
-          </p>
+          <div className="flex flex-col gap-4">
+            <p className="text-lg text-muted-foreground lg:max-w-md">
+              Create stunning app store screenshots with AI-powered editing and translation.
+              Transform your app&apos;s presentation in seconds.
+            </p>
+            {/* Temporary clear data button - remove in production */}
+            {apps.length > 10 && (
+              <button
+                onClick={handleClearData}
+                className="text-xs text-red-500 hover:text-red-700 underline"
+              >
+                Clear All Data (Development Only)
+              </button>
+            )}
+          </div>
         </motion.div>
 
         {/* Features */}
@@ -111,7 +175,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link href="/templates" className="group">
+          <Link href="/browse-vibes" className="group">
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 to-orange-500 p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] shadow-lg">
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
               <div className="relative">
@@ -136,28 +200,159 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
+          className="mb-12"
         >
-          <h2 className="text-2xl font-bold mb-6">Your Apps</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2, delay: 0.2 + i * 0.05 }}
-              >
-                <Link href={`/app/${i}`} className="group block">
-                  <div className="rounded-xl border bg-card/50 p-4 hover:bg-card hover:shadow-md transition-all duration-200">
-                    <div className="aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 rounded-lg mb-3 flex items-center justify-center group-hover:scale-[1.02] transition-transform">
-                      <FileImage className="w-8 h-8 text-muted-foreground/30" />
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Your Apps</h2>
+            <Link href="/new-app" className="text-sm text-primary hover:underline">
+              Create New App →
+            </Link>
+          </div>
+          {apps.length === 0 ? (
+            <div className="text-center py-12 bg-card/30 rounded-xl border-2 border-dashed">
+              <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-muted-foreground mb-4">No apps yet</p>
+              <Link href="/new-app" className="text-primary hover:underline">
+                Create your first app
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {apps.map((app) => (
+                <motion.div
+                  key={app.id}
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
+                  <Link href={`/app/${app.id}`} className="block group">
+                    <div className="rounded-xl border bg-card/50 p-4 hover:bg-card hover:shadow-md transition-all duration-200">
+                      <div className="flex items-start gap-3">
+                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-[1.05] transition-transform overflow-hidden">
+                          {getAppIcon(app)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">{app.name}</h3>
+                          <p className="text-xs text-muted-foreground truncate mb-2">
+                            {app.description || 'No description'}
+                          </p>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Folder className="w-3 h-3" />
+                              {app.sets?.length || 0} sets
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {getRelativeTime(app.updatedAt)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="font-medium mb-1">App {i}</h3>
-                    <p className="text-xs text-muted-foreground">Last edited 2 hours ago</p>
+                  </Link>
+                </motion.div>
+              ))}
+
+              {/* Add New App Card */}
+              {apps.length < 4 && (
+                <Link href="/new-app" className="block group">
+                  <div className="rounded-xl border-2 border-dashed bg-card/30 p-4 hover:bg-card/50 hover:border-primary/30 transition-all duration-200 h-full flex items-center justify-center min-h-[104px]">
+                    <div className="text-center">
+                      <Plus className="w-8 h-8 mx-auto mb-2 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <p className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Create New App</p>
+                    </div>
                   </div>
                 </Link>
-              </motion.div>
-            ))}
+              )}
+
+              {/* Ghost cards to fill the row */}
+              {apps.length < 3 && Array.from({ length: 3 - apps.length }, (_, i) => (
+                <div key={`ghost-${i}`} className="rounded-xl border border-dashed border-border/30 bg-card/10 p-4 min-h-[104px]" />
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Recent Sets */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.25 }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Recent Screenshot Sets</h2>
+            {apps.length > 0 && (
+              <Link href={`/app/${apps[0]?.id}`} className="text-sm text-primary hover:underline">
+                View All Sets →
+              </Link>
+            )}
           </div>
+          {recentSets.length === 0 ? (
+            <div className="text-center py-12 bg-card/30 rounded-xl border-2 border-dashed">
+              <ImageIcon className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-muted-foreground mb-4">No screenshot sets yet</p>
+              <Link href="/new-app" className="text-primary hover:underline">
+                Create an app to get started
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recentSets.map((set) => (
+                <motion.div
+                  key={set.id}
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
+                  <Link href={`/app/${set.appId}/set/${set.id}`} className="block group">
+                    <div className="rounded-xl border bg-card/50 p-4 hover:bg-card hover:shadow-md transition-all duration-200">
+                      <div className="aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 rounded-lg mb-3 flex items-center justify-center group-hover:scale-[1.02] transition-transform">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
+                      </div>
+                      <h3 className="font-medium mb-1 truncate">{set.name}</h3>
+                      <p className="text-xs text-muted-foreground mb-2 truncate">
+                        {set.app?.name || 'Unknown App'}
+                      </p>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className={`px-2 py-0.5 rounded-full ${
+                          set.filledCount === set.totalCount
+                            ? 'bg-green-500/20 text-green-600'
+                            : 'bg-yellow-500/20 text-yellow-600'
+                        }`}>
+                          {set.filledCount}/{set.totalCount} slots
+                        </span>
+                        <span className="text-muted-foreground">
+                          {getRelativeTime(set.updatedAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+
+              {/* Create Set Card if less than 4 sets */}
+              {recentSets.length > 0 && recentSets.length < 4 && apps.length > 0 && (
+                <Link href={`/app/${apps[0].id}/set/new`} className="block group">
+                  <div className="rounded-xl border-2 border-dashed bg-card/30 p-4 hover:bg-card/50 hover:border-primary/30 transition-all duration-200 h-full">
+                    <div className="aspect-[9/16] bg-gradient-to-br from-muted/30 to-muted/20 rounded-lg mb-3 flex items-center justify-center border-2 border-dashed border-border/30">
+                      <Plus className="w-8 h-8 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+                    </div>
+                    <h3 className="font-medium mb-1 text-muted-foreground group-hover:text-foreground transition-colors">Create New Set</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Start a new collection
+                    </p>
+                  </div>
+                </Link>
+              )}
+
+              {/* Ghost cards to fill the row */}
+              {recentSets.length > 0 && recentSets.length < 3 && Array.from({ length: 3 - recentSets.length }, (_, i) => (
+                <div key={`ghost-set-${i}`} className="rounded-xl border border-dashed border-border/30 bg-card/10 p-4">
+                  <div className="aspect-[9/16] bg-gradient-to-br from-muted/10 to-muted/5 rounded-lg mb-3" />
+                  <div className="h-4 bg-muted/10 rounded mb-2" />
+                  <div className="h-3 bg-muted/10 rounded w-2/3" />
+                </div>
+              ))}
+            </div>
+          )}
         </motion.div>
       </div>
     </div>

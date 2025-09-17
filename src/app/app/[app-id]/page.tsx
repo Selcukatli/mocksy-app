@@ -4,7 +4,9 @@ import { use, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useAppStore } from '@/stores/appStore';
 import OnboardingDialog from '@/components/OnboardingDialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Download,
   Settings,
@@ -23,6 +25,8 @@ import {
   ArrowRight,
   FileImage,
   Palette,
+  Trash2,
+  Copy,
 } from 'lucide-react';
 
 interface PageProps {
@@ -31,16 +35,6 @@ interface PageProps {
   }>;
 }
 
-interface AppStoreSet {
-  id: string;
-  name: string;
-  language: string;
-  platform: 'iOS' | 'Android' | 'Both';
-  status: 'draft' | 'ready' | 'exported';
-  screenshots: string[];
-  createdAt: Date;
-  modifiedAt: Date;
-}
 
 const containerAnimation = {
   hidden: { opacity: 0 },
@@ -70,11 +64,28 @@ export default function AppDetailPage({ params }: PageProps) {
   const appId = resolvedParams['app-id'];
   const router = useRouter();
 
-  const [selectedSet, setSelectedSet] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [deleteSetId, setDeleteSetId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
-  // Mock source images count - in real app this would come from API/database
-  const sourceImagesCount = 8; // Set to 0 to test empty state
+  // Store hooks
+  const { getApp, getSetsForApp, getSourceImagesForApp, getScreenshotsForSet, deleteSet } = useAppStore();
+
+  // Get or create app
+  const app = getApp(appId);
+
+  // If app doesn't exist, redirect to home
+  useEffect(() => {
+    if (!app) {
+      router.push('/home');
+    }
+  }, [app, router]);
+
+  // Get data for current app
+  const appStoreSets = app ? getSetsForApp(app.id) : [];
+  const sourceImages = app ? getSourceImagesForApp(app.id) : [];
+  const sourceImagesCount = sourceImages.length;
 
   useEffect(() => {
     // Check if user has seen onboarding globally
@@ -105,39 +116,14 @@ export default function AppDetailPage({ params }: PageProps) {
     setShowOnboarding(true);
   };
 
-  // Mock data for app store sets
-  const appStoreSets: AppStoreSet[] = [
-    {
-      id: '1',
-      name: 'Main Launch Set',
-      language: 'English',
-      platform: 'Both',
-      status: 'ready',
-      screenshots: ['1', '2', '3', '4', '5'],
-      createdAt: new Date(),
-      modifiedAt: new Date(),
-    },
-    {
-      id: '2',
-      name: 'Holiday Campaign',
-      language: 'English',
-      platform: 'iOS',
-      status: 'draft',
-      screenshots: ['1', '3', '5'],
-      createdAt: new Date(),
-      modifiedAt: new Date(),
-    },
-    {
-      id: '3',
-      name: 'Spanish Version',
-      language: 'Español',
-      platform: 'Both',
-      status: 'ready',
-      screenshots: ['1', '2', '3', '4'],
-      createdAt: new Date(),
-      modifiedAt: new Date(),
-    },
-  ];
+  // Helper to determine set status based on screenshots
+  const getSetStatus = (setId: string) => {
+    const screenshots = getScreenshotsForSet(setId);
+    const filledCount = screenshots.filter(s => !s.isEmpty).length;
+    if (filledCount === 0) return 'draft';
+    if (filledCount === screenshots.length) return 'ready';
+    return 'draft';
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -178,9 +164,22 @@ export default function AppDetailPage({ params }: PageProps) {
             className="px-6 pt-6 pb-4 border-b"
           >
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold">App {appId}</h1>
-                <p className="text-muted-foreground mt-1">Manage your app store screenshots and source images</p>
+              <div className="flex items-start gap-4">
+                {/* App Icon */}
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {app?.icon ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={app.icon} alt={app?.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl font-bold text-primary">
+                      {app?.name?.charAt(0).toUpperCase() || 'A'}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold">{app?.name || `App ${appId}`}</h1>
+                  <p className="text-muted-foreground mt-1">{app?.description || 'Manage your app store screenshots and source images'}</p>
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <button
@@ -249,12 +248,7 @@ export default function AppDetailPage({ params }: PageProps) {
                       key={set.id}
                       variants={itemAnimation}
                       onClick={() => router.push(`/app/${appId}/set/${set.id}`)}
-                      className={cn(
-                        "bg-card border rounded-xl p-4 cursor-pointer transition-all duration-200",
-                        selectedSet === set.id
-                          ? "border-primary shadow-lg"
-                          : "border-border hover:border-muted-foreground/30 hover:shadow-md"
-                      )}
+                      className="bg-card border rounded-xl p-4 cursor-pointer transition-all duration-200 border-border hover:border-muted-foreground/30 hover:shadow-md"
                     >
                       {/* Set Header */}
                       <div className="flex items-start justify-between mb-3">
@@ -263,46 +257,54 @@ export default function AppDetailPage({ params }: PageProps) {
                           <div className="flex items-center gap-3 mt-1">
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Globe className="w-3 h-3" />
-                              {set.language}
+                              English
                             </div>
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              {getPlatformIcon(set.platform)}
-                              {set.platform}
+                              {getPlatformIcon(set.deviceType || 'Both')}
+                              {set.deviceType || 'iPhone'}
                             </div>
                           </div>
                         </div>
                         <div className={cn(
                           "px-2 py-1 rounded-full text-xs border",
-                          getStatusColor(set.status)
+                          getStatusColor(getSetStatus(set.id))
                         )}>
-                          {set.status}
+                          {getSetStatus(set.id)}
                         </div>
                       </div>
 
                       {/* Screenshot Preview Grid */}
                       <div className="grid grid-cols-3 gap-1.5 mb-3">
-                        {set.screenshots.slice(0, set.screenshots.length > 3 ? 2 : 3).map((screenshotId, index) => (
-                          <div
-                            key={index}
-                            className="aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 rounded-md"
-                          />
-                        ))}
-                        {set.screenshots.length > 3 && (
-                          <div className="aspect-[9/16] bg-muted/30 rounded-md flex items-center justify-center relative">
-                            <div
-                              className="aspect-[9/16] absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/30 rounded-md"
-                            />
-                            <span className="text-sm font-medium text-muted-foreground z-10">
-                              +{set.screenshots.length - 2}
-                            </span>
-                          </div>
-                        )}
+                        {(() => {
+                          const screenshots = getScreenshotsForSet(set.id).filter(s => !s.isEmpty);
+                          const toShow = screenshots.slice(0, screenshots.length > 3 ? 2 : 3);
+                          return (
+                            <>
+                              {toShow.map((screenshot, index) => (
+                                <div
+                                  key={index}
+                                  className="aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 rounded-md"
+                                />
+                              ))}
+                              {screenshots.length > 3 && (
+                                <div className="aspect-[9/16] bg-muted/30 rounded-md flex items-center justify-center relative">
+                                  <div
+                                    className="aspect-[9/16] absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/30 rounded-md"
+                                  />
+                                  <span className="text-sm font-medium text-muted-foreground z-10">
+                                    +{screenshots.length - 2}
+                                  </span>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
 
                       {/* Set Footer */}
                       <div className="flex items-center justify-between pt-3 border-t">
                         <p className="text-xs text-muted-foreground">
-                          {set.screenshots.length} screenshots
+                          {getScreenshotsForSet(set.id).filter(s => !s.isEmpty).length} screenshots
                         </p>
                         <div className="flex gap-1">
                           <button
@@ -321,14 +323,43 @@ export default function AppDetailPage({ params }: PageProps) {
                           >
                             <Download className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                            className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
-                          >
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </button>
+                          <Popover open={openPopoverId === set.id} onOpenChange={(open) => setOpenPopoverId(open ? set.id : null)}>
+                            <PopoverTrigger asChild>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
+                                className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
+                              >
+                                <MoreVertical className="w-3.5 h-3.5" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent side="bottom" align="end" className="w-48 p-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenPopoverId(null);
+                                  // TODO: Implement duplicate functionality
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-muted/50 transition-colors"
+                              >
+                                <Copy className="w-4 h-4" />
+                                <span>Duplicate</span>
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenPopoverId(null);
+                                  setDeleteSetId(set.id);
+                                  setShowDeleteConfirm(true);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-red-500/10 hover:text-red-600 transition-colors text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                <span>Delete</span>
+                              </button>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
                     </motion.div>
@@ -338,14 +369,16 @@ export default function AppDetailPage({ params }: PageProps) {
                   <motion.div
                     variants={itemAnimation}
                     onClick={() => router.push(`/app/${appId}/set/new`)}
-                    className="bg-card/50 border-2 border-dashed border-border rounded-xl p-4 cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/20 transition-all duration-200 flex items-center justify-center min-h-[200px]"
+                    className="bg-card/50 border-2 border-dashed border-border rounded-xl p-4 cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/20 transition-all duration-200 flex flex-col"
                   >
-                    <div className="text-center">
-                      <FolderPlus className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="font-medium">Create New Set</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Start a new screenshot collection
-                      </p>
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center">
+                        <FolderPlus className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="font-medium">Create New Set</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Start a new screenshot collection
+                        </p>
+                      </div>
                     </div>
                   </motion.div>
                 </motion.div>
@@ -462,19 +495,19 @@ export default function AppDetailPage({ params }: PageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Ready to Export</span>
                     <span className="font-semibold text-green-600">
-                      {appStoreSets.filter(s => s.status === 'ready').length}
+                      {appStoreSets.filter(s => getSetStatus(s.id) === 'ready').length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">In Draft</span>
                     <span className="font-semibold text-yellow-600">
-                      {appStoreSets.filter(s => s.status === 'draft').length}
+                      {appStoreSets.filter(s => getSetStatus(s.id) === 'draft').length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Languages</span>
+                    <span className="text-sm text-muted-foreground">Source Images</span>
                     <span className="font-semibold">
-                      {new Set(appStoreSets.map(s => s.language)).size}
+                      {sourceImagesCount}
                     </span>
                   </div>
                 </div>
@@ -483,6 +516,44 @@ export default function AppDetailPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && deleteSetId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-card rounded-lg p-6 max-w-md w-full mx-4 border shadow-lg"
+          >
+            <h3 className="text-lg font-semibold mb-2">Delete Set?</h3>
+            <p className="text-muted-foreground mb-4">
+              Are you sure you want to delete &quot;{appStoreSets.find(s => s.id === deleteSetId)?.name}&quot;?
+              This will permanently delete all screenshots in this set. This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteSetId(null);
+                }}
+                className="px-4 py-2 border rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  deleteSet(deleteSetId);
+                  setShowDeleteConfirm(false);
+                  setDeleteSetId(null);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </>
   );
 }

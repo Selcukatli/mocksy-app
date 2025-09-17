@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { useAppStore } from '@/stores/appStore';
+import { useMockDataStore } from '@/stores/mockDataStore';
 import {
   ArrowLeft,
   Search,
@@ -14,22 +17,10 @@ import {
   Plus,
   User,
   Edit3,
+  Trash2,
+  X,
 } from 'lucide-react';
 import Toast from '@/components/Toast';
-
-interface Vibe {
-  id: string;
-  name: string;
-  description: string;
-  gradient: string;
-  category: string;
-  icon: string;
-  usageCount: number;
-  isPopular?: boolean;
-  isNew?: boolean;
-  isFavorited?: boolean;
-  isCreatedByMe?: boolean;
-}
 
 const containerAnimation = {
   hidden: { opacity: 0 },
@@ -54,46 +45,55 @@ const itemAnimation = {
   }
 };
 
+// Gradient presets for custom vibe creation
+const gradientPresets = [
+  'from-purple-500 via-pink-500 to-rose-500',
+  'from-blue-500 via-cyan-500 to-teal-500',
+  'from-yellow-400 via-orange-400 to-red-400',
+  'from-green-500 via-emerald-500 to-teal-500',
+  'from-indigo-500 via-purple-500 to-pink-500',
+  'from-gray-900 via-gray-800 to-black',
+  'from-red-500 via-orange-500 to-yellow-500',
+  'from-pink-200 via-purple-200 to-indigo-200',
+];
+
 export default function BrowseVibesPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [isCreatingVibe, setIsCreatingVibe] = useState(false);
+  const [newVibeName, setNewVibeName] = useState('');
+  const [newVibeDescription, setNewVibeDescription] = useState('');
+  const [newVibeGradient, setNewVibeGradient] = useState('from-purple-500 via-pink-500 to-rose-500');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isOpen: boolean }>({
     message: '',
     type: 'success',
     isOpen: false
   });
 
-  // Load favorites from localStorage on mount
-  useEffect(() => {
-    const storedFavorites = localStorage.getItem('mocksy-favorite-vibes');
-    if (storedFavorites) {
-      setFavorites(new Set(JSON.parse(storedFavorites)));
-    }
-  }, []);
+  // Store hooks
+  const { vibes: mockVibes } = useMockDataStore();
+  const {
+    customVibes,
+    favoriteVibes,
+    toggleFavoriteVibe,
+    isFavoriteVibe,
+    createCustomVibe,
+    deleteCustomVibe
+  } = useAppStore();
 
-  // Save favorites to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('mocksy-favorite-vibes', JSON.stringify(Array.from(favorites)));
-  }, [favorites]);
+  // Combine mock and custom vibes
+  const allVibes = useMemo(() => {
+    return [...mockVibes, ...customVibes];
+  }, [mockVibes, customVibes]);
 
   const toggleFavorite = (vibeId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
-    const vibe = vibes.find(v => v.id === vibeId);
-    const isAdding = !favorites.has(vibeId);
+    e.stopPropagation();
+    const vibe = allVibes.find(v => v.id === vibeId);
+    const isAdding = !isFavoriteVibe(vibeId);
 
-    setFavorites((prev) => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(vibeId)) {
-        newFavorites.delete(vibeId);
-      } else {
-        newFavorites.add(vibeId);
-      }
-      return newFavorites;
-    });
+    toggleFavoriteVibe(vibeId);
 
-    // Show toast notification
     setToast({
       message: isAdding ? `Added "${vibe?.name}" to favorites` : `Removed "${vibe?.name}" from favorites`,
       type: 'success',
@@ -101,170 +101,66 @@ export default function BrowseVibesPage() {
     });
   };
 
+  const handleCreateVibe = () => {
+    if (newVibeName && newVibeDescription) {
+      const newVibe = createCustomVibe({
+        name: newVibeName,
+        description: newVibeDescription,
+        gradient: newVibeGradient,
+        tags: [],
+        isPopular: false,
+      });
+
+      setToast({
+        message: `Created custom vibe "${newVibe.name}"`,
+        type: 'success',
+        isOpen: true
+      });
+
+      setNewVibeName('');
+      setNewVibeDescription('');
+      setNewVibeGradient('from-purple-500 via-pink-500 to-rose-500');
+      setIsCreatingVibe(false);
+    }
+  };
+
+  const handleDeleteVibe = (vibeId: string, vibeName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteCustomVibe(vibeId);
+    setToast({
+      message: `Deleted "${vibeName}"`,
+      type: 'success',
+      isOpen: true
+    });
+  };
+
   const categories = [
-    { id: 'all', name: 'All Vibes', count: 24 },
-    { id: 'created', name: 'Created by Me', count: 3, icon: <User className="w-3 h-3" /> },
-    { id: 'favorited', name: 'Favorited', count: 5, icon: <Heart className="w-3 h-3" /> },
-    { id: 'popular', name: 'Popular', count: 8, icon: <Star className="w-3 h-3" /> },
-  ];
-
-  const vibes: Vibe[] = [
     {
-      id: '1',
-      name: 'Snap Style',
-      description: 'Bold, playful, social media ready',
-      gradient: 'from-blue-500 to-cyan-500',
-      category: 'trendy',
-      icon: '✨',
-      usageCount: 1234,
-      isPopular: true,
-      isFavorited: false,
+      id: 'all',
+      name: 'All Vibes',
+      count: allVibes.length
     },
     {
-      id: '2',
-      name: 'Watercolor Zen',
-      description: 'Soft, calming, wellness focused',
-      gradient: 'from-purple-500 to-pink-500',
-      category: 'minimal',
-      icon: '🎨',
-      usageCount: 890,
-      isFavorited: false,
+      id: 'created',
+      name: 'Created by Me',
+      count: customVibes.length,
+      icon: <User className="w-3 h-3" />
     },
     {
-      id: '3',
-      name: 'GenZ Medley',
-      description: 'Vibrant, trendy, meme-worthy',
-      gradient: 'from-yellow-500 to-orange-500',
-      category: 'trendy',
-      icon: '⚡',
-      usageCount: 2103,
-      isPopular: true,
+      id: 'favorited',
+      name: 'Favorited',
+      count: favoriteVibes.length,
+      icon: <Heart className="w-3 h-3" />
     },
     {
-      id: '4',
-      name: 'Corporate Pro',
-      description: 'Clean, professional, trustworthy',
-      gradient: 'from-gray-700 to-gray-900',
-      category: 'professional',
-      icon: '🏢',
-      usageCount: 567,
-    },
-    {
-      id: '5',
-      name: 'Nature Flow',
-      description: 'Organic, earthy, sustainable',
-      gradient: 'from-green-500 to-emerald-600',
-      category: 'minimal',
-      icon: '🌿',
-      usageCount: 432,
-      isNew: true,
-    },
-    {
-      id: '6',
-      name: 'Tech Futura',
-      description: 'Futuristic, innovative, cutting-edge',
-      gradient: 'from-indigo-600 to-purple-700',
-      category: 'professional',
-      icon: '🚀',
-      usageCount: 789,
-    },
-    {
-      id: '7',
-      name: 'Love Story',
-      description: 'Romantic, emotional, heartfelt',
-      gradient: 'from-red-500 to-pink-600',
-      category: 'playful',
-      icon: '💖',
-      usageCount: 345,
-      isNew: true,
-      isFavorited: false,
-    },
-    {
-      id: '8',
-      name: 'Retro Wave',
-      description: '80s inspired, neon, nostalgic',
-      gradient: 'from-purple-600 to-blue-600',
-      category: 'trendy',
-      icon: '🌅',
-      usageCount: 1567,
-      isPopular: true,
-    },
-    {
-      id: '9',
-      name: 'Candy Pop',
-      description: 'Sweet, colorful, fun',
-      gradient: 'from-pink-400 to-purple-400',
-      category: 'playful',
-      icon: '🍭',
-      usageCount: 234,
-    },
-    {
-      id: '10',
-      name: 'Dark Mode',
-      description: 'Sleek, modern, sophisticated',
-      gradient: 'from-slate-800 to-slate-950',
-      category: 'minimal',
-      icon: '🌙',
-      usageCount: 987,
-    },
-    {
-      id: '11',
-      name: 'Ocean Breeze',
-      description: 'Fresh, calming, aquatic',
-      gradient: 'from-blue-400 to-teal-500',
-      category: 'minimal',
-      icon: '🌊',
-      usageCount: 456,
-    },
-    {
-      id: '12',
-      name: 'Sunset Glow',
-      description: 'Warm, inviting, beautiful',
-      gradient: 'from-orange-400 to-red-500',
-      category: 'playful',
-      icon: '🌅',
-      usageCount: 678,
-    },
-    {
-      id: '13',
-      name: 'My Custom Theme',
-      description: 'Personal branding style',
-      gradient: 'from-teal-500 to-blue-600',
-      category: 'professional',
-      icon: '🎯',
-      usageCount: 45,
-      isCreatedByMe: true,
-      isFavorited: false,
-    },
-    {
-      id: '14',
-      name: 'Client Project',
-      description: 'Custom design for client',
-      gradient: 'from-rose-500 to-purple-600',
-      category: 'professional',
-      icon: '💼',
-      usageCount: 12,
-      isCreatedByMe: true,
-    },
-    {
-      id: '15',
-      name: 'Test Theme',
-      description: 'Experimental gradient style',
-      gradient: 'from-amber-500 to-yellow-600',
-      category: 'minimal',
-      icon: '🔬',
-      usageCount: 3,
-      isCreatedByMe: true,
+      id: 'popular',
+      name: 'Popular',
+      count: allVibes.filter(v => v.isPopular).length,
+      icon: <Star className="w-3 h-3" />
     },
   ];
 
-  // Update vibes with current favorite status
-  const vibesWithFavorites = vibes.map(vibe => ({
-    ...vibe,
-    isFavorited: favorites.has(vibe.id)
-  }));
-
-  const filteredVibes = vibesWithFavorites.filter(vibe => {
+  const filteredVibes = allVibes.filter(vibe => {
     const matchesSearch = vibe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           vibe.description.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -272,19 +168,17 @@ export default function BrowseVibesPage() {
     if (selectedCategory === 'all') {
       matchesCategory = true;
     } else if (selectedCategory === 'created') {
-      matchesCategory = vibe.isCreatedByMe === true;
+      matchesCategory = vibe.createdByUser === true;
     } else if (selectedCategory === 'favorited') {
-      matchesCategory = vibe.isFavorited === true;
+      matchesCategory = isFavoriteVibe(vibe.id);
     } else if (selectedCategory === 'popular') {
       matchesCategory = vibe.isPopular === true;
-    } else {
-      matchesCategory = vibe.category === selectedCategory;
     }
 
     return matchesSearch && matchesCategory;
   });
 
-  const myVibes = vibesWithFavorites.filter(v => v.isCreatedByMe || v.isFavorited);
+  const myVibes = allVibes.filter(v => v.createdByUser || isFavoriteVibe(v.id));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
@@ -314,7 +208,10 @@ export default function BrowseVibesPage() {
                 </p>
               </div>
             </div>
-            <button className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2">
+            <button
+              onClick={() => setIsCreatingVibe(true)}
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2"
+            >
               <Plus className="w-4 h-4" />
               Create Custom Vibe
             </button>
@@ -380,6 +277,7 @@ export default function BrowseVibesPage() {
                   {/* Create Custom Vibe Card (show first even in search) */}
                   <motion.div
                     variants={itemAnimation}
+                    onClick={() => setIsCreatingVibe(true)}
                     className="bg-card/50 border-2 border-dashed border-border rounded-xl p-6 cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/20 transition-all duration-200 flex items-center justify-center min-h-[240px]"
                   >
                     <div className="text-center">
@@ -403,39 +301,48 @@ export default function BrowseVibesPage() {
                       {/* Preview Banner */}
                       <div className={`h-32 bg-gradient-to-br ${vibe.gradient} relative`}>
                         <div className="absolute inset-0 flex items-center justify-center text-4xl">
-                          {vibe.icon}
+                          <Sparkles className="w-10 h-10 text-white/50" />
                         </div>
-                        {vibe.isNew && (
-                          <span className="absolute top-3 left-3 px-2 py-1 bg-green-500 text-white text-xs rounded-full">
-                            NEW
+                        {vibe.isPopular && (
+                          <Star className="absolute top-3 left-3 w-5 h-5 text-yellow-400 fill-yellow-400" />
+                        )}
+                        {vibe.createdByUser && (
+                          <span className="absolute top-3 left-3 px-2 py-1 bg-primary text-primary-foreground text-xs rounded-full">
+                            MY VIBE
                           </span>
                         )}
-                        {vibe.isPopular && (
-                          <Star className="absolute top-3 left-12 w-5 h-5 text-yellow-400 fill-yellow-400" />
-                        )}
-                        {/* Favorite Button */}
-                        <button
-                          onClick={(e) => toggleFavorite(vibe.id, e)}
-                          className={`absolute top-3 right-3 w-8 h-8 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110 ${
-                            vibe.isFavorited ? '' : 'opacity-0 group-hover:opacity-100'
-                          }`}
-                        >
-                          <Heart className={`w-4 h-4 ${
-                            vibe.isFavorited ? 'text-red-500 fill-red-500' : 'text-muted-foreground'
-                          }`} />
-                        </button>
+                        {/* Actions */}
+                        <div className="absolute top-3 right-3 flex gap-2">
+                          <button
+                            onClick={(e) => toggleFavorite(vibe.id, e)}
+                            className={`w-8 h-8 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110 ${
+                              isFavoriteVibe(vibe.id) ? '' : 'opacity-0 group-hover:opacity-100'
+                            }`}
+                          >
+                            <Heart className={cn(
+                              "w-4 h-4",
+                              isFavoriteVibe(vibe.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                            )} />
+                          </button>
+                          {vibe.createdByUser && (
+                            <button
+                              onClick={(e) => handleDeleteVibe(vibe.id, vibe.name, e)}
+                              className="w-8 h-8 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Content */}
                       <div className="p-4">
                         <h3 className="font-semibold mb-1">{vibe.name}</h3>
                         <p className="text-sm text-muted-foreground mb-3">{vibe.description}</p>
-
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" />
-                            {vibe.usageCount.toLocaleString()} uses
-                          </span>
+                          <div className="text-xs text-muted-foreground">
+                            {vibe.createdByUser ? 'Custom' : 'System'}
+                          </div>
                           <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                         </div>
                       </div>
@@ -451,7 +358,10 @@ export default function BrowseVibesPage() {
                   <p className="text-sm text-muted-foreground max-w-md">
                     Try adjusting your search or create a custom vibe with your own style
                   </p>
-                  <button className="mt-6 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2">
+                  <button
+                    onClick={() => setIsCreatingVibe(true)}
+                    className="mt-6 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2"
+                  >
                     <Plus className="w-4 h-4" />
                     Create Custom Vibe
                   </button>
@@ -474,7 +384,7 @@ export default function BrowseVibesPage() {
                 <User className="w-5 h-5 text-primary" />
                 <h2 className="text-xl font-semibold">My Vibes</h2>
                 <span className="text-xs text-muted-foreground">
-                  ({myVibes.filter(v => v.isCreatedByMe).length} created, {myVibes.filter(v => v.isFavorited).length} favorited)
+                  ({myVibes.filter(v => v.createdByUser).length} created, {myVibes.filter(v => isFavoriteVibe(v.id)).length} favorited)
                 </span>
               </div>
             </div>
@@ -489,24 +399,18 @@ export default function BrowseVibesPage() {
                   >
                     <div className="flex items-start gap-3">
                       <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${vibe.gradient} flex items-center justify-center text-xl flex-shrink-0`}>
-                        {vibe.icon}
+                        <Sparkles className="w-6 h-6 text-white/70" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-start justify-between">
                           <h3 className="font-semibold text-sm">
                             {vibe.name}
                           </h3>
-                          {vibe.isCreatedByMe && (
+                          {vibe.createdByUser && (
                             <Edit3 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{vibe.description}</p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" />
-                            {vibe.usageCount} uses
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -540,16 +444,17 @@ export default function BrowseVibesPage() {
                   <button
                     onClick={(e) => toggleFavorite(vibe.id, e)}
                     className={`absolute top-3 right-3 p-1.5 bg-background/80 backdrop-blur-sm rounded-full transition-all hover:scale-110 z-10 ${
-                      vibe.isFavorited ? '' : 'opacity-0 group-hover:opacity-100'
+                      isFavoriteVibe(vibe.id) ? '' : 'opacity-0 group-hover:opacity-100'
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${
-                      vibe.isFavorited ? 'text-red-500 fill-red-500' : 'text-muted-foreground'
-                    }`} />
+                    <Heart className={cn(
+                      "w-4 h-4",
+                      isFavoriteVibe(vibe.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                    )} />
                   </button>
                   <div className="flex items-start gap-4">
                     <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${vibe.gradient} flex items-center justify-center text-2xl`}>
-                      {vibe.icon}
+                      <Sparkles className="w-8 h-8 text-white/50" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-start justify-between">
@@ -559,12 +464,6 @@ export default function BrowseVibesPage() {
                           </h3>
                           <p className="text-sm text-muted-foreground mt-1">{vibe.description}</p>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" />
-                          {vibe.usageCount.toLocaleString()} uses
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -589,6 +488,7 @@ export default function BrowseVibesPage() {
             {/* Create Custom Vibe Card */}
             <motion.div
               variants={itemAnimation}
+              onClick={() => setIsCreatingVibe(true)}
               className="bg-card/50 border-2 border-dashed border-border rounded-xl p-6 cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/20 transition-all duration-200 flex items-center justify-center min-h-[240px]"
             >
               <div className="text-center">
@@ -612,39 +512,48 @@ export default function BrowseVibesPage() {
                 {/* Preview Banner */}
                 <div className={`h-32 bg-gradient-to-br ${vibe.gradient} relative`}>
                   <div className="absolute inset-0 flex items-center justify-center text-4xl">
-                    {vibe.icon}
+                    <Sparkles className="w-10 h-10 text-white/50" />
                   </div>
-                  {vibe.isNew && (
-                    <span className="absolute top-3 left-3 px-2 py-1 bg-green-500 text-white text-xs rounded-full">
-                      NEW
+                  {vibe.isPopular && (
+                    <Star className="absolute top-3 left-3 w-5 h-5 text-yellow-400 fill-yellow-400" />
+                  )}
+                  {vibe.createdByUser && (
+                    <span className="absolute top-3 left-3 px-2 py-1 bg-primary text-primary-foreground text-xs rounded-full">
+                      MY VIBE
                     </span>
                   )}
-                  {vibe.isPopular && (
-                    <Star className="absolute top-3 left-12 w-5 h-5 text-yellow-400 fill-yellow-400" />
-                  )}
-                  {/* Favorite Button */}
-                  <button
-                    onClick={(e) => toggleFavorite(vibe.id, e)}
-                    className={`absolute top-3 right-3 w-8 h-8 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110 ${
-                      vibe.isFavorited ? '' : 'opacity-0 group-hover:opacity-100'
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${
-                      vibe.isFavorited ? 'text-red-500 fill-red-500' : 'text-muted-foreground'
-                    }`} />
-                  </button>
+                  {/* Actions */}
+                  <div className="absolute top-3 right-3 flex gap-2">
+                    <button
+                      onClick={(e) => toggleFavorite(vibe.id, e)}
+                      className={`w-8 h-8 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110 ${
+                        isFavoriteVibe(vibe.id) ? '' : 'opacity-0 group-hover:opacity-100'
+                      }`}
+                    >
+                      <Heart className={cn(
+                        "w-4 h-4",
+                        isFavoriteVibe(vibe.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                      )} />
+                    </button>
+                    {vibe.createdByUser && (
+                      <button
+                        onClick={(e) => handleDeleteVibe(vibe.id, vibe.name, e)}
+                        className="w-8 h-8 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Content */}
                 <div className="p-4">
                   <h3 className="font-semibold mb-1">{vibe.name}</h3>
                   <p className="text-sm text-muted-foreground mb-3">{vibe.description}</p>
-
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" />
-                      {vibe.usageCount.toLocaleString()} uses
-                    </span>
+                    <div className="text-xs text-muted-foreground">
+                      {vibe.createdByUser ? 'Custom' : 'System'}
+                    </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
                 </div>
@@ -655,6 +564,102 @@ export default function BrowseVibesPage() {
         </>
         )}
       </div>
+
+      {/* Create Custom Vibe Modal */}
+      <AnimatePresence>
+        {isCreatingVibe && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              onClick={() => setIsCreatingVibe(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-card border rounded-2xl shadow-2xl z-50 p-6"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold">Create Custom Vibe</h3>
+                <button
+                  onClick={() => setIsCreatingVibe(false)}
+                  className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Name</label>
+                  <input
+                    type="text"
+                    value={newVibeName}
+                    onChange={(e) => setNewVibeName(e.target.value)}
+                    placeholder="Enter vibe name"
+                    className="w-full px-3 py-2 border rounded-lg bg-background focus:ring-1 focus:ring-primary focus:border-primary"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Description</label>
+                  <input
+                    type="text"
+                    value={newVibeDescription}
+                    onChange={(e) => setNewVibeDescription(e.target.value)}
+                    placeholder="Describe your vibe"
+                    className="w-full px-3 py-2 border rounded-lg bg-background focus:ring-1 focus:ring-primary focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Choose Gradient</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {gradientPresets.map((gradient, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setNewVibeGradient(gradient)}
+                        className={cn(
+                          "h-16 rounded-lg bg-gradient-to-br transition-all",
+                          gradient,
+                          newVibeGradient === gradient ? "ring-2 ring-primary ring-offset-2" : "hover:scale-105"
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className={cn(
+                  "h-32 rounded-xl bg-gradient-to-br flex items-center justify-center",
+                  newVibeGradient
+                )}>
+                  <span className="text-white font-bold text-lg drop-shadow-lg">Preview</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setIsCreatingVibe(false)}
+                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateVibe}
+                  disabled={!newVibeName || !newVibeDescription}
+                  className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Create Vibe
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

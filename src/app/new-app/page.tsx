@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { useAppStore } from '@/stores/appStore';
 
 export default function NewAppPage() {
   const [appName, setAppName] = useState('');
@@ -20,6 +21,7 @@ export default function NewAppPage() {
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const router = useRouter();
+  const { createApp } = useAppStore();
 
   const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,8 +36,20 @@ export default function NewAppPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Creating app:', { appName, appDescription, selectedTemplate });
-    router.push('/home');
+
+    // Create the app in the store
+    const newApp = createApp(appName, appDescription);
+
+    // If icon was uploaded, update the app with the icon
+    if (iconPreview) {
+      const { updateApp } = useAppStore.getState();
+      updateApp(newApp.id, { icon: iconPreview });
+    }
+
+    console.log('Created app:', newApp);
+
+    // Navigate to the newly created app page
+    router.push(`/app/${newApp.id}`);
   };
 
   const templates = [

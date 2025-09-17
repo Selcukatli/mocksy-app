@@ -2,6 +2,7 @@
 
 import { use, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAppStore } from '@/stores/appStore';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -25,14 +26,6 @@ interface PageProps {
   }>;
 }
 
-interface SourceImage {
-  id: string;
-  name: string;
-  url?: string;
-  size: string;
-  uploadedAt: Date;
-  dimensions: string;
-}
 
 const containerAnimation = {
   hidden: { opacity: 0 },
@@ -64,30 +57,18 @@ export default function SourceImagesPage({ params }: PageProps) {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('returnTo');
 
+  // Store hooks
+  const { getSourceImagesForApp, uploadSourceImage, deleteSourceImage } = useAppStore();
+
+  // Local UI state
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'name' | 'date'>('date');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
-  // Mock data for source images - set to empty to show zero state
-  // You can uncomment the array below to see the images
-  const sourceImages: SourceImage[] = [];
-  /*
-  const sourceImages: SourceImage[] = [
-    { id: '1', name: 'Home Screen', size: '2.4 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '2', name: 'Dashboard', size: '1.8 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '3', name: 'Profile', size: '2.1 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '4', name: 'Settings', size: '1.5 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '5', name: 'Onboarding 1', size: '2.8 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '6', name: 'Onboarding 2', size: '2.7 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '7', name: 'Feature Detail', size: '2.2 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '8', name: 'Search Results', size: '1.9 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '9', name: 'Cart', size: '2.0 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '10', name: 'Checkout', size: '2.3 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '11', name: 'Success', size: '1.7 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-    { id: '12', name: 'Error State', size: '1.4 MB', dimensions: '1290x2796', uploadedAt: new Date() },
-  ];
-  */
+  // Get source images for current app
+  const sourceImages = getSourceImagesForApp(appId);
 
   const toggleImageSelection = (id: string) => {
     const newSelection = new Set(selectedImages);
@@ -115,9 +96,40 @@ export default function SourceImagesPage({ params }: PageProps) {
     if (sortBy === 'name') {
       return a.name.localeCompare(b.name);
     } else {
-      return b.uploadedAt.getTime() - a.uploadedAt.getTime();
+      return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
     }
   });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    setIsUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        await uploadSourceImage(appId, file);
+      }
+    } catch (error) {
+      console.error('Failed to upload images:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    selectedImages.forEach(id => {
+      deleteSourceImage(id);
+    });
+    setSelectedImages(new Set());
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
@@ -189,10 +201,18 @@ export default function SourceImagesPage({ params }: PageProps) {
                 <option value="name">Name (A-Z)</option>
               </select>
 
-              <button className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
+              <label className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap cursor-pointer">
                 <Upload className="w-4 h-4" />
-                Upload Images
-              </button>
+                {isUploading ? 'Uploading...' : 'Upload Images'}
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  className="hidden"
+                />
+              </label>
             </div>
           </div>
 
@@ -219,7 +239,10 @@ export default function SourceImagesPage({ params }: PageProps) {
               <button className="p-1 hover:bg-background/50 rounded transition-colors">
                 <Copy className="w-4 h-4" />
               </button>
-              <button className="p-1 hover:bg-red-500/20 text-red-600 rounded transition-colors">
+              <button
+                onClick={handleDeleteSelected}
+                className="p-1 hover:bg-red-500/20 text-red-600 rounded transition-colors"
+              >
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -260,10 +283,18 @@ export default function SourceImagesPage({ params }: PageProps) {
                 </div>
               </div>
 
-              <button className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2">
+              <label className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 cursor-pointer">
                 <Upload className="w-5 h-5" />
                 Upload Screenshots
-              </button>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  className="hidden"
+                />
+              </label>
 
               <p className="text-xs text-muted-foreground mt-4">
                 Supports PNG, JPG, JPEG, and WebP formats
@@ -304,14 +335,23 @@ export default function SourceImagesPage({ params }: PageProps) {
                     </div>
 
                     {/* Image Preview */}
-                    <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                      <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
-                    </div>
+                    {image.url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={image.url}
+                        alt={image.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                        <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
+                      </div>
+                    )}
 
                     {/* Hover Overlay */}
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <p className="text-white font-medium truncate mb-1">{image.name}</p>
-                      <p className="text-white/70 text-sm">{image.dimensions}</p>
+                      <p className="text-white/70 text-sm">{image.dimensions.width} × {image.dimensions.height}</p>
                       <div className="flex gap-2 mt-3">
                         <button className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors">
                           <Eye className="w-5 h-5 text-white" />
@@ -351,18 +391,27 @@ export default function SourceImagesPage({ params }: PageProps) {
                     )}
                   </button>
 
-                  <div className="w-10 h-16 rounded-md bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center flex-shrink-0">
-                    <ImageIcon className="w-5 h-5 text-muted-foreground/30" />
-                  </div>
+                  {image.url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={image.url}
+                      alt={image.name}
+                      className="w-10 h-16 rounded-md object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-16 rounded-md bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center flex-shrink-0">
+                      <ImageIcon className="w-5 h-5 text-muted-foreground/30" />
+                    </div>
+                  )}
 
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{image.name}</p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span>{image.dimensions}</span>
+                      <span>{image.dimensions.width} × {image.dimensions.height}</span>
                       <span>•</span>
-                      <span>{image.size}</span>
+                      <span>{formatFileSize(image.size)}</span>
                       <span>•</span>
-                      <span>{image.uploadedAt.toLocaleDateString()}</span>
+                      <span>{new Date(image.uploadedAt).toLocaleDateString()}</span>
                     </div>
                   </div>
 

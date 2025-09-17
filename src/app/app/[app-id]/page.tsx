@@ -13,26 +13,22 @@ import {
   MoreVertical,
   Edit3,
   Upload,
-  Image as ImageIcon,
   Layers,
   Globe,
   Package,
   Search,
   FolderPlus,
   HelpCircle,
+  Sparkles,
+  ArrowRight,
+  FileImage,
+  Palette,
 } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{
     'app-id': string;
   }>;
-}
-
-interface SourceImage {
-  id: string;
-  name: string;
-  url?: string;
-  uploadedAt: Date;
 }
 
 interface AppStoreSet {
@@ -75,12 +71,14 @@ export default function AppDetailPage({ params }: PageProps) {
   const router = useRouter();
 
   const [selectedSet, setSelectedSet] = useState<string | null>(null);
-  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [showOnboarding, setShowOnboarding] = useState(false);
 
+  // Mock source images count - in real app this would come from API/database
+  const sourceImagesCount = 8; // Set to 0 to test empty state
+
   useEffect(() => {
-    // Check if user has seen onboarding for this app
-    const hasSeenOnboarding = localStorage.getItem(`onboarding-app-${appId}`);
+    // Check if user has seen onboarding globally
+    const hasSeenOnboarding = localStorage.getItem('mocksy-onboarding-seen');
     if (!hasSeenOnboarding) {
       setShowOnboarding(true);
     }
@@ -95,29 +93,17 @@ export default function AppDetailPage({ params }: PageProps) {
     return () => {
       window.removeEventListener('show-onboarding', handleShowOnboardingEvent);
     };
-  }, [appId]);
+  }, []);
 
   const handleOnboardingClose = () => {
     setShowOnboarding(false);
-    // Mark onboarding as seen for this app
-    localStorage.setItem(`onboarding-app-${appId}`, 'true');
+    // Mark onboarding as seen globally
+    localStorage.setItem('mocksy-onboarding-seen', 'true');
   };
 
   const handleShowOnboarding = () => {
     setShowOnboarding(true);
   };
-
-  // Mock data for source images
-  const sourceImages: SourceImage[] = [
-    { id: '1', name: 'Home Screen', uploadedAt: new Date() },
-    { id: '2', name: 'Dashboard', uploadedAt: new Date() },
-    { id: '3', name: 'Profile', uploadedAt: new Date() },
-    { id: '4', name: 'Settings', uploadedAt: new Date() },
-    { id: '5', name: 'Onboarding 1', uploadedAt: new Date() },
-    { id: '6', name: 'Onboarding 2', uploadedAt: new Date() },
-    { id: '7', name: 'Feature Detail', uploadedAt: new Date() },
-    { id: '8', name: 'Search Results', uploadedAt: new Date() },
-  ];
 
   // Mock data for app store sets
   const appStoreSets: AppStoreSet[] = [
@@ -153,16 +139,6 @@ export default function AppDetailPage({ params }: PageProps) {
     },
   ];
 
-  const toggleImageSelection = (id: string) => {
-    const newSelection = new Set(selectedImages);
-    if (newSelection.has(id)) {
-      newSelection.delete(id);
-    } else {
-      newSelection.add(id);
-    }
-    setSelectedImages(newSelection);
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ready':
@@ -194,431 +170,315 @@ export default function AppDetailPage({ params }: PageProps) {
       <OnboardingDialog isOpen={showOnboarding} onClose={handleOnboardingClose} />
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
         <div className="h-screen flex flex-col">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="px-6 pt-6 pb-4 border-b"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">App {appId}</h1>
-              <p className="text-muted-foreground mt-1">Manage your app store screenshots and source images</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleShowOnboarding}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-              >
-                <HelpCircle className="w-4 h-4" />
-                See How It Works
-              </button>
-              <button
-                onClick={() => router.push(`/app/${appId}/manage`)}
-                className="px-4 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-2"
-              >
-                <Settings className="w-4 h-4" />
-                <span className="text-sm">Manage App Details</span>
-              </button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Main Content - 3 Column Layout */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Left Sidebar - Source Images */}
+          {/* Header */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="w-80 border-r bg-card/50 flex flex-col"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="px-6 pt-6 pb-4 border-b"
           >
-            <div className="p-4 border-b space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-sm">Source Images</h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold">App {appId}</h1>
+                <p className="text-muted-foreground mt-1">Manage your app store screenshots and source images</p>
+              </div>
+              <div className="flex items-center gap-4">
                 <button
-                  onClick={() => router.push(`/app/${appId}/source-images`)}
-                  className="text-xs hover:text-foreground text-muted-foreground transition-colors"
+                  onClick={handleShowOnboarding}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
                 >
-                  See All
+                  <HelpCircle className="w-4 h-4" />
+                  See How It Works
                 </button>
-              </div>
-
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search images..."
-                  className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg bg-background focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
-                />
-              </div>
-
-              <button className="w-full px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center justify-center gap-2 text-sm">
-                <Upload className="w-4 h-4" />
-                Upload Images
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-2">
-                {sourceImages.map((image) => (
-                  <motion.div
-                    key={image.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    whileHover={{ scale: 1.02 }}
-                    onClick={() => toggleImageSelection(image.id)}
-                    className={cn(
-                      "relative p-2 rounded-lg border cursor-pointer transition-all duration-200",
-                      selectedImages.has(image.id)
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-muted-foreground/30 hover:bg-muted/30"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-20 rounded-md bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center flex-shrink-0">
-                        <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{image.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {image.uploadedAt.toLocaleDateString()}
-                        </p>
-                      </div>
-                      {selectedImages.has(image.id) && (
-                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="w-3 h-3 text-primary-foreground" />
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
+                <button
+                  onClick={() => router.push(`/app/${appId}/manage`)}
+                  className="px-4 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="text-sm">Manage App Details</span>
+                </button>
               </div>
             </div>
           </motion.div>
 
-          {/* Center - AppStore Sets */}
-          <div className="flex-1 flex flex-col">
-            <div className="p-6 border-b bg-card/30">
-              <div className="mb-4">
-                <h2 className="text-xl font-semibold">AppStore Sets</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Collections of screenshots ready for app store submission
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Search sets..."
-                    className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg bg-background focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
-                  />
+          {/* Main Content - 2 Column Layout */}
+          <div className="flex-1 flex gap-6 p-6 overflow-hidden">
+            {/* Left Column - AppStore Sets */}
+            <div className="flex-1 flex flex-col">
+              <div className="mb-6">
+                <div className="mb-4">
+                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                    AppStore Screenshot Sets
+                    <span className="group relative">
+                      <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-sm rounded-md shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                        Collections of screenshots ready for app store submission
+                      </span>
+                    </span>
+                  </h2>
                 </div>
-                <button className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
-                  <FolderPlus className="w-4 h-4" />
-                  Create New Set
-                </button>
-              </div>
-            </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              <motion.div
-                variants={containerAnimation}
-                initial="hidden"
-                animate="show"
-                className="grid grid-cols-1 lg:grid-cols-2 gap-4"
-              >
-                {appStoreSets.map((set) => (
-                  <motion.div
-                    key={set.id}
-                    variants={itemAnimation}
-                    onClick={() => setSelectedSet(set.id)}
-                    className={cn(
-                      "bg-card border rounded-xl p-4 cursor-pointer transition-all duration-200",
-                      selectedSet === set.id
-                        ? "border-primary shadow-lg"
-                        : "border-border hover:border-muted-foreground/30 hover:shadow-md"
-                    )}
-                  >
-                    {/* Set Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold">{set.name}</h3>
-                        <div className="flex items-center gap-3 mt-1">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Globe className="w-3 h-3" />
-                            {set.language}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            {getPlatformIcon(set.platform)}
-                            {set.platform}
-                          </div>
-                        </div>
-                      </div>
-                      <div className={cn(
-                        "px-2 py-1 rounded-full text-xs border",
-                        getStatusColor(set.status)
-                      )}>
-                        {set.status}
-                      </div>
-                    </div>
-
-                    {/* Screenshot Preview Grid */}
-                    <div className="grid grid-cols-3 gap-1.5 mb-3">
-                      {set.screenshots.slice(0, set.screenshots.length > 3 ? 2 : 3).map((screenshotId, index) => (
-                        <div
-                          key={index}
-                          className="aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 rounded-md"
-                        />
-                      ))}
-                      {set.screenshots.length > 3 && (
-                        <div className="aspect-[9/16] bg-muted/30 rounded-md flex items-center justify-center relative">
-                          <div
-                            className="aspect-[9/16] absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/30 rounded-md"
-                          />
-                          <span className="text-sm font-medium text-muted-foreground z-10">
-                            +{set.screenshots.length - 2}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Set Footer */}
-                    <div className="flex items-center justify-between pt-3 border-t">
-                      <p className="text-xs text-muted-foreground">
-                        {set.screenshots.length} screenshots
-                      </p>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
-                        >
-                          <MoreVertical className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-
-                {/* Create New Set Card */}
-                <motion.div
-                  variants={itemAnimation}
-                  className="bg-card/50 border-2 border-dashed border-border rounded-xl p-4 cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/20 transition-all duration-200 flex items-center justify-center min-h-[200px]"
-                >
-                  <div className="text-center">
-                    <FolderPlus className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="font-medium">Create New Set</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Start a new screenshot collection
-                    </p>
-                  </div>
-                </motion.div>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Right Sidebar - Contextual Panel */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: 0.15 }}
-            className="w-80 border-l bg-muted/30 flex flex-col"
-          >
-            {selectedSet ? (
-              // Set Details View
-              <>
-                <div className="p-4 border-b">
-                  <h2 className="font-semibold text-sm">Set Details</h2>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {appStoreSets.find(s => s.id === selectedSet) && (
-                    <>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs font-medium text-muted-foreground">Name</label>
-                          <p className="text-sm mt-1">{appStoreSets.find(s => s.id === selectedSet)?.name}</p>
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-muted-foreground">Language</label>
-                          <p className="text-sm mt-1">{appStoreSets.find(s => s.id === selectedSet)?.language}</p>
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-muted-foreground">Platform</label>
-                          <p className="text-sm mt-1">{appStoreSets.find(s => s.id === selectedSet)?.platform}</p>
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-muted-foreground">Status</label>
-                          <p className="text-sm mt-1 capitalize">{appStoreSets.find(s => s.id === selectedSet)?.status}</p>
-                        </div>
-                      </div>
-
-                      <div className="pt-4 border-t space-y-2">
-                        <button className="w-full px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors text-sm">
-                          Export Set
-                        </button>
-                        <button className="w-full px-3 py-2 border hover:bg-muted/50 rounded-lg transition-colors text-sm">
-                          Edit Set
-                        </button>
-                        <button className="w-full px-3 py-2 border hover:bg-muted/50 rounded-lg transition-colors text-sm">
-                          Duplicate Set
-                        </button>
-                        <button className="w-full px-3 py-2 border border-red-500/20 hover:bg-red-500/10 text-red-600 rounded-lg transition-colors text-sm">
-                          Delete Set
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </>
-            ) : (
-              // Vibes View (default when no set selected)
-              <>
-                <div className="p-4 border-b space-y-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <h2 className="font-semibold text-sm">Vibes</h2>
-                      <button className="text-xs hover:text-foreground text-muted-foreground transition-colors">
-                        See All
-                      </button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">AI styles to generate stunning screenshots</p>
-                  </div>
-
-                  <div className="relative">
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
                       type="text"
-                      placeholder="Search vibes..."
+                      placeholder="Search sets..."
                       className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg bg-background focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                     />
                   </div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {/* Popular Vibes */}
-                  <div className="space-y-2">
-                    <button className="w-full p-3 border rounded-lg hover:bg-muted/30 hover:border-primary/30 transition-all duration-200 text-left group">
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-lg">✨</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">Snap Style</p>
-                          <p className="text-xs text-muted-foreground">Bold, playful, social media ready</p>
-                        </div>
-                      </div>
-                    </button>
-
-                    <button className="w-full p-3 border rounded-lg hover:bg-muted/30 hover:border-primary/30 transition-all duration-200 text-left group">
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-lg">🎨</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">Watercolor Zen</p>
-                          <p className="text-xs text-muted-foreground">Soft, calming, wellness focused</p>
-                        </div>
-                      </div>
-                    </button>
-
-                    <button className="w-full p-3 border rounded-lg hover:bg-muted/30 hover:border-primary/30 transition-all duration-200 text-left group">
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-lg">⚡</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">GenZ Medley</p>
-                          <p className="text-xs text-muted-foreground">Vibrant, trendy, meme-worthy</p>
-                        </div>
-                      </div>
-                    </button>
-
-                    <button className="w-full p-3 border rounded-lg hover:bg-muted/30 hover:border-primary/30 transition-all duration-200 text-left group">
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-lg">🏢</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">Corporate Pro</p>
-                          <p className="text-xs text-muted-foreground">Clean, professional, trustworthy</p>
-                        </div>
-                      </div>
-                    </button>
-
-                    <button className="w-full p-3 border rounded-lg hover:bg-muted/30 hover:border-primary/30 transition-all duration-200 text-left group">
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-lg">🌿</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">Nature Flow</p>
-                          <p className="text-xs text-muted-foreground">Organic, earthy, sustainable</p>
-                        </div>
-                      </div>
-                    </button>
-
-                    <button className="w-full p-3 border rounded-lg hover:bg-muted/30 hover:border-primary/30 transition-all duration-200 text-left group">
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-lg">🚀</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">Tech Futura</p>
-                          <p className="text-xs text-muted-foreground">Futuristic, innovative, cutting-edge</p>
-                        </div>
-                      </div>
-                    </button>
-
-                    <button className="w-full p-3 border rounded-lg hover:bg-muted/30 hover:border-primary/30 transition-all duration-200 text-left group">
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-lg">💖</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">Love Story</p>
-                          <p className="text-xs text-muted-foreground">Romantic, emotional, heartfelt</p>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-4 border-t space-y-3">
-                  <button className="w-full px-3 py-2 border border-dashed hover:bg-muted/30 rounded-lg transition-colors text-sm">
-                    + Create Custom Vibe
+                  <button className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
+                    <FolderPlus className="w-4 h-4" />
+                    Create New Set
                   </button>
-                  <div className="bg-muted/30 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-medium">Tip:</span> Select a vibe and source images to generate AI-powered screenshots instantly.
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                <motion.div
+                  variants={containerAnimation}
+                  initial="hidden"
+                  animate="show"
+                  className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"
+                >
+                  {appStoreSets.map((set) => (
+                    <motion.div
+                      key={set.id}
+                      variants={itemAnimation}
+                      onClick={() => setSelectedSet(set.id)}
+                      className={cn(
+                        "bg-card border rounded-xl p-4 cursor-pointer transition-all duration-200",
+                        selectedSet === set.id
+                          ? "border-primary shadow-lg"
+                          : "border-border hover:border-muted-foreground/30 hover:shadow-md"
+                      )}
+                    >
+                      {/* Set Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-semibold">{set.name}</h3>
+                          <div className="flex items-center gap-3 mt-1">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Globe className="w-3 h-3" />
+                              {set.language}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              {getPlatformIcon(set.platform)}
+                              {set.platform}
+                            </div>
+                          </div>
+                        </div>
+                        <div className={cn(
+                          "px-2 py-1 rounded-full text-xs border",
+                          getStatusColor(set.status)
+                        )}>
+                          {set.status}
+                        </div>
+                      </div>
+
+                      {/* Screenshot Preview Grid */}
+                      <div className="grid grid-cols-3 gap-1.5 mb-3">
+                        {set.screenshots.slice(0, set.screenshots.length > 3 ? 2 : 3).map((screenshotId, index) => (
+                          <div
+                            key={index}
+                            className="aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 rounded-md"
+                          />
+                        ))}
+                        {set.screenshots.length > 3 && (
+                          <div className="aspect-[9/16] bg-muted/30 rounded-md flex items-center justify-center relative">
+                            <div
+                              className="aspect-[9/16] absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/30 rounded-md"
+                            />
+                            <span className="text-sm font-medium text-muted-foreground z-10">
+                              +{set.screenshots.length - 2}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Set Footer */}
+                      <div className="flex items-center justify-between pt-3 border-t">
+                        <p className="text-xs text-muted-foreground">
+                          {set.screenshots.length} screenshots
+                        </p>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+
+                  {/* Create New Set Card */}
+                  <motion.div
+                    variants={itemAnimation}
+                    className="bg-card/50 border-2 border-dashed border-border rounded-xl p-4 cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/20 transition-all duration-200 flex items-center justify-center min-h-[200px]"
+                  >
+                    <div className="text-center">
+                      <FolderPlus className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="font-medium">Create New Set</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Start a new screenshot collection
+                      </p>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Right Column - Actions */}
+            <div className="w-96 space-y-4">
+              {/* Upload Source Images Box */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="bg-card border rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer group"
+                onClick={() => router.push(`/app/${appId}/source-images`)}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                    <FileImage className="w-7 h-7 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2">
+                      Upload Source Images
+                      <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Add screenshots from your app to use as source material for AI generation
                     </p>
+                    <div className="flex items-center gap-6 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Check className="w-3 h-3 text-primary" />
+                        Drag & drop
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Check className="w-3 h-3 text-primary" />
+                        Batch upload
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </>
-            )}
-          </motion.div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/app/${appId}/source-images`);
+                  }}
+                  className="w-full mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  <Upload className="w-4 h-4" />
+                  {sourceImagesCount > 0 ? 'Upload & Manage' : 'Upload Images'}
+                </button>
+              </motion.div>
+
+              {/* Browse Vibes Box */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: 0.15 }}
+                className="bg-card border rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer group"
+                onClick={() => router.push('/browse-vibes')}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-purple-500/30 group-hover:to-pink-500/30 transition-colors">
+                    <Palette className="w-7 h-7 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2">
+                      Browse Vibes
+                      <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Choose AI style templates to generate stunning, consistent app store screenshots
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="flex flex-col items-center">
+                        <div className="w-full h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-md mb-1" />
+                        <span className="text-xs">Snap</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-full h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-md mb-1" />
+                        <span className="text-xs">Zen</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-full h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-md mb-1" />
+                        <span className="text-xs">GenZ</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push('/browse-vibes');
+                  }}
+                  className="w-full mt-4 px-4 py-2 border hover:bg-muted/50 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Explore All Vibes
+                </button>
+              </motion.div>
+
+              {/* Quick Stats */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                className="bg-muted/30 rounded-xl p-6"
+              >
+                <h3 className="font-semibold mb-4 text-sm">Quick Stats</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Total Sets</span>
+                    <span className="font-semibold">{appStoreSets.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Ready to Export</span>
+                    <span className="font-semibold text-green-600">
+                      {appStoreSets.filter(s => s.status === 'ready').length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">In Draft</span>
+                    <span className="font-semibold text-yellow-600">
+                      {appStoreSets.filter(s => s.status === 'draft').length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Languages</span>
+                    <span className="font-semibold">
+                      {new Set(appStoreSets.map(s => s.language)).size}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 }

@@ -1,54 +1,138 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+
+const containerAnimation = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const itemAnimation = {
+  hidden: { opacity: 0, y: 10 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.3
+    }
+  }
+};
 
 export default function ProfilePage() {
   const [name, setName] = useState('John Doe');
   const [email, setEmail] = useState('john@example.com');
 
   return (
-    <div className="p-8 max-w-4xl">
-      <h1 className="text-4xl font-bold mb-8">Profile Settings</h1>
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
+      <div className="p-8 max-w-5xl mx-auto">
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="text-4xl font-bold mb-8"
+        >
+          Profile Settings
+        </motion.h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+        <motion.div
+          variants={containerAnimation}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+        >
+          {/* Personal Information */}
+          <motion.div
+            variants={itemAnimation}
+            className="bg-card rounded-xl border p-6 lg:col-span-2"
+          >
             <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Name</label>
+                <label className="block text-sm font-medium mb-2 text-muted-foreground">Name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
+                <label className="block text-sm font-medium mb-2 text-muted-foreground">Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background transition-colors"
                 />
               </div>
 
-              <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+              <Button variant="default" className="w-full sm:w-auto">
                 Save Changes
-              </button>
+              </Button>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+          {/* Account */}
+          <motion.div
+            variants={itemAnimation}
+            className="bg-card rounded-xl border p-6"
+          >
+            <h2 className="text-xl font-semibold mb-4">Account</h2>
+
+            <div className="space-y-3 mb-6">
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.2, delay: 0.1 }}
+              >
+                <p className="text-sm text-muted-foreground">Plan</p>
+                <p className="font-medium">Free</p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.2, delay: 0.15 }}
+              >
+                <p className="text-sm text-muted-foreground">Usage</p>
+                <p className="font-medium">3 / 10 apps</p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.2, delay: 0.2 }}
+              >
+                <p className="text-sm text-muted-foreground">Member Since</p>
+                <p className="font-medium">January 2025</p>
+              </motion.div>
+            </div>
+
+            <Button variant="gradient" className="w-full">
+              Upgrade to Pro
+            </Button>
+          </motion.div>
+
+          {/* Preferences */}
+          <motion.div
+            variants={itemAnimation}
+            className="bg-card rounded-xl border p-6 lg:col-span-2"
+          >
             <h2 className="text-xl font-semibold mb-4">Preferences</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Default Language</label>
-                <select className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900">
+                <label className="block text-sm font-medium mb-2 text-muted-foreground">Default Language</label>
+                <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background transition-colors">
                   <option>English</option>
                   <option>Spanish</option>
                   <option>French</option>
@@ -57,8 +141,8 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Screenshot Quality</label>
-                <select className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900">
+                <label className="block text-sm font-medium mb-2 text-muted-foreground">Screenshot Quality</label>
+                <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background transition-colors">
                   <option>High (PNG)</option>
                   <option>Medium (JPEG 90%)</option>
                   <option>Low (JPEG 70%)</option>
@@ -66,74 +150,33 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="flex items-center">
-                  <input type="checkbox" className="mr-2" />
+                <label className="flex items-center cursor-pointer">
+                  <input type="checkbox" className="mr-2 rounded border-border text-primary focus:ring-primary" defaultChecked />
                   <span className="text-sm">Auto-save screenshots</span>
                 </label>
               </div>
 
               <div>
-                <label className="flex items-center">
-                  <input type="checkbox" className="mr-2" />
+                <label className="flex items-center cursor-pointer">
+                  <input type="checkbox" className="mr-2 rounded border-border text-primary focus:ring-primary" defaultChecked />
                   <span className="text-sm">Enable AI suggestions</span>
                 </label>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold mb-4">API Keys</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Connect your own AI services for enhanced features
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">OpenAI API Key</label>
-                <input
-                  type="password"
-                  placeholder="sk-..."
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold mb-4">Account</h2>
-
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Plan</p>
-                <p className="font-medium">Free</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Usage</p>
-                <p className="font-medium">3 / 10 apps</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Member Since</p>
-                <p className="font-medium">January 2025</p>
-              </div>
-
-              <button className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors">
-                Upgrade to Pro
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 mt-6">
+          {/* Danger Zone */}
+          <motion.div
+            variants={itemAnimation}
+            className="bg-card rounded-xl border p-6"
+          >
             <h2 className="text-xl font-semibold mb-4">Danger Zone</h2>
 
-            <button className="w-full px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+            <Button variant="destructive" className="w-full">
               Delete Account
-            </button>
-          </div>
-        </div>
+            </Button>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );

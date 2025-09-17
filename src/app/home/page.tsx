@@ -2,7 +2,7 @@
 
 import {
   Plus,
-  Image,
+  Image as ImageIcon,
   Languages,
   Wand2,
   ArrowRight,
@@ -58,19 +58,19 @@ export default function HomePage() {
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
               <Wand2 className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="font-semibold mb-1">Smart Generation</h3>
+            <h3 className="font-semibold mb-1">Generate App Store Screenshots</h3>
             <p className="text-sm text-muted-foreground">
-              Generate stunning screenshots from simple descriptions using AI
+              Generate consistent, beautiful screenshots instantly
             </p>
           </motion.div>
 
           <motion.div variants={itemAnimation} className="text-center">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-              <Image className="w-6 h-6 text-primary" />
+              <ImageIcon className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="font-semibold mb-1">Intelligent Editing</h3>
+            <h3 className="font-semibold mb-1">A/B Test Variations</h3>
             <p className="text-sm text-muted-foreground">
-              Enhance and modify screenshots with AI-powered tools
+              Optimize conversions with AI-powered editing and testing
             </p>
           </motion.div>
 
@@ -78,9 +78,9 @@ export default function HomePage() {
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
               <Languages className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="font-semibold mb-1">Auto Translation</h3>
+            <h3 className="font-semibold mb-1">Automatically Translate Screenshots</h3>
             <p className="text-sm text-muted-foreground">
-              Translate your screenshots to multiple languages instantly
+              Instantly localize for global markets in 30+ languages
             </p>
           </motion.div>
         </motion.div>

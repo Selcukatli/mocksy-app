@@ -1,9 +1,10 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import OnboardingDialog from '@/components/OnboardingDialog';
 import {
   Download,
   Settings,
@@ -18,6 +19,7 @@ import {
   Package,
   Search,
   FolderPlus,
+  HelpCircle,
 } from 'lucide-react';
 
 interface PageProps {
@@ -74,6 +76,36 @@ export default function AppDetailPage({ params }: PageProps) {
 
   const [selectedSet, setSelectedSet] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen onboarding for this app
+    const hasSeenOnboarding = localStorage.getItem(`onboarding-app-${appId}`);
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
+
+    // Listen for custom event from sidebar
+    const handleShowOnboardingEvent = () => {
+      setShowOnboarding(true);
+    };
+
+    window.addEventListener('show-onboarding', handleShowOnboardingEvent);
+
+    return () => {
+      window.removeEventListener('show-onboarding', handleShowOnboardingEvent);
+    };
+  }, [appId]);
+
+  const handleOnboardingClose = () => {
+    setShowOnboarding(false);
+    // Mark onboarding as seen for this app
+    localStorage.setItem(`onboarding-app-${appId}`, 'true');
+  };
+
+  const handleShowOnboarding = () => {
+    setShowOnboarding(true);
+  };
 
   // Mock data for source images
   const sourceImages: SourceImage[] = [
@@ -158,8 +190,10 @@ export default function AppDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
-      <div className="h-screen flex flex-col">
+    <>
+      <OnboardingDialog isOpen={showOnboarding} onClose={handleOnboardingClose} />
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
+        <div className="h-screen flex flex-col">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -172,7 +206,14 @@ export default function AppDetailPage({ params }: PageProps) {
               <h1 className="text-3xl font-bold">App {appId}</h1>
               <p className="text-muted-foreground mt-1">Manage your app store screenshots and source images</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleShowOnboarding}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+              >
+                <HelpCircle className="w-4 h-4" />
+                See How It Works
+              </button>
               <button
                 onClick={() => router.push(`/app/${appId}/manage`)}
                 className="px-4 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-2"
@@ -402,7 +443,7 @@ export default function AppDetailPage({ params }: PageProps) {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.15 }}
-            className="w-80 border-l bg-card/50 flex flex-col"
+            className="w-80 border-l bg-muted/30 flex flex-col"
           >
             {selectedSet ? (
               // Set Details View
@@ -578,5 +619,6 @@ export default function AppDetailPage({ params }: PageProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }

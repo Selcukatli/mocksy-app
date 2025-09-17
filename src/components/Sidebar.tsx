@@ -20,6 +20,7 @@ import {
   Rocket,
   Monitor,
   Check,
+  HelpCircle,
 } from 'lucide-react';
 
 interface App {
@@ -268,6 +269,45 @@ export default function Sidebar({ onExpandedChange }: SidebarProps) {
 
       {/* Bottom Section */}
       <div className="border-t p-2">
+        {/* Help Button */}
+        <button
+          onClick={() => {
+            // Dispatch a custom event that the app page can listen to
+            window.dispatchEvent(new CustomEvent('show-onboarding'));
+          }}
+          className={cn(
+            "w-full h-12 flex items-center gap-3 px-3 rounded-lg transition-all duration-200 relative mb-1 group",
+            "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+          )}
+          aria-label="Help"
+        >
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-10 h-10 flex items-center justify-center flex-shrink-0"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </motion.div>
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+                className="font-medium overflow-hidden whitespace-nowrap"
+              >
+                Help
+              </motion.span>
+            )}
+          </AnimatePresence>
+          {!isExpanded && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-md z-50 text-sm">
+              Help
+            </div>
+          )}
+        </button>
+
         {/* Theme Toggle */}
         <Popover>
           <PopoverTrigger asChild>

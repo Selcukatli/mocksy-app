@@ -67,7 +67,10 @@ export default function SourceImagesPage({ params }: PageProps) {
   const [sortBy, setSortBy] = useState<'name' | 'date'>('date');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock data for source images - more than before
+  // Mock data for source images - set to empty to show zero state
+  // You can uncomment the array below to see the images
+  const sourceImages: SourceImage[] = [];
+  /*
   const sourceImages: SourceImage[] = [
     { id: '1', name: 'Home Screen', size: '2.4 MB', dimensions: '1290x2796', uploadedAt: new Date() },
     { id: '2', name: 'Dashboard', size: '1.8 MB', dimensions: '1290x2796', uploadedAt: new Date() },
@@ -82,6 +85,7 @@ export default function SourceImagesPage({ params }: PageProps) {
     { id: '11', name: 'Success', size: '1.7 MB', dimensions: '1290x2796', uploadedAt: new Date() },
     { id: '12', name: 'Error State', size: '1.4 MB', dimensions: '1290x2796', uploadedAt: new Date() },
   ];
+  */
 
   const toggleImageSelection = (id: string) => {
     const newSelection = new Set(selectedImages);
@@ -222,7 +226,48 @@ export default function SourceImagesPage({ params }: PageProps) {
 
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {viewMode === 'grid' ? (
+          {sortedImages.length === 0 ? (
+            // Zero State
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col items-center justify-center min-h-[500px] text-center"
+            >
+              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                <ImageIcon className="w-12 h-12 text-primary" />
+              </div>
+
+              <h2 className="text-2xl font-bold mb-3">Upload Screenshots from Your App</h2>
+              <p className="text-muted-foreground max-w-md mb-8">
+                We'll use these screenshots to generate stunning App Store Screenshots with AI.
+              </p>
+
+              <div className="space-y-3 mb-8">
+                <div className="flex items-center gap-3 text-sm">
+                  <Check className="w-4 h-4 text-primary" />
+                  <span>Drag and drop multiple files</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <Check className="w-4 h-4 text-primary" />
+                  <span>Organize and manage screenshots</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <Check className="w-4 h-4 text-primary" />
+                  <span>Transform with AI vibes</span>
+                </div>
+              </div>
+
+              <button className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2">
+                <Upload className="w-5 h-5" />
+                Upload Screenshots
+              </button>
+
+              <p className="text-xs text-muted-foreground mt-4">
+                Supports PNG, JPG, JPEG, and WebP formats
+              </p>
+            </motion.div>
+          ) : viewMode === 'grid' ? (
             <motion.div
               variants={containerAnimation}
               initial="hidden"

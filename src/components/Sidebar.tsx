@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useTheme } from './ThemeProvider';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Menu,
   Home,
@@ -15,6 +17,8 @@ import {
   Sparkles,
   Palette,
   Rocket,
+  Monitor,
+  Check,
 } from 'lucide-react';
 
 interface App {
@@ -30,8 +34,8 @@ interface SidebarProps {
 
 export default function Sidebar({ onExpandedChange }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const pathname = usePathname();
+  const { theme, setTheme, resolvedTheme } = useTheme();
 
   // Mock data for apps
   const apps: App[] = [
@@ -41,20 +45,8 @@ export default function Sidebar({ onExpandedChange }: SidebarProps) {
   ];
 
   useEffect(() => {
-    // Check initial theme
-    if (document.documentElement.classList.contains('dark')) {
-      setIsDarkMode(true);
-    }
-  }, []);
-
-  useEffect(() => {
     onExpandedChange?.(isExpanded);
   }, [isExpanded, onExpandedChange]);
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark');
-  };
 
   const isActive = (path: string) => pathname === path;
   const isAppActive = (appId: string) => pathname === `/app/${appId}`;
@@ -178,28 +170,80 @@ export default function Sidebar({ onExpandedChange }: SidebarProps) {
       {/* Bottom Section */}
       <div className="border-t p-2">
         {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          className={cn(
-            "w-full h-12 flex items-center gap-3 px-3 rounded-lg transition-all duration-200 relative mb-1 group",
-            "hover:bg-secondary text-muted-foreground hover:text-foreground"
-          )}
-          aria-label="Toggle theme"
-        >
-          <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
-            {isDarkMode ? (
-              <Sun className="w-5 h-5" />
-            ) : (
-              <Moon className="w-5 h-5" />
-            )}
-          </div>
-          {isExpanded && <span className="font-medium">{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>}
-          {!isExpanded && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-md z-50 text-sm">
-              {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              className={cn(
+                "w-full h-12 flex items-center gap-3 px-3 rounded-lg transition-all duration-200 relative mb-1 group",
+                "hover:bg-secondary text-muted-foreground hover:text-foreground"
+              )}
+              aria-label="Toggle theme"
+            >
+              <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                {theme === 'system' ? (
+                  <Monitor className="w-5 h-5" />
+                ) : theme === 'dark' ? (
+                  <Moon className="w-5 h-5" />
+                ) : (
+                  <Sun className="w-5 h-5" />
+                )}
+              </div>
+              {isExpanded && (
+                <span className="font-medium">
+                  {theme === 'system' ? 'System' : theme === 'dark' ? 'Dark' : 'Light'} Mode
+                </span>
+              )}
+              {!isExpanded && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-md z-50 text-sm">
+                  Theme: {theme === 'system' ? 'System' : theme === 'dark' ? 'Dark' : 'Light'}
+                </div>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="right" align="end" className="w-48 p-1">
+            <div className="space-y-1">
+              <button
+                onClick={() => setTheme('light')}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                  theme === 'light'
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-secondary"
+                )}
+              >
+                <Sun className="w-4 h-4" />
+                <span className="flex-1 text-left">Light</span>
+                {theme === 'light' && <Check className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => setTheme('dark')}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                  theme === 'dark'
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-secondary"
+                )}
+              >
+                <Moon className="w-4 h-4" />
+                <span className="flex-1 text-left">Dark</span>
+                {theme === 'dark' && <Check className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => setTheme('system')}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                  theme === 'system'
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-secondary"
+                )}
+              >
+                <Monitor className="w-4 h-4" />
+                <span className="flex-1 text-left">System</span>
+                {theme === 'system' && <Check className="w-4 h-4" />}
+              </button>
             </div>
-          )}
-        </button>
+          </PopoverContent>
+        </Popover>
 
         {/* Profile */}
         <Link

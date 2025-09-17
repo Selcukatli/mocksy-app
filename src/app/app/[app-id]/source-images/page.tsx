@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -61,6 +61,8 @@ export default function SourceImagesPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const appId = resolvedParams['app-id'];
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
 
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -130,7 +132,7 @@ export default function SourceImagesPage({ params }: PageProps) {
           <div className="flex items-center gap-4">
             {/* Left section with title */}
             <button
-              onClick={() => router.push(`/app/${appId}`)}
+              onClick={() => router.push(returnTo || `/app/${appId}`)}
               className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />

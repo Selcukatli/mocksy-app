@@ -227,7 +227,10 @@ export default function AppDetailPage({ params }: PageProps) {
                       className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg bg-background focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                     />
                   </div>
-                  <button className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
+                  <button
+                    onClick={() => router.push(`/app/${appId}/set/new`)}
+                    className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                  >
                     <FolderPlus className="w-4 h-4" />
                     Create New Set
                   </button>
@@ -245,7 +248,7 @@ export default function AppDetailPage({ params }: PageProps) {
                     <motion.div
                       key={set.id}
                       variants={itemAnimation}
-                      onClick={() => setSelectedSet(set.id)}
+                      onClick={() => router.push(`/app/${appId}/set/${set.id}`)}
                       className={cn(
                         "bg-card border rounded-xl p-4 cursor-pointer transition-all duration-200",
                         selectedSet === set.id
@@ -334,6 +337,7 @@ export default function AppDetailPage({ params }: PageProps) {
                   {/* Create New Set Card */}
                   <motion.div
                     variants={itemAnimation}
+                    onClick={() => router.push(`/app/${appId}/set/new`)}
                     className="bg-card/50 border-2 border-dashed border-border rounded-xl p-4 cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/20 transition-all duration-200 flex items-center justify-center min-h-[200px]"
                   >
                     <div className="text-center">

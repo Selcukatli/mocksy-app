@@ -1,0 +1,615 @@
+# Clerk + Convex Authentication Setup
+
+This document outlines the implementation of Clerk authentication in the GAG News application with Convex backend integration.
+
+## Overview
+
+We implemented Clerk authentication to provide user sign-in/sign-out functionality with a clean, modern UI that integrates seamlessly with the existing Convex backend.
+
+## Implementation Steps
+
+### 1. Install Dependencies
+
+```bash
+npm install @clerk/nextjs @clerk/clerk-react
+```
+
+**Note**: Both packages are required:
+- `@clerk/nextjs` - Provides Next.js specific integrations
+- `@clerk/clerk-react` - Required for `ConvexProviderWithClerk`
+
+### 2. Environment Variables
+
+Added to `.env.local`:
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_aGVhbHRoeS1jYXQtMzguY2xlcmsuYWNjb3VudHMuZGV2JA
+CLERK_SECRET_KEY=sk_test_8d9o1SW55f45xkwp17DOrAjti2hSxujiWlxYc62wDs
+```
+
+### 3. Middleware Configuration
+
+Created `src/middleware.ts`:
+```typescript
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+
+const isProtectedRoute = createRouteMatcher([
+  // Add protected routes here as needed
+])
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) await auth.protect()
+})
+
+export const config = {
+  matcher: [
+    "/((?!_next|.*\\..*|api/logo-base64|api/logo-png|api/og).*)", 
+    "/", 
+    "/(api)(.*)"
+  ],
+}
+```
+
+### 4. Provider Integration
+
+We use a separated provider architecture for better separation of concerns:
+
+#### 4a. Convex Provider (`src/providers/convex-provider.tsx`)
+
+Sets up Clerk and Convex integration:
+```typescript
+"use client";
+
+import { ClerkProvider, useAuth } from "@clerk/nextjs";
+import { ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { ReactNode } from "react";
+
+const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+// Main provider that sets up Clerk and Convex
+export function ConvexClientProvider({ children }: { children: ReactNode }) {
+  return (
+    <ClerkProvider>
+      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+        {children}
+      </ConvexProviderWithClerk>
+    </ClerkProvider>
+  );
+}
+```
+
+#### 4b. Profile Provider (`src/providers/profile-provider.tsx`)
+
+Handles profile creation and synchronization:
+```typescript
+"use client";
+
+import { ReactNode, useEffect, useRef } from "react";
+import { useAuth, useUser } from "@clerk/nextjs";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+
+interface ProfileProviderProps {
+  children: ReactNode;
+}
+
+export function ProfileProvider({ children }: ProfileProviderProps) {
+  const { isSignedIn } = useAuth();
+  const { user } = useUser();
+  const profile = useQuery(api.profiles.getCurrentProfile);
+  const ensureProfile = useMutation(api.profiles.ensureCurrentUserProfile);
+  
+  // Track if we're currently updating to prevent multiple simultaneous calls
+  const isUpdating = useRef(false);
+  const lastSyncedUsername = useRef<string | undefined>(undefined);
+  const lastSyncedImageUrl = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    // Only run if user is signed in
+    if (!isSignedIn || !user) return;
+
+    // Create profile if it doesn't exist
+    if (profile === null) {
+      if (!isUpdating.current) {
+        isUpdating.current = true;
+        ensureProfile({ 
+          username: user.username || undefined,
+          imageUrl: user.imageUrl || undefined,
+        })
+          .then((result) => {
+            if (result.created) {
+              console.log("[ProfileProvider] Created profile:", result.profileId);
+            }
+          })
+          .catch((error) => {
+            console.error("[ProfileProvider] Failed to create profile:", error);
+          })
+          .finally(() => {
+            isUpdating.current = false;
+          });
+      }
+      return;
+    }
+
+    // Always sync username and imageUrl from Clerk (Clerk is source of truth)
+    if (profile && user) {
+      const clerkUsername = user.username || undefined;
+      const clerkImageUrl = user.imageUrl || undefined;
+      
+      // Check if we actually need to update (and haven't just updated)
+      const usernameNeedsUpdate = profile.username !== clerkUsername && 
+                                 lastSyncedUsername.current !== clerkUsername;
+      const imageUrlNeedsUpdate = profile.imageUrl !== clerkImageUrl && 
+                                 lastSyncedImageUrl.current !== clerkImageUrl;
+      const needsUpdate = ((usernameNeedsUpdate || imageUrlNeedsUpdate) && !isUpdating.current);
+      
+      if (needsUpdate) {
+        console.log("[ProfileProvider] Syncing from Clerk:", {
+          username: usernameNeedsUpdate ? clerkUsername : undefined,
+          imageUrl: imageUrlNeedsUpdate ? clerkImageUrl : undefined,
+        });
+        isUpdating.current = true;
+        lastSyncedUsername.current = clerkUsername;
+        lastSyncedImageUrl.current = clerkImageUrl;
+        
+        ensureProfile({ 
+          username: clerkUsername,
+          imageUrl: clerkImageUrl,
+        })
+          .then((result) => {
+            console.log("[ProfileProvider] Profile sync completed:", result.message);
+          })
+          .catch((error) => {
+            console.error("[ProfileProvider] Failed to sync profile:", error);
+            // Reset on error so it can retry
+            lastSyncedUsername.current = undefined;
+            lastSyncedImageUrl.current = undefined;
+          })
+          .finally(() => {
+            isUpdating.current = false;
+          });
+      }
+    }
+  }, [isSignedIn, profile, user, ensureProfile]);
+
+  return <>{children}</>;
+}
+```
+
+#### 4c. Layout Integration (`src/app/layout.tsx`)
+
+Providers are composed in a specific order:
+```typescript
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <ConvexClientProvider>
+          <ThemeProvider>
+            <ProfileProvider>
+              <CreditGrantProvider>
+                {children}
+                <Toaster position="top-right" />
+              </CreditGrantProvider>
+            </ProfileProvider>
+          </ThemeProvider>
+        </ConvexClientProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+This architecture provides:
+- **Separation of Concerns**: Each provider has a single responsibility
+- **Modularity**: Easy to add or remove features
+- **Testability**: Each provider can be tested independently
+- **Clarity**: Clear dependency hierarchy
+
+**Critical**: You must use `ConvexProviderWithClerk` instead of the regular `ConvexProvider`. This component:
+- Bridges Clerk authentication with Convex
+- Passes the JWT token with every Convex request
+- Makes `ctx.auth.getUserIdentity()` available in your Convex functions
+
+### 5. Convex Authentication Configuration
+
+Created `convex/auth.config.ts`:
+```typescript
+export default {
+  providers: [
+    {
+      domain: "https://healthy-cat-38.clerk.accounts.dev",
+      applicationID: "convex",
+    },
+  ],
+};
+```
+
+### 6. UI Components
+
+#### Custom User Menu Dialog
+Created `src/components/user-menu-dialog.tsx` with:
+- User profile display with avatar
+- Dark mode toggle switch
+- Sign out with confirmation dialog
+- Manage account link to Clerk's user profile
+
+#### UI Components Added
+- `src/components/ui/avatar.tsx` - User avatar display
+- `src/components/ui/switch.tsx` - Dark mode toggle switch
+- `src/components/ui/alert-dialog.tsx` - Sign out confirmation
+
+#### Updated Components
+- **Sidebar** (`src/components/sidebar.tsx`):
+  - Removed settings link and theme toggle (moved to user menu)
+  - Added sign in button for logged out users
+  - Added clickable user profile area for logged in users
+
+- **Mobile Header** (`src/components/mobile-header.tsx`):
+  - Removed settings button
+  - Added user avatar/sign in button
+  - Consistent with desktop experience
+
+### 7. Next.js Configuration for Profile Images
+
+Added Clerk image domain to `next.config.ts` to allow loading profile images:
+```typescript
+images: {
+  remotePatterns: [
+    // ... other domains
+    {
+      protocol: 'https',
+      hostname: 'img.clerk.com',
+      port: '',
+      pathname: '/**',
+    },
+  ],
+},
+```
+
+### 8. User Experience Enhancements
+
+1. **Sign Out Flow**:
+   - Confirmation dialog when signing out
+   - Automatic redirect to `/read` tab after sign out
+
+2. **Dark Mode Compatibility**:
+   - All auth components properly styled for dark mode
+   - Fixed background color mismatches
+
+3. **Mobile Responsiveness**:
+   - Auth UI works seamlessly on mobile
+   - Consistent experience across devices
+
+4. **Profile Images**:
+   - Synced from Clerk and displayed in comments
+   - Fallback to gradient avatar with user initials
+   - Optimized loading with Next.js Image component
+
+## Clerk Dashboard Configuration
+
+### JWT Template (Required)
+1. Go to Clerk Dashboard → JWT Templates
+2. Create new template → Select "Convex"
+3. Save the template
+
+This enables Convex to validate Clerk authentication tokens.
+
+## How Authentication Flows Between Clerk and Convex
+
+Understanding how authentication flows is crucial for debugging issues:
+
+### 1. **Client-Side Flow**
+```
+User Signs In → Clerk creates JWT → ConvexProviderWithClerk captures JWT → Includes JWT in all Convex requests
+```
+
+### 2. **Server-Side Flow**
+```
+Convex receives request → Validates JWT → Makes auth available via ctx.auth → Your functions can access user info
+```
+
+### 3. **In Your Convex Functions**
+```typescript
+// In any query, mutation, or action called via ctx.runMutation/ctx.runQuery
+const identity = await ctx.auth.getUserIdentity();
+if (identity) {
+  console.log("User ID:", identity.subject);  // Clerk user ID
+  console.log("Email:", identity.email);
+}
+```
+
+### 4. **Important Notes**
+- **Actions**: When an action calls a mutation via `ctx.runMutation()`, authentication is forwarded automatically
+- **Direct Action Calls**: Actions themselves run in Node.js and don't have direct auth access
+- **Profile Lookup**: Always look up profiles using the Clerk user ID from `identity.subject`
+
+## What's Working
+
+- ✅ User sign in/sign out
+- ✅ User profile management
+- ✅ Protected route middleware
+- ✅ Dark mode support
+- ✅ Mobile responsive UI
+- ✅ Clerk + Convex authentication integration with proper auth context
+- ✅ Authentication available in all Convex functions via `ctx.auth`
+- ✅ Webhook-based user data sync
+- ✅ Automatic profile creation on sign up
+- ✅ User tracking for created content (articles, people)
+- ✅ Username sync from Clerk to Convex
+- ✅ Username-based profile URLs (e.g., `/profile/johndoe`)
+- ✅ Profile image sync from Clerk to Convex
+
+## Webhook Integration for User Data Sync
+
+### Overview
+
+We implemented webhook-based synchronization between Clerk and Convex to automatically create and manage user profiles in the database. This ensures:
+- User profiles are created automatically when users sign up
+- Profile data stays in sync with Clerk
+- Clean separation between authentication (Clerk) and application data (Convex)
+
+### Automatic Profile Creation for Existing Users
+
+For users who signed up before webhooks were configured, we implemented automatic profile creation in the `ProfileProvider` component within `convex-provider.tsx`. This ensures:
+- No user is left without a profile
+- Seamless experience for all users
+- Articles and people are properly tracked to their creators
+- Usernames and profile images are automatically synced from Clerk
+
+The `ensureCurrentUserProfile` mutation in `convex/profiles.ts` handles this:
+```typescript
+export const ensureCurrentUserProfile = mutation({
+  args: {
+    username: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Check if profile already exists
+    const existingProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
+      .first();
+
+    if (existingProfile) {
+      // Update username and/or imageUrl if provided and different
+      const usernameChanged = existingProfile.username !== args.username;
+      const imageUrlChanged = existingProfile.imageUrl !== args.imageUrl;
+      
+      if (usernameChanged || imageUrlChanged) {
+        const updates: any = {
+          updatedAt: Date.now(),
+        };
+        
+        if (usernameChanged) {
+          updates.username = args.username;
+          updates.usernameUpdatedAt = Date.now();
+        }
+        
+        if (imageUrlChanged) {
+          updates.imageUrl = args.imageUrl;
+          updates.imageUrlUpdatedAt = Date.now();
+        }
+        
+        await ctx.db.patch(existingProfile._id, updates);
+      }
+      return { 
+        created: false, 
+        profileId: existingProfile._id,
+        message: usernameChanged || imageUrlChanged ? "Profile synced from Clerk" : "Profile already exists"
+      };
+    }
+
+    // Create new profile
+    const profileId = await ctx.db.insert("profiles", {
+      userId: identity.subject,
+      username: args.username,
+      usernameUpdatedAt: args.username ? Date.now() : undefined,
+      imageUrl: args.imageUrl,
+      imageUrlUpdatedAt: args.imageUrl ? Date.now() : undefined,
+      preferences: {},
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return { created: true, profileId };
+  },
+});
+```
+
+### Username and Profile Image Synchronization
+
+We implemented a Clerk-managed profile system where:
+- **Clerk is the source of truth** for usernames and profile images
+- **Automatic sync** from Clerk to Convex on every sign-in
+- **Username-based profile URLs** (e.g., `/profile/johndoe`)
+- **Profile images** displayed in comments and user profiles
+- **Webhook sync** for real-time updates when users change their profile in Clerk
+
+Key features:
+1. **Preventing sync loops**: Uses `useRef` to track update status for both username and imageUrl
+2. **Graceful handling**: Shows initials avatar when profile image isn't set
+3. **URL-friendly profiles**: Public profiles accessible via username instead of database IDs
+4. **Optimized images**: Uses Next.js Image component for better performance
+
+### Implementation Details
+
+#### 1. Database Schema
+
+Added `profiles` table in `convex/schema.ts`:
+```typescript
+profiles: defineTable({
+  userId: v.string(), // Clerk's user ID (unique)
+  username: v.optional(v.string()), // Username from Clerk (unique when present)
+  usernameUpdatedAt: v.optional(v.number()), // Last time username was synced
+  imageUrl: v.optional(v.string()), // Profile image URL from Clerk
+  imageUrlUpdatedAt: v.optional(v.number()), // Last time image was synced from Clerk
+  preferences: v.optional(v.object({
+    // Future preferences can be added here
+  })),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user_id", ["userId"])
+  .index("by_username", ["username"]),
+```
+
+#### 2. HTTP Endpoint
+
+Created `convex/http.ts` to handle webhook requests:
+```typescript
+const handleClerkWebhook = httpAction(async (ctx, request) => {
+  // Verify webhook signature
+  // Process user.created, user.updated, user.deleted events
+  // Sync data to profiles table
+});
+
+http.route({
+  path: "/clerk-webhook",
+  method: "POST",
+  handler: handleClerkWebhook,
+});
+```
+
+#### 3. Webhook Configuration in Clerk
+
+1. Go to [Clerk Dashboard](https://dashboard.clerk.com) → Webhooks
+2. Click "Add Endpoint"
+3. Set URL to: `https://YOUR-CONVEX-DEPLOYMENT.convex.site/clerk-webhook`
+   - **Important**: Use `.convex.site` NOT `.convex.cloud`
+4. Select events:
+   - `user.created`
+   - `user.updated`
+   - `user.deleted`
+5. Copy the Signing Secret
+
+#### 4. Environment Variables
+
+Add the webhook signing secret to:
+
+1. **Local development** (`.env.local`):
+   ```env
+   CLERK_WEBHOOK_SIGNING_SECRET=whsec_xxxxxxxxxxxxx
+   ```
+
+2. **Convex deployment**:
+   - Go to Convex Dashboard → Settings → Environment Variables
+   - Add `CLERK_WEBHOOK_SIGNING_SECRET` with the same value
+
+### Testing the Integration
+
+1. Send a test webhook from Clerk Dashboard
+2. Check Convex logs: `npx convex logs`
+3. Verify profile creation in the `profiles` table
+
+### Common Issues
+
+- **Wrong URL**: Ensure you're using `.convex.site` not `.convex.cloud`
+- **Missing signature**: Verify the signing secret is correctly set in Convex
+- **Profile not created**: Check logs for webhook processing errors
+
+## What's Not Implemented (Yet)
+
+1. **Protected Routes**
+   - Middleware is configured but no routes are protected yet
+   - Can be added as needed
+
+## Production Deployment
+
+When deploying to production:
+
+1. **Update Environment Variables**:
+   ```env
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_... # Production key
+   CLERK_SECRET_KEY=sk_live_... # Production key
+   ```
+
+2. **Update auth.config.ts**:
+   ```typescript
+   domain: "https://clerk.yourdomain.com", // Your production Clerk domain
+   ```
+
+## MCP Integration
+
+We also configured Clerk MCP (Model Context Protocol) in `.mcp.json` for enhanced development capabilities:
+```json
+"clerk": {
+  "command": "npx",
+  "args": [
+    "-y",
+    "@clerk/agent-toolkit",
+    "-p",
+    "local-mcp",
+    "--secret-key",
+    "sk_test_..."
+  ]
+}
+```
+
+This enables Claude Code to interact with Clerk APIs directly during development.
+
+## Troubleshooting Common Issues
+
+### 1. **"createdByProfileId is null" when creating content**
+
+**Symptom**: Content is created but `createdByProfileId` field is `null` or `undefined`
+
+**Cause**: Using `ConvexProvider` instead of `ConvexProviderWithClerk`
+
+**Solution**: Ensure your provider setup uses `ConvexProviderWithClerk`:
+```typescript
+// ❌ Wrong
+<ConvexProvider client={convex}>
+
+// ✅ Correct
+<ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+```
+
+### 2. **"ctx.auth.getUserIdentity() returns null"**
+
+**Possible Causes**:
+- User is not signed in
+- Provider is not set up correctly
+- JWT template not configured in Clerk
+
+**Debugging Steps**:
+1. Check if user is signed in on the client: `const { isSignedIn } = useAuth()`
+2. Verify provider setup (see issue #1)
+3. Confirm JWT template exists in Clerk dashboard
+
+### 3. **"Profile not created after sign up"**
+
+**Cause**: Webhook not properly configured or signing secret mismatch
+
+**Solution**:
+1. Verify webhook URL uses `.convex.site` (not `.convex.cloud`)
+2. Check signing secret is set in Convex environment variables
+3. Test webhook from Clerk dashboard and check Convex logs
+4. For existing users, the `ProfileProvider` will automatically create profiles on first sign-in after deployment
+
+### 4. **"Infinite username sync loop"**
+
+**Symptom**: Console shows repeated "Syncing username from Clerk" messages
+
+**Cause**: Profile missing username field or comparison logic causing continuous updates
+
+**Solution**:
+1. Ensure `useRef` tracking is implemented to prevent concurrent updates
+2. Check that profile has username field (not just `usernameUpdatedAt`)
+3. Verify the comparison logic properly handles `undefined` values
+4. Use the updated `ProfileProvider` code with proper update tracking
+
+
+## Next Steps
+
+1. **Test authentication flow** in development
+2. **Deploy to production** with production keys
+3. **Monitor webhook events** in Convex logs
+4. **Implement protected routes** as features require
+
+The authentication system is now fully functional and ready for deployment!

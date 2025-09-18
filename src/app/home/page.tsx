@@ -306,60 +306,116 @@ export default function HomePage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {recentSets.map((set) => (
-                <motion.div
-                  key={set.id}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                >
-                  <Link href={`/app/${set.appId}/set/${set.id}`} className="block group">
-                    <div className="rounded-xl border bg-card/50 p-4 hover:bg-card hover:shadow-md transition-all duration-200">
-                      <div className="aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 rounded-lg mb-3 flex items-center justify-center group-hover:scale-[1.02] transition-transform">
-                        <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
-                      </div>
-                      <h3 className="font-medium mb-1 truncate">{set.name}</h3>
-                      <p className="text-xs text-muted-foreground mb-2 truncate">
-                        {set.app?.name || 'Unknown App'}
-                      </p>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className={`px-2 py-0.5 rounded-full ${
-                          set.filledCount === set.totalCount
-                            ? 'bg-green-500/20 text-green-600'
-                            : 'bg-yellow-500/20 text-yellow-600'
-                        }`}>
-                          {set.filledCount}/{set.totalCount} slots
-                        </span>
-                        <span className="text-muted-foreground">
-                          {getRelativeTime(set.updatedAt)}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentSets.map((set) => {
+                const screenshots = getScreenshotsForSet(set.id);
+                const previewScreenshots = screenshots.slice(0, 3);
 
-              {/* Create Set Card if less than 4 sets */}
-              {recentSets.length > 0 && recentSets.length < 4 && apps.length > 0 && (
+                return (
+                  <motion.div
+                    key={set.id}
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  >
+                    <Link href={`/app/${set.appId}/set/${set.id}`} className="block group">
+                      <div className="rounded-xl border bg-card/50 hover:bg-card hover:shadow-md transition-all duration-200">
+                        {/* Screenshot Previews Row */}
+                        <div className="flex gap-1.5 p-3 pb-2">
+                          {[0, 1, 2].map((index) => {
+                            const screenshot = previewScreenshots[index];
+                            return (
+                              <div
+                                key={index}
+                                className="flex-1 aspect-[9/16] bg-gradient-to-br from-muted/30 to-muted/20 rounded-md flex items-center justify-center overflow-hidden border border-border/30"
+                              >
+                                {screenshot && !screenshot.isEmpty ? (
+                                  screenshot.imageUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={screenshot.imageUrl}
+                                      alt={`Screenshot ${index + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <ImageIcon className="w-4 h-4 text-muted-foreground/50" />
+                                  )
+                                ) : (
+                                  <div className="w-full h-full border border-dashed border-border/30 rounded-md flex items-center justify-center">
+                                    <ImageIcon className="w-3 h-3 text-muted-foreground/30" />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Set Info */}
+                        <div className="px-3 pb-3">
+                          <h3 className="font-medium text-sm mb-0.5 truncate">{set.name}</h3>
+                          <p className="text-xs text-muted-foreground mb-2 truncate">
+                            {set.app?.name || 'Unknown App'}
+                          </p>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                              set.filledCount === set.totalCount
+                                ? 'bg-green-500/20 text-green-600 dark:bg-green-500/30 dark:text-green-400'
+                                : 'bg-yellow-500/20 text-yellow-600 dark:bg-yellow-500/30 dark:text-yellow-400'
+                            }`}>
+                              {set.filledCount}/{set.totalCount} slots
+                            </span>
+                            <span className="text-muted-foreground text-[11px]">
+                              {getRelativeTime(set.updatedAt)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+
+              {/* Create Set Card if less than 3 sets */}
+              {recentSets.length > 0 && recentSets.length < 3 && apps.length > 0 && (
                 <Link href={`/app/${apps[0].id}/set/new`} className="block group">
-                  <div className="rounded-xl border-2 border-dashed bg-card/30 p-4 hover:bg-card/50 hover:border-primary/30 transition-all duration-200 h-full">
-                    <div className="aspect-[9/16] bg-gradient-to-br from-muted/30 to-muted/20 rounded-lg mb-3 flex items-center justify-center border-2 border-dashed border-border/30">
-                      <Plus className="w-8 h-8 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+                  <div className="rounded-xl border-2 border-dashed bg-card/30 hover:bg-card/50 hover:border-primary/30 transition-all duration-200 h-full">
+                    {/* Empty Screenshot Slots */}
+                    <div className="flex gap-1.5 p-3 pb-2">
+                      {[0, 1, 2].map((index) => (
+                        <div
+                          key={index}
+                          className="flex-1 aspect-[9/16] rounded-md flex items-center justify-center border border-dashed border-border/30 bg-gradient-to-br from-muted/10 to-muted/5"
+                        >
+                          <Plus className="w-3 h-3 text-muted-foreground/30 group-hover:text-primary/50 transition-colors" />
+                        </div>
+                      ))}
                     </div>
-                    <h3 className="font-medium mb-1 text-muted-foreground group-hover:text-foreground transition-colors">Create New Set</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Start a new collection
-                    </p>
+
+                    {/* Set Info */}
+                    <div className="px-3 pb-3">
+                      <h3 className="font-medium text-sm mb-0.5 text-muted-foreground group-hover:text-foreground transition-colors">Create New Set</h3>
+                      <p className="text-xs text-muted-foreground">
+                        Start a new collection
+                      </p>
+                    </div>
                   </div>
                 </Link>
               )}
 
               {/* Ghost cards to fill the row */}
-              {recentSets.length > 0 && recentSets.length < 3 && Array.from({ length: 3 - recentSets.length }, (_, i) => (
-                <div key={`ghost-set-${i}`} className="rounded-xl border border-dashed border-border/30 bg-card/10 p-4">
-                  <div className="aspect-[9/16] bg-gradient-to-br from-muted/10 to-muted/5 rounded-lg mb-3" />
-                  <div className="h-4 bg-muted/10 rounded mb-2" />
-                  <div className="h-3 bg-muted/10 rounded w-2/3" />
+              {recentSets.length > 0 && recentSets.length < 2 && Array.from({ length: 2 - recentSets.length }, (_, i) => (
+                <div key={`ghost-set-${i}`} className="rounded-xl border border-dashed border-border/30 bg-card/10">
+                  <div className="flex gap-1.5 p-3 pb-2">
+                    {[0, 1, 2].map((index) => (
+                      <div
+                        key={index}
+                        className="flex-1 aspect-[9/16] rounded-md bg-gradient-to-br from-muted/10 to-muted/5"
+                      />
+                    ))}
+                  </div>
+                  <div className="px-3 pb-3">
+                    <div className="h-3.5 bg-muted/10 rounded w-3/4 mb-1" />
+                    <div className="h-3 bg-muted/10 rounded w-1/2" />
+                  </div>
                 </div>
               ))}
             </div>

@@ -18,14 +18,19 @@ import {
   Sparkles,
   ArrowLeft,
   Palette,
-  Globe
+  Globe,
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/components/ThemeProvider';
 
 export default function ProfilePage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut, openUserProfile } = useClerk();
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -168,6 +173,19 @@ export default function ProfilePage() {
             {/* Profile Card */}
             <div className="bg-card rounded-xl border p-6">
               <div className="flex flex-col">
+                {/* Edit button in top right corner */}
+                <div className="flex justify-end mb-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openUserProfile()}
+                    className="text-xs"
+                  >
+                    <Settings className="w-3.5 h-3.5 mr-1" />
+                    Edit
+                  </Button>
+                </div>
+
                 {/* Avatar and User Info */}
                 <div className="flex items-center gap-4 mb-4">
                   {/* Avatar */}
@@ -254,28 +272,75 @@ export default function ProfilePage() {
             transition={{ duration: 0.3, delay: 0.2 }}
             className="lg:col-span-2 space-y-6"
           >
-            {profileSections.map((section) => (
+            {profileSections.filter(section => section.title !== 'Account').map((section) => (
               <div key={section.title} className="bg-card rounded-xl border">
                 <div className="px-6 py-3 border-b border-border/50 bg-muted/5">
                   <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{section.title}</h3>
                 </div>
                 <div className="divide-y divide-border/50">
-                  {section.items.map((item, itemIndex) => (
-                    <button
-                      key={itemIndex}
-                      onClick={item.onClick}
-                      className="w-full px-6 py-4 flex items-center gap-4 hover:bg-muted/50 transition-colors text-left group"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                        <item.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{item.label}</p>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    </button>
-                  ))}
+                  {section.items.map((item, itemIndex) => {
+                    // Special rendering for Appearance item
+                    if (item.label === 'Appearance') {
+                      return (
+                        <div key={itemIndex} className="px-6 py-4 flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                            <Palette className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{item.label}</p>
+                            <p className="text-sm text-muted-foreground">{item.description}</p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              variant={theme === 'light' ? 'secondary' : 'ghost'}
+                              size="sm"
+                              onClick={() => setTheme('light')}
+                              className={`h-8 ${theme === 'light' ? 'bg-foreground text-background hover:bg-foreground/90' : ''}`}
+                            >
+                              <Sun className="w-4 h-4 mr-1" />
+                              Light
+                            </Button>
+                            <Button
+                              variant={theme === 'dark' ? 'secondary' : 'ghost'}
+                              size="sm"
+                              onClick={() => setTheme('dark')}
+                              className={`h-8 ${theme === 'dark' ? 'bg-foreground text-background hover:bg-foreground/90' : ''}`}
+                            >
+                              <Moon className="w-4 h-4 mr-1" />
+                              Dark
+                            </Button>
+                            <Button
+                              variant={theme === 'system' ? 'secondary' : 'ghost'}
+                              size="sm"
+                              onClick={() => setTheme('system')}
+                              className={`h-8 ${theme === 'system' ? 'bg-foreground text-background hover:bg-foreground/90' : ''}`}
+                            >
+                              <Monitor className="w-4 h-4 mr-1" />
+                              System
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Default rendering for other items
+                    return (
+                      <button
+                        key={itemIndex}
+                        onClick={item.onClick}
+                        className="w-full px-6 py-4 flex items-center gap-4 hover:bg-muted/50 transition-colors text-left group"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                          <item.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{item.label}</p>
+                          <p className="text-sm text-muted-foreground">{item.description}</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}

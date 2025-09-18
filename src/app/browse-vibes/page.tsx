@@ -237,7 +237,7 @@ export default function BrowseVibesPage() {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`px-4 py-2 rounded-full text-sm transition-all flex items-center gap-1.5 ${
                     selectedCategory === category.id
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-foreground text-background hover:bg-foreground/90'
                       : 'bg-muted/50 hover:bg-muted'
                   }`}
                 >
@@ -296,54 +296,60 @@ export default function BrowseVibesPage() {
                       key={vibe.id}
                       variants={itemAnimation}
                       whileHover={{ scale: 1.02 }}
-                      className="group bg-card border rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+                      className="group relative h-[240px] rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all"
                     >
-                      {/* Preview Banner */}
-                      <div className={`h-32 bg-gradient-to-br ${vibe.gradient} relative`}>
-                        <div className="absolute inset-0 flex items-center justify-center text-4xl">
-                          <Sparkles className="w-10 h-10 text-white/50" />
+                      {/* Full Background */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${vibe.gradient}`}>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Sparkles className="w-20 h-20 text-white/10" />
                         </div>
-                        {vibe.isPopular && (
-                          <Star className="absolute top-3 left-3 w-5 h-5 text-yellow-400 fill-yellow-400" />
-                        )}
-                        {vibe.createdByUser && (
-                          <span className="absolute top-3 left-3 px-2 py-1 bg-primary text-primary-foreground text-xs rounded-full">
-                            MY VIBE
-                          </span>
-                        )}
+                      </div>
+
+                      {/* Gradient Overlay for readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                      {/* Top Badges and Actions */}
+                      <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+                        <div className="flex gap-2">
+                          {vibe.createdByUser && (
+                            <span className="px-2 py-1 bg-white/90 text-black text-xs font-medium rounded-full">
+                              MY VIBE
+                            </span>
+                          )}
+                        </div>
                         {/* Actions */}
-                        <div className="absolute top-3 right-3 flex gap-2">
+                        <div className="flex gap-2">
                           <button
                             onClick={(e) => toggleFavorite(vibe.id, e)}
-                            className={`w-8 h-8 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110 ${
+                            className={`w-8 h-8 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center transition-all hover:scale-110 hover:bg-white/20 ${
                               isFavoriteVibe(vibe.id) ? '' : 'opacity-0 group-hover:opacity-100'
                             }`}
                           >
                             <Heart className={cn(
                               "w-4 h-4",
-                              isFavoriteVibe(vibe.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                              isFavoriteVibe(vibe.id) ? "fill-red-500 text-red-500" : "text-white"
                             )} />
                           </button>
                           {vibe.createdByUser && (
                             <button
                               onClick={(e) => handleDeleteVibe(vibe.id, vibe.name, e)}
-                              className="w-8 h-8 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                              className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center transition-all hover:scale-110 hover:bg-white/20 opacity-0 group-hover:opacity-100"
                             >
-                              <Trash2 className="w-4 h-4 text-red-500" />
+                              <Trash2 className="w-4 h-4 text-red-400" />
                             </button>
                           )}
                         </div>
                       </div>
 
-                      {/* Content */}
-                      <div className="p-4">
-                        <h3 className="font-semibold mb-1">{vibe.name}</h3>
-                        <p className="text-sm text-muted-foreground mb-3">{vibe.description}</p>
-                        <div className="flex items-center justify-between">
-                          <div className="text-xs text-muted-foreground">
+                      {/* Bottom Content */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <h3 className="font-semibold text-white mb-1">{vibe.name}</h3>
+                        <p className="text-sm text-white/80 line-clamp-2">{vibe.description}</p>
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="text-xs text-white/60">
                             {vibe.createdByUser ? 'Custom' : 'System'}
                           </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                          <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
                         </div>
                       </div>
                     </motion.div>
@@ -507,54 +513,60 @@ export default function BrowseVibesPage() {
                 key={vibe.id}
                 variants={itemAnimation}
                 whileHover={{ scale: 1.02 }}
-                className="group bg-card border rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+                className="group relative h-[240px] rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all"
               >
-                {/* Preview Banner */}
-                <div className={`h-32 bg-gradient-to-br ${vibe.gradient} relative`}>
-                  <div className="absolute inset-0 flex items-center justify-center text-4xl">
-                    <Sparkles className="w-10 h-10 text-white/50" />
+                {/* Full Background */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${vibe.gradient}`}>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Sparkles className="w-20 h-20 text-white/10" />
                   </div>
-                  {vibe.isPopular && (
-                    <Star className="absolute top-3 left-3 w-5 h-5 text-yellow-400 fill-yellow-400" />
-                  )}
-                  {vibe.createdByUser && (
-                    <span className="absolute top-3 left-3 px-2 py-1 bg-primary text-primary-foreground text-xs rounded-full">
-                      MY VIBE
-                    </span>
-                  )}
+                </div>
+
+                {/* Gradient Overlay for readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                {/* Top Badges and Actions */}
+                <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+                  <div className="flex gap-2">
+                    {vibe.createdByUser && (
+                      <span className="px-2 py-1 bg-white/90 text-black text-xs font-medium rounded-full">
+                        MY VIBE
+                      </span>
+                    )}
+                  </div>
                   {/* Actions */}
-                  <div className="absolute top-3 right-3 flex gap-2">
+                  <div className="flex gap-2">
                     <button
                       onClick={(e) => toggleFavorite(vibe.id, e)}
-                      className={`w-8 h-8 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110 ${
+                      className={`w-8 h-8 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center transition-all hover:scale-110 hover:bg-white/20 ${
                         isFavoriteVibe(vibe.id) ? '' : 'opacity-0 group-hover:opacity-100'
                       }`}
                     >
                       <Heart className={cn(
                         "w-4 h-4",
-                        isFavoriteVibe(vibe.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                        isFavoriteVibe(vibe.id) ? "fill-red-500 text-red-500" : "text-white"
                       )} />
                     </button>
                     {vibe.createdByUser && (
                       <button
                         onClick={(e) => handleDeleteVibe(vibe.id, vibe.name, e)}
-                        className="w-8 h-8 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                        className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center transition-all hover:scale-110 hover:bg-white/20 opacity-0 group-hover:opacity-100"
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-4 h-4 text-red-400" />
                       </button>
                     )}
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="p-4">
-                  <h3 className="font-semibold mb-1">{vibe.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{vibe.description}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground">
+                {/* Bottom Content */}
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <h3 className="font-semibold text-white mb-1">{vibe.name}</h3>
+                  <p className="text-sm text-white/80 line-clamp-2">{vibe.description}</p>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="text-xs text-white/60">
                       {vibe.createdByUser ? 'Custom' : 'System'}
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
                   </div>
                 </div>
               </motion.div>

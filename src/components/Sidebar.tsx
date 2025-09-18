@@ -8,6 +8,7 @@ import { useTheme } from './ThemeProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAppStore } from '@/stores/appStore';
+import { useUser, useClerk } from '@clerk/nextjs';
 import {
   Menu,
   Home,
@@ -19,7 +20,6 @@ import {
   Monitor,
   Check,
   HelpCircle,
-  Package,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -31,6 +31,8 @@ export default function Sidebar({ onExpandedChange }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { apps } = useAppStore();
+  const { isSignedIn, user } = useUser();
+  const { openUserProfile } = useClerk();
 
   useEffect(() => {
     onExpandedChange?.(isExpanded);
@@ -205,12 +207,7 @@ export default function Sidebar({ onExpandedChange }: SidebarProps) {
             )}
           </AnimatePresence>
           <div className="space-y-1">
-            {apps.length === 0 ? (
-              <div className="px-3 py-8 text-center">
-                <Package className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">No apps yet</p>
-              </div>
-            ) : (
+            {apps.length > 0 && (
               apps.map((app) => {
                 // Generate a gradient color based on the app name (deterministic)
                 const colors = [
@@ -410,44 +407,92 @@ export default function Sidebar({ onExpandedChange }: SidebarProps) {
         </Popover>
 
         {/* Profile */}
-        <Link
-          href="/profile"
-          className={cn(
-            "w-full h-12 flex items-center gap-3 px-3 rounded-lg transition-all duration-200 relative group",
-            isActive('/profile')
-              ? "bg-primary/20 text-primary border border-primary/30 font-medium"
-              : "hover:bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
-          )}
-        >
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-10 h-10 flex items-center justify-center flex-shrink-0"
-          >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/30 flex items-center justify-center">
-              <User className="w-4 h-4" />
-            </div>
-          </motion.div>
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.2 }}
-                className="min-w-0 overflow-hidden"
-              >
-                <p className="font-medium text-sm truncate">John Doe</p>
-                <p className="text-xs text-muted-foreground truncate">Free Plan</p>
-              </motion.div>
+        {isSignedIn ? (
+          <Link href="/profile">
+            <button
+            className={cn(
+              "w-full h-12 flex items-center gap-3 px-3 rounded-lg transition-all duration-200 relative group",
+              "hover:bg-muted/50 text-muted-foreground hover:text-foreground border border-transparent"
             )}
-          </AnimatePresence>
-          {!isExpanded && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-md z-50 text-sm">
-              Profile
-            </div>
-          )}
-        </Link>
+          >
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-10 h-10 flex items-center justify-center flex-shrink-0"
+            >
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/30 flex items-center justify-center overflow-hidden">
+                {user?.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-4 h-4" />
+                )}
+              </div>
+            </motion.div>
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="min-w-0 overflow-hidden"
+                >
+                  <p className="font-medium text-sm truncate">
+                    {user?.firstName || user?.username || 'User'}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {user?.primaryEmailAddress?.emailAddress}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {!isExpanded && (
+              <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-md z-50 text-sm">
+                Profile
+              </div>
+            )}
+          </button>
+          </Link>
+        ) : (
+          <Link href="/welcome?mode=sign-in&context=app-access">
+            <button
+              className={cn(
+                "w-full h-12 flex items-center gap-3 px-3 rounded-lg transition-all duration-200 relative group",
+                "hover:bg-muted/50 text-muted-foreground hover:text-foreground border border-transparent"
+              )}
+            >
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-10 h-10 flex items-center justify-center flex-shrink-0"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/30 flex items-center justify-center">
+                  <User className="w-4 h-4" />
+                </div>
+              </motion.div>
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="min-w-0 overflow-hidden"
+                  >
+                    <p className="font-medium text-sm truncate">Sign In</p>
+                    <p className="text-xs text-muted-foreground truncate">Login to continue</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {!isExpanded && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-md z-50 text-sm">
+                  Sign In
+                </div>
+              )}
+            </button>
+          </Link>
+        )}
       </div>
     </motion.div>
   );

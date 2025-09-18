@@ -13,6 +13,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
+import { useUser } from '@clerk/nextjs';
 
 export default function NewAppPage() {
   const [appName, setAppName] = useState('');
@@ -22,6 +23,14 @@ export default function NewAppPage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const router = useRouter();
   const { createApp } = useAppStore();
+  const { isLoaded, isSignedIn } = useUser();
+
+  // Redirect to welcome page if not signed in
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/welcome?mode=sign-in&context=new-app');
+    }
+  }, [isLoaded, isSignedIn, router]);
 
   const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -88,6 +97,18 @@ export default function NewAppPage() {
     }, 6000); // Changed from 4000ms to 6000ms (6 seconds)
     return () => clearInterval(interval);
   }, [previewSlides.length]);
+
+  // Show loading state while checking authentication
+  if (!isLoaded || (isLoaded && !isSignedIn)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">

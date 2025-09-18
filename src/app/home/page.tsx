@@ -9,11 +9,13 @@ import {
   Layout,
   Clock,
   Package,
-  Folder
+  Folder,
+  User
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/stores/appStore';
+import { useUser } from '@clerk/nextjs';
 
 const containerAnimation = {
   hidden: { opacity: 0 },
@@ -32,6 +34,7 @@ const itemAnimation = {
 
 export default function HomePage() {
   const { apps, sets, getScreenshotsForSet, clearAllData } = useAppStore();
+  const { isSignedIn } = useUser();
 
   // Add a clear button for development (you can remove this later)
   const handleClearData = () => {
@@ -83,32 +86,40 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      {/* Top Navigation Bar - Only show sign in button when not authenticated */}
+      {!isSignedIn && (
+        <div className="absolute top-0 right-0 p-6 z-10">
+          <Link href="/welcome?mode=sign-in&context=create-app">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium">
+              <User className="w-4 h-4" />
+              Sign In
+            </button>
+          </Link>
+        </div>
+      )}
+
       <div className="p-8 max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="mb-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+          className="mb-12 text-center"
         >
           <h1 className="text-5xl md:text-6xl font-bold bg-[linear-gradient(to_right,theme(colors.blue.600),theme(colors.purple.600),theme(colors.pink.600),theme(colors.orange.600),theme(colors.blue.600))] dark:bg-[linear-gradient(to_right,theme(colors.blue.400),theme(colors.purple.400),theme(colors.pink.400),theme(colors.orange.400),theme(colors.blue.400))] bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient">
             Welcome to Mocksy
           </h1>
-          <div className="flex flex-col gap-4">
-            <p className="text-lg text-muted-foreground lg:max-w-md">
-              Create stunning app store screenshots with AI-powered editing and translation.
-              Transform your app&apos;s presentation in seconds.
-            </p>
-            {/* Temporary clear data button - remove in production */}
-            {apps.length > 10 && (
+          {/* Temporary clear data button - remove in production */}
+          {apps.length > 10 && (
+            <div className="flex flex-col gap-4">
               <button
                 onClick={handleClearData}
                 className="text-xs text-red-500 hover:text-red-700 underline"
               >
                 Clear All Data (Development Only)
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </motion.div>
 
         {/* Features */}

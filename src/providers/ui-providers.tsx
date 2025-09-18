@@ -3,7 +3,6 @@
 import { useState, ReactNode } from 'react';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import Sidebar from '@/components/Sidebar';
-import { ProfileDebug } from '@/components/ProfileDebug';
 import { cn } from '@/lib/utils';
 
 interface UIProvidersProps {
@@ -25,8 +24,6 @@ export default function UIProviders({ children }: UIProvidersProps) {
         >
           {children}
         </div>
-        {/* Temporary debug component - remove after fixing */}
-        <ProfileDebug />
       </div>
     </ThemeProvider>
   );

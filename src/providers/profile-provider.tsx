@@ -10,7 +10,7 @@ interface ProfileProviderProps {
 }
 
 export function ProfileProvider({ children }: ProfileProviderProps) {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn } = useAuth();
   const { user } = useUser();
   const profile = useQuery(api.profiles.getCurrentProfile);
   const ensureProfile = useMutation(api.profiles.ensureCurrentUserProfile);
@@ -20,22 +20,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const lastSyncedUsername = useRef<string | undefined>(undefined);
   const lastSyncedImageUrl = useRef<string | undefined>(undefined);
 
-  // Debug logging
-  console.log("[ProfileProvider] Component rendered", {
-    isLoaded,
-    isSignedIn,
-    user: user?.id,
-    profileStatus: profile === undefined ? "loading" : profile === null ? "not-found" : "exists",
-    profileId: profile?._id,
-  });
-
   useEffect(() => {
-    console.log("[ProfileProvider] Effect running", {
-      isSignedIn,
-      userExists: !!user,
-      profileStatus: profile === undefined ? "loading" : profile === null ? "not-found" : "exists",
-    });
-
     // Only run if user is signed in
     if (!isSignedIn || !user) return;
 

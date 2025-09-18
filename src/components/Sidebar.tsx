@@ -8,7 +8,7 @@ import { useTheme } from './ThemeProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAppStore } from '@/stores/appStore';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import {
   Menu,
   Home,
@@ -32,7 +32,6 @@ export default function Sidebar({ onExpandedChange }: SidebarProps) {
   const { theme, setTheme } = useTheme();
   const { apps } = useAppStore();
   const { isSignedIn, user } = useUser();
-  const { openUserProfile } = useClerk();
 
   useEffect(() => {
     onExpandedChange?.(isExpanded);

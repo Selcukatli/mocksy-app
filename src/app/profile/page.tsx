@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
   Mail,
-  Calendar,
   Shield,
   LogOut,
   Settings,
@@ -255,7 +254,7 @@ export default function ProfilePage() {
             transition={{ duration: 0.3, delay: 0.2 }}
             className="lg:col-span-2 space-y-6"
           >
-            {profileSections.map((section, sectionIndex) => (
+            {profileSections.map((section) => (
               <div key={section.title} className="bg-card rounded-xl border">
                 <div className="px-6 py-3 border-b border-border/50 bg-muted/5">
                   <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{section.title}</h3>

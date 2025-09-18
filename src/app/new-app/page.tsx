@@ -3,24 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Upload,
   Sparkles,
-  Image as ImageIcon,
-  Check,
-  ChevronLeft,
-  ChevronRight
+  Check
 } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import { useUser } from '@clerk/nextjs';
+import FeatureSlides from '@/components/FeatureSlides';
 
 export default function NewAppPage() {
   const [appName, setAppName] = useState('');
   const [appDescription, setAppDescription] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const router = useRouter();
   const { createApp } = useAppStore();
   const { isLoaded, isSignedIn } = useUser();
@@ -66,37 +63,6 @@ export default function NewAppPage() {
     { id: 2, name: 'Classic', color: 'from-green-500 to-teal-600' },
     { id: 3, name: 'Bold', color: 'from-pink-500 to-orange-500' },
   ];
-
-  const previewSlides = [
-    {
-      title: 'Beautiful Screenshots',
-      description: 'AI-generated app store screenshots that convert',
-      gradient: 'from-blue-500 to-purple-600',
-    },
-    {
-      title: 'Smart Templates',
-      description: 'Choose from professionally designed layouts',
-      gradient: 'from-green-500 to-teal-600',
-    },
-    {
-      title: 'Multi-Language',
-      description: 'Instantly translate to 30+ languages',
-      gradient: 'from-pink-500 to-orange-500',
-    },
-    {
-      title: 'Brand Consistency',
-      description: 'Maintain your visual identity across all assets',
-      gradient: 'from-purple-500 to-indigo-600',
-    },
-  ];
-
-  // Auto-play slideshow
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % previewSlides.length);
-    }, 6000); // Changed from 4000ms to 6000ms (6 seconds)
-    return () => clearInterval(interval);
-  }, [previewSlides.length]);
 
   // Show loading state while checking authentication
   if (!isLoaded || (isLoaded && !isSignedIn)) {
@@ -266,83 +232,18 @@ export default function NewAppPage() {
             </motion.div>
           </motion.div>
 
-          {/* Right Column - Preview Slideshow */}
+          {/* Right Column - Feature Slides */}
           <motion.div
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="hidden lg:flex flex-col h-full"
+            className="hidden lg:flex flex-col h-full rounded-xl overflow-hidden border"
           >
-            <div className="flex-1 relative bg-card rounded-xl border overflow-hidden">
-              {/* Slide Content */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentSlide}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.02 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="h-full flex items-center justify-center p-12"
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${previewSlides[currentSlide].gradient} opacity-10`} />
-                  <div className="relative text-center max-w-md">
-                    <motion.div
-                      initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.1, duration: 0.25 }}
-                      className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${previewSlides[currentSlide].gradient} mx-auto mb-6 flex items-center justify-center`}
-                    >
-                      <ImageIcon className="w-12 h-12 text-white" />
-                    </motion.div>
-                    <motion.h2
-                      initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.15, duration: 0.25 }}
-                      className="text-3xl font-bold mb-4"
-                    >
-                      {previewSlides[currentSlide].title}
-                    </motion.h2>
-                    <motion.p
-                      initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.2, duration: 0.25 }}
-                      className="text-lg text-muted-foreground"
-                    >
-                      {previewSlides[currentSlide].description}
-                    </motion.p>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Navigation Arrows */}
-              <button
-                onClick={() => setCurrentSlide((prev) => (prev - 1 + previewSlides.length) % previewSlides.length)}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border flex items-center justify-center hover:bg-background transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setCurrentSlide((prev) => (prev + 1) % previewSlides.length)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border flex items-center justify-center hover:bg-background transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-
-              {/* Pagination Dots */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-                {previewSlides.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                      index === currentSlide
-                        ? 'w-8 bg-primary'
-                        : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
+            <FeatureSlides
+              className="flex-1"
+              maskGradient={false}
+              interval={6000}
+            />
           </motion.div>
         </div>
       </div>

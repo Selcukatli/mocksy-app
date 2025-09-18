@@ -1,11 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import Sidebar from './Sidebar';
-import { ThemeProvider } from './ThemeProvider';
+import { useState, ReactNode } from 'react';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import Sidebar from '@/components/Sidebar';
 import { cn } from '@/lib/utils';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+interface UIProvidersProps {
+  children: ReactNode;
+}
+
+export default function UIProviders({ children }: UIProvidersProps) {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
   return (

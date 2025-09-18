@@ -61,7 +61,13 @@ export const ensureCurrentUserProfile = mutation({
       const imageUrlChanged = existingProfile.imageUrl !== args.imageUrl;
 
       if (usernameChanged || imageUrlChanged) {
-        const updates: any = {
+        const updates: {
+          updatedAt: number;
+          username?: string | undefined;
+          usernameUpdatedAt?: number;
+          imageUrl?: string | undefined;
+          imageUrlUpdatedAt?: number;
+        } = {
           updatedAt: Date.now(),
         };
 

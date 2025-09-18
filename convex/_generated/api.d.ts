@@ -13,6 +13,8 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as fileStorage_fileActions from "../fileStorage/fileActions.js";
+import type * as fileStorage_fileQueries from "../fileStorage/fileQueries.js";
 import type * as profiles from "../profiles.js";
 
 /**
@@ -24,6 +26,8 @@ import type * as profiles from "../profiles.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "fileStorage/fileActions": typeof fileStorage_fileActions;
+  "fileStorage/fileQueries": typeof fileStorage_fileQueries;
   profiles: typeof profiles;
 }>;
 export declare const api: FilterApi<

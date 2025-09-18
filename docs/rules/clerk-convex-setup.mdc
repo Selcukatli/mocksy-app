@@ -463,16 +463,82 @@ profiles: defineTable({
 
 Created `convex/http.ts` to handle webhook requests:
 ```typescript
-const handleClerkWebhook = httpAction(async (ctx, request) => {
-  // Verify webhook signature
-  // Process user.created, user.updated, user.deleted events
-  // Sync data to profiles table
-});
+import { httpRouter } from "convex/server";
+import { httpAction } from "./_generated/server";
+import { Webhook } from "svix";  // npm install svix
+import { internal } from "./_generated/api";
+
+const http = httpRouter();
 
 http.route({
-  path: "/clerk-webhook",
+  path: "/webhooks/clerk",
   method: "POST",
-  handler: handleClerkWebhook,
+  handler: httpAction(async (ctx, request) => {
+    // Get webhook secret from Convex environment variables
+    const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      return new Response("Webhook secret not configured", { status: 500 });
+    }
+
+    // Verify webhook signature using svix
+    const wh = new Webhook(webhookSecret);
+    const payload = await request.text();
+    const headers = {
+      "svix-id": request.headers.get("svix-id")!,
+      "svix-timestamp": request.headers.get("svix-timestamp")!,
+      "svix-signature": request.headers.get("svix-signature")!,
+    };
+
+    const evt = wh.verify(payload, headers);
+
+    // Process the webhook event
+    switch (evt.type) {
+      case "user.created":
+      case "user.updated":
+        await ctx.runMutation(internal.webhooks.upsertUserFromClerk, {
+          userId: evt.data.id,
+          username: evt.data.username,
+          imageUrl: evt.data.profile_image_url || evt.data.image_url,
+        });
+        break;
+      case "user.deleted":
+        await ctx.runMutation(internal.webhooks.deleteUserFromClerk, {
+          userId: evt.data.id,
+        });
+        break;
+    }
+
+    return new Response("", { status: 200 });
+  }),
+});
+
+export default http;
+```
+
+Also create `convex/webhooks.ts` with internal mutations:
+```typescript
+import { v } from "convex/values";
+import { internalMutation } from "./_generated/server";
+
+export const upsertUserFromClerk = internalMutation({
+  args: {
+    userId: v.string(),
+    username: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Upsert user profile logic
+  },
+});
+
+export const deleteUserFromClerk = internalMutation({
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Delete user profile logic
+  },
 });
 ```
 
@@ -480,26 +546,39 @@ http.route({
 
 1. Go to [Clerk Dashboard](https://dashboard.clerk.com) → Webhooks
 2. Click "Add Endpoint"
-3. Set URL to: `https://YOUR-CONVEX-DEPLOYMENT.convex.site/clerk-webhook`
-   - **Important**: Use `.convex.site` NOT `.convex.cloud`
+3. Set URL to: `https://YOUR-CONVEX-DEPLOYMENT.convex.site/webhooks/clerk`
+   - **CRITICAL**: Use `.convex.site` NOT `.convex.cloud`
+   - The path should match what's defined in your `convex/http.ts`
+   - Example: `https://fantastic-squid-750.convex.site/webhooks/clerk`
 4. Select events:
    - `user.created`
    - `user.updated`
    - `user.deleted`
-5. Copy the Signing Secret
+5. Copy the Signing Secret (starts with `whsec_`)
 
 #### 4. Environment Variables
 
-Add the webhook signing secret to:
+Add the webhook signing secret to **BOTH** locations:
 
 1. **Local development** (`.env.local`):
    ```env
-   CLERK_WEBHOOK_SIGNING_SECRET=whsec_xxxxxxxxxxxxx
+   CLERK_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxx
+   ```
+   Note: This is for reference only, webhooks don't run locally
+
+2. **Convex deployment** (REQUIRED for webhooks to work):
+
+   Using Convex CLI:
+   ```bash
+   npx convex env set CLERK_WEBHOOK_SECRET "whsec_xxxxxxxxxxxxx"
    ```
 
-2. **Convex deployment**:
+   Or via Convex Dashboard:
    - Go to Convex Dashboard → Settings → Environment Variables
-   - Add `CLERK_WEBHOOK_SIGNING_SECRET` with the same value
+   - Add `CLERK_WEBHOOK_SECRET` with the signing secret value
+
+   **Important**: The environment variable must be set in Convex, not just `.env.local`,
+   because Convex functions run in a separate environment from your Next.js app
 
 ### Testing the Integration
 
@@ -509,9 +588,24 @@ Add the webhook signing secret to:
 
 ### Common Issues
 
-- **Wrong URL**: Ensure you're using `.convex.site` not `.convex.cloud`
-- **Missing signature**: Verify the signing secret is correctly set in Convex
-- **Profile not created**: Check logs for webhook processing errors
+- **Wrong URL Domain**:
+  - ❌ Wrong: `https://fantastic-squid-750.convex.cloud/webhooks/clerk`
+  - ✅ Correct: `https://fantastic-squid-750.convex.site/webhooks/clerk`
+  - HTTP endpoints MUST use `.convex.site` domain
+
+- **500 Error "Webhook secret not configured"**:
+  - The `CLERK_WEBHOOK_SECRET` must be set in Convex environment variables
+  - Use `npx convex env set` or Convex Dashboard to set it
+  - `.env.local` alone is NOT sufficient for Convex functions
+
+- **400 Error "Error occurred -- no svix headers"**:
+  - Webhook signature verification failed
+  - Verify the signing secret matches exactly (including the `whsec_` prefix)
+
+- **Profile not created**:
+  - Check Convex logs: `npx convex logs`
+  - Verify webhook events are enabled in Clerk Dashboard
+  - Test with Clerk's webhook testing tool
 
 ## What's Not Implemented (Yet)
 

@@ -15,7 +15,9 @@ import type {
 } from "convex/server";
 import type * as fileStorage_fileActions from "../fileStorage/fileActions.js";
 import type * as fileStorage_fileQueries from "../fileStorage/fileQueries.js";
+import type * as http from "../http.js";
 import type * as profiles from "../profiles.js";
+import type * as webhooks from "../webhooks.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -28,7 +30,9 @@ import type * as profiles from "../profiles.js";
 declare const fullApi: ApiFromModules<{
   "fileStorage/fileActions": typeof fileStorage_fileActions;
   "fileStorage/fileQueries": typeof fileStorage_fileQueries;
+  http: typeof http;
   profiles: typeof profiles;
+  webhooks: typeof webhooks;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

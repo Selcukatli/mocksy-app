@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Save,
   Trash2,
-  Globe,
   Smartphone,
   Package,
   Link,

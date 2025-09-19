@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import {
   Upload,
-  Sparkles,
-  Check
+  Sparkles
 } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import { useUser } from '@clerk/nextjs';
@@ -16,7 +15,6 @@ import FeatureSlides from '@/components/FeatureSlides';
 export default function NewAppPage() {
   const [appName, setAppName] = useState('');
   const [appDescription, setAppDescription] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [category, setCategory] = useState('Productivity');
   const [platforms, setPlatforms] = useState({
@@ -66,12 +64,6 @@ export default function NewAppPage() {
     // Navigate to the newly created app page
     router.push(`/app/${newApp.id}`);
   };
-
-  const templates = [
-    { id: 1, name: 'Modern', color: 'from-blue-500 to-purple-600' },
-    { id: 2, name: 'Classic', color: 'from-green-500 to-teal-600' },
-    { id: 3, name: 'Bold', color: 'from-pink-500 to-orange-500' },
-  ];
 
   // Show loading state while checking authentication
   if (!isLoaded || (isLoaded && !isSignedIn)) {

@@ -5,6 +5,9 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
+import { useQuery } from 'convex/react';
+import { api } from '../../../../convex/_generated/api';
+import { Id } from '../../../../convex/_generated/dataModel';
 import OnboardingDialog from '@/components/OnboardingDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -69,22 +72,25 @@ export default function AppDetailPage({ params }: PageProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
-  // Store hooks
-  const { getApp, getSetsForApp, getSourceImagesForApp, getScreenshotsForSet, deleteSet } = useAppStore();
+  // Store hooks for local data (sets, screenshots)
+  const { getSetsForApp, getSourceImagesForApp, getScreenshotsForSet, deleteSet } = useAppStore();
 
-  // Get or create app
-  const app = getApp(appId);
+  // Get app from Convex
+  const app = useQuery(api.apps.getApp, { appId: appId as Id<"apps"> });
 
-  // If app doesn't exist, redirect to home
+  // If app doesn't exist or still loading, handle accordingly
   useEffect(() => {
-    if (!app) {
+    // app === null means it loaded but doesn't exist
+    // app === undefined means still loading
+    if (app === null) {
+      console.log('App not found in Convex, redirecting to home');
       router.push('/home');
     }
   }, [app, router]);
 
-  // Get data for current app
-  const appStoreSets = app ? getSetsForApp(app.id) : [];
-  const sourceImages = app ? getSourceImagesForApp(app.id) : [];
+  // Get data for current app (still from local store for now)
+  const appStoreSets = app ? getSetsForApp(appId) : [];
+  const sourceImages = app ? getSourceImagesForApp(appId) : [];
   const sourceImagesCount = sourceImages.length;
 
   useEffect(() => {
@@ -167,9 +173,9 @@ export default function AppDetailPage({ params }: PageProps) {
               <div className="flex items-start gap-4">
                 {/* App Icon */}
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {app?.icon ? (
+                  {app?.iconUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={app.icon} alt={app?.name} className="w-full h-full object-cover" />
+                    <img src={app.iconUrl} alt={app?.name} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-2xl font-bold text-primary">
                       {app?.name?.charAt(0).toUpperCase() || 'A'}

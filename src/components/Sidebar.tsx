@@ -7,8 +7,9 @@ import { cn } from '@/lib/utils';
 import { useTheme } from './ThemeProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useAppStore } from '@/stores/appStore';
 import { useUser } from '@clerk/nextjs';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import {
   Menu,
   Home,
@@ -30,8 +31,8 @@ export default function Sidebar({ onExpandedChange }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const { apps } = useAppStore();
   const { isSignedIn, user } = useUser();
+  const apps = useQuery(api.apps.getApps) || [];
 
   useEffect(() => {
     onExpandedChange?.(isExpanded);
@@ -222,11 +223,11 @@ export default function Sidebar({ onExpandedChange }: SidebarProps) {
 
                 return (
                   <Link
-                    key={app.id}
-                    href={`/app/${app.id}`}
+                    key={app._id}
+                    href={`/app/${app._id}`}
                     className={cn(
                       "w-full h-12 flex items-center gap-3 px-3 rounded-lg transition-all duration-200 relative group",
-                      isAppActive(app.id)
+                      isAppActive(app._id)
                         ? "bg-primary/20 text-primary border border-primary/30 font-medium"
                         : "hover:bg-muted/50 text-muted-foreground hover:text-foreground border border-transparent"
                     )}
@@ -240,9 +241,9 @@ export default function Sidebar({ onExpandedChange }: SidebarProps) {
                         "w-8 h-8 rounded-lg flex items-center justify-center text-white",
                         appColor
                       )}>
-                        {app.icon ? (
+                        {app.iconUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={app.icon} alt={app.name} className="w-full h-full object-cover rounded-lg" />
+                          <img src={app.iconUrl} alt={app.name} className="w-full h-full object-cover rounded-lg" />
                         ) : (
                           <span className="text-sm font-bold">
                             {app.name.charAt(0).toUpperCase()}

@@ -8,8 +8,9 @@ import {
   Upload,
   Sparkles
 } from 'lucide-react';
-import { useAppStore } from '@/stores/appStore';
 import { useUser } from '@clerk/nextjs';
+import { useMutation, useAction } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import FeatureSlides from '@/components/FeatureSlides';
 
 export default function NewAppPage() {
@@ -23,8 +24,9 @@ export default function NewAppPage() {
   });
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
   const router = useRouter();
-  const { createApp } = useAppStore();
   const { isLoaded, isSignedIn } = useUser();
+  const createAppMutation = useMutation(api.apps.createApp);
+  const storeFromBase64 = useAction(api.fileStorage.fileActions.storeFromBase64);
 
   // Redirect to welcome page if not signed in
   useEffect(() => {
@@ -44,25 +46,37 @@ export default function NewAppPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Create the app in the store with all the new fields
-    const newApp = createApp(appName, appDescription);
+    try {
+      // Upload icon if exists
+      let iconStorageId;
+      if (iconPreview) {
+        iconStorageId = await storeFromBase64({
+          base64Data: iconPreview,
+          contentType: 'image/png',
+        });
+      }
 
-    // Update the app with all additional information
-    const { updateApp } = useAppStore.getState();
-    updateApp(newApp.id, {
-      icon: iconPreview || undefined,
-      category,
-      platforms,
-      languages: selectedLanguages,
-    });
+      // Create the app in Convex
+      const appId = await createAppMutation({
+        name: appName,
+        description: appDescription || undefined,
+        iconStorageId,
+        category,
+        platforms,
+        languages: selectedLanguages,
+      });
 
-    console.log('Created app:', newApp);
+      console.log('Created app with ID:', appId);
 
-    // Navigate to the newly created app page
-    router.push(`/app/${newApp.id}`);
+      // Navigate to the newly created app page
+      router.push(`/app/${appId}`);
+    } catch (error) {
+      console.error('Failed to create app:', error);
+      // TODO: Show error toast
+    }
   };
 
   // Show loading state while checking authentication
@@ -289,6 +303,7 @@ export default function NewAppPage() {
                 variant="default"
                 size="lg"
                 className="flex-1"
+                disabled={!appName}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 Create App

@@ -9,13 +9,14 @@ import {
   Layout,
   Clock,
   Package,
-  Folder,
   User
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/stores/appStore';
 import { useUser } from '@clerk/nextjs';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 const containerAnimation = {
   hidden: { opacity: 0 },
@@ -33,8 +34,9 @@ const itemAnimation = {
 };
 
 export default function HomePage() {
-  const { apps, sets, getScreenshotsForSet, clearAllData } = useAppStore();
+  const { sets, getScreenshotsForSet, clearAllData } = useAppStore();
   const { isSignedIn } = useUser();
+  const apps = useQuery(api.apps.getApps) || [];
 
   // Add a clear button for development (you can remove this later)
   const handleClearData = () => {
@@ -49,7 +51,7 @@ export default function HomePage() {
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 4)
     .map(set => {
-      const app = apps.find(a => a.id === set.appId);
+      const app = apps.find(a => a._id === set.appId);
       const screenshots = getScreenshotsForSet(set.id);
       const filledCount = screenshots.filter(s => !s.isEmpty).length;
       return { ...set, app, filledCount, totalCount: screenshots.length };
@@ -57,10 +59,10 @@ export default function HomePage() {
 
   // Function to get app icon (use first letter if no icon)
   const getAppIcon = (app: typeof apps[0]) => {
-    if (app.icon) {
+    if (app.iconUrl) {
       return (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={app.icon} alt={app.name} className="w-full h-full object-cover rounded-xl" />
+        <img src={app.iconUrl} alt={app.name} className="w-full h-full object-cover rounded-xl" />
       );
     }
     return (
@@ -231,11 +233,11 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {apps.map((app) => (
                 <motion.div
-                  key={app.id}
+                  key={app._id}
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
-                  <Link href={`/app/${app.id}`} className="block group">
+                  <Link href={`/app/${app._id}`} className="block group">
                     <div className="rounded-xl border bg-card/50 p-4 hover:bg-card hover:shadow-md transition-all duration-200">
                       <div className="flex items-start gap-3">
                         <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-[1.05] transition-transform overflow-hidden">
@@ -248,12 +250,8 @@ export default function HomePage() {
                           </p>
                           <div className="flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <Folder className="w-3 h-3" />
-                              {app.sets?.length || 0} sets
-                            </span>
-                            <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
-                              {getRelativeTime(app.updatedAt)}
+                              {getRelativeTime(new Date(app.updatedAt))}
                             </span>
                           </div>
                         </div>
@@ -292,7 +290,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Recent Screenshot Sets</h2>
             {apps.length > 0 && (
-              <Link href={`/app/${apps[0]?.id}`} className="text-sm text-primary hover:underline">
+              <Link href={`/app/${apps[0]?._id}`} className="text-sm text-primary hover:underline">
                 View All Sets →
               </Link>
             )}
@@ -376,7 +374,7 @@ export default function HomePage() {
 
               {/* Create Set Card if less than 3 sets */}
               {recentSets.length > 0 && recentSets.length < 3 && apps.length > 0 && (
-                <Link href={`/app/${apps[0].id}/set/new`} className="block group">
+                <Link href={`/app/${apps[0]._id}/set/new`} className="block group">
                   <div className="rounded-xl border-2 border-dashed bg-card/30 hover:bg-card/50 hover:border-primary/30 transition-all duration-200 h-full">
                     {/* Empty Screenshot Slots */}
                     <div className="flex gap-1.5 p-3 pb-2">

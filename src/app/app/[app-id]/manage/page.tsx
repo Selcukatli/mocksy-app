@@ -27,6 +27,8 @@ export default function ManageAppPage({ params }: PageProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
+  const [category, setCategory] = useState('Productivity');
+  const [platforms, setPlatforms] = useState({ ios: true, android: true });
 
   const handleDelete = () => {
     // Handle delete logic here
@@ -128,7 +130,11 @@ export default function ManageAppPage({ params }: PageProps) {
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">Category</label>
-                  <select className="w-full px-3 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-colors">
+                  <select
+                    className="w-full px-3 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
                     <option>Productivity</option>
                     <option>Social</option>
                     <option>Entertainment</option>
@@ -210,7 +216,12 @@ export default function ManageAppPage({ params }: PageProps) {
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={platforms.ios}
+                      onChange={(e) => setPlatforms({ ...platforms, ios: e.target.checked })}
+                    />
                     <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
                 </div>
@@ -226,7 +237,12 @@ export default function ManageAppPage({ params }: PageProps) {
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={platforms.android}
+                      onChange={(e) => setPlatforms({ ...platforms, android: e.target.checked })}
+                    />
                     <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
                 </div>

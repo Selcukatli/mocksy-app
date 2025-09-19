@@ -226,7 +226,7 @@ export default function FeatureSlides({
         })}
       </div>
 
-      <div className="relative z-10 max-w-lg w-full">
+      <div className="relative z-10 max-w-lg w-full h-full flex flex-col">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -234,10 +234,11 @@ export default function FeatureSlides({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="text-left"
+            className="text-left flex-1 flex items-center"
           >
-            {/* Icon */}
-            <div className="mb-8 flex justify-start">
+            <div className="w-full">
+              {/* Icon */}
+              <div className="mb-8 flex justify-start">
               <motion.div
                 animate={{
                   rotate: [0, 5, -5, 0],
@@ -305,28 +306,29 @@ export default function FeatureSlides({
               {slides[currentSlide].description}
             </motion.p>
 
-            {/* Features */}
-            <motion.div
-              className="space-y-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              {slides[currentSlide].features.map((feature, idx) => (
-                <div key={idx} className="flex items-center gap-3 group">
-                  <div className="w-5 h-5 rounded-full bg-primary/20 dark:bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/30 transition-colors">
-                    <Check className="w-3 h-3 text-primary" />
+              {/* Features */}
+              <motion.div
+                className="space-y-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                {slides[currentSlide].features.map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-3 group">
+                    <div className="w-5 h-5 rounded-full bg-primary/20 dark:bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/30 transition-colors">
+                      <Check className="w-3 h-3 text-primary" />
+                    </div>
+                    <span className="text-foreground/80 group-hover:text-foreground transition-colors">{feature}</span>
                   </div>
-                  <span className="text-foreground/80 group-hover:text-foreground transition-colors">{feature}</span>
-                </div>
-              ))}
-            </motion.div>
+                ))}
+              </motion.div>
+            </div>
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation */}
+        {/* Navigation - anchored at bottom */}
         {showNavigation && (
-          <div className="flex items-center justify-between mt-12">
+          <div className="flex items-center justify-between pt-12">
             <div className="flex gap-2">
               <button
                 onClick={handlePrevSlide}

@@ -18,6 +18,12 @@ export default function NewAppPage() {
   const [appDescription, setAppDescription] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const [category, setCategory] = useState('Productivity');
+  const [platforms, setPlatforms] = useState({
+    ios: true,
+    android: true,
+  });
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
   const router = useRouter();
   const { createApp } = useAppStore();
   const { isLoaded, isSignedIn } = useUser();
@@ -43,14 +49,17 @@ export default function NewAppPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Create the app in the store
+    // Create the app in the store with all the new fields
     const newApp = createApp(appName, appDescription);
 
-    // If icon was uploaded, update the app with the icon
-    if (iconPreview) {
-      const { updateApp } = useAppStore.getState();
-      updateApp(newApp.id, { icon: iconPreview });
-    }
+    // Update the app with all additional information
+    const { updateApp } = useAppStore.getState();
+    updateApp(newApp.id, {
+      icon: iconPreview || undefined,
+      category,
+      platforms,
+      languages: selectedLanguages,
+    });
 
     console.log('Created app:', newApp);
 
@@ -168,9 +177,31 @@ export default function NewAppPage() {
                       rows={4}
                     />
                   </div>
+
+                  {/* Category */}
+                  <div>
+                    <label htmlFor="category" className="block text-sm font-medium mb-2">
+                      Category
+                    </label>
+                    <select
+                      id="category"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                    >
+                      <option>Productivity</option>
+                      <option>Social</option>
+                      <option>Entertainment</option>
+                      <option>Education</option>
+                      <option>Lifestyle</option>
+                      <option>Health & Fitness</option>
+                      <option>Business</option>
+                      <option>Games</option>
+                    </select>
+                  </div>
                 </motion.div>
 
-                {/* Screenshot Templates */}
+                {/* Platform Settings */}
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -178,27 +209,76 @@ export default function NewAppPage() {
                   className="bg-card rounded-xl border p-6"
                 >
                   <label className="block text-sm font-medium mb-4">
-                    Screenshot Template
+                    Target Platforms
                   </label>
-                  <div className="grid grid-cols-3 gap-4">
-                    {templates.map((template) => (
-                      <div
-                        key={template.id}
-                        onClick={() => setSelectedTemplate(template.id)}
-                        className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 ${
-                          selectedTemplate === template.id
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-muted-foreground/20 hover:bg-muted/30'
+                  <div className="space-y-3">
+                    <label className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5M13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+                          </svg>
+                        </div>
+                        <span className="font-medium">iOS</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={platforms.ios}
+                        onChange={(e) => setPlatforms({ ...platforms, ios: e.target.checked })}
+                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.523 2.102a1.24 1.24 0 0 0-.238-.108 1.426 1.426 0 0 0-.236-.074c-.154-.04-.313-.04-.468-.002-.114.016-.227.049-.332.098l-.006.002L5.9 6.3c-.696.258-1.168.928-1.168 1.705v7.99c0 .777.472 1.447 1.168 1.705l10.343 4.282a1.397 1.397 0 0 0 1.057 0L17.524 22a1.81 1.81 0 0 0 1.168-1.705v-7.99a1.81 1.81 0 0 0-1.168-1.705L7.18 6.318v-.013l10.343-4.282s.002 0 .002-.002l-.002.08z"/>
+                          </svg>
+                        </div>
+                        <span className="font-medium">Android</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={platforms.android}
+                        onChange={(e) => setPlatforms({ ...platforms, android: e.target.checked })}
+                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                    </label>
+
+                  </div>
+                </motion.div>
+
+                {/* Languages */}
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: 0.2 }}
+                  className="bg-card rounded-xl border p-6"
+                >
+                  <label className="block text-sm font-medium mb-4">
+                    Supported Languages
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {['English', 'Spanish', 'French', 'German', 'Japanese', 'Korean', 'Chinese'].map((lang) => (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => {
+                          if (selectedLanguages.includes(lang)) {
+                            setSelectedLanguages(selectedLanguages.filter(l => l !== lang));
+                          } else {
+                            setSelectedLanguages([...selectedLanguages, lang]);
+                          }
+                        }}
+                        className={`px-3 py-1.5 border rounded-lg transition-colors text-sm ${
+                          selectedLanguages.includes(lang)
+                            ? 'bg-foreground text-background border-foreground'
+                            : 'hover:bg-muted/50'
                         }`}
                       >
-                        {selectedTemplate === template.id && (
-                          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                            <Check className="w-3.5 h-3.5 text-primary-foreground" />
-                          </div>
-                        )}
-                        <div className={`w-full h-24 rounded-lg bg-gradient-to-br ${template.color} mb-2`} />
-                        <p className="text-xs font-medium text-center">{template.name}</p>
-                      </div>
+                        {lang}
+                      </button>
                     ))}
                   </div>
                 </motion.div>

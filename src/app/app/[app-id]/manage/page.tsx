@@ -27,6 +27,7 @@ export default function ManageAppPage({ params }: PageProps) {
   const appId = resolvedParams['app-id'];
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
 
   const handleDelete = () => {
     // Handle delete logic here
@@ -139,14 +140,6 @@ export default function ManageAppPage({ params }: PageProps) {
                     <option>Games</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">App Version</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
-                    placeholder="1.0.0"
-                  />
-                </div>
               </div>
             </motion.div>
 
@@ -239,21 +232,6 @@ export default function ManageAppPage({ params }: PageProps) {
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                      <Globe className="w-5 h-5 text-purple-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Web</p>
-                      <p className="text-xs text-muted-foreground">Progressive Web App</p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" />
-                    <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                  </label>
-                </div>
               </div>
             </motion.div>
 
@@ -265,19 +243,28 @@ export default function ManageAppPage({ params }: PageProps) {
               className="bg-card rounded-xl border p-6"
             >
               <h2 className="text-lg font-semibold mb-4">Supported Languages</h2>
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-2">
                 {['English', 'Spanish', 'French', 'German', 'Japanese', 'Korean', 'Chinese', 'Italian', 'Portuguese'].map((lang) => (
                   <button
                     key={lang}
-                    className="px-3 py-1.5 border rounded-lg hover:bg-muted/50 transition-colors text-sm"
+                    type="button"
+                    onClick={() => {
+                      if (selectedLanguages.includes(lang)) {
+                        setSelectedLanguages(selectedLanguages.filter(l => l !== lang));
+                      } else {
+                        setSelectedLanguages([...selectedLanguages, lang]);
+                      }
+                    }}
+                    className={`px-3 py-1.5 border rounded-lg transition-colors text-sm ${
+                      selectedLanguages.includes(lang)
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'hover:bg-muted/50'
+                    }`}
                   >
                     {lang}
                   </button>
                 ))}
               </div>
-              <button className="w-full px-3 py-2 border border-dashed rounded-lg hover:bg-muted/50 transition-colors text-sm">
-                + Add Language
-              </button>
             </motion.div>
 
             {/* App Metadata */}

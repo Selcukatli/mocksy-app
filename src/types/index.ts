@@ -77,6 +77,12 @@ export interface App {
   name: string;
   icon?: string;
   description?: string;
+  category?: string;
+  platforms?: {
+    ios: boolean;
+    android: boolean;
+  };
+  languages?: string[];
   sets: string[]; // Set IDs
   sourceImages: SourceImage[];
   createdAt: Date;

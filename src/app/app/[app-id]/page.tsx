@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
 import OnboardingDialog from '@/components/OnboardingDialog';
@@ -72,10 +72,16 @@ export default function AppDetailPage({ params }: PageProps) {
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   // Store hooks for local data (sets, screenshots)
-  const { getSetsForApp, getScreenshotsForSet, deleteSet } = useAppStore();
+  const { getScreenshotsForSet } = useAppStore();
+
+  // Convex mutations
+  const deleteSetMutation = useMutation(api.sets.deleteSet);
 
   // Get app from Convex
   const app = useQuery(api.apps.getApp, { appId: appId as Id<"apps"> });
+
+  // Fetch sets from Convex
+  const convexSets = useQuery(api.sets.getSetsForApp, app ? { appId: appId as Id<"apps"> } : "skip") ?? [];
 
   // Fetch app screens from Convex
   const appScreens = useQuery(api.appScreens.getAppScreens, { appId: appId as Id<"apps"> }) ?? [];
@@ -90,8 +96,7 @@ export default function AppDetailPage({ params }: PageProps) {
     }
   }, [app, router]);
 
-  // Get data for current app (still from local store for now)
-  const appStoreSets = app ? getSetsForApp(appId) : [];
+  // Get data for current app
   const sourceImagesCount = appScreens.length;
 
   useEffect(() => {
@@ -124,11 +129,10 @@ export default function AppDetailPage({ params }: PageProps) {
   };
 
   // Helper to determine set status based on screenshots
-  const getSetStatus = (setId: string) => {
-    const screenshots = getScreenshotsForSet(setId);
-    const filledCount = screenshots.filter(s => !s.isEmpty).length;
-    if (filledCount === 0) return 'draft';
-    if (filledCount === screenshots.length) return 'ready';
+  const getSetStatus = (set: typeof convexSets[0]) => {
+    if (set.status) return set.status;
+    if (set.filledCount === 0) return 'draft';
+    if (set.filledCount === set.screenshotCount) return 'ready';
     return 'draft';
   };
 
@@ -246,7 +250,7 @@ export default function AppDetailPage({ params }: PageProps) {
               )}
 
               <div className="flex-1 overflow-y-auto flex flex-col">
-                {appStoreSets.length === 0 ? (
+                {convexSets.length === 0 ? (
                   /* Zero State - No Sets */
                   <div className="flex-1 flex flex-col">
                     {/* Header for zero state */}
@@ -426,11 +430,11 @@ export default function AppDetailPage({ params }: PageProps) {
                     animate="show"
                     className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"
                   >
-                    {appStoreSets.map((set) => (
+                    {convexSets.map((set) => (
                       <motion.div
-                        key={set.id}
+                        key={set._id}
                         variants={itemAnimation}
-                        onClick={() => router.push(`/app/${appId}/set/${set.id}`)}
+                        onClick={() => router.push(`/app/${appId}/set/${set._id}`)}
                         className="bg-card border rounded-xl p-4 cursor-pointer transition-all duration-200 border-border hover:border-muted-foreground/30 hover:shadow-md"
                       >
                         {/* Set Header */}
@@ -450,35 +454,42 @@ export default function AppDetailPage({ params }: PageProps) {
                           </div>
                           <div className={cn(
                             "px-2 py-1 rounded-full text-xs border",
-                            getStatusColor(getSetStatus(set.id))
+                            getStatusColor(getSetStatus(set))
                           )}>
-                            {getSetStatus(set.id)}
+                            {getSetStatus(set)}
                           </div>
                         </div>
 
                         {/* Screenshot Preview Grid */}
                         <div className="grid grid-cols-3 gap-1.5 mb-3">
                           {(() => {
-                            const screenshots = getScreenshotsForSet(set.id).filter(s => !s.isEmpty);
-                            const toShow = screenshots.slice(0, screenshots.length > 3 ? 2 : 3);
+                            const filledCount = set.filledCount || 0;
+                            const toShow = Math.min(filledCount, 3);
                             return (
                               <>
-                                {toShow.map((screenshot, index) => (
+                                {Array.from({ length: toShow }).map((_, index) => (
                                   <div
                                     key={index}
                                     className="aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 rounded-md"
                                   />
                                 ))}
-                                {screenshots.length > 3 && (
+                                {filledCount > 3 && (
                                   <div className="aspect-[9/16] bg-muted/30 rounded-md flex items-center justify-center relative">
                                     <div
                                       className="aspect-[9/16] absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/30 rounded-md"
                                     />
                                     <span className="text-sm font-medium text-muted-foreground z-10">
-                                      +{screenshots.length - 2}
+                                      +{filledCount - 2}
                                     </span>
                                   </div>
                                 )}
+                                {/* Empty slots */}
+                                {toShow < 3 && !filledCount && Array.from({ length: 3 - toShow }).map((_, index) => (
+                                  <div
+                                    key={`empty-${index}`}
+                                    className="aspect-[9/16] border border-dashed border-muted-foreground/30 rounded-md"
+                                  />
+                                ))}
                               </>
                             );
                           })()}
@@ -487,7 +498,7 @@ export default function AppDetailPage({ params }: PageProps) {
                         {/* Set Footer */}
                         <div className="flex items-center justify-between pt-3 border-t">
                           <p className="text-xs text-muted-foreground">
-                            {getScreenshotsForSet(set.id).filter(s => !s.isEmpty).length} screenshots
+                            {set.filledCount || 0} screenshots
                           </p>
                           <div className="flex gap-1">
                             <button
@@ -506,7 +517,7 @@ export default function AppDetailPage({ params }: PageProps) {
                             >
                               <Download className="w-3.5 h-3.5" />
                             </button>
-                            <Popover open={openPopoverId === set.id} onOpenChange={(open) => setOpenPopoverId(open ? set.id : null)}>
+                            <Popover open={openPopoverId === set._id} onOpenChange={(open) => setOpenPopoverId(open ? set._id : null)}>
                               <PopoverTrigger asChild>
                                 <button
                                   onClick={(e) => {
@@ -533,7 +544,7 @@ export default function AppDetailPage({ params }: PageProps) {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setOpenPopoverId(null);
-                                    setDeleteSetId(set.id);
+                                    setDeleteSetId(set._id);
                                     setShowDeleteConfirm(true);
                                   }}
                                   className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-red-500/10 hover:text-red-600 transition-colors text-red-600"
@@ -704,18 +715,18 @@ export default function AppDetailPage({ params }: PageProps) {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Total Sets</span>
-                    <span className="font-semibold">{appStoreSets.length}</span>
+                    <span className="font-semibold">{convexSets.length}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Ready to Export</span>
                     <span className="font-semibold text-green-600">
-                      {appStoreSets.filter(s => getSetStatus(s.id) === 'ready').length}
+                      {convexSets.filter(s => getSetStatus(s) === 'ready').length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">In Draft</span>
                     <span className="font-semibold text-yellow-600">
-                      {appStoreSets.filter(s => getSetStatus(s.id) === 'draft').length}
+                      {convexSets.filter(s => getSetStatus(s) === 'draft').length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -741,7 +752,7 @@ export default function AppDetailPage({ params }: PageProps) {
           >
             <h3 className="text-lg font-semibold mb-2">Delete Set?</h3>
             <p className="text-muted-foreground mb-4">
-              Are you sure you want to delete &quot;{appStoreSets.find(s => s.id === deleteSetId)?.name}&quot;?
+              Are you sure you want to delete &quot;{convexSets.find(s => s._id === deleteSetId)?.name}&quot;?
               This will permanently delete all screenshots in this set. This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
@@ -755,10 +766,14 @@ export default function AppDetailPage({ params }: PageProps) {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  deleteSet(deleteSetId);
-                  setShowDeleteConfirm(false);
-                  setDeleteSetId(null);
+                onClick={async () => {
+                  try {
+                    await deleteSetMutation({ setId: deleteSetId as Id<"sets"> });
+                    setShowDeleteConfirm(false);
+                    setDeleteSetId(null);
+                  } catch (error) {
+                    console.error('Failed to delete set:', error);
+                  }
                 }}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
               >

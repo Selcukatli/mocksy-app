@@ -6,6 +6,9 @@ import { useAppStore } from '@/stores/appStore';
 import { useMockDataStore } from '@/stores/mockDataStore';
 import { useEditorStore } from '@/stores/editorStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../../../../convex/_generated/api';
+import { Id } from '../../../../../../convex/_generated/dataModel';
 import {
   ArrowLeft,
   Download,
@@ -42,10 +45,15 @@ export default function SetPage({ params }: PageProps) {
   const setId = resolvedParams['set-id'];
   const router = useRouter();
 
-  // Store hooks
+  // Convex mutations
+  const createSetMutation = useMutation(api.sets.createSet);
+  const updateSetMutation = useMutation(api.sets.updateSet);
+  const updateScreenshotMutation = useMutation(api.screenshots.updateScreenshot);
+  const clearScreenshotMutation = useMutation(api.screenshots.clearScreenshot);
+
+  // Store hooks (still using some local store functions)
   const {
-    getApp, getSet, getScreenshotsForSet,
-    createSet, updateScreenshot
+    getApp, updateScreenshot
   } = useAppStore();
 
   const { themes, layouts } = useMockDataStore();
@@ -79,72 +87,80 @@ export default function SetPage({ params }: PageProps) {
   const [subtitleText, setSubtitleText] = useState('');
   const [showSubtitle, setShowSubtitle] = useState(false);
 
-  // Get current app and set data
-  const [app, setApp] = useState<ReturnType<typeof getApp> | null>(null);
-  const [currentSet, setCurrentSet] = useState<ReturnType<typeof getSet> | null>(null);
+  // Get current app and set data from Convex
+  const convexApp = useQuery(api.apps.getApp, { appId: appId as Id<"apps"> });
+  const convexSet = useQuery(
+    api.sets.getSet,
+    setId !== 'new' ? { setId: setId as Id<"sets"> } : "skip"
+  );
+  const screenshots = useQuery(
+    api.screenshots.getScreenshotsForSet,
+    convexSet ? { setId: convexSet._id } : "skip"
+  ) || [];
+
   const [setName, setSetName] = useState('');
+  const [creatingSet, setCreatingSet] = useState(false);
   const isNewSet = setId === 'new';
 
-  // Initialize app after mount to avoid hydration issues
+  // Check if app exists
   useEffect(() => {
-    const existingApp = getApp(appId);
-    if (!existingApp) {
+    if (convexApp === null) {
       console.log('App does not exist, redirecting to home...');
       router.push('/home');
-    } else {
-      setApp(existingApp);
     }
-  }, [appId, getApp, router]);
+  }, [convexApp, router]);
 
+  // Check if set exists
   useEffect(() => {
-    if (!app) return;
-
-    if (isNewSet) {
-      // Handle new set creation in the next effect
-      return;
-    }
-
-    const existingSet = getSet(setId);
-    if (!existingSet) {
+    if (!isNewSet && convexSet === null && setId !== 'new') {
       console.log('Set does not exist, redirecting to app page...');
       router.push(`/app/${appId}`);
-    } else {
-      setCurrentSet(existingSet);
-      setSetName(existingSet.name);
     }
-  }, [app, appId, setId, isNewSet, getSet, router]);
+  }, [convexSet, isNewSet, setId, appId, router]);
 
-  // Initialize set if new
+  // Initialize set name
   useEffect(() => {
-    if (isNewSet && app && !currentSet) {
-      console.log('Creating new set...');
-      const newSet = createSet(appId, 'Untitled Set');
-      setCurrentSet(newSet);
-      setSetName(newSet.name);
-      setIsEditingName(true);
-      // Replace URL with actual set ID
-      router.replace(`/app/${appId}/set/${newSet.id}`);
-    } else if (currentSet && !setName) {
-      setSetName(currentSet.name);
+    if (convexSet) {
+      setSetName(convexSet.name);
     }
-    // Removed the else if that was creating sets for non-existent set IDs
-  }, [isNewSet, app, currentSet, appId, createSet, router, setName]);
+  }, [convexSet]);
 
-  // Get screenshots for current set
-  const screenshots = currentSet ? getScreenshotsForSet(currentSet.id) : [];
+  // Create new set
+  useEffect(() => {
+    async function createNewSet() {
+      if (isNewSet && convexApp && !creatingSet) {
+        setCreatingSet(true);
+        console.log('Creating new set...');
+        try {
+          const newSetId = await createSetMutation({
+            appId: appId as Id<"apps">,
+            name: 'Untitled Set',
+            deviceType: 'iPhone 15 Pro',
+          });
+          setIsEditingName(true);
+          // Replace URL with actual set ID
+          router.replace(`/app/${appId}/set/${newSetId}`);
+        } catch (error) {
+          console.error('Failed to create set:', error);
+          router.push(`/app/${appId}`);
+        }
+      }
+    }
+    createNewSet();
+  }, [isNewSet, convexApp, creatingSet, appId, createSetMutation, router]);
 
   // Debug logging
-  console.log('Current Set:', currentSet);
+  console.log('Convex Set:', convexSet);
   console.log('Screenshots array:', screenshots);
   console.log('Screenshots length:', screenshots.length);
 
   const selectedSlot = activeScreenshotId ?
-    screenshots.find(s => s.id === activeScreenshotId) || null :
+    screenshots.find((s: any) => s._id === activeScreenshotId) || null :
     null;
 
   const handleSlotClick = (screenshot: typeof screenshots[0]) => {
-    if (currentSet) {
-      setActiveSlot(currentSet.id, screenshot.id, screenshot.slotNumber);
+    if (convexSet) {
+      setActiveSlot(convexSet._id, screenshot._id, screenshot.slotNumber);
       setHeaderText(screenshot.title || '');
       setSubtitleText(screenshot.subtitle || '');
       setShowSubtitle(!!screenshot.subtitle);
@@ -152,18 +168,17 @@ export default function SetPage({ params }: PageProps) {
     }
   };
 
-  const handleClearSlot = () => {
+  const handleClearSlot = async () => {
     if (selectedSlot) {
-      updateScreenshot(selectedSlot.id, {
-        imageUrl: undefined,
-        title: undefined,
-        subtitle: undefined,
-        themeId: undefined,
-        layoutId: undefined,
-        isEmpty: true,
-      });
-      setShowClearConfirm(false);
-      closeRevisePanel();
+      try {
+        await clearScreenshotMutation({
+          screenshotId: selectedSlot._id
+        });
+        setShowClearConfirm(false);
+        closeRevisePanel();
+      } catch (error) {
+        console.error('Failed to clear screenshot:', error);
+      }
     }
   };
 
@@ -179,7 +194,7 @@ export default function SetPage({ params }: PageProps) {
   };
 
   const selectAll = () => {
-    setSelectedScreenshots(new Set(screenshots.map(s => s.id)));
+    setSelectedScreenshots(new Set(screenshots.map((s: any) => s._id)));
   };
 
   const clearSelection = () => {
@@ -215,10 +230,34 @@ export default function SetPage({ params }: PageProps) {
                       onChange={(e) => setSetName(e.target.value)}
                       className="px-3 py-1.5 text-2xl font-bold bg-background border rounded-lg focus:ring-1 focus:ring-primary focus:border-primary"
                       autoFocus
-                      onBlur={() => setIsEditingName(false)}
-                      onKeyDown={(e) => {
+                      onBlur={async () => {
+                        setIsEditingName(false);
+                        if (convexSet && setName !== convexSet.name) {
+                          try {
+                            await updateSetMutation({
+                              setId: convexSet._id,
+                              name: setName,
+                            });
+                          } catch (error) {
+                            console.error('Failed to update set name:', error);
+                            setSetName(convexSet.name); // Revert on error
+                          }
+                        }
+                      }}
+                      onKeyDown={async (e) => {
                         if (e.key === 'Enter') {
                           setIsEditingName(false);
+                          if (convexSet && setName !== convexSet.name) {
+                            try {
+                              await updateSetMutation({
+                                setId: convexSet._id,
+                                name: setName,
+                              });
+                            } catch (error) {
+                              console.error('Failed to update set name:', error);
+                              setSetName(convexSet.name); // Revert on error
+                            }
+                          }
                         }
                       }}
                     />
@@ -340,9 +379,9 @@ export default function SetPage({ params }: PageProps) {
               )}
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {screenshots.map((screenshot) => (
+                {screenshots.map((screenshot: any) => (
                   <motion.div
-                    key={screenshot.id}
+                    key={screenshot._id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="group relative"
@@ -371,7 +410,7 @@ export default function SetPage({ params }: PageProps) {
                       <div
                         onClick={() => handleSlotClick(screenshot)}
                         className={`relative aspect-[9/16] bg-card border-2 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ${
-                          selectedScreenshots.has(screenshot.id)
+                          selectedScreenshots.has(screenshot._id)
                             ? 'border-primary shadow-lg'
                             : 'border-border hover:border-primary/50 hover:shadow-lg'
                         }`}
@@ -385,15 +424,15 @@ export default function SetPage({ params }: PageProps) {
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleScreenshotSelection(screenshot.id);
+                            toggleScreenshotSelection(screenshot._id);
                           }}
                           className={`absolute top-3 right-3 w-6 h-6 rounded-md border-2 backdrop-blur-sm z-10 flex items-center justify-center transition-all duration-200 ${
-                            selectedScreenshots.has(screenshot.id)
+                            selectedScreenshots.has(screenshot._id)
                               ? 'border-primary bg-primary text-primary-foreground'
                               : 'border-gray-400 dark:border-gray-500 bg-white/90 dark:bg-gray-800/90 opacity-0 group-hover:opacity-100 hover:border-primary dark:hover:border-primary'
                           }`}
                         >
-                          {selectedScreenshots.has(screenshot.id) && (
+                          {selectedScreenshots.has(screenshot._id) && (
                             <Check className="w-3.5 h-3.5" />
                           )}
                         </div>
@@ -521,9 +560,9 @@ export default function SetPage({ params }: PageProps) {
                 </div>
               )}
 
-              {screenshots.map((screenshot) => (
+              {screenshots.map((screenshot: any) => (
                 <motion.div
-                  key={screenshot.id}
+                  key={screenshot._id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   onClick={() => handleSlotClick(screenshot)}
@@ -540,15 +579,15 @@ export default function SetPage({ params }: PageProps) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleScreenshotSelection(screenshot.id);
+                        toggleScreenshotSelection(screenshot._id);
                       }}
                       className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                        selectedScreenshots.has(screenshot.id)
+                        selectedScreenshots.has(screenshot._id)
                           ? 'border-primary bg-primary text-primary-foreground'
                           : 'border-border hover:border-muted-foreground'
                       }`}
                     >
-                      {selectedScreenshots.has(screenshot.id) && (
+                      {selectedScreenshots.has(screenshot._id) && (
                         <Check className="w-3 h-3" />
                       )}
                     </button>

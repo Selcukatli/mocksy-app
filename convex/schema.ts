@@ -58,7 +58,7 @@ export default defineSchema({
     .index("by_app", ["appId"])
     .index("by_profile", ["profileId"]),
 
-  sets: defineTable({
+  screenshotSets: defineTable({
     appId: v.id("apps"), // Which app this set belongs to
     createdBy: v.id("profiles"), // User who created the set
     name: v.string(), // Set name (e.g., "iOS Screenshots - English")
@@ -73,7 +73,7 @@ export default defineSchema({
     .index("by_app_and_created", ["appId", "createdAt"]),
 
   screenshots: defineTable({
-    setId: v.id("sets"), // Which set this screenshot belongs to
+    setId: v.id("screenshotSets"), // Which set this screenshot belongs to
     appId: v.id("apps"), // Denormalized for easier queries
     createdBy: v.id("profiles"), // User who created the screenshot
     slotNumber: v.number(), // Position in the set (1-10)

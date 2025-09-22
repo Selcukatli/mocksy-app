@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import NextImage from 'next/image';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
@@ -624,10 +625,11 @@ export default function SourceImagesPage({ params }: PageProps) {
                     {/* Image Container with loading animation - matching aspect ratio */}
                     <div className="relative flex-1 aspect-[9/16] bg-muted/20 rounded-lg overflow-hidden">
                       <div className="absolute inset-0 rounded-lg overflow-hidden">
-                        <img
+                        <NextImage
                           src={item.preview}
                           alt="Uploading..."
-                          className="w-full h-full object-cover opacity-50"
+                          fill
+                          className="object-cover opacity-50"
                         />
                       </div>
                       {/* Loading overlay */}

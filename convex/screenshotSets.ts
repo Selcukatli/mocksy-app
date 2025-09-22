@@ -10,7 +10,7 @@ export const createSet = mutation({
     deviceType: v.optional(v.string()),
     language: v.optional(v.string()),
   },
-  returns: v.id("sets"),
+  returns: v.id("screenshotSets"),
   handler: async (ctx, args) => {
     // Get the current user's profile
     const identity = await ctx.auth.getUserIdentity();
@@ -37,7 +37,7 @@ export const createSet = mutation({
     const now = Date.now();
 
     // Create the set
-    const setId = await ctx.db.insert("sets", {
+    const setId = await ctx.db.insert("screenshotSets", {
       appId: args.appId,
       createdBy: profile._id,
       name: args.name,
@@ -48,34 +48,106 @@ export const createSet = mutation({
       updatedAt: now,
     });
 
-    // Create 10 empty screenshot slots
-    const screenshotPromises = [];
-    for (let i = 1; i <= 10; i++) {
-      screenshotPromises.push(
-        ctx.db.insert("screenshots", {
-          setId,
-          appId: args.appId,
-          createdBy: profile._id,
-          slotNumber: i,
-          isEmpty: true,
-          createdAt: now,
-          updatedAt: now,
-        })
-      );
-    }
-
-    await Promise.all(screenshotPromises);
+    // Don't create empty screenshot slots upfront
+    // Screenshots will be created on-demand when needed
 
     return setId;
   },
 });
 
+// Get recent sets for the current user
+export const getRecentSets = query({
+  args: {},
+  returns: v.array(v.object({
+    _id: v.id("screenshotSets"),
+    _creationTime: v.number(),
+    appId: v.id("apps"),
+    createdBy: v.id("profiles"),
+    name: v.string(),
+    deviceType: v.optional(v.string()),
+    language: v.optional(v.string()),
+    status: v.optional(v.string()),
+    screenshotCount: v.number(),
+    filledCount: v.number(),
+    app: v.optional(v.object({
+      _id: v.id("apps"),
+      name: v.string(),
+      description: v.optional(v.string()),
+      iconUrl: v.optional(v.string()),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })),
+  handler: async (ctx) => {
+    // Get the current user's profile
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user_id")
+      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .first();
+
+    if (!profile) {
+      return [];
+    }
+
+    // Get recent sets created by this user (max 3)
+    const sets = await ctx.db
+      .query("screenshotSets")
+      .withIndex("by_creator")
+      .filter(q => q.eq(q.field("createdBy"), profile._id))
+      .order("desc")
+      .take(3);
+
+    // For each set, get the app info and count screenshots
+    const setsWithDetails = await Promise.all(
+      sets.map(async (set) => {
+        // Get the app
+        const app = await ctx.db.get(set.appId);
+
+        // Get app icon URL if available
+        let iconUrl: string | undefined;
+        if (app?.iconStorageId) {
+          iconUrl = (await ctx.storage.getUrl(app.iconStorageId)) || undefined;
+        }
+
+        // Count screenshots
+        const screenshots = await ctx.db
+          .query("screenshots")
+          .withIndex("by_set")
+          .filter(q => q.eq(q.field("setId"), set._id))
+          .collect();
+
+        const filledCount = screenshots.filter(s => !s.isEmpty).length;
+
+        return {
+          ...set,
+          screenshotCount: screenshots.length,
+          filledCount,
+          app: app ? {
+            _id: app._id,
+            name: app.name,
+            description: app.description,
+            iconUrl,
+          } : undefined,
+        };
+      })
+    );
+
+    return setsWithDetails;
+  },
+});
+
 // Get a single set
 export const getSet = query({
-  args: { setId: v.id("sets") },
+  args: { setId: v.id("screenshotSets") },
   returns: v.union(
     v.object({
-      _id: v.id("sets"),
+      _id: v.id("screenshotSets"),
       _creationTime: v.number(),
       appId: v.id("apps"),
       createdBy: v.id("profiles"),
@@ -118,7 +190,7 @@ export const getSet = query({
 export const getSetsForApp = query({
   args: { appId: v.id("apps") },
   returns: v.array(v.object({
-    _id: v.id("sets"),
+    _id: v.id("screenshotSets"),
     _creationTime: v.number(),
     appId: v.id("apps"),
     createdBy: v.id("profiles"),
@@ -156,7 +228,7 @@ export const getSetsForApp = query({
 
     // Get all sets for this app
     const sets = await ctx.db
-      .query("sets")
+      .query("screenshotSets")
       .withIndex("by_app")
       .filter(q => q.eq(q.field("appId"), appId))
       .collect();
@@ -187,7 +259,7 @@ export const getSetsForApp = query({
 // Update a set
 export const updateSet = mutation({
   args: {
-    setId: v.id("sets"),
+    setId: v.id("screenshotSets"),
     name: v.optional(v.string()),
     deviceType: v.optional(v.string()),
     language: v.optional(v.string()),
@@ -229,7 +301,7 @@ export const updateSet = mutation({
 
 // Delete a set and all its screenshots
 export const deleteSet = mutation({
-  args: { setId: v.id("sets") },
+  args: { setId: v.id("screenshotSets") },
   handler: async (ctx, { setId }) => {
     // Get the set
     const set = await ctx.db.get(setId);

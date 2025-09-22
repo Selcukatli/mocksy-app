@@ -4,7 +4,7 @@ import { use, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useAppStore } from '@/stores/appStore';
+// import { useAppStore } from '@/stores/appStore';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
@@ -72,16 +72,16 @@ export default function AppDetailPage({ params }: PageProps) {
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   // Store hooks for local data (sets, screenshots)
-  const { getScreenshotsForSet } = useAppStore();
+  // const { getScreenshotsForSet } = useAppStore();
 
   // Convex mutations
-  const deleteSetMutation = useMutation(api.sets.deleteSet);
+  const deleteSetMutation = useMutation(api.screenshotSets.deleteSet);
 
   // Get app from Convex
   const app = useQuery(api.apps.getApp, { appId: appId as Id<"apps"> });
 
   // Fetch sets from Convex
-  const convexSets = useQuery(api.sets.getSetsForApp, app ? { appId: appId as Id<"apps"> } : "skip") ?? [];
+  const convexSets = useQuery(api.screenshotSets.getSetsForApp, app ? { appId: appId as Id<"apps"> } : "skip") ?? [];
 
   // Fetch app screens from Convex
   const appScreens = useQuery(api.appScreens.getAppScreens, { appId: appId as Id<"apps"> }) ?? [];
@@ -215,7 +215,7 @@ export default function AppDetailPage({ params }: PageProps) {
           <div className="flex-1 flex gap-6 p-6 overflow-hidden">
             {/* Left Column - AppStore Sets */}
             <div className="flex-1 flex flex-col">
-              {appStoreSets.length > 0 && (
+              {convexSets.length > 0 && (
                 <div className="mb-6">
                   <div className="mb-4">
                     <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -768,7 +768,7 @@ export default function AppDetailPage({ params }: PageProps) {
               <button
                 onClick={async () => {
                   try {
-                    await deleteSetMutation({ setId: deleteSetId as Id<"sets"> });
+                    await deleteSetMutation({ setId: deleteSetId as Id<"screenshotSets"> });
                     setShowDeleteConfirm(false);
                     setDeleteSetId(null);
                   } catch (error) {

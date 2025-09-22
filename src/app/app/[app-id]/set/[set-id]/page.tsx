@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
 import { useMockDataStore } from '@/stores/mockDataStore';
 import { useEditorStore } from '@/stores/editorStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
@@ -24,11 +24,13 @@ import {
   Check,
   X,
   Eye,
+  Edit2,
   Edit3,
   Palette,
   Languages,
   FolderOpen,
   Layout,
+  MoreVertical,
 } from 'lucide-react';
 
 interface PageProps {
@@ -46,14 +48,16 @@ export default function SetPage({ params }: PageProps) {
   const router = useRouter();
 
   // Convex mutations
-  const createSetMutation = useMutation(api.sets.createSet);
-  const updateSetMutation = useMutation(api.sets.updateSet);
-  const updateScreenshotMutation = useMutation(api.screenshots.updateScreenshot);
+  const createSetMutation = useMutation(api.screenshotSets.createSet);
+  const updateSetMutation = useMutation(api.screenshotSets.updateSet);
+  const deleteSetMutation = useMutation(api.screenshotSets.deleteSet);
+  const createScreenshotMutation = useMutation(api.screenshots.createScreenshot);
+  // const updateScreenshotMutation = useMutation(api.screenshots.updateScreenshot);
   const clearScreenshotMutation = useMutation(api.screenshots.clearScreenshot);
 
   // Store hooks (still using some local store functions)
   const {
-    getApp, updateScreenshot
+    updateScreenshot
   } = useAppStore();
 
   const { themes, layouts } = useMockDataStore();
@@ -83,6 +87,8 @@ export default function SetPage({ params }: PageProps) {
   const [selectedScreenshots, setSelectedScreenshots] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [headerText, setHeaderText] = useState('');
   const [subtitleText, setSubtitleText] = useState('');
   const [showSubtitle, setShowSubtitle] = useState(false);
@@ -90,8 +96,8 @@ export default function SetPage({ params }: PageProps) {
   // Get current app and set data from Convex
   const convexApp = useQuery(api.apps.getApp, { appId: appId as Id<"apps"> });
   const convexSet = useQuery(
-    api.sets.getSet,
-    setId !== 'new' ? { setId: setId as Id<"sets"> } : "skip"
+    api.screenshotSets.getSet,
+    setId !== 'new' ? { setId: setId as Id<"screenshotSets"> } : "skip"
   );
   const screenshots = useQuery(
     api.screenshots.getScreenshotsForSet,
@@ -149,30 +155,119 @@ export default function SetPage({ params }: PageProps) {
     createNewSet();
   }, [isNewSet, convexApp, creatingSet, appId, createSetMutation, router]);
 
+  // Close dropdown menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-dropdown-menu]')) {
+        setShowMoreMenu(false);
+      }
+    };
+
+    if (showMoreMenu) {
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 0);
+      return () => {
+        document.removeEventListener('click', handleClickOutside);
+      };
+    }
+  }, [showMoreMenu]);
+
   // Debug logging
   console.log('Convex Set:', convexSet);
   console.log('Screenshots array:', screenshots);
   console.log('Screenshots length:', screenshots.length);
 
+  // Create placeholder slots for the UI
+  type SlotType = typeof screenshots[0] | {
+    _id: string;
+    _creationTime: number;
+    setId: Id<"screenshotSets">;
+    appId: Id<"apps">;
+    createdBy: Id<"profiles">;
+    slotNumber: number;
+    title?: string;
+    subtitle?: string;
+    imageUrl?: string;
+    imageStorageId?: Id<"_storage">;
+    themeId?: string;
+    layoutId?: string;
+    isEmpty: boolean;
+    createdAt: number;
+    updatedAt: number;
+    isPlaceholder: boolean;
+  };
+
+  const allSlots: SlotType[] = [];
+  for (let i = 1; i <= 10; i++) {
+    const existingScreenshot = screenshots.find(s => s.slotNumber === i);
+    if (existingScreenshot) {
+      allSlots.push(existingScreenshot);
+    } else {
+      // Create a placeholder object for empty slots
+      allSlots.push({
+        _id: `placeholder-${i}`,
+        _creationTime: Date.now(),
+        setId: convexSet?._id || ('' as Id<"screenshotSets">),
+        appId: convexSet?.appId || ('' as Id<"apps">),
+        createdBy: convexSet?.createdBy || ('' as Id<"profiles">),
+        slotNumber: i,
+        isEmpty: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        isPlaceholder: true,
+      });
+    }
+  }
+
   const selectedSlot = activeScreenshotId ?
-    screenshots.find((s: any) => s._id === activeScreenshotId) || null :
+    allSlots.find(s => s._id === activeScreenshotId) || null :
     null;
 
-  const handleSlotClick = (screenshot: typeof screenshots[0]) => {
+  const handleSlotClick = async (slot: typeof allSlots[0]) => {
     if (convexSet) {
-      setActiveSlot(convexSet._id, screenshot._id, screenshot.slotNumber);
-      setHeaderText(screenshot.title || '');
-      setSubtitleText(screenshot.subtitle || '');
-      setShowSubtitle(!!screenshot.subtitle);
-      updateTempScreenshot({ title: screenshot.title, subtitle: screenshot.subtitle });
+      // If it's a placeholder, create a new screenshot first
+      if ('isPlaceholder' in slot && slot.isPlaceholder) {
+        try {
+          const newScreenshotId = await createScreenshotMutation({
+            setId: convexSet._id,
+            slotNumber: slot.slotNumber,
+          });
+          setActiveSlot(convexSet._id, newScreenshotId, slot.slotNumber);
+          setHeaderText('');
+          setSubtitleText('');
+          setShowSubtitle(false);
+          updateTempScreenshot({ title: '', subtitle: '' });
+        } catch (error) {
+          console.error('Failed to create screenshot:', error);
+        }
+      } else {
+        setActiveSlot(convexSet._id, slot._id, slot.slotNumber);
+        setHeaderText(slot.title || '');
+        setSubtitleText(slot.subtitle || '');
+        setShowSubtitle(!!slot.subtitle);
+        updateTempScreenshot({ title: slot.title, subtitle: slot.subtitle });
+      }
+    }
+  };
+
+  const handleDeleteSet = async () => {
+    if (!convexSet) return;
+
+    try {
+      await deleteSetMutation({ setId: convexSet._id });
+      router.push(`/app/${appId}`);
+    } catch (error) {
+      console.error('Failed to delete set:', error);
     }
   };
 
   const handleClearSlot = async () => {
-    if (selectedSlot) {
+    if (selectedSlot && !('isPlaceholder' in selectedSlot)) {
       try {
         await clearScreenshotMutation({
-          screenshotId: selectedSlot._id
+          screenshotId: selectedSlot._id as Id<"screenshots">
         });
         setShowClearConfirm(false);
         closeRevisePanel();
@@ -194,7 +289,8 @@ export default function SetPage({ params }: PageProps) {
   };
 
   const selectAll = () => {
-    setSelectedScreenshots(new Set(screenshots.map((s: any) => s._id)));
+    // Only select real screenshots, not placeholders
+    setSelectedScreenshots(new Set(screenshots.filter(s => !s.isEmpty).map(s => s._id)));
   };
 
   const clearSelection = () => {
@@ -221,14 +317,36 @@ export default function SetPage({ params }: PageProps) {
                 <ArrowLeft className="w-5 h-5" />
               </button>
 
-              <div className="flex items-center gap-2">
+              {/* App Icon */}
+              {convexApp && (
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {convexApp.iconUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={convexApp.iconUrl}
+                      alt={convexApp.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-lg font-bold text-primary">
+                      {convexApp.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 group">
                 {isEditingName ? (
-                  <div className="flex items-center gap-2">
+                  <motion.div
+                    initial={{ opacity: 0.8 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center gap-2"
+                  >
                     <input
                       type="text"
                       value={setName}
                       onChange={(e) => setSetName(e.target.value)}
-                      className="px-3 py-1.5 text-2xl font-bold bg-background border rounded-lg focus:ring-1 focus:ring-primary focus:border-primary"
+                      className="px-3 py-1.5 text-2xl font-bold bg-background border-2 border-primary/30 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                       autoFocus
                       onBlur={async () => {
                         setIsEditingName(false);
@@ -258,31 +376,50 @@ export default function SetPage({ params }: PageProps) {
                               setSetName(convexSet.name); // Revert on error
                             }
                           }
+                        } else if (e.key === 'Escape') {
+                          setIsEditingName(false);
+                          setSetName(convexSet?.name || '');
                         }
                       }}
                     />
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => setIsEditingName(false)}
-                      className="p-1.5 text-green-600 hover:bg-muted/50 rounded-lg transition-colors"
+                      className="p-1.5 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                     >
                       <Check className="w-4 h-4" />
-                    </button>
-                  </div>
+                    </motion.button>
+                    <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-2">
+                      <span className="px-2 py-0.5 bg-muted/30 rounded">Enter</span>
+                      <span className="px-2 py-0.5 bg-muted/30 rounded">Esc</span>
+                    </div>
+                  </motion.div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold">{setName}</h1>
-                    <button
+                  <>
+                    <h1 className="text-2xl font-bold relative">
+                      {setName}
+                      <motion.div
+                        className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary/20 origin-left"
+                        initial={{ scaleX: 0 }}
+                        whileHover={{ scaleX: 1 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    </h1>
+                    <motion.button
+                      whileHover={{ scale: 1.1, rotate: 15 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => setIsEditingName(true)}
-                      className="p-1.5 hover:bg-muted/50 rounded-lg transition-colors"
+                      className="p-1.5 hover:bg-primary/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                     >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
+                      <Edit2 className="w-4 h-4 text-primary/60" />
+                    </motion.button>
+                  </>
                 )}
-                <span className="text-sm text-muted-foreground">
-                  {screenshots.filter(s => !s.isEmpty).length} of 10 filled
-                </span>
               </div>
+              <span className="text-sm text-muted-foreground">
+                {screenshots.filter(s => !s.isEmpty).length} of 10 filled
+              </span>
             </div>
 
             {/* Right section with actions */}
@@ -321,6 +458,31 @@ export default function SetPage({ params }: PageProps) {
                 <Download className="w-4 h-4" />
                 Export All
               </button>
+
+              {/* More Options Menu */}
+              <div className="relative" data-dropdown-menu>
+                <button
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                  className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+
+                {showMoreMenu && (
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-popover border rounded-lg shadow-lg z-50">
+                    <button
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowDeleteConfirm(true);
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2 text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete Set
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -379,7 +541,7 @@ export default function SetPage({ params }: PageProps) {
               )}
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {screenshots.map((screenshot: any) => (
+                {allSlots.map((screenshot) => (
                   <motion.div
                     key={screenshot._id}
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -482,18 +644,11 @@ export default function SetPage({ params }: PageProps) {
                         )}
 
                         {/* Badges */}
-                        {(screenshot.themeId || screenshot.language) && (
+                        {screenshot.themeId && (
                           <div className="absolute bottom-3 left-3 flex gap-1">
-                            {screenshot.themeId && (
-                              <span className="px-2 py-0.5 bg-purple-500/90 backdrop-blur-sm text-white text-xs rounded-full">
-                                {themes.find(t => t.id === screenshot.themeId)?.name}
-                              </span>
-                            )}
-                            {screenshot.language && screenshot.language !== 'English' && (
-                              <span className="px-2 py-0.5 bg-blue-500/90 backdrop-blur-sm text-white text-xs rounded-full">
-                                {screenshot.language}
-                              </span>
-                            )}
+                            <span className="px-2 py-0.5 bg-purple-500/90 backdrop-blur-sm text-white text-xs rounded-full">
+                              {themes.find(t => t.id === screenshot.themeId)?.name}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -503,7 +658,7 @@ export default function SetPage({ params }: PageProps) {
                     {!screenshot.isEmpty && (
                       <div className="mt-2">
                         <p className="text-sm font-medium truncate">{screenshot.title || `Screenshot ${screenshot.slotNumber}`}</p>
-                        <p className="text-xs text-muted-foreground truncate">{screenshot.deviceFrameId || 'No device'}</p>
+                        <p className="text-xs text-muted-foreground truncate">{convexSet?.deviceType || 'No device'}</p>
                       </div>
                     )}
                   </motion.div>
@@ -560,7 +715,7 @@ export default function SetPage({ params }: PageProps) {
                 </div>
               )}
 
-              {screenshots.map((screenshot: any) => (
+              {allSlots.map((screenshot) => (
                 <motion.div
                   key={screenshot._id}
                   initial={{ opacity: 0, x: -10 }}
@@ -611,17 +766,17 @@ export default function SetPage({ params }: PageProps) {
                       <>
                         <p className="font-medium">{screenshot.title || `Screenshot ${screenshot.slotNumber}`}</p>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                          {screenshot.deviceFrameId && <span>{screenshot.deviceFrameId}</span>}
+                          {convexSet?.deviceType && <span>{convexSet.deviceType}</span>}
                           {screenshot.themeId && (
                             <>
                               <span>•</span>
                               <span>{themes.find(t => t.id === screenshot.themeId)?.name}</span>
                             </>
                           )}
-                          {screenshot.language && (
+                          {convexSet?.language && (
                             <>
                               <span>•</span>
-                              <span>{screenshot.language}</span>
+                              <span>{convexSet.language}</span>
                             </>
                           )}
                           {screenshot.subtitle && (
@@ -671,7 +826,7 @@ export default function SetPage({ params }: PageProps) {
       </div>
 
       {/* Side Panel / Sheet */}
-      <AnimatePresence>
+      {/*AnimatePresence removed for faster transitions*/}
         {isReviseOpen && selectedSlot && (
           <>
             {/* Backdrop */}
@@ -964,14 +1119,14 @@ export default function SetPage({ params }: PageProps) {
                                 {themes.find(t => t.id === selectedSlot.themeId)?.name}
                               </span>
                             )}
-                            {selectedSlot.language && (
+                            {convexSet?.language && (
                               <span className="px-2 py-1 bg-blue-500/10 text-blue-600 text-xs rounded-full">
-                                {selectedSlot.language}
+                                {convexSet.language}
                               </span>
                             )}
-                            {selectedSlot.deviceFrameId && (
+                            {convexSet?.deviceType && (
                               <span className="px-2 py-1 bg-green-500/10 text-green-600 text-xs rounded-full">
-                                {selectedSlot.deviceFrameId}
+                                {convexSet.deviceType}
                               </span>
                             )}
                           </div>
@@ -1003,10 +1158,10 @@ export default function SetPage({ params }: PageProps) {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+      {/*AnimatePresence end*/}
 
       {/* Clear Confirmation Dialog */}
-      <AnimatePresence>
+      {/*AnimatePresence removed for faster transitions*/}
         {showClearConfirm && (
           <>
             <motion.div
@@ -1052,10 +1207,67 @@ export default function SetPage({ params }: PageProps) {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+      {/*AnimatePresence end*/}
+
+      {/* Delete Set Confirmation Dialog */}
+      {/*AnimatePresence removed for faster transitions*/}
+        {showDeleteConfirm && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+              onClick={() => setShowDeleteConfirm(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-card border rounded-xl shadow-2xl z-[61] p-6"
+            >
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-destructive/10 rounded-lg">
+                  <Trash2 className="w-6 h-6 text-destructive" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">Delete Set?</h3>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Are you sure you want to delete &ldquo;{setName}&rdquo;?
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {screenshots.filter(s => !s.isEmpty).length > 0
+                      ? `This will permanently delete all ${screenshots.filter(s => !s.isEmpty).length} screenshots in this set.`
+                      : 'This will permanently delete this set.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 text-sm hover:bg-muted/50 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleDeleteSet();
+                    setShowDeleteConfirm(false);
+                  }}
+                  className="px-4 py-2 text-sm bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg transition-colors"
+                >
+                  Delete Set
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      {/*AnimatePresence end*/}
 
       {/* Source Images Stacked Panel */}
-      <AnimatePresence>
+      {/*AnimatePresence removed for faster transitions*/}
         {isSourceImagePanelOpen && (
           <>
             <motion.div
@@ -1169,10 +1381,10 @@ export default function SetPage({ params }: PageProps) {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+      {/*AnimatePresence end*/}
 
       {/* Theme Selection Panel */}
-      <AnimatePresence>
+      {/*AnimatePresence removed for faster transitions*/}
         {isThemePanelOpen && (
           <>
             <motion.div
@@ -1214,7 +1426,7 @@ export default function SetPage({ params }: PageProps) {
                       onClick={() => {
                         selectTheme(theme.id);
                         if (selectedSlot) {
-                          updateScreenshot(selectedSlot.id, { themeId: theme.id });
+                          updateScreenshot(selectedSlot._id, { themeId: theme.id });
                         }
                         closeThemePanel();
                       }}
@@ -1242,10 +1454,10 @@ export default function SetPage({ params }: PageProps) {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+      {/*AnimatePresence end*/}
 
       {/* Layout Selection Panel */}
-      <AnimatePresence>
+      {/*AnimatePresence removed for faster transitions*/}
         {isLayoutPanelOpen && (
           <>
             <motion.div
@@ -1287,7 +1499,7 @@ export default function SetPage({ params }: PageProps) {
                       onClick={() => {
                         selectLayout(layout.id);
                         if (selectedSlot) {
-                          updateScreenshot(selectedSlot.id, { layoutId: layout.id });
+                          updateScreenshot(selectedSlot._id, { layoutId: layout.id });
                         }
                         closeLayoutPanel();
                       }}
@@ -1305,7 +1517,7 @@ export default function SetPage({ params }: PageProps) {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+      {/*AnimatePresence end*/}
     </div>
   );
 }

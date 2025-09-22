@@ -19,8 +19,8 @@ import type * as fileStorage_fileActions from "../fileStorage/fileActions.js";
 import type * as fileStorage_fileQueries from "../fileStorage/fileQueries.js";
 import type * as http from "../http.js";
 import type * as profiles from "../profiles.js";
+import type * as screenshotSets from "../screenshotSets.js";
 import type * as screenshots from "../screenshots.js";
-import type * as sets from "../sets.js";
 import type * as webhooks from "../webhooks.js";
 
 /**
@@ -38,8 +38,8 @@ declare const fullApi: ApiFromModules<{
   "fileStorage/fileQueries": typeof fileStorage_fileQueries;
   http: typeof http;
   profiles: typeof profiles;
+  screenshotSets: typeof screenshotSets;
   screenshots: typeof screenshots;
-  sets: typeof sets;
   webhooks: typeof webhooks;
 }>;
 export declare const api: FilterApi<

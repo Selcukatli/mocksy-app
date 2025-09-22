@@ -117,6 +117,20 @@ body {
   animation: gradient-shift 15s linear infinite;
 }
 
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 5s ease infinite;
+  background-size: 200% 200%;
+}
+
 .drop-shadow-glow {
   filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 20px currentColor);
 }

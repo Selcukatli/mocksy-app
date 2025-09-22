@@ -4,11 +4,11 @@ import { Id } from "./_generated/dataModel";
 
 // Get all screenshots for a set
 export const getScreenshotsForSet = query({
-  args: { setId: v.id("sets") },
+  args: { setId: v.id("screenshotSets") },
   returns: v.array(v.object({
     _id: v.id("screenshots"),
     _creationTime: v.number(),
-    setId: v.id("sets"),
+    setId: v.id("screenshotSets"),
     appId: v.id("apps"),
     createdBy: v.id("profiles"),
     slotNumber: v.number(),
@@ -182,7 +182,7 @@ export const getScreenshot = query({
     v.object({
       _id: v.id("screenshots"),
       _creationTime: v.number(),
-      setId: v.id("sets"),
+      setId: v.id("screenshotSets"),
       appId: v.id("apps"),
       createdBy: v.id("profiles"),
       slotNumber: v.number(),
@@ -229,5 +229,78 @@ export const getScreenshot = query({
       ...screenshot,
       imageUrl: imageUrl || undefined,
     };
+  },
+});
+
+// Create a screenshot for a set
+export const createScreenshot = mutation({
+  args: {
+    setId: v.id("screenshotSets"),
+    slotNumber: v.number(),
+    title: v.optional(v.string()),
+    subtitle: v.optional(v.string()),
+    imageStorageId: v.optional(v.id("_storage")),
+    themeId: v.optional(v.string()),
+    layoutId: v.optional(v.string()),
+  },
+  returns: v.id("screenshots"),
+  handler: async (ctx, args) => {
+    // Get the set to verify access and get appId
+    const set = await ctx.db.get(args.setId);
+    if (!set) {
+      throw new Error("Set not found");
+    }
+
+    // Get the current user's profile
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("User must be authenticated");
+    }
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user_id")
+      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .first();
+
+    if (!profile || set.createdBy !== profile._id) {
+      throw new Error("Unauthorized");
+    }
+
+    // Check if a screenshot already exists for this slot
+    const existingScreenshot = await ctx.db
+      .query("screenshots")
+      .withIndex("by_set")
+      .filter(q =>
+        q.and(
+          q.eq(q.field("setId"), args.setId),
+          q.eq(q.field("slotNumber"), args.slotNumber)
+        )
+      )
+      .first();
+
+    if (existingScreenshot) {
+      throw new Error("Screenshot already exists for this slot");
+    }
+
+    const now = Date.now();
+
+    // Create the screenshot
+    const screenshotId = await ctx.db.insert("screenshots", {
+      setId: args.setId,
+      appId: set.appId,
+      createdBy: profile._id,
+      slotNumber: args.slotNumber,
+      title: args.title,
+      subtitle: args.subtitle,
+      imageStorageId: args.imageStorageId,
+      themeId: args.themeId,
+      layoutId: args.layoutId,
+      isEmpty: !args.imageStorageId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return screenshotId;
   },
 });

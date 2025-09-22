@@ -57,4 +57,36 @@ export default defineSchema({
   })
     .index("by_app", ["appId"])
     .index("by_profile", ["profileId"]),
+
+  sets: defineTable({
+    appId: v.id("apps"), // Which app this set belongs to
+    createdBy: v.id("profiles"), // User who created the set
+    name: v.string(), // Set name (e.g., "iOS Screenshots - English")
+    deviceType: v.optional(v.string()), // e.g. "iPhone 15 Pro", "iPad Pro", "Pixel 8"
+    language: v.optional(v.string()), // e.g. "en", "es", "fr"
+    status: v.optional(v.string()), // "draft", "ready", "exported"
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_app", ["appId"])
+    .index("by_creator", ["createdBy"])
+    .index("by_app_and_created", ["appId", "createdAt"]),
+
+  screenshots: defineTable({
+    setId: v.id("sets"), // Which set this screenshot belongs to
+    appId: v.id("apps"), // Denormalized for easier queries
+    createdBy: v.id("profiles"), // User who created the screenshot
+    slotNumber: v.number(), // Position in the set (1-10)
+    title: v.optional(v.string()), // Screenshot title/heading
+    subtitle: v.optional(v.string()), // Screenshot subtitle/description
+    imageStorageId: v.optional(v.id("_storage")), // Generated image in storage
+    themeId: v.optional(v.string()), // Theme/vibe used for generation
+    layoutId: v.optional(v.string()), // Layout template used
+    isEmpty: v.boolean(), // Whether this slot is empty
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_set", ["setId", "slotNumber"])
+    .index("by_app", ["appId"])
+    .index("by_creator", ["createdBy"]),
 });

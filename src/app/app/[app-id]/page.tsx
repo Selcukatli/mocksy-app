@@ -14,7 +14,6 @@ import {
   Download,
   Settings,
   Smartphone,
-  Check,
   MoreVertical,
   Edit3,
   Upload,
@@ -73,10 +72,13 @@ export default function AppDetailPage({ params }: PageProps) {
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   // Store hooks for local data (sets, screenshots)
-  const { getSetsForApp, getSourceImagesForApp, getScreenshotsForSet, deleteSet } = useAppStore();
+  const { getSetsForApp, getScreenshotsForSet, deleteSet } = useAppStore();
 
   // Get app from Convex
   const app = useQuery(api.apps.getApp, { appId: appId as Id<"apps"> });
+
+  // Fetch app screens from Convex
+  const appScreens = useQuery(api.appScreens.getAppScreens, { appId: appId as Id<"apps"> }) ?? [];
 
   // If app doesn't exist or still loading, handle accordingly
   useEffect(() => {
@@ -90,8 +92,7 @@ export default function AppDetailPage({ params }: PageProps) {
 
   // Get data for current app (still from local store for now)
   const appStoreSets = app ? getSetsForApp(appId) : [];
-  const sourceImages = app ? getSourceImagesForApp(appId) : [];
-  const sourceImagesCount = sourceImages.length;
+  const sourceImagesCount = appScreens.length;
 
   useEffect(() => {
     // Check if user has seen onboarding globally
@@ -399,7 +400,7 @@ export default function AppDetailPage({ params }: PageProps) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
                 className="bg-card border rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer group"
-                onClick={() => router.push(`/app/${appId}/source-images`)}
+                onClick={() => router.push(`/app/${appId}/app-screens`)}
               >
                 <div className="flex items-start gap-4">
                   <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
@@ -407,33 +408,63 @@ export default function AppDetailPage({ params }: PageProps) {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold mb-2 flex items-center gap-2">
-                      Upload Source Images
+                      Manage App Screens
                       <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Add screenshots from your app to use as source material for AI generation
+                    <p className="text-sm text-muted-foreground">
+                      Upload and organize screenshots from your app for AI generation
                     </p>
-                    <div className="flex items-center gap-6 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Check className="w-3 h-3 text-primary" />
-                        Drag & drop
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Check className="w-3 h-3 text-primary" />
-                        Batch upload
-                      </span>
-                    </div>
                   </div>
                 </div>
+
+                {/* Thumbnail Preview Section */}
+                {appScreens.length > 0 && (
+                  <div className="mt-4 grid grid-cols-4 gap-2">
+                    {/* Show actual uploaded images */}
+                    {appScreens.slice(0, Math.min(appScreens.length, 3)).map((screen) => (
+                      <div
+                        key={screen._id}
+                        className="aspect-[9/16] bg-muted/20 rounded-md overflow-hidden"
+                      >
+                        {screen.screenUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={screen.screenUrl}
+                            alt={screen.name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Add ghost cells if less than 3 images */}
+                    {appScreens.length < 3 && Array(3 - appScreens.length).fill(0).map((_, index) => (
+                      <div
+                        key={`ghost-${index}`}
+                        className="aspect-[9/16] bg-muted/10 border border-dashed border-muted-foreground/20 rounded-md"
+                      />
+                    ))}
+
+                    {/* Show +X indicator for overflow */}
+                    {appScreens.length > 3 && (
+                      <div className="aspect-[9/16] bg-muted/30 rounded-md flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">
+                          +{appScreens.length - 3}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    router.push(`/app/${appId}/source-images`);
+                    router.push(`/app/${appId}/app-screens`);
                   }}
                   className="w-full mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
                 >
                   <Upload className="w-4 h-4" />
-                  {sourceImagesCount > 0 ? 'Upload & Manage' : 'Upload Images'}
+                  {sourceImagesCount > 0 ? 'Manage Screens' : 'Upload Screens'}
                 </button>
               </motion.div>
 

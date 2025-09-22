@@ -320,6 +320,47 @@ const messages = await ctx.db
 - If a cron calls an internal function, always import the `internal` object from '_generated/api`, even if the internal function is registered in the same file.
 
 
+## Client-side React guidelines
+### Handling loading states with useQuery
+- `useQuery` returns `undefined` while the subscription is being established or during initial load
+- After loading, it returns the actual data (which could be an empty array/null/object)
+- Be careful to distinguish between "loading" and "empty data" states to avoid UI flashing
+
+#### Common pattern to avoid zero-state flash:
+```typescript
+// ❌ Bad - can show zero state briefly before data loads
+const data = useQuery(api.myQuery) ?? [];
+if (data.length === 0) {
+  return <ZeroState />;
+}
+
+// ✅ Good - properly handles loading vs empty states
+const data = useQuery(api.myQuery);
+const isLoading = data === undefined;
+
+if (isLoading) {
+  return <LoadingSkeleton />;
+}
+if (data.length === 0) {
+  return <ZeroState />;
+}
+```
+
+#### For complex loading scenarios with state transitions:
+```typescript
+// When you need to track initial load completion
+const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+const data = useQuery(api.myQuery);
+
+useEffect(() => {
+  if (data !== undefined) {
+    setHasInitiallyLoaded(true);
+  }
+}, [data]);
+
+const isLoading = data === undefined || !hasInitiallyLoaded;
+```
+
 ## File storage guidelines
 - Convex includes file storage for large files like images, videos, and PDFs.
 - The `ctx.storage.getUrl()` method returns a signed URL for a given file. It returns `null` if the file doesn't exist.

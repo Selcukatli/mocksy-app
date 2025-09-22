@@ -7,6 +7,7 @@ export const upsertUserFromClerk = internalMutation({
     username: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     // Check if profile already exists
     const existingProfile = await ctx.db
@@ -64,6 +65,7 @@ export const deleteUserFromClerk = internalMutation({
   args: {
     userId: v.string(),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     // Find and delete the profile
     const profile = await ctx.db

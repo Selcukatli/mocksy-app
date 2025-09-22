@@ -41,4 +41,20 @@ export default defineSchema({
   })
     .index("by_profile", ["profileId"])
     .index("by_profile_and_created", ["profileId", "createdAt"]),
+
+  appScreens: defineTable({
+    appId: v.id("apps"), // Which app this screen belongs to
+    profileId: v.id("profiles"), // Owner of the screen
+    name: v.string(), // File name or descriptive name
+    storageId: v.id("_storage"), // File storage ID
+    dimensions: v.object({
+      width: v.number(),
+      height: v.number(),
+    }),
+    size: v.number(), // File size in bytes
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_app", ["appId"])
+    .index("by_profile", ["profileId"]),
 });

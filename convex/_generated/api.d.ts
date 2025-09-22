@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as appScreens from "../appScreens.js";
 import type * as apps from "../apps.js";
 import type * as fileStorage_fileActions from "../fileStorage/fileActions.js";
 import type * as fileStorage_fileQueries from "../fileStorage/fileQueries.js";
@@ -29,6 +30,7 @@ import type * as webhooks from "../webhooks.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  appScreens: typeof appScreens;
   apps: typeof apps;
   "fileStorage/fileActions": typeof fileStorage_fileActions;
   "fileStorage/fileQueries": typeof fileStorage_fileQueries;

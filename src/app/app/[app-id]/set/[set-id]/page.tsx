@@ -1120,7 +1120,7 @@ export default function SetPage({ params }: PageProps) {
                 </button>
                 <button
                   onClick={() => {
-                    router.push(`/app/${appId}/source-images`);
+                    router.push(`/app/${appId}/app-screens`);
                   }}
                   className="px-4 py-2 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors"
                 >

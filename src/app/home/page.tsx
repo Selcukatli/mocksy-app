@@ -9,14 +9,17 @@ import {
   Layout,
   Clock,
   Package,
-  User
+  User,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/stores/appStore';
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const containerAnimation = {
   hidden: { opacity: 0 },
@@ -37,6 +40,8 @@ export default function HomePage() {
   const { sets, getScreenshotsForSet, clearAllData } = useAppStore();
   const { isSignedIn } = useUser();
   const apps = useQuery(api.apps.getApps) || [];
+  const [showAppSelectionDialog, setShowAppSelectionDialog] = useState(false);
+  const router = useRouter();
 
   // Add a clear button for development (you can remove this later)
   const handleClearData = () => {
@@ -374,29 +379,21 @@ export default function HomePage() {
 
               {/* Create Set Card if less than 3 sets */}
               {recentSets.length > 0 && recentSets.length < 3 && apps.length > 0 && (
-                <Link href={`/app/${apps[0]._id}/set/new`} className="block group">
-                  <div className="rounded-xl border-2 border-dashed bg-card/30 hover:bg-card/50 hover:border-primary/30 transition-all duration-200 h-full">
-                    {/* Empty Screenshot Slots */}
-                    <div className="flex gap-1.5 p-3 pb-2">
-                      {[0, 1, 2].map((index) => (
-                        <div
-                          key={index}
-                          className="flex-1 aspect-[9/16] rounded-md flex items-center justify-center border border-dashed border-border/30 bg-gradient-to-br from-muted/10 to-muted/5"
-                        >
-                          <Plus className="w-3 h-3 text-muted-foreground/30 group-hover:text-primary/50 transition-colors" />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Set Info */}
-                    <div className="px-3 pb-3">
-                      <h3 className="font-medium text-sm mb-0.5 text-muted-foreground group-hover:text-foreground transition-colors">Create New Set</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Start a new collection
+                <button
+                  onClick={() => setShowAppSelectionDialog(true)}
+                  className="block group w-full text-left"
+                >
+                  <div className="rounded-xl border-2 border-dashed bg-card/30 hover:bg-card/50 hover:border-primary/30 transition-all duration-200 h-full flex flex-col items-center justify-center">
+                    <div className="text-center py-8">
+                      <p className="font-medium text-sm mb-4 text-muted-foreground group-hover:text-foreground transition-colors">
+                        Create New Set
                       </p>
+                      <div className="w-16 h-16 rounded-full bg-muted/20 group-hover:bg-primary/10 flex items-center justify-center transition-all duration-200 mx-auto">
+                        <Plus className="w-8 h-8 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+                      </div>
                     </div>
                   </div>
-                </Link>
+                </button>
               )}
 
               {/* Ghost cards to fill the row */}
@@ -420,6 +417,103 @@ export default function HomePage() {
           )}
         </motion.div>
       </div>
+
+      {/* App Selection Dialog */}
+      <AnimatePresence>
+        {showAppSelectionDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowAppSelectionDialog(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="relative bg-card rounded-xl border shadow-xl w-full max-w-md mx-4 max-h-[80vh] overflow-hidden"
+            >
+              {/* Dialog Header */}
+              <div className="border-b px-6 py-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Select an App</h2>
+                <button
+                  onClick={() => setShowAppSelectionDialog(false)}
+                  className="p-1 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* App List */}
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                {apps.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                    <p className="text-muted-foreground mb-4">No apps available</p>
+                    <Link href="/new-app">
+                      <button
+                        onClick={() => setShowAppSelectionDialog(false)}
+                        className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
+                      >
+                        Create Your First App
+                      </button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {apps.map((app) => (
+                      <button
+                        key={app._id}
+                        onClick={() => {
+                          router.push(`/app/${app._id}/set/new`);
+                          setShowAppSelectionDialog(false);
+                        }}
+                        className="w-full p-3 rounded-lg border bg-card/50 hover:bg-card hover:border-primary/30 transition-all duration-200 flex items-start gap-3 group"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {getAppIcon(app)}
+                        </div>
+                        <div className="flex-1 text-left">
+                          <h3 className="font-medium text-sm group-hover:text-primary transition-colors">
+                            {app.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {app.description || 'No description'}
+                          </p>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all mt-3" />
+                      </button>
+                    ))}
+
+                    {/* Create New App Option */}
+                    <Link href="/new-app">
+                      <button
+                        onClick={() => setShowAppSelectionDialog(false)}
+                        className="w-full p-3 rounded-lg border-2 border-dashed bg-card/30 hover:bg-card/50 hover:border-primary/30 transition-all duration-200 flex items-center gap-3 group"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Plus className="w-6 h-6 text-primary" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <h3 className="font-medium text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                            Create New App
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            Start fresh with a new app
+                          </p>
+                        </div>
+                      </button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -211,184 +211,361 @@ export default function AppDetailPage({ params }: PageProps) {
           <div className="flex-1 flex gap-6 p-6 overflow-hidden">
             {/* Left Column - AppStore Sets */}
             <div className="flex-1 flex flex-col">
-              <div className="mb-6">
-                <div className="mb-4">
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
-                    AppStore Screenshot Sets
-                    <span className="group relative">
-                      <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-sm rounded-md shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                        Collections of screenshots ready for app store submission
+              {appStoreSets.length > 0 && (
+                <div className="mb-6">
+                  <div className="mb-4">
+                    <h2 className="text-xl font-semibold flex items-center gap-2">
+                      AppStore Screenshot Sets
+                      <span className="group relative">
+                        <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-sm rounded-md shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                          Collections of screenshots ready for app store submission
+                        </span>
                       </span>
-                    </span>
-                  </h2>
-                </div>
-
-                <div className="flex gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      placeholder="Search sets..."
-                      className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg bg-background focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
-                    />
+                    </h2>
                   </div>
-                  <button
-                    onClick={() => router.push(`/app/${appId}/set/new`)}
-                    className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
-                  >
-                    <FolderPlus className="w-4 h-4" />
-                    Create New Set
-                  </button>
-                </div>
-              </div>
 
-              <div className="flex-1 overflow-y-auto">
-                <motion.div
-                  variants={containerAnimation}
-                  initial="hidden"
-                  animate="show"
-                  className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"
-                >
-                  {appStoreSets.map((set) => (
-                    <motion.div
-                      key={set.id}
-                      variants={itemAnimation}
-                      onClick={() => router.push(`/app/${appId}/set/${set.id}`)}
-                      className="bg-card border rounded-xl p-4 cursor-pointer transition-all duration-200 border-border hover:border-muted-foreground/30 hover:shadow-md"
+                  <div className="flex gap-3">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search sets..."
+                        className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg bg-background focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
+                      />
+                    </div>
+                    <button
+                      onClick={() => router.push(`/app/${appId}/set/new`)}
+                      className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
                     >
-                      {/* Set Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-semibold">{set.name}</h3>
-                          <div className="flex items-center gap-3 mt-1">
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Globe className="w-3 h-3" />
-                              English
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              {getPlatformIcon(set.deviceType || 'Both')}
-                              {set.deviceType || 'iPhone'}
-                            </div>
+                      <FolderPlus className="w-4 h-4" />
+                      Create New Set
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex-1 overflow-y-auto flex flex-col">
+                {appStoreSets.length === 0 ? (
+                  /* Zero State - No Sets */
+                  <div className="flex-1 flex flex-col">
+                    {/* Header for zero state */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold flex items-center gap-2">
+                          AppStore Screenshot Sets
+                          <span className="group relative">
+                            <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-sm rounded-md shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                              Collections of screenshots ready for app store submission
+                            </span>
+                          </span>
+                        </h2>
+                        <button
+                          onClick={() => router.push(`/app/${appId}/set/new`)}
+                          className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                        >
+                          <FolderPlus className="w-4 h-4" />
+                          Create New Set
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Zero State Content */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4 }}
+                      className="flex-1 flex items-center justify-center"
+                    >
+                      <div className="text-center max-w-lg">
+                        <div className="mb-6">
+                          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl flex items-center justify-center">
+                            <Sparkles className="w-10 h-10 text-primary" />
                           </div>
                         </div>
+
+                        <h3 className="text-2xl font-semibold mb-8">Get Started in 3 Steps</h3>
+
+                      {/* Step by Step Guide */}
+                      <div className="space-y-4 mb-8">
+                        {/* Step 1 */}
                         <div className={cn(
-                          "px-2 py-1 rounded-full text-xs border",
-                          getStatusColor(getSetStatus(set.id))
-                        )}>
-                          {getSetStatus(set.id)}
-                        </div>
-                      </div>
-
-                      {/* Screenshot Preview Grid */}
-                      <div className="grid grid-cols-3 gap-1.5 mb-3">
-                        {(() => {
-                          const screenshots = getScreenshotsForSet(set.id).filter(s => !s.isEmpty);
-                          const toShow = screenshots.slice(0, screenshots.length > 3 ? 2 : 3);
-                          return (
-                            <>
-                              {toShow.map((screenshot, index) => (
-                                <div
-                                  key={index}
-                                  className="aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 rounded-md"
-                                />
-                              ))}
-                              {screenshots.length > 3 && (
-                                <div className="aspect-[9/16] bg-muted/30 rounded-md flex items-center justify-center relative">
-                                  <div
-                                    className="aspect-[9/16] absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/30 rounded-md"
-                                  />
-                                  <span className="text-sm font-medium text-muted-foreground z-10">
-                                    +{screenshots.length - 2}
-                                  </span>
-                                </div>
+                          "flex items-start gap-4 text-left p-4 border rounded-lg transition-all cursor-pointer group",
+                          appScreens.length > 0
+                            ? "bg-card/50 hover:shadow-md"
+                            : "bg-card hover:shadow-md"
+                        )}
+                             onClick={() => router.push(`/app/${appId}/app-screens`)}>
+                          <div className={cn(
+                            "w-10 h-10 rounded-full font-bold flex items-center justify-center flex-shrink-0 transition-colors",
+                            appScreens.length > 0
+                              ? "bg-green-500/10 text-green-600"
+                              : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+                          )}>
+                            {appScreens.length > 0 ? '✓' : '1'}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold mb-1 flex items-center gap-2">
+                              Upload App Screens
+                              <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              {appScreens.length > 0 && (
+                                <span className="text-xs text-green-600 font-normal">({appScreens.length} uploaded)</span>
                               )}
-                            </>
-                          );
-                        })()}
-                      </div>
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              Add screenshots from your app to give AI context
+                            </p>
+                          </div>
+                          <Upload className="w-5 h-5 text-muted-foreground mt-0.5" />
+                        </div>
 
-                      {/* Set Footer */}
-                      <div className="flex items-center justify-between pt-3 border-t">
-                        <p className="text-xs text-muted-foreground">
-                          {getScreenshotsForSet(set.id).filter(s => !s.isEmpty).length} screenshots
-                        </p>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                            className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                            className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </button>
-                          <Popover open={openPopoverId === set.id} onOpenChange={(open) => setOpenPopoverId(open ? set.id : null)}>
-                            <PopoverTrigger asChild>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                }}
-                                className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
-                              >
-                                <MoreVertical className="w-3.5 h-3.5" />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent side="bottom" align="end" className="w-48 p-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenPopoverId(null);
-                                  // TODO: Implement duplicate functionality
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-muted/50 transition-colors"
-                              >
-                                <Copy className="w-4 h-4" />
-                                <span>Duplicate</span>
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenPopoverId(null);
-                                  setDeleteSetId(set.id);
-                                  setShowDeleteConfirm(true);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-red-500/10 hover:text-red-600 transition-colors text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                <span>Delete</span>
-                              </button>
-                            </PopoverContent>
-                          </Popover>
+                        {/* Step 2 */}
+                        <div className={cn(
+                          "flex items-start gap-4 text-left p-4 border rounded-lg transition-all",
+                          appScreens.length > 0
+                            ? "bg-card hover:shadow-md cursor-pointer group"
+                            : "bg-card/50 opacity-75"
+                        )}
+                             onClick={appScreens.length > 0 ? () => router.push('/browse-vibes') : undefined}>
+                          <div className={cn(
+                            "w-10 h-10 rounded-full font-bold flex items-center justify-center flex-shrink-0 transition-colors",
+                            appScreens.length > 0
+                              ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+                              : "bg-muted text-muted-foreground"
+                          )}>
+                            2
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold mb-1 flex items-center gap-2">
+                              Choose a Vibe
+                              {appScreens.length > 0 && (
+                                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              )}
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              Select AI-powered templates for your brand
+                            </p>
+                          </div>
+                          <Palette className="w-5 h-5 text-muted-foreground mt-0.5" />
+                        </div>
+
+                        {/* Step 3 */}
+                        <div className={cn(
+                          "flex items-start gap-4 text-left p-4 border rounded-lg transition-all",
+                          appScreens.length > 0
+                            ? "bg-card hover:shadow-md cursor-pointer group"
+                            : "bg-card/50 opacity-75"
+                        )}
+                             onClick={appScreens.length > 0 ? () => router.push(`/app/${appId}/set/new`) : undefined}>
+                          <div className={cn(
+                            "w-10 h-10 rounded-full font-bold flex items-center justify-center flex-shrink-0 transition-colors",
+                            appScreens.length > 0
+                              ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+                              : "bg-muted text-muted-foreground"
+                          )}>
+                            3
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold mb-1 flex items-center gap-2">
+                              Generate AppStore Screenshots
+                              {appScreens.length > 0 && (
+                                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              )}
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              AI creates beautiful screenshots ready for the App Store
+                            </p>
+                          </div>
+                          <Download className="w-5 h-5 text-muted-foreground mt-0.5" />
                         </div>
                       </div>
-                    </motion.div>
-                  ))}
 
-                  {/* Create New Set Card */}
-                  <motion.div
-                    variants={itemAnimation}
-                    onClick={() => router.push(`/app/${appId}/set/new`)}
-                    className="bg-card/50 border-2 border-dashed border-border rounded-xl p-4 cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/20 transition-all duration-200 flex flex-col"
-                  >
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className="text-center">
-                        <FolderPlus className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="font-medium">Create New Set</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Start a new screenshot collection
-                        </p>
+                      <div className="space-y-3">
+                        {appScreens.length === 0 ? (
+                          <>
+                            <button
+                              onClick={() => router.push(`/app/${appId}/app-screens`)}
+                              className="w-full px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center justify-center gap-2"
+                            >
+                              <Upload className="w-5 h-5" />
+                              Start with Step 1: Upload App Screens
+                            </button>
+                            <button
+                              onClick={() => router.push(`/app/${appId}/set/new`)}
+                              className="w-full px-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              or skip and create a set directly →
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => router.push(`/app/${appId}/set/new`)}
+                              className="w-full px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center justify-center gap-2"
+                            >
+                              <FolderPlus className="w-5 h-5" />
+                              Continue: Create Your First Set
+                            </button>
+                            <button
+                              onClick={() => router.push(`/app/${appId}/app-screens`)}
+                              className="w-full px-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              or manage uploaded screens →
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </motion.div>
-                </motion.div>
+                  </div>
+                ) : (
+                  <motion.div
+                    variants={containerAnimation}
+                    initial="hidden"
+                    animate="show"
+                    className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"
+                  >
+                    {appStoreSets.map((set) => (
+                      <motion.div
+                        key={set.id}
+                        variants={itemAnimation}
+                        onClick={() => router.push(`/app/${appId}/set/${set.id}`)}
+                        className="bg-card border rounded-xl p-4 cursor-pointer transition-all duration-200 border-border hover:border-muted-foreground/30 hover:shadow-md"
+                      >
+                        {/* Set Header */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h3 className="font-semibold">{set.name}</h3>
+                            <div className="flex items-center gap-3 mt-1">
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Globe className="w-3 h-3" />
+                                English
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                {getPlatformIcon(set.deviceType || 'Both')}
+                                {set.deviceType || 'iPhone'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className={cn(
+                            "px-2 py-1 rounded-full text-xs border",
+                            getStatusColor(getSetStatus(set.id))
+                          )}>
+                            {getSetStatus(set.id)}
+                          </div>
+                        </div>
+
+                        {/* Screenshot Preview Grid */}
+                        <div className="grid grid-cols-3 gap-1.5 mb-3">
+                          {(() => {
+                            const screenshots = getScreenshotsForSet(set.id).filter(s => !s.isEmpty);
+                            const toShow = screenshots.slice(0, screenshots.length > 3 ? 2 : 3);
+                            return (
+                              <>
+                                {toShow.map((screenshot, index) => (
+                                  <div
+                                    key={index}
+                                    className="aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 rounded-md"
+                                  />
+                                ))}
+                                {screenshots.length > 3 && (
+                                  <div className="aspect-[9/16] bg-muted/30 rounded-md flex items-center justify-center relative">
+                                    <div
+                                      className="aspect-[9/16] absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/30 rounded-md"
+                                    />
+                                    <span className="text-sm font-medium text-muted-foreground z-10">
+                                      +{screenshots.length - 2}
+                                    </span>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+
+                        {/* Set Footer */}
+                        <div className="flex items-center justify-between pt-3 border-t">
+                          <p className="text-xs text-muted-foreground">
+                            {getScreenshotsForSet(set.id).filter(s => !s.isEmpty).length} screenshots
+                          </p>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                              className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                              className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </button>
+                            <Popover open={openPopoverId === set.id} onOpenChange={(open) => setOpenPopoverId(open ? set.id : null)}>
+                              <PopoverTrigger asChild>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                  className="p-1.5 hover:bg-muted/50 rounded-md transition-colors"
+                                >
+                                  <MoreVertical className="w-3.5 h-3.5" />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent side="bottom" align="end" className="w-48 p-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenPopoverId(null);
+                                    // TODO: Implement duplicate functionality
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-muted/50 transition-colors"
+                                >
+                                  <Copy className="w-4 h-4" />
+                                  <span>Duplicate</span>
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenPopoverId(null);
+                                    setDeleteSetId(set.id);
+                                    setShowDeleteConfirm(true);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-red-500/10 hover:text-red-600 transition-colors text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>Delete</span>
+                                </button>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+
+                    {/* Create New Set Card */}
+                    <motion.div
+                      variants={itemAnimation}
+                      onClick={() => router.push(`/app/${appId}/set/new`)}
+                      className="bg-card/50 border-2 border-dashed border-border rounded-xl p-4 cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/20 transition-all duration-200 flex flex-col"
+                    >
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                          <FolderPlus className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                          <p className="font-medium">Create New Set</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Start a new screenshot collection
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
               </div>
             </div>
 

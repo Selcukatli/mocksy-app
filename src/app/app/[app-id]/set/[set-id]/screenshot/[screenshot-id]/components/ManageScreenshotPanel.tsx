@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -12,7 +12,8 @@ import {
   RefreshCw,
   ImageIcon,
   Plus,
-  Trash2
+  Trash2,
+  Smartphone
 } from 'lucide-react';
 import { useEditorStore } from '@/stores/editorStore';
 import { useMutation, useQuery } from 'convex/react';
@@ -46,6 +47,8 @@ export default function ManageScreenshotPanel({
   const [selectedAppScreen, setSelectedAppScreen] = useState<string | null>(null);
   const [selectedAppScreenUrl, setSelectedAppScreenUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearFromPanel, setClearFromPanel] = useState(false);
   const {
     isSourceImagePanelOpen,
     isThemePanelOpen,
@@ -69,7 +72,7 @@ export default function ManageScreenshotPanel({
     api.appScreens.getAppScreens,
     appId ? { appId: appId as Id<"apps"> } : "skip"
   );
-  const appScreens = appScreensQuery || [];
+  const appScreens = useMemo(() => appScreensQuery || [], [appScreensQuery]);
 
   // Update showSubtitle when subtitleText changes
   useEffect(() => {
@@ -299,50 +302,83 @@ export default function ManageScreenshotPanel({
 
               {/* Options */}
               <div className="space-y-3">
-                <button
-                  onClick={openSourceImagePanel}
-                  className="w-full p-3 bg-background hover:bg-muted/50 border rounded-lg transition-colors flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-3">
-                    <Upload className="w-5 h-5 text-muted-foreground" />
-                    <div className="text-left">
-                      <p className="font-medium">App Screen</p>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedAppScreen
-                          ? `${appScreens.find(s => s._id === selectedAppScreen)?.name || 'Screen'}`
-                          : 'Choose from uploaded screens'}
-                      </p>
+                <div className="relative">
+                  <button
+                    onClick={openSourceImagePanel}
+                    className="w-full p-3 bg-background hover:bg-muted/50 border rounded-lg transition-colors group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Smartphone className="w-5 h-5 text-muted-foreground" />
+                        <div className="text-left">
+                          <p className="font-medium">App Screen</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-muted-foreground">
+                              {selectedAppScreen
+                                ? `${appScreens.find(s => s._id === selectedAppScreen)?.name || 'Screen'}`
+                                : 'Choose from uploaded screens'}
+                            </p>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                          </div>
+                        </div>
+                      </div>
+                      {selectedAppScreenUrl && (
+                        <div className="relative w-8 h-14 rounded overflow-hidden bg-muted">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={selectedAppScreenUrl}
+                            alt="Selected screen"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                </button>
+                  </button>
+                  {selectedAppScreen && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setClearFromPanel(false);
+                        setShowClearConfirm(true);
+                      }}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-muted hover:bg-muted/80 border border-border rounded-full transition-colors flex items-center justify-center shadow-sm"
+                      title="Clear selection"
+                    >
+                      <X className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
 
                 <button
                   onClick={openThemePanel}
-                  className="w-full p-3 bg-background hover:bg-muted/50 border rounded-lg transition-colors flex items-center justify-between group"
+                  className="w-full p-3 bg-background hover:bg-muted/50 border rounded-lg transition-colors group"
                 >
                   <div className="flex items-center gap-3">
                     <Palette className="w-5 h-5 text-muted-foreground" />
                     <div className="text-left">
                       <p className="font-medium">Theme & Vibe</p>
-                      <p className="text-xs text-muted-foreground">Select visual style</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground">Select visual style</p>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                      </div>
                     </div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </button>
 
                 <button
                   onClick={openLayoutPanel}
-                  className="w-full p-3 bg-background hover:bg-muted/50 border rounded-lg transition-colors flex items-center justify-between group"
+                  className="w-full p-3 bg-background hover:bg-muted/50 border rounded-lg transition-colors group"
                 >
                   <div className="flex items-center gap-3">
                     <Layout className="w-5 h-5 text-muted-foreground" />
                     <div className="text-left">
                       <p className="font-medium">Layout</p>
-                      <p className="text-xs text-muted-foreground">Adjust composition</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground">Adjust composition</p>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                      </div>
                     </div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </div>
 
@@ -367,45 +403,45 @@ export default function ManageScreenshotPanel({
           </div>
 
           {/* Right Side - Preview */}
-          <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-br from-muted/5 via-muted/10 to-muted/5">
-            <div className="w-full max-w-sm">
+          <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-muted/5 via-muted/10 to-muted/5">
+            <div className="w-full max-w-[280px]">
               {/* App Store Screenshot Preview */}
               <div className="relative">
                 {/* Screenshot Container - App Store dimensions 1290x2796 (6.7" display) */}
-                <div className="aspect-[1290/2796] bg-gradient-to-br from-slate-900 to-slate-800 rounded-[40px] overflow-hidden shadow-2xl relative">
+                <div className="aspect-[1290/2796] bg-gradient-to-br from-slate-900 to-slate-800 rounded-[30px] overflow-hidden shadow-2xl relative">
                   <div className="w-full h-full flex flex-col">
                     {/* Header Section - Always visible, center aligned */}
-                    <div className={`px-10 ${
+                    <div className={`px-6 ${
                       showSubtitle && subtitleText
-                        ? 'pt-10 pb-3'
-                        : 'pt-12 pb-4'
+                        ? 'pt-8 pb-2'
+                        : 'pt-10 pb-3'
                     } bg-gradient-to-b from-black/90 via-black/70 to-transparent relative z-10`}>
-                      <div className="space-y-2 text-center">
+                      <div className="space-y-1 text-center">
                         {headerText ? (
                           <>
                             <h3 className={`font-bold text-white leading-tight ${
-                              showSubtitle && subtitleText ? 'text-[32px]' : 'text-[40px]'
+                              showSubtitle && subtitleText ? 'text-xl' : 'text-2xl'
                             }`}>
                               {headerText}
                             </h3>
                             {showSubtitle && subtitleText && (
-                              <p className="text-[18px] text-white/90 leading-relaxed max-w-[90%] mx-auto">
+                              <p className="text-xs text-white/90 leading-relaxed max-w-[90%] mx-auto">
                                 {subtitleText}
                               </p>
                             )}
                           </>
                         ) : (
                           <div className="text-white/40">
-                            <p className="text-2xl font-medium">Enter header text...</p>
+                            <p className="text-base font-medium">Enter header text...</p>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* App Screen Content Area with padding */}
-                    <div className="flex-1 relative px-6 pb-8 flex items-center justify-center">
+                    <div className="flex-1 relative px-4 pb-6 flex items-center justify-center">
                       <div
-                        className="rounded-[32px] overflow-hidden relative bg-black group cursor-pointer"
+                        className="rounded-[20px] overflow-hidden relative bg-black group cursor-pointer"
                         onClick={openSourceImagePanel}
                       >
                         {selectedAppScreenUrl ? (
@@ -446,9 +482,6 @@ export default function ManageScreenshotPanel({
                     </div>
                   </div>
                 </div>
-
-                {/* Device Context Hint */}
-                <div className="absolute -bottom-2 -right-2 w-20 h-20 border-2 border-dashed border-muted-foreground/20 rounded-2xl" />
               </div>
 
               {/* Preview Info */}
@@ -489,13 +522,26 @@ export default function ManageScreenshotPanel({
                 <h3 className="text-lg font-semibold">Select App Screen</h3>
                 <p className="text-sm text-muted-foreground mt-1">Choose a screen or upload a new one</p>
               </div>
-              <button
-                onClick={closeSourceImagePanel}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
-                title="Close (ESC)"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {selectedAppScreen && (
+                  <button
+                    onClick={() => {
+                      setClearFromPanel(true);
+                      setShowClearConfirm(true);
+                    }}
+                    className="px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors"
+                  >
+                    Clear Selection
+                  </button>
+                )}
+                <button
+                  onClick={closeSourceImagePanel}
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                  title="Close (ESC)"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
@@ -713,6 +759,59 @@ export default function ManageScreenshotPanel({
               </button>
             </div>
           </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Clear Confirmation Dialog */}
+      <AnimatePresence>
+        {showClearConfirm && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center"
+              onClick={() => setShowClearConfirm(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                className="bg-background border rounded-xl p-6 max-w-sm mx-4 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-lg font-semibold mb-2">Clear App Screen?</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Are you sure you want to remove the selected app screen? You can always select it again later.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowClearConfirm(false)}
+                    className="flex-1 px-4 py-2 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedAppScreen(null);
+                      setSelectedAppScreenUrl(null);
+                      if (clearFromPanel) {
+                        selectSourceImage(null);
+                        closeSourceImagePanel();
+                      }
+                      setShowClearConfirm(false);
+                      setClearFromPanel(false);
+                    }}
+                    className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
           </>
         )}
       </AnimatePresence>

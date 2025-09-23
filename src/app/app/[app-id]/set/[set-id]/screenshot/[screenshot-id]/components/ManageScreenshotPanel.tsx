@@ -49,6 +49,7 @@ export default function ManageScreenshotPanel({
   const [isUploading, setIsUploading] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearFromPanel, setClearFromPanel] = useState(false);
+  const [artDirection, setArtDirection] = useState('');
   const {
     isSourceImagePanelOpen,
     isThemePanelOpen,
@@ -382,6 +383,23 @@ export default function ManageScreenshotPanel({
                 </button>
               </div>
 
+              {/* Art Direction */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium">
+                    Describe Visual Style
+                  </label>
+                  <span className="text-xs text-muted-foreground">optional</span>
+                </div>
+                <textarea
+                  value={artDirection}
+                  onChange={(e) => setArtDirection(e.target.value)}
+                  placeholder="E.g., vibrant colors with geometric shapes, minimalist with soft gradients, dark mode with neon accents..."
+                  rows={3}
+                  className="w-full px-3 py-2 bg-background border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none resize-none text-sm"
+                />
+              </div>
+
               {/* Generate Button */}
               <button
                 onClick={handleGenerateClick}
@@ -417,23 +435,23 @@ export default function ManageScreenshotPanel({
                         : 'pt-10 pb-3'
                     } bg-gradient-to-b from-black/90 via-black/70 to-transparent relative z-10`}>
                       <div className="space-y-1 text-center">
-                        {headerText ? (
-                          <>
-                            <h3 className={`font-bold text-white leading-tight ${
-                              showSubtitle && subtitleText ? 'text-xl' : 'text-2xl'
-                            }`}>
-                              {headerText}
-                            </h3>
-                            {showSubtitle && subtitleText && (
-                              <p className="text-xs text-white/90 leading-relaxed max-w-[90%] mx-auto">
-                                {subtitleText}
-                              </p>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-white/40">
-                            <p className="text-base font-medium">Enter header text...</p>
-                          </div>
+                        <input
+                          type="text"
+                          value={headerText}
+                          onChange={(e) => onHeaderChange(e.target.value)}
+                          placeholder="Enter header text..."
+                          className={`font-bold text-white text-center bg-transparent w-full outline-none placeholder:text-white/40 placeholder:font-normal ${
+                            showSubtitle && subtitleText ? 'text-xl' : 'text-2xl'
+                          }`}
+                        />
+                        {showSubtitle && (
+                          <textarea
+                            value={subtitleText}
+                            onChange={(e) => onSubtitleChange(e.target.value)}
+                            placeholder="Enter subtitle..."
+                            rows={2}
+                            className="text-xs text-white/90 text-center bg-transparent w-full outline-none resize-none placeholder:text-white/40 leading-relaxed max-w-[90%] mx-auto"
+                          />
                         )}
                       </div>
                     </div>

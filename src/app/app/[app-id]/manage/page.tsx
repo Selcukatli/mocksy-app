@@ -129,7 +129,6 @@ export default function ManageAppPage({ params }: PageProps) {
   // Redirect if app not found
   useEffect(() => {
     if (app === null) {
-      console.log('App not found in Convex, redirecting to home');
       router.push('/home');
     }
   }, [app, router]);
@@ -193,9 +192,7 @@ export default function ManageAppPage({ params }: PageProps) {
       });
       setHasChanges(false);
       // TODO: Show success toast
-      console.log('App updated successfully');
-    } catch (error) {
-      console.error('Failed to save app:', error);
+    } catch {
       // TODO: Show error toast
     } finally {
       setIsSaving(false);
@@ -207,8 +204,7 @@ export default function ManageAppPage({ params }: PageProps) {
     try {
       await deleteApp({ appId });
       router.push('/home');
-    } catch (error) {
-      console.error('Failed to delete app:', error);
+    } catch {
       setIsDeleting(false);
       // TODO: Show error toast
     }

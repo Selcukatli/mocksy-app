@@ -148,7 +148,6 @@ export const useAppStore = create<AppStore>()(
         }
         newSet.screenshots = screenshots;
 
-        console.log('Creating set with screenshots:', screenshots.length, 'screenshots');
 
         set((state) => ({
           sets: [...state.sets, newSet],
@@ -244,13 +243,9 @@ export const useAppStore = create<AppStore>()(
 
       getScreenshotsForSet: (setId) => {
         const set = get().getSet(setId);
-        console.log('getScreenshotsForSet - Set ID:', setId);
-        console.log('getScreenshotsForSet - Set found:', set);
         if (!set) {
-          console.log('getScreenshotsForSet - No set found, returning empty array');
           return [];
         }
-        console.log('getScreenshotsForSet - Screenshots in set:', set.screenshots?.length || 0);
         // Screenshots are stored directly in the set, not as IDs
         return set.screenshots || [];
       },
@@ -382,8 +377,7 @@ export const useAppStore = create<AppStore>()(
             favoriteVibes: data.favoriteVibes || [],
           });
           return true;
-        } catch (error) {
-          console.error('Failed to import data:', error);
+        } catch {
           return false;
         }
       },

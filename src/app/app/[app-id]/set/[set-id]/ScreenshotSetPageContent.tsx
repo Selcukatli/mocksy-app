@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMockDataStore } from '@/stores/mockDataStore';
 import { motion } from 'framer-motion';
@@ -24,18 +24,38 @@ import {
   MoreVertical,
 } from 'lucide-react';
 
-interface PageProps {
-  params: Promise<{
-    'app-id': string;
-    'set-id': string;
-  }>;
+type SlotType = {
+  _id: string;
+  _creationTime: number;
+  setId: Id<"screenshotSets">;
+  appId: Id<"apps">;
+  createdBy: Id<"profiles">;
+  slotNumber: number;
+  title?: string;
+  subtitle?: string;
+  imageUrl?: string;
+  imageStorageId?: Id<"_storage">;
+  themeId?: string;
+  layoutId?: string;
+  isEmpty: boolean;
+  createdAt: number;
+  updatedAt: number;
+  isPlaceholder?: boolean;
+};
+
+interface ScreenshotSetPageContentProps {
+  appId: string;
+  setId: string;
+  onSlotClick?: (slot: SlotType) => void;
+  isBackground?: boolean;
 }
 
-
-export default function SetPage({ params }: PageProps) {
-  const resolvedParams = use(params);
-  const appId = resolvedParams['app-id'];
-  const setId = resolvedParams['set-id'];
+export default function ScreenshotSetPageContent({
+  appId,
+  setId,
+  onSlotClick,
+  isBackground = false
+}: ScreenshotSetPageContentProps) {
   const router = useRouter();
 
   // Convex mutations
@@ -70,17 +90,17 @@ export default function SetPage({ params }: PageProps) {
 
   // Check if app exists
   useEffect(() => {
-    if (convexApp === null) {
+    if (convexApp === null && !isBackground) {
       router.push('/home');
     }
-  }, [convexApp, router]);
+  }, [convexApp, router, isBackground]);
 
   // Check if set exists
   useEffect(() => {
-    if (!isNewSet && convexSet === null && setId !== 'new') {
+    if (!isNewSet && convexSet === null && setId !== 'new' && !isBackground) {
       router.push(`/app/${appId}`);
     }
-  }, [convexSet, isNewSet, setId, appId, router]);
+  }, [convexSet, isNewSet, setId, appId, router, isBackground]);
 
   // Initialize set name
   useEffect(() => {
@@ -92,7 +112,7 @@ export default function SetPage({ params }: PageProps) {
   // Create new set
   useEffect(() => {
     async function createNewSet() {
-      if (isNewSet && convexApp && !creatingSet) {
+      if (isNewSet && convexApp && !creatingSet && !isBackground) {
         setCreatingSet(true);
         try {
           const newSetId = await createSetMutation({
@@ -109,7 +129,7 @@ export default function SetPage({ params }: PageProps) {
       }
     }
     createNewSet();
-  }, [isNewSet, convexApp, creatingSet, appId, createSetMutation, router]);
+  }, [isNewSet, convexApp, creatingSet, appId, createSetMutation, router, isBackground]);
 
   // Close dropdown menu when clicking outside
   useEffect(() => {
@@ -130,28 +150,10 @@ export default function SetPage({ params }: PageProps) {
     }
   }, [showMoreMenu]);
 
-
   // Create placeholder slots for the UI
-  type SlotType = typeof screenshots[0] | {
-    _id: string;
-    _creationTime: number;
-    setId: Id<"screenshotSets">;
-    appId: Id<"apps">;
-    createdBy: Id<"profiles">;
-    slotNumber: number;
-    title?: string;
-    subtitle?: string;
-    imageUrl?: string;
-    imageStorageId?: Id<"_storage">;
-    themeId?: string;
-    layoutId?: string;
-    isEmpty: boolean;
-    createdAt: number;
-    updatedAt: number;
-    isPlaceholder: boolean;
-  };
+  type ScreenshotSlotType = typeof screenshots[0] | SlotType;
 
-  const allSlots: SlotType[] = [];
+  const allSlots: ScreenshotSlotType[] = [];
   for (let i = 1; i <= 10; i++) {
     const existingScreenshot = screenshots.find(s => s.slotNumber === i);
     if (existingScreenshot) {
@@ -173,9 +175,12 @@ export default function SetPage({ params }: PageProps) {
     }
   }
 
+  const handleSlotClick = (slot: ScreenshotSlotType) => {
+    if (isBackground) return; // Don't handle clicks when in background
 
-  const handleSlotClick = (slot: typeof allSlots[0]) => {
-    if (convexSet) {
+    if (onSlotClick) {
+      onSlotClick(slot as SlotType);
+    } else if (convexSet) {
       // Navigate to the screenshot route
       if ('isPlaceholder' in slot && slot.isPlaceholder) {
         // For new slots, use the new route structure
@@ -217,7 +222,7 @@ export default function SetPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
+    <div className={`min-h-screen bg-gradient-to-b from-background to-secondary/10 ${isBackground ? 'pointer-events-none' : ''}`}>
       <div className="h-screen flex flex-col">
         {/* Header */}
         <motion.div
@@ -230,8 +235,9 @@ export default function SetPage({ params }: PageProps) {
             {/* Left section with title */}
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push(`/app/${appId}`)}
+                onClick={() => !isBackground && router.push(`/app/${appId}`)}
                 className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                disabled={isBackground}
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -255,7 +261,7 @@ export default function SetPage({ params }: PageProps) {
               )}
 
               <div className="flex items-center gap-2 group">
-                {isEditingName ? (
+                {isEditingName && !isBackground ? (
                   <motion.div
                     initial={{ opacity: 0.8 }}
                     animate={{ opacity: 1 }}
@@ -323,14 +329,16 @@ export default function SetPage({ params }: PageProps) {
                         transition={{ duration: 0.2 }}
                       />
                     </h1>
-                    <motion.button
-                      whileHover={{ scale: 1.1, rotate: 15 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setIsEditingName(true)}
-                      className="p-1.5 hover:bg-primary/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                    >
-                      <Edit2 className="w-4 h-4 text-primary/60" />
-                    </motion.button>
+                    {!isBackground && (
+                      <motion.button
+                        whileHover={{ scale: 1.1, rotate: 15 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setIsEditingName(true)}
+                        className="p-1.5 hover:bg-primary/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        <Edit2 className="w-4 h-4 text-primary/60" />
+                      </motion.button>
+                    )}
                   </>
                 )}
               </div>
@@ -340,69 +348,70 @@ export default function SetPage({ params }: PageProps) {
             </div>
 
             {/* Right section with actions */}
-            <div className="flex items-center gap-2">
-              {/* View Mode Toggle */}
-              <div className="flex items-center border rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded transition-colors ${
-                    viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <Grid3x3 className="w-4 h-4" />
+            {!isBackground && (
+              <div className="flex items-center gap-2">
+                {/* View Mode Toggle */}
+                <div className="flex items-center border rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-1.5 rounded transition-colors ${
+                      viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <Grid3x3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-1.5 rounded transition-colors ${
+                      viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <button className="px-4 py-1.5 border rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2 text-sm">
+                  <Palette className="w-4 h-4" />
+                  Change Vibe
                 </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded transition-colors ${
-                    viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
+
+                <button className="px-4 py-1.5 border rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2 text-sm">
+                  <Languages className="w-4 h-4" />
+                  Translate
                 </button>
+
+                <button className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm">
+                  <Download className="w-4 h-4" />
+                  Export All
+                </button>
+
+                {/* More Options Menu */}
+                <div className="relative" data-dropdown-menu>
+                  <button
+                    onClick={() => setShowMoreMenu(!showMoreMenu)}
+                    className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+
+                  {showMoreMenu && (
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-popover border rounded-lg shadow-lg z-50">
+                      <button
+                        onClick={() => {
+                          setShowMoreMenu(false);
+                          setShowDeleteConfirm(true);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2 text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Set
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <button className="px-4 py-1.5 border rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2 text-sm">
-                <Palette className="w-4 h-4" />
-                Change Vibe
-              </button>
-
-              <button className="px-4 py-1.5 border rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2 text-sm">
-                <Languages className="w-4 h-4" />
-                Translate
-              </button>
-
-              <button className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm">
-                <Download className="w-4 h-4" />
-                Export All
-              </button>
-
-              {/* More Options Menu */}
-              <div className="relative" data-dropdown-menu>
-                <button
-                  onClick={() => setShowMoreMenu(!showMoreMenu)}
-                  className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-
-                {showMoreMenu && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-popover border rounded-lg shadow-lg z-50">
-                    <button
-                      onClick={() => {
-                        setShowMoreMenu(false);
-                        setShowDeleteConfirm(true);
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2 text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete Set
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
-
         </motion.div>
 
         {/* Main Content */}
@@ -418,7 +427,7 @@ export default function SetPage({ params }: PageProps) {
               </div>
 
               {/* Selection Bar - shows when items are selected */}
-              {selectedScreenshots.size > 0 && (
+              {selectedScreenshots.size > 0 && !isBackground && (
                 <div className="flex items-center justify-between -mt-2 mb-4 px-4 py-3 bg-primary/10 border border-primary/20 rounded-lg">
                   <div className="flex items-center gap-3">
                     <span className="font-medium">{selectedScreenshots.size} selected</span>
@@ -469,7 +478,9 @@ export default function SetPage({ params }: PageProps) {
                       // Empty Slot
                       <div
                         onClick={() => handleSlotClick(screenshot)}
-                        className="relative aspect-[9/16] bg-card/50 border-2 border-dashed border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-all duration-200"
+                        className={`relative aspect-[9/16] bg-card/50 border-2 border-dashed border-border rounded-xl overflow-hidden ${
+                          isBackground ? '' : 'cursor-pointer hover:border-primary/50 hover:bg-muted/20'
+                        } transition-all duration-200`}
                       >
                         {/* Slot Number */}
                         <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm border flex items-center justify-center">
@@ -488,7 +499,9 @@ export default function SetPage({ params }: PageProps) {
                       // Filled Slot
                       <div
                         onClick={() => handleSlotClick(screenshot)}
-                        className={`relative aspect-[9/16] bg-card border-2 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ${
+                        className={`relative aspect-[9/16] bg-card border-2 rounded-xl overflow-hidden ${
+                          isBackground ? '' : 'cursor-pointer'
+                        } transition-all duration-200 ${
                           selectedScreenshots.has(screenshot._id)
                             ? 'border-primary shadow-lg'
                             : 'border-border hover:border-primary/50 hover:shadow-lg'
@@ -500,21 +513,23 @@ export default function SetPage({ params }: PageProps) {
                         </div>
 
                         {/* Checkbox */}
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleScreenshotSelection(screenshot._id);
-                          }}
-                          className={`absolute top-3 right-3 w-6 h-6 rounded-md border-2 backdrop-blur-sm z-10 flex items-center justify-center transition-all duration-200 ${
-                            selectedScreenshots.has(screenshot._id)
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-gray-400 dark:border-gray-500 bg-white/90 dark:bg-gray-800/90 opacity-0 group-hover:opacity-100 hover:border-primary dark:hover:border-primary'
-                          }`}
-                        >
-                          {selectedScreenshots.has(screenshot._id) && (
-                            <Check className="w-3.5 h-3.5" />
-                          )}
-                        </div>
+                        {!isBackground && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleScreenshotSelection(screenshot._id);
+                            }}
+                            className={`absolute top-3 right-3 w-6 h-6 rounded-md border-2 backdrop-blur-sm z-10 flex items-center justify-center transition-all duration-200 ${
+                              selectedScreenshots.has(screenshot._id)
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-gray-400 dark:border-gray-500 bg-white/90 dark:bg-gray-800/90 opacity-0 group-hover:opacity-100 hover:border-primary dark:hover:border-primary'
+                            }`}
+                          >
+                            {selectedScreenshots.has(screenshot._id) && (
+                              <Check className="w-3.5 h-3.5" />
+                            )}
+                          </div>
+                        )}
 
                         {/* Image Preview */}
                         <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
@@ -522,7 +537,7 @@ export default function SetPage({ params }: PageProps) {
                         </div>
 
                         {/* Hover Overlay - Only show when nothing is selected */}
-                        {selectedScreenshots.size === 0 && (
+                        {selectedScreenshots.size === 0 && !isBackground && (
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-3 p-4">
                             <div className="text-center">
                               <p className="text-white font-semibold text-sm mb-1">{screenshot.title}</p>
@@ -593,7 +608,7 @@ export default function SetPage({ params }: PageProps) {
               </div>
 
               {/* Selection Bar - shows when items are selected */}
-              {selectedScreenshots.size > 0 && (
+              {selectedScreenshots.size > 0 && !isBackground && (
                 <div className="flex items-center justify-between mb-4 px-4 py-3 bg-primary/10 border border-primary/20 rounded-lg">
                   <div className="flex items-center gap-3">
                     <span className="font-medium">{selectedScreenshots.size} selected</span>
@@ -638,7 +653,9 @@ export default function SetPage({ params }: PageProps) {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   onClick={() => handleSlotClick(screenshot)}
-                  className={`flex items-center gap-4 p-3 bg-card border rounded-lg cursor-pointer transition-colors ${
+                  className={`flex items-center gap-4 p-3 bg-card border rounded-lg ${
+                    isBackground ? '' : 'cursor-pointer'
+                  } transition-colors ${
                     screenshot.isEmpty ? 'border-dashed hover:bg-muted/20' : 'hover:bg-muted/30'
                   }`}
                 >
@@ -647,7 +664,7 @@ export default function SetPage({ params }: PageProps) {
                     <span className="text-sm font-semibold">{screenshot.slotNumber}</span>
                   </div>
 
-                  {!screenshot.isEmpty && (
+                  {!screenshot.isEmpty && !isBackground && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -707,7 +724,7 @@ export default function SetPage({ params }: PageProps) {
                     )}
                   </div>
 
-                  {!screenshot.isEmpty && (
+                  {!screenshot.isEmpty && !isBackground && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => {
@@ -743,7 +760,7 @@ export default function SetPage({ params }: PageProps) {
       </div>
 
       {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && (
+      {showDeleteConfirm && !isBackground && (
         <>
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50" onClick={() => setShowDeleteConfirm(false)} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border rounded-lg shadow-2xl z-50 p-6">

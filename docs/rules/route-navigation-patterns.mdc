@@ -1,0 +1,314 @@
+---
+description: Guidelines for route-based navigation patterns, component organization, and maintaining page context with overlay panels
+globs: src/app/**/*.tsx,src/app/**/*.ts
+alwaysApply: false
+---
+
+# Route-Based Navigation Patterns
+
+## Overview
+This document defines patterns for organizing route-based navigation in Next.js App Router, keeping route-specific components separate from the design system, and maintaining page context when navigating deeper with overlay panels.
+
+## 1. Component Organization
+
+### Route-Specific Components
+Route-specific components should be organized within the route directory structure, NOT in the global components folder.
+
+```
+src/app/
+├── [route]/
+│   ├── page.tsx                    # Main route page
+│   ├── layout.tsx                  # Route layout (if needed)
+│   ├── components/                 # Route-specific components
+│   │   ├── ComponentA.tsx
+│   │   └── ComponentB.tsx
+│   └── [PageName]PageContent.tsx   # Extracted page content (for reuse)
+```
+
+### Example Structure
+```
+src/app/app/[app-id]/set/[set-id]/
+├── page.tsx                           # Set page route
+├── ScreenshotSetPageContent.tsx       # Reusable page content
+├── screenshot/
+│   ├── [screenshot-id]/
+│   │   ├── page.tsx                   # Screenshot detail route
+│   │   └── components/
+│   │       └── ManageScreenshotPanel.tsx
+│   └── new/
+│       └── [slot-number]/
+│           └── page.tsx                # New screenshot route
+```
+
+### Key Principles
+- **Route-specific components** stay in `/[route]/components/`
+- **Shared UI components** go in `/src/components/ui/`
+- **Feature components** that are reused across routes go in `/src/components/`
+- **Page content components** that need to be reused (for background rendering) stay at the route level
+
+## 2. Retaining Page Context with Overlay Panels
+
+### The Problem
+When navigating to deeper routes that show overlay panels or modals, we want to maintain the parent page visible in the background for context.
+
+### The Solution Pattern
+
+#### Step 1: Extract Page Content
+Create a reusable page content component with an `isBackground` prop:
+
+```tsx
+// src/app/[route]/[Entity]PageContent.tsx
+interface EntityPageContentProps {
+  // Required route params
+  id: string;
+  // Control interaction
+  isBackground?: boolean;
+  // Optional callbacks for child routes
+  onItemClick?: (item: any) => void;
+}
+
+export default function EntityPageContent({
+  id,
+  isBackground = false,
+  onItemClick
+}: EntityPageContentProps) {
+  // Component logic...
+
+  return (
+    <div className={`min-h-screen ${isBackground ? 'pointer-events-none' : ''}`}>
+      {/* Page content */}
+    </div>
+  );
+}
+```
+
+#### Step 2: Use in Main Route
+The main route uses the content component normally:
+
+```tsx
+// src/app/[route]/page.tsx
+export default function RoutePage({ params }: PageProps) {
+  const resolvedParams = use(params);
+  return <EntityPageContent id={resolvedParams.id} />;
+}
+```
+
+#### Step 3: Render Parent in Background
+Child routes render the parent content in background mode:
+
+```tsx
+// src/app/[route]/[child-route]/page.tsx
+export default function ChildRoutePage({ params }: PageProps) {
+  const resolvedParams = use(params);
+
+  return (
+    <>
+      {/* Render parent page in background */}
+      <EntityPageContent
+        id={resolvedParams.id}
+        isBackground={true}
+      />
+
+      {/* Render overlay panel on top */}
+      <OverlayPanel />
+    </>
+  );
+}
+```
+
+### Background Mode Features
+When `isBackground={true}`:
+- Apply `pointer-events-none` to disable all interactions
+- Hide interactive elements (checkboxes, hover effects)
+- Disable navigation and form submissions
+- Maintain visual state but prevent modifications
+
+## 3. Naming Conventions
+
+### Page Content Components
+Use descriptive names that indicate the entity type:
+- ✅ `ScreenshotSetPageContent.tsx` - Clear it's about screenshot sets
+- ❌ `SetPageContent.tsx` - Ambiguous (set as verb vs noun)
+- ✅ `AppDetailsPageContent.tsx` - Clear it's about app details
+- ❌ `DetailsPageContent.tsx` - Too generic
+
+### Route Components
+Components specific to a route should be in that route's `components/` folder:
+```
+/app/[app-id]/set/[set-id]/screenshot/[screenshot-id]/components/
+└── ManageScreenshotPanel.tsx  # Only used in screenshot routes
+```
+
+## 4. Route Structure Patterns
+
+### RESTful URL Patterns
+Use clean, RESTful URLs for better UX:
+
+```
+/app/[app-id]                                    # App detail
+/app/[app-id]/set/[set-id]                      # Set detail
+/app/[app-id]/set/[set-id]/screenshot/[id]      # Edit existing
+/app/[app-id]/set/[set-id]/screenshot/new/[slot] # Create new
+```
+
+### Avoid Encoded Parameters in URLs
+- ✅ `/screenshot/new/1` - Clean and RESTful
+- ❌ `/screenshot/new-1` - Encoded parameter in route
+
+## 5. Keyboard Navigation Support
+
+### ESC Key Pattern
+Add keyboard support for closing overlay panels:
+
+```tsx
+useEffect(() => {
+  if (!isOpen) return;
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  };
+
+  document.addEventListener('keydown', handleKeyDown);
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown);
+  };
+}, [isOpen, onClose]);
+```
+
+### Visual Hints
+Provide visual indicators for keyboard shortcuts:
+
+```tsx
+<div className="flex items-center gap-2">
+  <span className="text-xs text-muted-foreground hidden sm:inline">ESC</span>
+  <button
+    onClick={handleClose}
+    className="p-2 hover:bg-muted rounded-lg"
+    title="Close (ESC)"
+  >
+    <X className="w-5 h-5" />
+  </button>
+</div>
+```
+
+## 6. Implementation Example
+
+### Complete Example: Screenshot Management
+
+```tsx
+// src/app/app/[app-id]/set/[set-id]/ScreenshotSetPageContent.tsx
+interface ScreenshotSetPageContentProps {
+  appId: string;
+  setId: string;
+  isBackground?: boolean;
+  onSlotClick?: (slot: any) => void;
+}
+
+export default function ScreenshotSetPageContent({
+  appId,
+  setId,
+  isBackground = false,
+  onSlotClick
+}: ScreenshotSetPageContentProps) {
+  const router = useRouter();
+
+  // Disable navigation when in background
+  const handleSlotClick = (slot: any) => {
+    if (isBackground) return;
+
+    if (onSlotClick) {
+      onSlotClick(slot);
+    } else {
+      router.push(`/app/${appId}/set/${setId}/screenshot/${slot.id}`);
+    }
+  };
+
+  return (
+    <div className={isBackground ? 'pointer-events-none' : ''}>
+      {/* Page content with conditional interaction */}
+    </div>
+  );
+}
+```
+
+```tsx
+// src/app/app/[app-id]/set/[set-id]/screenshot/[screenshot-id]/page.tsx
+export default function ScreenshotPage({ params }: PageProps) {
+  const resolvedParams = use(params);
+  const appId = resolvedParams['app-id'];
+  const setId = resolvedParams['set-id'];
+
+  return (
+    <>
+      {/* Parent page as background */}
+      <ScreenshotSetPageContent
+        appId={appId}
+        setId={setId}
+        isBackground={true}
+      />
+
+      {/* Overlay panel */}
+      <ManageScreenshotPanel
+        onClose={() => router.back()}
+        isOpen={true}
+      />
+    </>
+  );
+}
+```
+
+## 7. Benefits of This Pattern
+
+### Separation of Concerns
+- Route-specific components don't pollute the global component space
+- Clear ownership and dependencies
+- Easier to maintain and refactor
+
+### Better User Experience
+- Maintains visual context when navigating deeper
+- Smooth transitions with overlay panels
+- Keyboard-friendly navigation
+
+### Type Safety
+- Use Convex generated types for data models
+- Proper TypeScript interfaces for props
+- Avoid `any` types where possible
+
+## 8. When to Use This Pattern
+
+### Use For:
+- Multi-step workflows (create → configure → preview)
+- Detail views that need context (list → item → edit)
+- Modal-like interactions that benefit from route-based URLs
+- Complex forms that span multiple screens
+
+### Don't Use For:
+- Simple confirmation dialogs
+- Temporary UI states (dropdowns, tooltips)
+- Components that are truly reusable across many routes
+
+## 9. Migration Strategy
+
+When refactoring existing code to follow this pattern:
+
+1. **Identify route-specific components** in `/src/components/`
+2. **Move them** to the appropriate `/[route]/components/` folder
+3. **Extract page content** into a reusable component if needed for overlays
+4. **Add isBackground prop** and conditional rendering
+5. **Update imports** in affected files
+6. **Test navigation flow** with keyboard and mouse
+
+## 10. Checklist
+
+When implementing a new route with overlay pattern:
+
+- [ ] Route-specific components are in `/[route]/components/`
+- [ ] Page content is extracted to `[Entity]PageContent.tsx` if needed
+- [ ] Background mode properly disables interactions
+- [ ] ESC key closes overlay panels
+- [ ] Visual hints for keyboard shortcuts are present
+- [ ] Clean, RESTful URL structure
+- [ ] TypeScript types are properly defined
+- [ ] No unnecessary global components created

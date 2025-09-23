@@ -69,12 +69,10 @@ export default function NewAppPage() {
         languages: selectedLanguages,
       });
 
-      console.log('Created app with ID:', appId);
 
       // Navigate to the newly created app page
       router.push(`/app/${appId}`);
-    } catch (error) {
-      console.error('Failed to create app:', error);
+    } catch {
       // TODO: Show error toast
     }
   };

@@ -32,13 +32,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
           username: user.username || undefined,
           imageUrl: user.imageUrl || undefined,
         })
-          .then((result) => {
-            if (result.created) {
-              console.log("[ProfileProvider] Created profile:", result.profileId);
-            }
+          .then(() => {
           })
-          .catch((error) => {
-            console.error("[ProfileProvider] Failed to create profile:", error);
+          .catch(() => {
           })
           .finally(() => {
             isUpdating.current = false;
@@ -60,10 +56,6 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       const needsUpdate = ((usernameNeedsUpdate || imageUrlNeedsUpdate) && !isUpdating.current);
 
       if (needsUpdate) {
-        console.log("[ProfileProvider] Syncing from Clerk:", {
-          username: usernameNeedsUpdate ? clerkUsername : undefined,
-          imageUrl: imageUrlNeedsUpdate ? clerkImageUrl : undefined,
-        });
         isUpdating.current = true;
         lastSyncedUsername.current = clerkUsername;
         lastSyncedImageUrl.current = clerkImageUrl;
@@ -72,11 +64,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
           username: clerkUsername,
           imageUrl: clerkImageUrl,
         })
-          .then((result) => {
-            console.log("[ProfileProvider] Profile sync completed:", result.message);
+          .then(() => {
           })
-          .catch((error) => {
-            console.error("[ProfileProvider] Failed to sync profile:", error);
+          .catch(() => {
             // Reset on error so it can retry
             lastSyncedUsername.current = undefined;
             lastSyncedImageUrl.current = undefined;

@@ -357,10 +357,29 @@ export default function Home() {
 
                         {/* Set Info */}
                         <div className="px-3 pb-3">
-                          <h3 className="font-medium text-sm mb-0.5 truncate">{set.name}</h3>
-                          <p className="text-xs text-muted-foreground mb-2 truncate">
-                            {set.app?.name || 'Unknown App'}
-                          </p>
+                          <div className="flex items-start gap-2 mb-2">
+                            {/* App Icon */}
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                              {set.app?.iconUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={set.app.iconUrl}
+                                  alt={set.app.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-xs font-bold text-primary">
+                                  {(set.app?.name || 'A').charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-sm mb-0.5 truncate">{set.name}</h3>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {set.app?.name || 'Unknown App'}
+                              </p>
+                            </div>
+                          </div>
                           <div className="flex items-center justify-between text-xs">
                             <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
                               set.filledCount === set.screenshotCount && set.screenshotCount > 0

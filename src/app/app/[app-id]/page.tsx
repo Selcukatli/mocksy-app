@@ -91,7 +91,6 @@ export default function AppDetailPage({ params }: PageProps) {
     // app === null means it loaded but doesn't exist
     // app === undefined means still loading
     if (app === null) {
-      console.log('App not found in Convex, redirecting to home');
       router.push('/home');
     }
   }, [app, router]);

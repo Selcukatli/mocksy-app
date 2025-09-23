@@ -80,6 +80,7 @@ export default defineSchema({
     title: v.optional(v.string()), // Screenshot title/heading
     subtitle: v.optional(v.string()), // Screenshot subtitle/description
     imageStorageId: v.optional(v.id("_storage")), // Generated image in storage
+    appScreenId: v.optional(v.id("appScreens")), // Optional reference to source app screen
     themeId: v.optional(v.string()), // Theme/vibe used for generation
     layoutId: v.optional(v.string()), // Layout template used
     isEmpty: v.boolean(), // Whether this slot is empty

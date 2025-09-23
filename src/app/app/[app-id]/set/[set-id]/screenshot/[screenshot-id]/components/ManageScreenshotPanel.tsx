@@ -13,12 +13,21 @@ import {
   ImageIcon,
   Plus,
   Trash2,
-  Smartphone
+  Smartphone,
+  Minus
 } from 'lucide-react';
 import { useEditorStore } from '@/stores/editorStore';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id, Doc } from '@convex/_generated/dataModel';
+
+type LayoutPosition = 'top' | 'bottom';
+type LayoutAlignment = 'left' | 'center' | 'right';
+
+interface LayoutOption {
+  position: LayoutPosition;
+  alignment: LayoutAlignment;
+}
 
 interface ManageScreenshotPanelProps {
   selectedSlot: Doc<"screenshots"> | null;
@@ -32,6 +41,74 @@ interface ManageScreenshotPanelProps {
   appId?: string;
 }
 
+// Layout Option Component
+const LayoutOptionCard: React.FC<{
+  layout: LayoutOption;
+  isSelected: boolean;
+  onClick: () => void;
+  label: string;
+}> = ({ layout, isSelected, onClick, label }) => {
+  return (
+    <div className="flex flex-col items-center space-y-2">
+      <div
+        onClick={onClick}
+        className={`
+          relative w-16 h-28 border-2 rounded cursor-pointer transition-all
+          ${isSelected
+            ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
+            : 'border-muted hover:border-primary/50 bg-muted/20 hover:bg-muted/30'
+          }
+        `}
+      >
+        {/* Mini phone frame */}
+        <div className="absolute inset-1 bg-slate-900 rounded overflow-hidden">
+          {/* Header representation */}
+          {layout.position === 'top' && (
+            <div className={`absolute top-0 left-0 right-0 p-1 bg-gradient-to-b from-black/80 to-transparent`}>
+              <div className={`space-y-0.5 flex flex-col ${
+                layout.alignment === 'left' ? 'items-start' :
+                layout.alignment === 'right' ? 'items-end' : 'items-center'
+              }`}>
+                <div className={`h-0.5 bg-white/80 rounded-full ${
+                  layout.alignment === 'left' ? 'w-4' :
+                  layout.alignment === 'right' ? 'w-4' : 'w-5'
+                }`} />
+                <div className={`h-0.5 bg-white/50 rounded-full ${
+                  layout.alignment === 'left' ? 'w-3' :
+                  layout.alignment === 'right' ? 'w-3' : 'w-4'
+                }`} />
+              </div>
+            </div>
+          )}
+
+          {/* Screen content representation */}
+          <div className="absolute inset-x-1.5 top-1/3 bottom-1/3 bg-slate-700/50 rounded-sm" />
+
+          {/* Header representation for bottom */}
+          {layout.position === 'bottom' && (
+            <div className={`absolute bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/80 to-transparent`}>
+              <div className={`space-y-0.5 flex flex-col ${
+                layout.alignment === 'left' ? 'items-start' :
+                layout.alignment === 'right' ? 'items-end' : 'items-center'
+              }`}>
+                <div className={`h-0.5 bg-white/80 rounded-full ${
+                  layout.alignment === 'left' ? 'w-4' :
+                  layout.alignment === 'right' ? 'w-4' : 'w-5'
+                }`} />
+                <div className={`h-0.5 bg-white/50 rounded-full ${
+                  layout.alignment === 'left' ? 'w-3' :
+                  layout.alignment === 'right' ? 'w-3' : 'w-4'
+                }`} />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      <p className="text-xs text-center text-muted-foreground">{label}</p>
+    </div>
+  );
+};
+
 export default function ManageScreenshotPanel({
   selectedSlot,
   headerText,
@@ -44,12 +121,17 @@ export default function ManageScreenshotPanel({
   appId,
 }: ManageScreenshotPanelProps) {
   const [showSubtitle, setShowSubtitle] = useState(!!subtitleText);
+  const [isSubtitleFocused, setIsSubtitleFocused] = useState(false);
   const [selectedAppScreen, setSelectedAppScreen] = useState<string | null>(null);
   const [selectedAppScreenUrl, setSelectedAppScreenUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearFromPanel, setClearFromPanel] = useState(false);
   const [artDirection, setArtDirection] = useState('');
+  const [selectedLayout, setSelectedLayout] = useState<LayoutOption>({
+    position: 'top',
+    alignment: 'center'
+  });
   const {
     isSourceImagePanelOpen,
     isThemePanelOpen,
@@ -79,6 +161,18 @@ export default function ManageScreenshotPanel({
   useEffect(() => {
     setShowSubtitle(!!subtitleText);
   }, [subtitleText]);
+
+  // Auto-resize textareas on mount and when text changes
+  useEffect(() => {
+    // Find all textareas in the preview and resize them
+    const textareas = document.querySelectorAll('textarea');
+    textareas.forEach((textarea) => {
+      if (textarea instanceof HTMLTextAreaElement) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      }
+    });
+  }, [headerText, subtitleText]);
 
   // Set initial selected app screen if the screenshot already has one
   useEffect(() => {
@@ -292,10 +386,22 @@ export default function ManageScreenshotPanel({
                     </div>
                     <textarea
                       value={subtitleText}
-                      onChange={(e) => onSubtitleChange(e.target.value)}
+                      onChange={(e) => {
+                        onSubtitleChange(e.target.value);
+                        // Auto-resize textarea
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                      onInput={(e) => {
+                        // Auto-resize on input
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
                       placeholder="Enter subtitle text..."
-                      rows={3}
-                      className="w-full px-3 py-2 bg-background border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none resize-none"
+                      rows={1}
+                      className="w-full px-3 py-2 bg-background border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none resize-none text-sm"
+                      style={{ minHeight: '38px' }}
                     />
                   </div>
                 )}
@@ -370,13 +476,48 @@ export default function ManageScreenshotPanel({
                   onClick={openLayoutPanel}
                   className="w-full p-3 bg-background hover:bg-muted/50 border rounded-lg transition-colors group"
                 >
-                  <div className="flex items-center gap-3">
-                    <Layout className="w-5 h-5 text-muted-foreground" />
-                    <div className="text-left">
-                      <p className="font-medium">Layout</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-muted-foreground">Adjust composition</p>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Layout className="w-5 h-5 text-muted-foreground" />
+                      <div className="text-left">
+                        <p className="font-medium">Layout</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">
+                            Text {selectedLayout.position === 'top' ? 'Top' : 'Bottom'},
+                            {selectedLayout.alignment === 'left' ? ' Left' :
+                             selectedLayout.alignment === 'right' ? ' Right' : ' Center'} Aligned
+                          </p>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                      </div>
+                    </div>
+                    {/* Mini layout preview */}
+                    <div className="relative w-8 h-14 border border-muted rounded bg-slate-900">
+                      <div className="absolute inset-0.5 overflow-hidden">
+                        {/* Header representation */}
+                        {selectedLayout.position === 'top' && (
+                          <div className="absolute top-0 left-0 right-0 p-0.5 bg-gradient-to-b from-black/80 to-transparent">
+                            <div className={`flex ${
+                              selectedLayout.alignment === 'left' ? 'justify-start' :
+                              selectedLayout.alignment === 'right' ? 'justify-end' : 'justify-center'
+                            }`}>
+                              <div className="h-0.5 w-3 bg-white/80 rounded-full" />
+                            </div>
+                          </div>
+                        )}
+                        {/* Screen content */}
+                        <div className="absolute inset-x-1 top-1/3 bottom-1/3 bg-slate-700/30 rounded-sm" />
+                        {/* Header for bottom */}
+                        {selectedLayout.position === 'bottom' && (
+                          <div className="absolute bottom-0 left-0 right-0 p-0.5 bg-gradient-to-t from-black/80 to-transparent">
+                            <div className={`flex ${
+                              selectedLayout.alignment === 'left' ? 'justify-start' :
+                              selectedLayout.alignment === 'right' ? 'justify-end' : 'justify-center'
+                            }`}>
+                              <div className="h-0.5 w-3 bg-white/80 rounded-full" />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -427,37 +568,118 @@ export default function ManageScreenshotPanel({
               <div className="relative">
                 {/* Screenshot Container - App Store dimensions 1290x2796 (6.7" display) */}
                 <div className="aspect-[1290/2796] bg-gradient-to-br from-slate-900 to-slate-800 rounded-[30px] overflow-hidden shadow-2xl relative">
-                  <div className="w-full h-full flex flex-col">
-                    {/* Header Section - Always visible, center aligned */}
+                  <div className={`w-full h-full flex ${selectedLayout.position === 'bottom' ? 'flex-col-reverse' : 'flex-col'}`}>
+                    {/* Header Section - Dynamic position and alignment */}
                     <div className={`px-6 ${
                       showSubtitle && subtitleText
-                        ? 'pt-8 pb-2'
-                        : 'pt-10 pb-3'
-                    } bg-gradient-to-b from-black/90 via-black/70 to-transparent relative z-10`}>
-                      <div className="space-y-1 text-center">
-                        <input
-                          type="text"
-                          value={headerText}
-                          onChange={(e) => onHeaderChange(e.target.value)}
-                          placeholder="Enter header text..."
-                          className={`font-bold text-white text-center bg-transparent w-full outline-none placeholder:text-white/40 placeholder:font-normal ${
-                            showSubtitle && subtitleText ? 'text-xl' : 'text-2xl'
-                          }`}
-                        />
-                        {showSubtitle && (
+                        ? selectedLayout.position === 'top' ? 'pt-8 pb-2' : 'pb-8 pt-2'
+                        : selectedLayout.position === 'top' ? 'pt-10 pb-3' : 'pb-10 pt-3'
+                    } ${
+                      selectedLayout.position === 'top'
+                        ? 'bg-gradient-to-b from-black/90 via-black/70 to-transparent'
+                        : 'bg-gradient-to-t from-black/90 via-black/70 to-transparent'
+                    } relative z-10 group/header`}>
+                      <div className={`space-y-1 ${
+                        selectedLayout.alignment === 'left' ? 'text-left' :
+                        selectedLayout.alignment === 'right' ? 'text-right' :
+                        'text-center'
+                      }`}>
+                        <div className="relative">
                           <textarea
+                          value={headerText}
+                          onChange={(e) => {
+                            onHeaderChange(e.target.value);
+                            // Auto-resize textarea
+                            e.target.style.height = 'auto';
+                            e.target.style.height = e.target.scrollHeight + 'px';
+                          }}
+                          onInput={(e) => {
+                            // Auto-resize on input
+                            const target = e.target as HTMLTextAreaElement;
+                            target.style.height = 'auto';
+                            target.style.height = target.scrollHeight + 'px';
+                          }}
+                          placeholder="Enter header text..."
+                          rows={1}
+                          className={`font-bold text-white bg-transparent w-full outline-none resize-none placeholder:text-white/40 placeholder:font-normal overflow-hidden ${
+                            showSubtitle && subtitleText ? 'text-xl' : 'text-2xl'
+                          } ${
+                            selectedLayout.alignment === 'left' ? 'text-left' :
+                            selectedLayout.alignment === 'right' ? 'text-right' :
+                            'text-center'
+                          }`}
+                          style={{ minHeight: 'auto', lineHeight: '1.2' }}
+                        />
+                          {!showSubtitle && (
+                            <button
+                              onClick={() => {
+                                setShowSubtitle(true);
+                                // Focus subtitle after a brief delay to ensure it's rendered
+                                setTimeout(() => {
+                                  const subtitleTextarea = document.querySelector('[data-subtitle-textarea]') as HTMLTextAreaElement;
+                                  if (subtitleTextarea) {
+                                    subtitleTextarea.focus();
+                                  }
+                                }, 50);
+                              }}
+                              className="absolute -bottom-5 left-1/2 -translate-x-1/2 opacity-0 group-hover/header:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap"
+                            >
+                              + Add subtitle
+                            </button>
+                          )}
+                        </div>
+                        {showSubtitle && (
+                          <div className="relative group/subtitle">
+                          <textarea
+                            data-subtitle-textarea
                             value={subtitleText}
-                            onChange={(e) => onSubtitleChange(e.target.value)}
+                            onChange={(e) => {
+                              onSubtitleChange(e.target.value);
+                              // Auto-resize textarea
+                              e.target.style.height = 'auto';
+                              e.target.style.height = e.target.scrollHeight + 'px';
+                            }}
+                            onInput={(e) => {
+                              // Auto-resize on input
+                              const target = e.target as HTMLTextAreaElement;
+                              target.style.height = 'auto';
+                              target.style.height = target.scrollHeight + 'px';
+                            }}
+                            onFocus={() => setIsSubtitleFocused(true)}
+                            onBlur={() => setIsSubtitleFocused(false)}
                             placeholder="Enter subtitle..."
-                            rows={2}
-                            className="text-xs text-white/90 text-center bg-transparent w-full outline-none resize-none placeholder:text-white/40 leading-relaxed max-w-[90%] mx-auto"
+                            rows={1}
+                            className={`text-xs text-white/90 bg-transparent w-full outline-none resize-none placeholder:text-white/40 leading-relaxed overflow-hidden ${
+                              selectedLayout.alignment === 'center' ? 'max-w-[90%] mx-auto' : ''
+                            } ${
+                              selectedLayout.alignment === 'left' ? 'text-left' :
+                              selectedLayout.alignment === 'right' ? 'text-right' :
+                              'text-center'
+                            }`}
+                            style={{ minHeight: 'auto' }}
                           />
+                            {!isSubtitleFocused && (
+                              <button
+                                onClick={() => {
+                                  setShowSubtitle(false);
+                                  onSubtitleChange('');
+                                }}
+                                className="absolute -bottom-5 left-1/2 -translate-x-1/2 opacity-0 group-hover/subtitle:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap flex items-center gap-1"
+                                title="Remove subtitle"
+                              >
+                                <Minus className="w-3 h-3" />
+                                Remove subtitle
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
 
                     {/* App Screen Content Area with padding */}
-                    <div className="flex-1 relative px-4 pb-6 flex items-center justify-center">
+                    <div className={`flex-1 relative px-4 ${
+                      selectedLayout.position === 'top' ? 'pb-6' : 'pt-6'
+                    } flex items-center justify-center`}>
                       <div
                         className="rounded-[20px] overflow-hidden relative bg-black group cursor-pointer"
                         onClick={openSourceImagePanel}
@@ -759,22 +981,63 @@ export default function ManageScreenshotPanel({
             </div>
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="grid grid-cols-3 gap-4">
-                {/* TODO: Add layout templates */}
-                <div className="aspect-[9/16] border rounded-lg bg-muted cursor-pointer hover:border-primary transition-colors" />
-                <div className="aspect-[9/16] border rounded-lg bg-muted cursor-pointer hover:border-primary transition-colors" />
-                <div className="aspect-[9/16] border rounded-lg bg-muted cursor-pointer hover:border-primary transition-colors" />
+                    {/* Top layouts */}
+                    <LayoutOptionCard
+                      layout={{ position: 'top', alignment: 'left' }}
+                      isSelected={selectedLayout.position === 'top' && selectedLayout.alignment === 'left'}
+                      onClick={() => {
+                        setSelectedLayout({ position: 'top', alignment: 'left' });
+                        closeLayoutPanel();
+                      }}
+                      label="Text Top, Left Aligned"
+                    />
+                    <LayoutOptionCard
+                      layout={{ position: 'top', alignment: 'center' }}
+                      isSelected={selectedLayout.position === 'top' && selectedLayout.alignment === 'center'}
+                      onClick={() => {
+                        setSelectedLayout({ position: 'top', alignment: 'center' });
+                        closeLayoutPanel();
+                      }}
+                      label="Text Top, Center Aligned"
+                    />
+                    <LayoutOptionCard
+                      layout={{ position: 'top', alignment: 'right' }}
+                      isSelected={selectedLayout.position === 'top' && selectedLayout.alignment === 'right'}
+                      onClick={() => {
+                        setSelectedLayout({ position: 'top', alignment: 'right' });
+                        closeLayoutPanel();
+                      }}
+                      label="Text Top, Right Aligned"
+                    />
+                    {/* Bottom layouts */}
+                    <LayoutOptionCard
+                      layout={{ position: 'bottom', alignment: 'left' }}
+                      isSelected={selectedLayout.position === 'bottom' && selectedLayout.alignment === 'left'}
+                      onClick={() => {
+                        setSelectedLayout({ position: 'bottom', alignment: 'left' });
+                        closeLayoutPanel();
+                      }}
+                      label="Text Bottom, Left Aligned"
+                    />
+                    <LayoutOptionCard
+                      layout={{ position: 'bottom', alignment: 'center' }}
+                      isSelected={selectedLayout.position === 'bottom' && selectedLayout.alignment === 'center'}
+                      onClick={() => {
+                        setSelectedLayout({ position: 'bottom', alignment: 'center' });
+                        closeLayoutPanel();
+                      }}
+                      label="Text Bottom, Center Aligned"
+                    />
+                    <LayoutOptionCard
+                      layout={{ position: 'bottom', alignment: 'right' }}
+                      isSelected={selectedLayout.position === 'bottom' && selectedLayout.alignment === 'right'}
+                      onClick={() => {
+                        setSelectedLayout({ position: 'bottom', alignment: 'right' });
+                        closeLayoutPanel();
+                      }}
+                      label="Text Bottom, Right Aligned"
+                    />
               </div>
-            </div>
-            <div className="p-6 border-t">
-              <button
-                onClick={() => {
-                  // TODO: Handle layout selection
-                  closeLayoutPanel();
-                }}
-                className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
-              >
-                Apply Layout
-              </button>
             </div>
           </motion.div>
           </>

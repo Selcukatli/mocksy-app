@@ -16,6 +16,8 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useState } from 'react';
 import { Id } from '../../../convex/_generated/dataModel';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export default function TemplatesPage() {
   const { user } = useUser();
@@ -206,19 +208,32 @@ export default function TemplatesPage() {
               whileHover={{ scale: 1.02 }}
               className="group relative"
             >
-              <div className="rounded-xl border bg-card hover:shadow-lg transition-all duration-200 overflow-hidden">
+              <Link href={`/template/${template._id}`} className="block">
+                <div className="rounded-xl border bg-card hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer">
                 {/* Template Preview Area */}
-                <div className="aspect-[16/10] bg-gradient-to-br from-primary/10 to-primary/5 p-4 flex items-center justify-center relative">
-                  {/* Decorative elements */}
-                  <div className="absolute inset-0 opacity-30">
-                    <div className="absolute top-4 left-4 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
-                    <div className="absolute bottom-4 right-4 w-16 h-16 bg-primary/10 rounded-full blur-xl" />
-                  </div>
+                <div className="aspect-[16/10] bg-gradient-to-br from-primary/10 to-primary/5 relative overflow-hidden">
+                  {template.imageUrl ? (
+                    <Image
+                      src={template.imageUrl}
+                      alt={template.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    />
+                  ) : (
+                    <>
+                      {/* Decorative elements */}
+                      <div className="absolute inset-0 opacity-30">
+                        <div className="absolute top-4 left-4 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
+                        <div className="absolute bottom-4 right-4 w-16 h-16 bg-primary/10 rounded-full blur-xl" />
+                      </div>
 
-                  {/* Template Icon */}
-                  <div className="relative z-10">
-                    <Sparkles className="w-12 h-12 text-primary/60" />
-                  </div>
+                      {/* Template Icon */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Sparkles className="w-12 h-12 text-primary/60" />
+                      </div>
+                    </>
+                  )}
 
                   {/* Ownership Badge */}
                   <div className="absolute top-3 right-3">
@@ -274,6 +289,7 @@ export default function TemplatesPage() {
                   </div>
                 </div>
               </div>
+              </Link>
             </motion.div>
           ))}
         </div>
@@ -323,31 +339,37 @@ export default function TemplatesPage() {
                 {/* Template Name */}
                 <div>
                   <label htmlFor="template-name" className="text-sm font-medium mb-1.5 block">
-                    Template Name
+                    Name this template
                   </label>
                   <input
                     id="template-name"
                     type="text"
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
-                    placeholder="e.g., App Store Hero Screenshots"
+                    placeholder="e.g., Vibrant Product Showcase, Minimal Tech Demo"
                     className="w-full px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     autoFocus
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Give your template a memorable name that describes its style
+                  </p>
                 </div>
 
                 {/* Template Description */}
                 <div>
                   <label htmlFor="template-description" className="text-sm font-medium mb-1.5 block">
-                    Description <span className="text-muted-foreground">(optional)</span>
+                    Describe the vibe <span className="text-muted-foreground">(optional)</span>
                   </label>
                   <textarea
                     id="template-description"
                     value={templateDescription}
                     onChange={(e) => setTemplateDescription(e.target.value)}
-                    placeholder="Describe what this template is for..."
+                    placeholder="e.g., Bold gradients with floating UI elements, perfect for showcasing modern apps with a premium feel..."
                     className="w-full px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[80px] resize-none"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    What mood, style, or aesthetic will this template create?
+                  </p>
                 </div>
 
                 {/* Public/Private Toggle */}
@@ -356,9 +378,9 @@ export default function TemplatesPage() {
                     <div className="flex items-center gap-3">
                       {isPublic ? <Globe className="w-5 h-5 text-green-600" /> : <Lock className="w-5 h-5 text-muted-foreground" />}
                       <div>
-                        <p className="font-medium text-sm">Make Public</p>
+                        <p className="font-medium text-sm">Share with community</p>
                         <p className="text-xs text-muted-foreground">
-                          {isPublic ? 'Others can use this template' : 'Only you can use this template'}
+                          {isPublic ? 'Others can discover and remix your template' : 'Keep this template private to your account'}
                         </p>
                       </div>
                     </div>

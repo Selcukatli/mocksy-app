@@ -48,16 +48,21 @@ export const getMyTemplates = query({
       .order("desc")
       .collect();
 
-    // For each template, get the active variant
+    // For each template, get the active variant and image URL
     const templatesWithVariants = await Promise.all(
       templates.map(async (template) => {
         let activeVariant = null;
         if (template.currentVariantId) {
           activeVariant = await ctx.db.get(template.currentVariantId);
         }
+        let imageUrl = null;
+        if (template.imageStorageId) {
+          imageUrl = await ctx.storage.getUrl(template.imageStorageId);
+        }
         return {
           ...template,
           activeVariant,
+          imageUrl,
         };
       })
     );
@@ -82,13 +87,17 @@ export const getPublicTemplates = query({
       .order("desc")
       .take(limit);
 
-    // Add profile info and active variant
+    // Add profile info, active variant, and image URL
     const templatesWithDetails = await Promise.all(
       templates.map(async (template) => {
         const profile = await ctx.db.get(template.profileId);
         let activeVariant = null;
         if (template.currentVariantId) {
           activeVariant = await ctx.db.get(template.currentVariantId);
+        }
+        let imageUrl = null;
+        if (template.imageStorageId) {
+          imageUrl = await ctx.storage.getUrl(template.imageStorageId);
         }
         return {
           ...template,
@@ -97,6 +106,7 @@ export const getPublicTemplates = query({
             imageUrl: profile.imageUrl,
           } : null,
           activeVariant,
+          imageUrl,
         };
       })
     );
@@ -130,6 +140,12 @@ export const getTemplate = query({
       activeVariant = await ctx.db.get(template.currentVariantId);
     }
 
+    // Get image URL
+    let imageUrl = null;
+    if (template.imageStorageId) {
+      imageUrl = await ctx.storage.getUrl(template.imageStorageId);
+    }
+
     // Get all variants for this template
     const variants = await ctx.db
       .query("templateVariants")
@@ -141,6 +157,7 @@ export const getTemplate = query({
       ...template,
       activeVariant,
       variants,
+      imageUrl,
     };
   },
 });

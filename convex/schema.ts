@@ -96,6 +96,7 @@ export default defineSchema({
     profileId: v.id("profiles"), // Template owner
     name: v.string(), // Template name
     description: v.optional(v.string()), // Template description
+    imageStorageId: v.optional(v.id("_storage")), // Representative preview image
     isPublic: v.boolean(), // Whether template is public/shareable
     currentVariantId: v.optional(v.id("templateVariants")), // Points to active variant
     usageCount: v.optional(v.number()), // Track how many times used

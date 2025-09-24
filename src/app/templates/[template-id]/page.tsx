@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
-  Edit,
+  Pencil,
   Plus,
   Globe,
   Lock,
@@ -121,8 +121,36 @@ export default function TemplateDetailPage() {
 
         {/* Template Header */}
         <div className="bg-card rounded-xl border p-6">
-          <div className="flex items-start justify-between mb-4">
+          <div className="flex items-start gap-6">
+            {/* Template Preview Image - Rounded Square */}
+            <div className="relative w-24 h-24 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex-shrink-0 overflow-hidden">
+              {template.imageUrl ? (
+                <Image
+                  src={template.imageUrl}
+                  alt={template.name}
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                  priority
+                />
+              ) : (
+                <>
+                  {/* Decorative elements for fallback */}
+                  <div className="absolute inset-0 opacity-30">
+                    <div className="absolute top-2 left-2 w-12 h-12 bg-primary/20 rounded-full blur-xl" />
+                    <div className="absolute bottom-2 right-2 w-10 h-10 bg-primary/15 rounded-full blur-lg" />
+                  </div>
+                  {/* Template Icon */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Sparkles className="w-10 h-10 text-primary/40" />
+                  </div>
+                </>
+              )}
+            </div>
+
             <div className="flex-1">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
               {/* Template Name */}
               {isEditingName ? (
                 <div className="flex items-center gap-2 mb-2">
@@ -167,7 +195,7 @@ export default function TemplateDetailPage() {
                       }}
                       className="p-1 rounded hover:bg-muted/50 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <Edit className="w-4 h-4" />
+                      <Pencil className="w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -222,7 +250,7 @@ export default function TemplateDetailPage() {
                         }}
                         className="p-1 rounded hover:bg-muted/50 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <Edit className="w-3 h-3" />
+                        <Pencil className="w-3 h-3" />
                       </button>
                     )}
                   </p>
@@ -282,6 +310,8 @@ export default function TemplateDetailPage() {
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
+            </div>
+              </div>
             </div>
           </div>
         </div>

@@ -3,6 +3,23 @@ import { httpAction } from "./_generated/server";
 import { Webhook } from "svix";
 import { internal } from "./_generated/api";
 
+type ClerkWebhookEmailAddress = {
+  email_address: string;
+};
+
+type ClerkWebhookEvent = {
+  type: string;
+  data: {
+    id: string;
+    username?: string | null;
+    image_url?: string | null;
+    profile_image_url?: string | null;
+    email_addresses?: ClerkWebhookEmailAddress[];
+    first_name?: string | null;
+    last_name?: string | null;
+  };
+};
+
 const http = httpRouter();
 
 // Webhook endpoint for Clerk
@@ -33,15 +50,14 @@ http.route({
     // Create a new Svix instance with your secret
     const wh = new Webhook(webhookSecret);
 
-    let evt: any;
-
     // Verify the payload with the headers
+    let evt: ClerkWebhookEvent;
     try {
       evt = wh.verify(payload, {
         "svix-id": svixId,
         "svix-timestamp": svixTimestamp,
         "svix-signature": svixSignature,
-      });
+      }) as ClerkWebhookEvent;
     } catch (err) {
       console.error("Error verifying webhook:", err);
       return new Response("Error occurred", { status: 400 });
@@ -67,7 +83,7 @@ http.route({
         } = evt.data;
 
         // Build username from available data
-        let displayUsername = username;
+        let displayUsername: string | undefined = username ?? undefined;
         if (!displayUsername && first_name && last_name) {
           displayUsername = `${first_name} ${last_name}`;
         } else if (!displayUsername && first_name) {
@@ -77,7 +93,7 @@ http.route({
         }
 
         // Use profile_image_url if available, fallback to image_url
-        const userImageUrl = profile_image_url || image_url;
+        const userImageUrl = profile_image_url ?? image_url ?? undefined;
 
         await ctx.runMutation(internal.webhooks.upsertUserFromClerk, {
           userId: id,

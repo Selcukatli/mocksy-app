@@ -8,14 +8,18 @@ import {
   Lock,
   TrendingUp,
   Search,
-  X
+  X,
+  ChevronRight,
+  MoreVertical,
+  Trash2,
+  Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { useState } from 'react';
 import { Id } from '../../../convex/_generated/dataModel';
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -27,14 +31,21 @@ export default function TemplatesPage() {
   const [templateDescription, setTemplateDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [referenceImage, setReferenceImage] = useState<File | null>(null);
+  const [referenceImagePreview, setReferenceImagePreview] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'mine' | 'public'>('all');
+  const [showDeleteMenu, setShowDeleteMenu] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{id: Id<"templates">, name: string} | null>(null);
+  const [deletingTemplate, setDeletingTemplate] = useState(false);
 
   // Fetch templates
   const myTemplates = useQuery(api.templates.getMyTemplates) || [];
   const publicTemplates = useQuery(api.templates.getPublicTemplates, { limit: 50 }) || [];
   const createTemplateMutation = useMutation(api.templates.createTemplate);
   const duplicateTemplateMutation = useMutation(api.templates.duplicateTemplate);
+  const deleteTemplateMutation = useMutation(api.templates.deleteTemplate);
+  const generateUploadUrl = useMutation(api.fileStorage.files.generateUploadUrl);
 
   // Combine and filter templates based on filter type
   const allTemplates = filterType === 'mine'
@@ -59,16 +70,33 @@ export default function TemplatesPage() {
 
     setCreating(true);
     try {
+      let referenceImageStorageId: Id<"_storage"> | undefined;
+
+      // Upload reference image if provided
+      if (referenceImage) {
+        const uploadUrl = await generateUploadUrl();
+        const result = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': referenceImage.type },
+          body: referenceImage,
+        });
+        const { storageId } = await result.json();
+        referenceImageStorageId = storageId;
+      }
+
       await createTemplateMutation({
         name: templateName.trim(),
         description: templateDescription.trim() || undefined,
-        isPublic
+        isPublic,
+        referenceImageStorageId
       });
 
       setShowCreateDialog(false);
       setTemplateName('');
       setTemplateDescription('');
       setIsPublic(false);
+      setReferenceImage(null);
+      setReferenceImagePreview(null);
     } catch (error) {
       console.error('Failed to create template:', error);
     } finally {
@@ -76,7 +104,58 @@ export default function TemplatesPage() {
     }
   };
 
-  const handleDuplicateTemplate = async (templateId: Id<"templates">, originalName: string) => {
+  const handleSetReferenceImage = useCallback((file: File) => {
+    setReferenceImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setReferenceImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleReferenceImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleSetReferenceImage(file);
+    }
+  };
+
+  useEffect(() => {
+    if (!showCreateDialog) {
+      return;
+    }
+
+    const handlePaste = (event: ClipboardEvent) => {
+      if (!event.clipboardData) return;
+
+      const items = event.clipboardData.items;
+      for (let i = 0; i < items.length; i += 1) {
+        const item = items[i];
+        if (!item.type.startsWith('image/')) continue;
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        const fileWithName = file.name
+          ? file
+          : new File([file], `pasted-image-${Date.now()}.png`, {
+              type: file.type || 'image/png',
+            });
+
+        handleSetReferenceImage(fileWithName);
+        event.preventDefault();
+        break;
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => {
+      window.removeEventListener('paste', handlePaste);
+    };
+  }, [showCreateDialog, handleSetReferenceImage]);
+
+  const handleDuplicateTemplate = async (e: React.MouseEvent, templateId: Id<"templates">, originalName: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     try {
       await duplicateTemplateMutation({
         templateId,
@@ -84,6 +163,21 @@ export default function TemplatesPage() {
       });
     } catch (error) {
       console.error('Failed to duplicate template:', error);
+    }
+  };
+
+  const handleDeleteTemplate = async () => {
+    if (!deleteConfirmation) return;
+
+    setDeletingTemplate(true);
+    try {
+      await deleteTemplateMutation({ templateId: deleteConfirmation.id });
+      setDeleteConfirmation(null);
+    } catch (error) {
+      console.error('Failed to delete template:', error);
+    } finally {
+      setDeletingTemplate(false);
+      setShowDeleteMenu(null);
     }
   };
 
@@ -205,11 +299,10 @@ export default function TemplatesPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              whileHover={{ scale: 1.02 }}
               className="group relative"
             >
-              <Link href={`/template/${template._id}`} className="block">
-                <div className="rounded-xl border bg-card hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer">
+              <Link href={`/templates/${template._id}`} className="block">
+                <div className="rounded-xl border bg-card hover:shadow-lg hover:scale-[1.02] transition-all duration-200 overflow-hidden cursor-pointer">
                 {/* Template Preview Area */}
                 <div className="aspect-[16/10] bg-gradient-to-br from-primary/10 to-primary/5 relative overflow-hidden">
                   {template.imageUrl ? (
@@ -235,20 +328,52 @@ export default function TemplatesPage() {
                     </>
                   )}
 
-                  {/* Ownership Badge */}
-                  <div className="absolute top-3 right-3">
+                  {/* Ownership Badge - Top Left */}
+                  <div className="absolute top-3 left-3">
                     {template.isPublic ? (
-                      <div className="px-2 py-1 bg-green-500/20 text-green-600 dark:text-green-400 rounded-full text-xs font-medium flex items-center gap-1">
+                      <div className="px-2 py-1 bg-green-500/20 backdrop-blur-sm text-green-600 dark:text-green-400 rounded-full text-xs font-medium flex items-center gap-1">
                         <Globe className="w-3 h-3" />
                         Public
                       </div>
                     ) : (
-                      <div className="px-2 py-1 bg-gray-500/20 text-gray-600 dark:text-gray-400 rounded-full text-xs font-medium flex items-center gap-1">
+                      <div className="px-2 py-1 bg-gray-500/20 backdrop-blur-sm text-gray-600 dark:text-gray-400 rounded-full text-xs font-medium flex items-center gap-1">
                         <Lock className="w-3 h-3" />
                         Private
                       </div>
                     )}
                   </div>
+
+                  {/* Actions Menu - Top Right (only for owned templates) */}
+                  {template.profileId === myTemplates[0]?.profileId && (
+                    <div className="absolute top-3 right-3">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setShowDeleteMenu(showDeleteMenu === template._id ? null : template._id);
+                        }}
+                        className="p-1.5 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      {showDeleteMenu === template._id && (
+                        <div className="absolute right-0 mt-1 bg-card border rounded-lg shadow-lg py-1 z-10">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDeleteConfirmation({ id: template._id, name: template.name });
+                              setShowDeleteMenu(null);
+                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50 transition-colors text-destructive w-full text-left"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Template Info */}
@@ -272,20 +397,19 @@ export default function TemplatesPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2">
-                    {template.profileId === myTemplates[0]?.profileId ? (
-                      <button className="flex-1 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm transition-colors">
-                        Edit Template
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleDuplicateTemplate(template._id, template.name)}
-                        className="flex-1 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm transition-colors flex items-center justify-center gap-1"
-                      >
-                        <Copy className="w-3 h-3" />
-                        Use Template
-                      </button>
-                    )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      {template.profileId !== myTemplates[0]?.profileId && (
+                        <button
+                          onClick={(e) => handleDuplicateTemplate(e, template._id, template.name)}
+                          className="px-3 py-1.5 bg-muted/50 hover:bg-muted text-sm rounded-lg transition-colors flex items-center gap-1"
+                        >
+                          <Copy className="w-3 h-3" />
+                          Use Template
+                        </button>
+                      )}
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
                 </div>
               </div>
@@ -309,6 +433,8 @@ export default function TemplatesPage() {
                 setTemplateName('');
                 setTemplateDescription('');
                 setIsPublic(false);
+                setReferenceImage(null);
+                setReferenceImagePreview(null);
               }}
             />
             <motion.div
@@ -316,7 +442,7 @@ export default function TemplatesPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="relative bg-card rounded-xl border shadow-xl w-full max-w-md mx-4"
+              className="relative bg-card rounded-xl border shadow-xl w-full max-w-md md:max-w-2xl mx-4"
             >
               {/* Dialog Header */}
               <div className="border-b px-6 py-4 flex items-center justify-between">
@@ -335,67 +461,116 @@ export default function TemplatesPage() {
               </div>
 
               {/* Dialog Content */}
-              <div className="p-6 space-y-4">
-                {/* Template Name */}
-                <div>
-                  <label htmlFor="template-name" className="text-sm font-medium mb-1.5 block">
-                    Name this template
-                  </label>
-                  <input
-                    id="template-name"
-                    type="text"
-                    value={templateName}
-                    onChange={(e) => setTemplateName(e.target.value)}
-                    placeholder="e.g., Vibrant Product Showcase, Minimal Tech Demo"
-                    className="w-full px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    autoFocus
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Give your template a memorable name that describes its style
-                  </p>
-                </div>
+              <div className="p-6">
+                <div className="flex flex-col gap-4 md:grid md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:gap-6">
+                  <div className="space-y-4">
+                    {/* Template Name */}
+                    <div>
+                      <label htmlFor="template-name" className="text-sm font-medium mb-1.5 block">
+                        Template name
+                      </label>
+                      <input
+                        id="template-name"
+                        type="text"
+                        value={templateName}
+                        onChange={(e) => setTemplateName(e.target.value)}
+                        placeholder="e.g., Dark Gradient, Minimal Tech"
+                        className="w-full px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        autoFocus
+                      />
+                    </div>
 
-                {/* Template Description */}
-                <div>
-                  <label htmlFor="template-description" className="text-sm font-medium mb-1.5 block">
-                    Describe the vibe <span className="text-muted-foreground">(optional)</span>
-                  </label>
-                  <textarea
-                    id="template-description"
-                    value={templateDescription}
-                    onChange={(e) => setTemplateDescription(e.target.value)}
-                    placeholder="e.g., Bold gradients with floating UI elements, perfect for showcasing modern apps with a premium feel..."
-                    className="w-full px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[80px] resize-none"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    What mood, style, or aesthetic will this template create?
-                  </p>
-                </div>
+                    {/* Template Description */}
+                    <div>
+                      <label htmlFor="template-description" className="text-sm font-medium mb-1.5 block">
+                        Description <span className="text-muted-foreground">(optional)</span>
+                      </label>
+                      <textarea
+                        id="template-description"
+                        value={templateDescription}
+                        onChange={(e) => setTemplateDescription(e.target.value)}
+                        placeholder="Describe the style or mood..."
+                        className="w-full px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[60px] resize-none"
+                      />
+                    </div>
 
-                {/* Public/Private Toggle */}
-                <div>
-                  <label className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30 cursor-pointer transition-colors">
-                    <div className="flex items-center gap-3">
-                      {isPublic ? <Globe className="w-5 h-5 text-green-600" /> : <Lock className="w-5 h-5 text-muted-foreground" />}
-                      <div>
-                        <p className="font-medium text-sm">Share with community</p>
-                        <p className="text-xs text-muted-foreground">
-                          {isPublic ? 'Others can discover and remix your template' : 'Keep this template private to your account'}
-                        </p>
+                    {/* Public/Private Toggle */}
+                    <div>
+                      <label className="flex items-center justify-between p-2 rounded-lg border hover:bg-muted/30 cursor-pointer transition-colors">
+                        <div className="flex items-center gap-2">
+                          {isPublic ? <Globe className="w-4 h-4 text-green-600" /> : <Lock className="w-4 h-4 text-muted-foreground" />}
+                          <span className="text-sm font-medium">
+                            {isPublic ? 'Public' : 'Private'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsPublic(!isPublic)}
+                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${
+                            isPublic ? 'bg-green-600' : 'bg-muted'
+                          }`}
+                        >
+                          <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                            isPublic ? 'translate-x-6' : 'translate-x-1'
+                          }`} />
+                        </button>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Reference Image Upload */}
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">
+                        Reference image <span className="text-muted-foreground">(optional)</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="file"
+                          id="reference-image"
+                          accept="image/*"
+                          onChange={handleReferenceImageChange}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="reference-image"
+                          className={`flex min-h-[216px] items-center justify-center gap-2 w-full px-3 ${referenceImagePreview ? 'py-4' : 'py-8'} rounded-lg border-2 border-dashed bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors`}
+                        >
+                          {referenceImagePreview ? (
+                            <div className="relative">
+                              <Image
+                                src={referenceImagePreview}
+                                alt="Reference preview"
+                                width={256}
+                                height={256}
+                                unoptimized
+                                className="max-h-48 w-auto rounded-lg object-contain"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setReferenceImage(null);
+                                  setReferenceImagePreview(null);
+                                }}
+                                className="absolute -top-2 -right-2 p-1 bg-background border rounded-full"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-5 h-5 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">
+                                Paste or upload inspiration image
+                              </span>
+                            </>
+                          )}
+                        </label>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsPublic(!isPublic)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        isPublic ? 'bg-green-600' : 'bg-muted'
-                      }`}
-                    >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        isPublic ? 'translate-x-6' : 'translate-x-1'
-                      }`} />
-                    </button>
-                  </label>
+                  </div>
                 </div>
               </div>
 
@@ -426,6 +601,70 @@ export default function TemplatesPage() {
                   )}
                   <span className="relative">
                     {creating ? 'Creating...' : 'Create Template'}
+                  </span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Dialog */}
+      <AnimatePresence>
+        {deleteConfirmation && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setDeleteConfirmation(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="relative bg-card rounded-xl border shadow-xl w-full max-w-md mx-4"
+            >
+              {/* Dialog Header */}
+              <div className="border-b px-6 py-4">
+                <h2 className="text-lg font-semibold">Delete Template</h2>
+              </div>
+
+              {/* Dialog Content */}
+              <div className="p-6">
+                <p className="text-muted-foreground mb-4">
+                  Are you sure you want to delete <span className="font-medium text-foreground">&quot;{deleteConfirmation.name}&quot;</span>?
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  This action cannot be undone. All template variants and generated screenshots will be permanently deleted.
+                </p>
+              </div>
+
+              {/* Dialog Footer */}
+              <div className="border-t px-6 py-4 flex gap-2">
+                <button
+                  onClick={() => setDeleteConfirmation(null)}
+                  disabled={deletingTemplate}
+                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-muted/50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteTemplate}
+                  disabled={deletingTemplate}
+                  className="flex-1 px-4 py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+                >
+                  {deletingTemplate && (
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                      animate={{ x: [-200, 200] }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                  )}
+                  <span className="relative">
+                    {deletingTemplate ? 'Deleting...' : 'Delete Template'}
                   </span>
                 </button>
               </div>

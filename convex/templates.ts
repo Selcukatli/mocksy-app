@@ -10,6 +10,7 @@ export const createTemplate = mutation({
     name: v.string(),
     description: v.optional(v.string()),
     isPublic: v.boolean(),
+    referenceImageStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     const profile = await getCurrentUser(ctx);
@@ -21,6 +22,7 @@ export const createTemplate = mutation({
       profileId: profile._id,
       name: args.name,
       description: args.description,
+      referenceImageStorageId: args.referenceImageStorageId,
       isPublic: args.isPublic,
       usageCount: 0,
       createdAt: Date.now(),
@@ -59,10 +61,15 @@ export const getMyTemplates = query({
         if (template.imageStorageId) {
           imageUrl = await ctx.storage.getUrl(template.imageStorageId);
         }
+        let referenceImageUrl = null;
+        if (template.referenceImageStorageId) {
+          referenceImageUrl = await ctx.storage.getUrl(template.referenceImageStorageId);
+        }
         return {
           ...template,
           activeVariant,
           imageUrl,
+          referenceImageUrl,
         };
       })
     );
@@ -99,6 +106,10 @@ export const getPublicTemplates = query({
         if (template.imageStorageId) {
           imageUrl = await ctx.storage.getUrl(template.imageStorageId);
         }
+        let referenceImageUrl = null;
+        if (template.referenceImageStorageId) {
+          referenceImageUrl = await ctx.storage.getUrl(template.referenceImageStorageId);
+        }
         return {
           ...template,
           profile: profile ? {
@@ -107,6 +118,7 @@ export const getPublicTemplates = query({
           } : null,
           activeVariant,
           imageUrl,
+          referenceImageUrl,
         };
       })
     );
@@ -140,10 +152,14 @@ export const getTemplate = query({
       activeVariant = await ctx.db.get(template.currentVariantId);
     }
 
-    // Get image URL
+    // Get image URLs
     let imageUrl = null;
     if (template.imageStorageId) {
       imageUrl = await ctx.storage.getUrl(template.imageStorageId);
+    }
+    let referenceImageUrl = null;
+    if (template.referenceImageStorageId) {
+      referenceImageUrl = await ctx.storage.getUrl(template.referenceImageStorageId);
     }
 
     // Get all variants for this template
@@ -158,6 +174,7 @@ export const getTemplate = query({
       activeVariant,
       variants,
       imageUrl,
+      referenceImageUrl,
     };
   },
 });

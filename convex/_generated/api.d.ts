@@ -15,9 +15,8 @@ import type {
 } from "convex/server";
 import type * as appScreens from "../appScreens.js";
 import type * as apps from "../apps.js";
-import type * as fileStorage_fileActions from "../fileStorage/fileActions.js";
-import type * as fileStorage_fileQueries from "../fileStorage/fileQueries.js";
-import type * as fileStorage_fileUploads from "../fileStorage/fileUploads.js";
+import type * as fileStorage_base64Files from "../fileStorage/base64Files.js";
+import type * as fileStorage_files from "../fileStorage/files.js";
 import type * as http from "../http.js";
 import type * as profiles from "../profiles.js";
 import type * as screenshotSets from "../screenshotSets.js";
@@ -35,9 +34,8 @@ import type * as webhooks from "../webhooks.js";
 declare const fullApi: ApiFromModules<{
   appScreens: typeof appScreens;
   apps: typeof apps;
-  "fileStorage/fileActions": typeof fileStorage_fileActions;
-  "fileStorage/fileQueries": typeof fileStorage_fileQueries;
-  "fileStorage/fileUploads": typeof fileStorage_fileUploads;
+  "fileStorage/base64Files": typeof fileStorage_base64Files;
+  "fileStorage/files": typeof fileStorage_files;
   http: typeof http;
   profiles: typeof profiles;
   screenshotSets: typeof screenshotSets;

@@ -26,7 +26,7 @@ export default function NewAppPage() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useUser();
   const createAppMutation = useMutation(api.apps.createApp);
-  const storeFromBase64 = useAction(api.fileStorage.fileActions.storeFromBase64);
+  const storeFromBase64 = useAction(api.fileStorage.base64Files.storeBase64File);
 
   // Redirect to welcome page if not signed in
   useEffect(() => {

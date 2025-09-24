@@ -16,8 +16,6 @@ import {
   Smartphone,
   Minus,
   ChevronDown,
-  Settings2,
-  Monitor,
   Sliders
 } from 'lucide-react';
 import { useEditorStore } from '@/stores/editorStore';
@@ -156,7 +154,7 @@ export default function ManageScreenshotPanel({
   } = useEditorStore();
 
   const updateScreenshotMutation = useMutation(api.screenshots.updateScreenshot);
-  const generateUploadUrl = useMutation(api.fileStorage.fileUploads.generateUploadUrl);
+  const generateUploadUrl = useMutation(api.fileStorage.files.generateUploadUrl);
   const uploadAppScreenMutation = useMutation(api.appScreens.uploadAppScreen);
 
   // Fetch app screens from Convex

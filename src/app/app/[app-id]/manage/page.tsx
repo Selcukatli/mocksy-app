@@ -65,7 +65,7 @@ export default function ManageAppPage({ params }: PageProps) {
   const app = useQuery(api.apps.getApp, { appId });
   const updateApp = useMutation(api.apps.updateApp);
   const deleteApp = useMutation(api.apps.deleteApp);
-  const storeFromBase64 = useAction(api.fileStorage.fileActions.storeFromBase64);
+  const storeFromBase64 = useAction(api.fileStorage.base64Files.storeBase64File);
 
   // Initialize form with app data
   useEffect(() => {

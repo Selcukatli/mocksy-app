@@ -77,7 +77,7 @@ export default function SourceImagesPage({ params }: PageProps) {
   const uploadAppScreen = useMutation(api.appScreens.uploadAppScreen);
   const deleteAppScreen = useMutation(api.appScreens.deleteAppScreen);
   const updateAppScreenName = useMutation(api.appScreens.updateAppScreenName);
-  const storeFromBase64 = useAction(api.fileStorage.fileActions.storeFromBase64);
+  const storeFromBase64 = useAction(api.fileStorage.base64Files.storeBase64File);
 
   // Local UI state
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());

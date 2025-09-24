@@ -14,7 +14,11 @@ import {
   Plus,
   Trash2,
   Smartphone,
-  Minus
+  Minus,
+  ChevronDown,
+  Settings2,
+  Monitor,
+  Sliders
 } from 'lucide-react';
 import { useEditorStore } from '@/stores/editorStore';
 import { useMutation, useQuery } from 'convex/react';
@@ -132,6 +136,11 @@ export default function ManageScreenshotPanel({
     position: 'top',
     alignment: 'center'
   });
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [showDeviceFrame, setShowDeviceFrame] = useState(true);
+  const [frameThickness, setFrameThickness] = useState(30); // Default thickness in px
+  const [frameColor, setFrameColor] = useState('#000000'); // Default black frame
+  const [showDynamicIsland, setShowDynamicIsland] = useState(true); // Show Dynamic Island by default
   const {
     isSourceImagePanelOpen,
     isThemePanelOpen,
@@ -339,10 +348,12 @@ export default function ManageScreenshotPanel({
         </div>
 
         {/* Panel Content */}
-        <div className="flex-1 flex">
+        <div className="flex-1 flex overflow-hidden">
           {/* Left Side - Controls */}
-          <div className="w-[400px] border-r bg-muted/30 p-6 overflow-y-auto">
-            <div className="space-y-6">
+          <div className="w-[400px] border-r bg-muted/30 flex flex-col">
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-6">
               {/* Text Inputs */}
               <div className="space-y-4">
                 <div>
@@ -419,26 +430,30 @@ export default function ManageScreenshotPanel({
                         <Smartphone className="w-5 h-5 text-muted-foreground" />
                         <div className="text-left">
                           <p className="font-medium">App Screen</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs text-muted-foreground">
-                              {selectedAppScreen
-                                ? `${appScreens.find(s => s._id === selectedAppScreen)?.name || 'Screen'}`
-                                : 'Choose from uploaded screens'}
-                            </p>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {selectedAppScreen
+                              ? `${appScreens.find(s => s._id === selectedAppScreen)?.name || 'Screen'}`
+                              : 'Choose from uploaded screens'}
+                          </p>
                         </div>
                       </div>
-                      {selectedAppScreenUrl && (
-                        <div className="relative w-8 h-14 rounded overflow-hidden bg-muted">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={selectedAppScreenUrl}
-                            alt="Selected screen"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {selectedAppScreenUrl ? (
+                          <div className="relative w-6 h-10 rounded overflow-hidden bg-muted">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={selectedAppScreenUrl}
+                              alt="Selected screen"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="relative w-6 h-10 rounded bg-muted/50 flex items-center justify-center">
+                            <ImageIcon className="w-3 h-3 text-muted-foreground" />
+                          </div>
+                        )}
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                      </div>
                     </div>
                   </button>
                   {selectedAppScreen && (
@@ -481,44 +496,44 @@ export default function ManageScreenshotPanel({
                       <Layout className="w-5 h-5 text-muted-foreground" />
                       <div className="text-left">
                         <p className="font-medium">Layout</p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs text-muted-foreground">
-                            Text {selectedLayout.position === 'top' ? 'Top' : 'Bottom'},
-                            {selectedLayout.alignment === 'left' ? ' Left' :
-                             selectedLayout.alignment === 'right' ? ' Right' : ' Center'} Aligned
-                          </p>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Text {selectedLayout.position === 'top' ? 'Top' : 'Bottom'},
+                          {selectedLayout.alignment === 'left' ? ' Left' :
+                           selectedLayout.alignment === 'right' ? ' Right' : ' Center'} Aligned
+                        </p>
                       </div>
                     </div>
-                    {/* Mini layout preview */}
-                    <div className="relative w-8 h-14 border border-muted rounded bg-slate-900">
-                      <div className="absolute inset-0.5 overflow-hidden">
-                        {/* Header representation */}
-                        {selectedLayout.position === 'top' && (
-                          <div className="absolute top-0 left-0 right-0 p-0.5 bg-gradient-to-b from-black/80 to-transparent">
-                            <div className={`flex ${
-                              selectedLayout.alignment === 'left' ? 'justify-start' :
-                              selectedLayout.alignment === 'right' ? 'justify-end' : 'justify-center'
-                            }`}>
-                              <div className="h-0.5 w-3 bg-white/80 rounded-full" />
+                    <div className="flex items-center gap-2">
+                      {/* Mini layout preview - smaller size */}
+                      <div className="relative w-6 h-10 border border-muted rounded bg-slate-900">
+                        <div className="absolute inset-0.5 overflow-hidden">
+                          {/* Header representation */}
+                          {selectedLayout.position === 'top' && (
+                            <div className="absolute top-0 left-0 right-0 p-0.5 bg-gradient-to-b from-black/80 to-transparent">
+                              <div className={`flex ${
+                                selectedLayout.alignment === 'left' ? 'justify-start' :
+                                selectedLayout.alignment === 'right' ? 'justify-end' : 'justify-center'
+                              }`}>
+                                <div className="h-[1px] w-2 bg-white/80 rounded-full" />
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        {/* Screen content */}
-                        <div className="absolute inset-x-1 top-1/3 bottom-1/3 bg-slate-700/30 rounded-sm" />
-                        {/* Header for bottom */}
-                        {selectedLayout.position === 'bottom' && (
-                          <div className="absolute bottom-0 left-0 right-0 p-0.5 bg-gradient-to-t from-black/80 to-transparent">
-                            <div className={`flex ${
-                              selectedLayout.alignment === 'left' ? 'justify-start' :
-                              selectedLayout.alignment === 'right' ? 'justify-end' : 'justify-center'
-                            }`}>
-                              <div className="h-0.5 w-3 bg-white/80 rounded-full" />
+                          )}
+                          {/* Screen content */}
+                          <div className="absolute inset-x-1 top-1/3 bottom-1/3 bg-slate-700/30 rounded-sm" />
+                          {/* Header for bottom */}
+                          {selectedLayout.position === 'bottom' && (
+                            <div className="absolute bottom-0 left-0 right-0 p-0.5 bg-gradient-to-t from-black/80 to-transparent">
+                              <div className={`flex ${
+                                selectedLayout.alignment === 'left' ? 'justify-start' :
+                                selectedLayout.alignment === 'right' ? 'justify-end' : 'justify-center'
+                              }`}>
+                                <div className="h-[1px] w-2 bg-white/80 rounded-full" />
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </div>
                 </button>
@@ -541,7 +556,151 @@ export default function ManageScreenshotPanel({
                 />
               </div>
 
-              {/* Generate Button */}
+              {/* Device Frame Settings - Combined */}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="px-4 py-3 bg-muted/20 hover:bg-muted/30 transition-colors flex items-center justify-between">
+                  <button
+                    onClick={() => showDeviceFrame && setShowMoreOptions(!showMoreOptions)}
+                    className="flex-1 flex items-center gap-2"
+                    disabled={!showDeviceFrame}
+                  >
+                    <Smartphone className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Device Frame</span>
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const newValue = !showDeviceFrame;
+                        setShowDeviceFrame(newValue);
+                        if (newValue) {
+                          setShowMoreOptions(true); // Auto-expand when enabling
+                        } else {
+                          setShowMoreOptions(false); // Close when disabling
+                        }
+                      }}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        showDeviceFrame ? 'bg-primary' : 'bg-muted'
+                      }`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        showDeviceFrame ? 'translate-x-6' : 'translate-x-1'
+                      }`} />
+                    </button>
+                    {showDeviceFrame && (
+                      <button
+                        onClick={() => setShowMoreOptions(!showMoreOptions)}
+                        className="p-1"
+                      >
+                        <ChevronDown
+                          className={`w-4 h-4 text-muted-foreground transition-transform ${
+                            showMoreOptions ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {showDeviceFrame && showMoreOptions && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div className="p-4 space-y-4 bg-muted/10 border-t">
+                            {/* Frame Color Picker */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                  <Palette className="w-4 h-4" />
+                                  Frame Color
+                                </span>
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={frameColor}
+                                  onChange={(e) => setFrameColor(e.target.value)}
+                                  className="w-16 h-10 rounded border border-border cursor-pointer"
+                                />
+                                <input
+                                  type="text"
+                                  value={frameColor}
+                                  onChange={(e) => setFrameColor(e.target.value)}
+                                  placeholder="#000000"
+                                  className="flex-1 px-3 py-2 bg-background border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-sm font-mono"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Frame Thickness Slider */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                  <Sliders className="w-4 h-4" />
+                                  Frame Thickness
+                                </span>
+                                <span className="text-xs text-muted-foreground">{frameThickness}px</span>
+                              </label>
+                              <input
+                                type="range"
+                                min="5"
+                                max="50"
+                                value={frameThickness}
+                                onChange={(e) => setFrameThickness(parseInt(e.target.value))}
+                                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer slider"
+                                style={{
+                                  background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${((frameThickness - 5) / 45) * 100}%, hsl(var(--muted)) ${((frameThickness - 5) / 45) * 100}%, hsl(var(--muted)) 100%)`
+                                }}
+                              />
+                            </div>
+
+                            {/* Dynamic Island Toggle */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium flex items-center gap-2">
+                                  <Smartphone className="w-4 h-4" />
+                                  Dynamic Island
+                                </label>
+                                <button
+                                  onClick={() => setShowDynamicIsland(!showDynamicIsland)}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    showDynamicIsland ? 'bg-primary' : 'bg-muted'
+                                  }`}
+                                >
+                                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                    showDynamicIsland ? 'translate-x-6' : 'translate-x-1'
+                                  }`} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Art Direction */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium flex items-center gap-2">
+                                <Palette className="w-4 h-4" />
+                                Art Direction
+                              </label>
+                              <textarea
+                                value={artDirection}
+                                onChange={(e) => setArtDirection(e.target.value)}
+                                placeholder="Describe the visual style, mood, or artistic direction..."
+                                className="w-full px-3 py-2 bg-background border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none resize-none text-sm"
+                                rows={2}
+                              />
+                            </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+            </div>
+
+            {/* Sticky Bottom - Generate Button */}
+            <div className="p-6 border-t bg-background/95 backdrop-blur-sm">
               <button
                 onClick={handleGenerateClick}
                 className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
@@ -677,13 +836,40 @@ export default function ManageScreenshotPanel({
                     </div>
 
                     {/* App Screen Content Area with padding */}
-                    <div className={`flex-1 relative px-4 ${
+                    <div className={`flex-1 relative ${
+                      showDeviceFrame ? `px-6` : 'px-4'
+                    } ${
                       selectedLayout.position === 'top' ? 'pb-6' : 'pt-6'
                     } flex items-center justify-center`}>
+                      {/* Device Frame Wrapper */}
                       <div
-                        className="rounded-[20px] overflow-hidden relative bg-black group cursor-pointer"
-                        onClick={openSourceImagePanel}
+                        className={`relative ${
+                          showDeviceFrame
+                            ? 'shadow-2xl'
+                            : ''
+                        }`}
+                        style={{
+                          backgroundColor: showDeviceFrame ? frameColor : 'transparent',
+                          borderRadius: showDeviceFrame ? `${Math.min(Math.max(frameThickness, 20), 40)}px` : '0',
+                          padding: showDeviceFrame ? `${Math.max(frameThickness * 0.4, 3)}px` : '0'
+                        }}
                       >
+                        {/* Inner Screen */}
+                        <div
+                          className="rounded-[20px] overflow-hidden relative bg-black group cursor-pointer"
+                          onClick={openSourceImagePanel}
+                        >
+                        {/* Dynamic Island */}
+                        {showDeviceFrame && showDynamicIsland && (
+                          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
+                            <div
+                              className="w-[90px] h-[24px] bg-black rounded-full"
+                              style={{
+                                boxShadow: '0 0 0 2px rgba(0,0,0,0.3)',
+                              }}
+                            />
+                          </div>
+                        )}
                         {selectedAppScreenUrl ? (
                           // Show selected app screen with natural dimensions
                           <>
@@ -708,7 +894,7 @@ export default function ManageScreenshotPanel({
                           </div>
                         ) : (
                           // Empty state - maintain aspect ratio
-                          <div className="w-[240px] aspect-[9/16] bg-black/20 flex flex-col items-center justify-center p-8 transition-colors group-hover:bg-black/30">
+                          <div className="w-[240px] aspect-[9/16] bg-slate-800 flex flex-col items-center justify-center p-8 transition-colors group-hover:bg-slate-700">
                             <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
                               <ImageIcon className="w-10 h-10 text-white/40 group-hover:text-white/60 transition-colors" />
                             </div>
@@ -718,6 +904,7 @@ export default function ManageScreenshotPanel({
                             </p>
                           </div>
                         )}
+                        </div>
                       </div>
                     </div>
                   </div>

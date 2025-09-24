@@ -120,9 +120,9 @@ export default function Home() {
               Welcome to Mocksy
             </span>
             <motion.span
-              className="absolute -inset-x-4 -inset-y-2 bg-gradient-to-r from-blue-600/10 via-purple-600/10 via-pink-600/10 to-orange-500/10 blur-3xl transition-all duration-300 group-hover:blur-2xl group-hover:opacity-100"
+              className="absolute -inset-x-4 -inset-y-2 bg-gradient-to-r from-blue-600/5 via-purple-600/5 via-pink-600/5 to-orange-500/5 blur-3xl transition-all duration-300 group-hover:blur-2xl group-hover:opacity-60"
               animate={{
-                opacity: [0.3, 0.8, 0.3],
+                opacity: [0.2, 0.4, 0.2],
                 scale: [0.95, 1.05, 0.95],
               }}
               transition={{
@@ -133,13 +133,14 @@ export default function Home() {
             />
           </span>
           <motion.div
-            className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-purple-600/40 to-transparent transition-all duration-300 group-hover:via-purple-600/80 group-hover:h-1"
+            className="absolute -bottom-1 left-0 right-0 h-0.5 overflow-hidden"
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
-            whileHover={{ scaleX: 1.1 }}
             transition={{ duration: 1.2, delay: 0.8, ease: "easeOut" }}
             style={{ originX: 0.5 }}
-          />
+          >
+            <div className="h-full w-[200%] bg-gradient-to-r from-transparent via-purple-600/20 to-transparent group-hover:via-purple-600/40 transition-all duration-300 group-hover:animate-gradient-slide" />
+          </motion.div>
         </motion.h1>
 
         {/* Feature Cards */}

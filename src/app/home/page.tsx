@@ -197,7 +197,7 @@ export default function Home() {
             </motion.div>
           </Link>
 
-          <Link href="/browse-vibes" className="group">
+          <Link href="/templates" className="group">
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

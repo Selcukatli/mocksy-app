@@ -21,6 +21,9 @@ import type * as http from "../http.js";
 import type * as profiles from "../profiles.js";
 import type * as screenshotSets from "../screenshotSets.js";
 import type * as screenshots from "../screenshots.js";
+import type * as templateScreenshots from "../templateScreenshots.js";
+import type * as templateVariants from "../templateVariants.js";
+import type * as templates from "../templates.js";
 import type * as webhooks from "../webhooks.js";
 
 /**
@@ -40,6 +43,9 @@ declare const fullApi: ApiFromModules<{
   profiles: typeof profiles;
   screenshotSets: typeof screenshotSets;
   screenshots: typeof screenshots;
+  templateScreenshots: typeof templateScreenshots;
+  templateVariants: typeof templateVariants;
+  templates: typeof templates;
   webhooks: typeof webhooks;
 }>;
 export declare const api: FilterApi<

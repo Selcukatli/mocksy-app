@@ -90,4 +90,93 @@ export default defineSchema({
     .index("by_set", ["setId", "slotNumber"])
     .index("by_app", ["appId"])
     .index("by_creator", ["createdBy"]),
+
+  // Templates system - replaces vibes
+  templates: defineTable({
+    profileId: v.id("profiles"), // Template owner
+    name: v.string(), // Template name
+    description: v.optional(v.string()), // Template description
+    isPublic: v.boolean(), // Whether template is public/shareable
+    currentVariantId: v.optional(v.id("templateVariants")), // Points to active variant
+    usageCount: v.optional(v.number()), // Track how many times used
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_profile", ["profileId"])
+    .index("by_public", ["isPublic"])
+    .index("by_profile_and_created", ["profileId", "createdAt"]),
+
+  templateVariants: defineTable({
+    templateId: v.id("templates"), // Parent template
+    version: v.number(), // Version number (1, 2, 3...)
+    basePrompt: v.string(), // Core image-to-image prompt
+    styleSettings: v.object({
+      colorScheme: v.optional(v.string()), // Color palette/theme
+      artStyle: v.optional(v.string()), // Art direction
+      mood: v.optional(v.string()), // Mood/feeling
+      effects: v.optional(v.array(v.string())), // Special effects/filters
+    }),
+    deviceFrameSettings: v.optional(v.object({
+      showFrame: v.boolean(),
+      frameColor: v.string(),
+      frameThickness: v.number(),
+      showDynamicIsland: v.optional(v.boolean()),
+    })),
+    isActive: v.boolean(), // Whether this is the active variant
+    notes: v.optional(v.string()), // Version notes/changelog
+    createdAt: v.number(),
+  })
+    .index("by_template", ["templateId"])
+    .index("by_template_and_active", ["templateId", "isActive"])
+    .index("by_template_and_version", ["templateId", "version"]),
+
+  templateScreenshots: defineTable({
+    templateVariantId: v.id("templateVariants"), // Links to specific variant
+    templateId: v.id("templates"), // Denormalized for queries
+    appId: v.optional(v.id("apps")), // Optional app association
+
+    // Content
+    headerText: v.string(),
+    subheaderText: v.optional(v.string()),
+
+    // Layout configuration
+    layoutSettings: v.object({
+      textPosition: v.union(
+        v.literal("top"),
+        v.literal("bottom"),
+        v.literal("overlay-top"),
+        v.literal("overlay-bottom")
+      ),
+      textAlignment: v.union(
+        v.literal("left"),
+        v.literal("center"),
+        v.literal("right")
+      ),
+      headerStyle: v.optional(v.object({
+        fontSize: v.optional(v.string()),
+        fontWeight: v.optional(v.string()),
+        color: v.optional(v.string()),
+      })),
+      subheaderStyle: v.optional(v.object({
+        fontSize: v.optional(v.string()),
+        fontWeight: v.optional(v.string()),
+        color: v.optional(v.string()),
+      })),
+    }),
+
+    // Generated assets
+    imageStorageId: v.optional(v.id("_storage")), // Generated screenshot
+    sourceScreenId: v.optional(v.id("appScreens")), // Source app screen used
+
+    // Metadata
+    slotNumber: v.optional(v.number()), // If part of a set
+    tags: v.optional(v.array(v.string())), // For searching/filtering
+    generationSettings: v.optional(v.string()), // JSON string of generation params
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_template_variant", ["templateVariantId"])
+    .index("by_template", ["templateId"])
+    .index("by_app", ["appId"]),
 });

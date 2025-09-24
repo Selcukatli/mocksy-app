@@ -1,5 +1,26 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, QueryCtx, MutationCtx } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
+
+/**
+ * Helper function to get the current user's profile
+ * Can be used within queries and mutations
+ */
+export async function getCurrentUser(
+  ctx: QueryCtx | MutationCtx
+): Promise<Doc<"profiles"> | null> {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    return null;
+  }
+
+  const profile = await ctx.db
+    .query("profiles")
+    .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
+    .first();
+
+  return profile;
+}
 
 export const getCurrentProfile = query({
   args: {},

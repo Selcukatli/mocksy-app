@@ -8,6 +8,10 @@ import { generateFluxTextToImage } from "./clients/fluxImageClient";
 import { editImageWithKontext, editImageWithKontextMulti } from "./clients/kontextImageClient";
 import { generateGptTextToImage, editImageWithGpt } from "./clients/gptImageClient";
 import { generateImagenTextToImage } from "./clients/imagenImageClient";
+import { GeminiImageClient } from "./clients/geminiImageClient";
+import { NanoBananaClient } from "./clients/nanoBananaClient";
+import { QwenImageClient } from "./clients/qwenImageClient";
+import { FluxProUltraClient } from "./clients/fluxProUltraClient";
 
 // Convex validators for GPT Image enums
 const gptQualityValidator = v.union(
@@ -256,6 +260,168 @@ export const kontextMultiEditImage = action({
   returns: v.any(),
   handler: async (ctx, args) => {
     return await editImageWithKontextMulti(args);
+  },
+});
+
+/**
+ * Generate image using Gemini 2.5 Flash - Fast, affordable image generation by Google
+ * Best for quick prototyping and testing
+ */
+export const geminiFlashTextToImage = action({
+  args: {
+    prompt: v.string(),
+    num_images: v.optional(v.number()),
+    output_format: v.optional(v.union(v.literal("jpeg"), v.literal("png"))),
+    sync_mode: v.optional(v.boolean()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await GeminiImageClient.generateFlashImage(args);
+  },
+});
+
+/**
+ * Edit image using Gemini 2.5 Flash Edit
+ * Fast image editing with natural language instructions
+ */
+export const geminiFlashEditImage = action({
+  args: {
+    prompt: v.string(),
+    image_url: v.string(),
+    num_images: v.optional(v.number()),
+    output_format: v.optional(v.union(v.literal("jpeg"), v.literal("png"))),
+    sync_mode: v.optional(v.boolean()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await GeminiImageClient.editFlashImage(args);
+  },
+});
+
+/**
+ * Generate image using Nano Banana - Google's state-of-the-art model
+ * Advanced generation with excellent quality/speed balance
+ */
+export const nanoBananaTextToImage = action({
+  args: {
+    prompt: v.string(),
+    num_images: v.optional(v.number()),
+    output_format: v.optional(v.union(v.literal("jpeg"), v.literal("png"))),
+    sync_mode: v.optional(v.boolean()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await NanoBananaClient.generateImage(args);
+  },
+});
+
+/**
+ * Edit image using Nano Banana Edit
+ * State-of-the-art image editing by Google
+ */
+export const nanoBananaEditImage = action({
+  args: {
+    prompt: v.string(),
+    image_url: v.string(),
+    num_images: v.optional(v.number()),
+    output_format: v.optional(v.union(v.literal("jpeg"), v.literal("png"))),
+    sync_mode: v.optional(v.boolean()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await NanoBananaClient.editImage(args);
+  },
+});
+
+/**
+ * Generate image using Qwen Image - Excellent text rendering in images
+ * Best for images that need clear, readable text
+ */
+export const qwenTextToImage = action({
+  args: {
+    prompt: v.string(),
+    num_images: v.optional(v.number()),
+    image_size: v.optional(v.union(
+      v.literal("landscape_4_3"),
+      v.literal("portrait_3_4"),
+      v.literal("square"),
+      v.literal("square_hd"),
+      v.literal("landscape_16_9"),
+      v.literal("portrait_9_16")
+    )),
+    acceleration: v.optional(v.union(v.literal("none"), v.literal("regular"), v.literal("high"))),
+    output_format: v.optional(v.union(v.literal("jpeg"), v.literal("png"))),
+    sync_mode: v.optional(v.boolean()),
+    guidance_scale: v.optional(v.number()),
+    num_inference_steps: v.optional(v.number()),
+    seed: v.optional(v.number()),
+    negative_prompt: v.optional(v.string()),
+    enable_safety_checker: v.optional(v.boolean()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await QwenImageClient.generateImage(args);
+  },
+});
+
+/**
+ * Edit image using Qwen Image Edit Plus
+ * Advanced image editing with excellent text preservation
+ */
+export const qwenEditImage = action({
+  args: {
+    prompt: v.string(),
+    image_url: v.string(),
+    num_images: v.optional(v.number()),
+    image_size: v.optional(v.union(
+      v.literal("landscape_4_3"),
+      v.literal("portrait_3_4"),
+      v.literal("square"),
+      v.literal("square_hd"),
+      v.literal("landscape_16_9"),
+      v.literal("portrait_9_16")
+    )),
+    acceleration: v.optional(v.union(v.literal("none"), v.literal("regular"), v.literal("high"))),
+    output_format: v.optional(v.union(v.literal("jpeg"), v.literal("png"))),
+    sync_mode: v.optional(v.boolean()),
+    guidance_scale: v.optional(v.number()),
+    num_inference_steps: v.optional(v.number()),
+    seed: v.optional(v.number()),
+    negative_prompt: v.optional(v.string()),
+    enable_safety_checker: v.optional(v.boolean()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await QwenImageClient.editImage(args);
+  },
+});
+
+/**
+ * Generate image using FLUX Pro Ultra v1.1 - Ultra-high quality output
+ * Premium model for the highest quality results with 2K-4MP resolution
+ */
+export const fluxProUltraTextToImage = action({
+  args: {
+    prompt: v.string(),
+    aspect_ratio: v.optional(v.union(
+      v.literal("1:1"),
+      v.literal("16:9"),
+      v.literal("9:16"),
+      v.literal("4:3"),
+      v.literal("3:4")
+    )),
+    enhance_prompt: v.optional(v.boolean()),
+    num_images: v.optional(v.number()),
+    output_format: v.optional(v.union(v.literal("jpeg"), v.literal("png"))),
+    sync_mode: v.optional(v.boolean()),
+    safety_tolerance: v.optional(fluxSafetyToleranceValidator),
+    enable_safety_checker: v.optional(v.boolean()),
+    seed: v.optional(v.number()),
+    raw: v.optional(v.boolean()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await FluxProUltraClient.generateImage(args);
   },
 });
 

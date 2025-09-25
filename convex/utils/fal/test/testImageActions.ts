@@ -392,6 +392,172 @@ const testImageStorage = async (ctx: ActionCtx): Promise<TestResult> => {
 };
 
 /**
+ * Test Gemini Flash text-to-image generation
+ */
+const testGeminiFlashTextToImage = async (ctx: ActionCtx): Promise<TestResult> => {
+  const startTime = Date.now();
+
+  try {
+    console.log("[Test] Testing Gemini Flash text-to-image generation");
+
+    const result = await ctx.runAction(api.utils.fal.falImageActions.geminiFlashTextToImage, {
+      prompt: "A simple yellow star on blue background",
+      num_images: 1,
+      output_format: "jpeg",
+      sync_mode: false
+    });
+
+    const typedResult = result as { images?: Array<{ url: string }> };
+
+    if (!typedResult.images || typedResult.images.length === 0) {
+      throw new Error("No images generated");
+    }
+
+    console.log("[Test] Gemini Flash generated image:", typedResult.images[0].url.substring(0, 50) + "...");
+
+    return {
+      name: "Gemini Flash Text-to-Image",
+      status: "passed",
+      duration: Date.now() - startTime,
+      details: { imageUrl: typedResult.images[0].url }
+    };
+  } catch (error) {
+    return {
+      name: "Gemini Flash Text-to-Image",
+      status: "failed",
+      duration: Date.now() - startTime,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+};
+
+/**
+ * Test Nano Banana text-to-image generation
+ */
+const testNanoBananaTextToImage = async (ctx: ActionCtx): Promise<TestResult> => {
+  const startTime = Date.now();
+
+  try {
+    console.log("[Test] Testing Nano Banana text-to-image generation");
+
+    const result = await ctx.runAction(api.utils.fal.falImageActions.nanoBananaTextToImage, {
+      prompt: "A simple orange hexagon on gray background",
+      num_images: 1,
+      output_format: "jpeg"
+    });
+
+    const typedResult = result as { images?: Array<{ url: string }> };
+
+    if (!typedResult.images || typedResult.images.length === 0) {
+      throw new Error("No images generated");
+    }
+
+    console.log("[Test] Nano Banana generated image:", typedResult.images[0].url.substring(0, 50) + "...");
+
+    return {
+      name: "Nano Banana Text-to-Image",
+      status: "passed",
+      duration: Date.now() - startTime,
+      details: { imageUrl: typedResult.images[0].url }
+    };
+  } catch (error) {
+    return {
+      name: "Nano Banana Text-to-Image",
+      status: "failed",
+      duration: Date.now() - startTime,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+};
+
+/**
+ * Test Qwen text-to-image generation
+ */
+const testQwenTextToImage = async (ctx: ActionCtx): Promise<TestResult> => {
+  const startTime = Date.now();
+
+  try {
+    console.log("[Test] Testing Qwen text-to-image generation");
+
+    const result = await ctx.runAction(api.utils.fal.falImageActions.qwenTextToImage, {
+      prompt: "A simple text that says 'TEST' in bold letters on white background",
+      num_images: 1,
+      image_size: "square",
+      acceleration: "high", // Fast generation
+      output_format: "png",
+      guidance_scale: 2.5,
+      num_inference_steps: 10, // Minimal steps for speed
+      enable_safety_checker: true
+    });
+
+    const typedResult = result as { images?: Array<{ url: string }> };
+
+    if (!typedResult.images || typedResult.images.length === 0) {
+      throw new Error("No images generated");
+    }
+
+    console.log("[Test] Qwen generated image:", typedResult.images[0].url.substring(0, 50) + "...");
+
+    return {
+      name: "Qwen Text-to-Image",
+      status: "passed",
+      duration: Date.now() - startTime,
+      details: { imageUrl: typedResult.images[0].url }
+    };
+  } catch (error) {
+    return {
+      name: "Qwen Text-to-Image",
+      status: "failed",
+      duration: Date.now() - startTime,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+};
+
+/**
+ * Test FLUX Pro Ultra text-to-image generation
+ */
+const testFluxProUltraTextToImage = async (ctx: ActionCtx): Promise<TestResult> => {
+  const startTime = Date.now();
+
+  try {
+    console.log("[Test] Testing FLUX Pro Ultra text-to-image generation");
+
+    const result = await ctx.runAction(api.utils.fal.falImageActions.fluxProUltraTextToImage, {
+      prompt: "A simple purple diamond on cream background, ultra high quality",
+      aspect_ratio: "1:1",
+      enhance_prompt: false, // Don't enhance for testing
+      num_images: 1,
+      output_format: "jpeg",
+      safety_tolerance: "3",
+      enable_safety_checker: true
+    });
+
+    const typedResult = result as { images?: Array<{ url: string }> };
+
+    if (!typedResult.images || typedResult.images.length === 0) {
+      throw new Error("No images generated");
+    }
+
+    console.log("[Test] FLUX Pro Ultra generated image:", typedResult.images[0].url.substring(0, 50) + "...");
+
+    return {
+      name: "FLUX Pro Ultra Text-to-Image",
+      status: "passed",
+      duration: Date.now() - startTime,
+      details: { imageUrl: typedResult.images[0].url }
+    };
+  } catch (error) {
+    return {
+      name: "FLUX Pro Ultra Text-to-Image",
+      status: "failed",
+      duration: Date.now() - startTime,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+};
+
+/**
  * Run all FAL image action tests
  */
 export const runAllTests = action({
@@ -425,6 +591,11 @@ export const runAllTests = action({
       testImagenTextToImage(ctx),
       testKontextEditImage(ctx),
       testKontextMultiEdit(ctx),
+      // New model tests
+      testGeminiFlashTextToImage(ctx),
+      testNanoBananaTextToImage(ctx),
+      testQwenTextToImage(ctx),
+      testFluxProUltraTextToImage(ctx),
     ]);
     
     // Calculate summary

@@ -66,9 +66,13 @@ convex/utils/fal/
 ├── clients/                           # Model-specific client implementations
 │   ├── falImageClient.ts              # Core generic API client
 │   ├── fluxImageClient.ts             # FLUX model client
-│   ├── kontextImageClient.ts          # FLUX Kontext model client  
+│   ├── fluxProUltraClient.ts         # FLUX Pro Ultra client
+│   ├── kontextImageClient.ts          # FLUX Kontext model client
 │   ├── gptImageClient.ts              # GPT Image model client
-│   └── imagenImageClient.ts           # Imagen4 model client
+│   ├── imagenImageClient.ts           # Imagen4 model client
+│   ├── geminiImageClient.ts           # Gemini 2.5 Flash client (text & edit)
+│   ├── nanoBananaClient.ts            # Nano Banana client (text & edit)
+│   └── qwenImageClient.ts             # Qwen Image client (text & edit)
 ├── falImageActions.ts                 # Convex action wrappers
 ├── index.ts                           # Barrel exports
 └── README.md                          # This file
@@ -92,14 +96,26 @@ npx convex env set FAL_KEY your_fal_ai_api_key_here --prod
 npx convex env set OPENAI_API_KEY your_openai_api_key_here --prod
 ```
 
+## Model Distinctions
+
+### Important: Gemini 2.5 Flash vs Nano Banana
+- **These are SEPARATE models** from Google, not the same endpoint
+- **Gemini 2.5 Flash** (`fal-ai/gemini-25-flash-image`): $0.03/image - Fast, efficient generation
+- **Nano Banana** (`fal-ai/nano-banana`): $0.04/image - State-of-the-art quality
+- Both support text-to-image AND image editing through separate endpoints
+
 ## Supported Models & Clients
 
-| Model | Client | Endpoint | Capabilities |
-|-------|--------|----------|-------------|
-| **FLUX Schnell/Dev/Pro** | `clients/fluxImageClient.ts` | `fal-ai/flux-1/*` | Fast, high-quality text-to-image |
-| **FLUX Kontext Pro/Max** | `clients/kontextImageClient.ts` | `fal-ai/flux-pro/kontext/*` | Context-aware image editing |
-| **GPT Image 1** | `clients/gptImageClient.ts` | `fal-ai/gpt-image-1/*` | OpenAI text-to-image & editing |
-| **Imagen4 Preview** | `clients/imagenImageClient.ts` | `fal-ai/imagen4/preview` | Google's photorealistic generation |
+| Model | Client | Endpoint | Capabilities | Cost |
+|-------|--------|----------|-------------|------|
+| **FLUX Schnell/Dev/Pro** | `clients/fluxImageClient.ts` | `fal-ai/flux-1/*` | Fast, high-quality text-to-image | $0.025-0.05 |
+| **FLUX Pro Ultra** | `clients/fluxProUltraClient.ts` | `fal-ai/flux-pro/v1.1-ultra` | Premium ultra-quality, 2K-4MP | $0.06 |
+| **FLUX Kontext Pro/Max** | `clients/kontextImageClient.ts` | `fal-ai/flux-pro/kontext/*` | Context-aware image editing | $0.04 |
+| **GPT Image 1** | `clients/gptImageClient.ts` | `fal-ai/gpt-image-1/*` | OpenAI text-to-image & editing | $0.08 |
+| **Imagen4 Preview** | `clients/imagenImageClient.ts` | `fal-ai/imagen4/preview` | Google's photorealistic generation | $0.07 |
+| **Gemini 2.5 Flash** | `clients/geminiImageClient.ts` | `fal-ai/gemini-25-flash-image` | Fast generation, text & edit | $0.03 |
+| **Nano Banana** | `clients/nanoBananaClient.ts` | `fal-ai/nano-banana` | State-of-the-art Google model | $0.04 |
+| **Qwen Image** | `clients/qwenImageClient.ts` | `fal-ai/qwen-image` | Excellent text rendering | $0.02 |
 
 ## Usage Examples
 
@@ -183,12 +199,21 @@ const result = await convex.action(api.utils.fal.falImageActions.gptEditImage, {
 
 ### Text-to-Image Generation
 - `fluxTextToImage` - FLUX models with model selection and safety controls
+- `fluxProUltraTextToImage` - FLUX Pro Ultra for premium quality
 - `gptTextToImage` - GPT Image with structured error responses
 - `imagenTextToImage` - Imagen4 with aspect ratio controls
+- `geminiFlashTextToImage` - Gemini 2.5 Flash fast generation ✨
+- `nanoBananaTextToImage` - Nano Banana state-of-the-art quality ✨
+- `qwenTextToImage` - Qwen with excellent text rendering ✨
 
 ### Image Editing
 - `kontextEditImage` - FLUX Kontext with Pro/Max model selection
 - `gptEditImage` - GPT Image editing with structured error responses
+- `geminiFlashEditImage` - Gemini 2.5 Flash image editing ✨
+- `nanoBananaEditImage` - Nano Banana image editing ✨
+- `qwenEditImage` - Qwen image editing with text focus ✨
+
+✨ = Models with both text-to-image AND image editing capabilities
 
 ## Model-Specific Features
 
@@ -351,6 +376,10 @@ export const generateSlideImage = internalAction({
 | `clients/kontextImageClient.ts` | Kontext editing client | ✅ Yes (100% portable) |
 | `clients/gptImageClient.ts` | GPT Image client | ✅ Yes (100% portable) |
 | `clients/imagenImageClient.ts` | Imagen4 client | ✅ Yes (100% portable) |
+| `clients/fluxProUltraClient.ts` | FLUX Pro Ultra client | ✅ Yes (100% portable) |
+| `clients/geminiImageClient.ts` | Gemini 2.5 Flash client | ✅ Yes (100% portable) |
+| `clients/nanoBananaClient.ts` | Nano Banana client | ✅ Yes (100% portable) |
+| `clients/qwenImageClient.ts` | Qwen Image client | ✅ Yes (100% portable) |
 | `index.ts` | Public exports | ✅ Yes (100% portable) |
 | `falImageActions.ts` | Convex action wrappers | ⚠️ Needs adaptation |
 | `test/*.ts` | Test files | ⚠️ Needs adaptation |

@@ -1,6 +1,5 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { Doc, Id } from "./_generated/dataModel";
 
 // Query to get all apps for the current user
 export const getApps = query({
@@ -229,6 +228,7 @@ export const updateApp = mutation({
       throw new Error("App not found or access denied");
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { appId, ...updates } = args;
 
     // Update the app

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalAction } from "../../../_generated/server";
-import { api, internal } from "../../../_generated/api";
+import { internal } from "../../../_generated/api";
 
 /**
  * Test FLUX SRPO text-to-image generation
@@ -78,7 +78,7 @@ export const testFluxSrpoTextToImage = internalAction({
         const startTime = Date.now();
 
         const result = await ctx.runAction(
-          api.utils.fal.falImageActions.fluxSrpoTextToImage,
+          internal.utils.fal.falImageActions.fluxSrpoTextToImage,
           {
             prompt: test.prompt,
             ...test.params,
@@ -236,7 +236,7 @@ export const testFluxSrpoImageToImage = internalAction({
         const startTime = Date.now();
 
         const result = await ctx.runAction(
-          api.utils.fal.falImageActions.fluxSrpoImageToImage,
+          internal.utils.fal.falImageActions.fluxSrpoImageToImage,
           {
             prompt: test.prompt,
             image_url: testImageUrl,
@@ -337,7 +337,7 @@ export const testFluxSrpoUnified = internalAction({
     console.log("\n1️⃣ Direct Model Selection (Text-to-Image)");
     try {
       const result = await ctx.runAction(
-        api.utils.fal.falImageActions.generateImage,
+        internal.utils.fal.falImageActions.generateImage,
         {
           prompt: "A futuristic city with neon lights",
           model: "fal-ai/flux/srpo",
@@ -361,7 +361,7 @@ export const testFluxSrpoUnified = internalAction({
     console.log("\n2️⃣ Direct Model Selection (Image-to-Image)");
     try {
       const result = await ctx.runAction(
-        api.utils.fal.falImageActions.generateImage,
+        internal.utils.fal.falImageActions.generateImage,
         {
           prompt: "Make it look like a painting",
           image_url: "https://fal.media/files/koala/Chls9L2ZnvuipUTEwlnJC.png",
@@ -386,7 +386,7 @@ export const testFluxSrpoUnified = internalAction({
     console.log("\n3️⃣ Quality Preference (Should Use SRPO as Fallback)");
     try {
       const result = await ctx.runAction(
-        api.utils.fal.falImageActions.generateImage,
+        internal.utils.fal.falImageActions.generateImage,
         {
           prompt: "An award-winning photograph of nature",
           preference: "quality",

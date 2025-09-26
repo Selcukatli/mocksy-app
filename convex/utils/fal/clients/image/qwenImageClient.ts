@@ -1,7 +1,7 @@
 "use node";
 
-import { callFalModel } from "./falImageClient";
-import { logger } from "../../logger";
+import { callFalModel } from "../falClient";
+import { logger } from "../../../logger";
 
 const logInfo = (...args: unknown[]) => logger.info(...args);
 const logError = (...args: unknown[]) => logger.error(...args);

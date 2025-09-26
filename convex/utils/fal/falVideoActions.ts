@@ -1,21 +1,13 @@
 "use node";
 
-import { action, ActionCtx } from "../../_generated/server";
+import { internalAction, ActionCtx } from "../../_generated/server";
 import { v, Infer } from "convex/values";
-import { api } from "../../_generated/api";
+import { internal } from "../../_generated/api";
 import { FalErrorResponse } from "./types";
+import { VIDEO_MODELS } from "./clients/video/videoModels";
 
-// Export constants for better discoverability
-export const VIDEO_MODELS = {
-  // Text-to-Video Models
-  KLING_TEXT: "klingTextToVideo",
-  SEEDANCE_TEXT: "seeDanceTextToVideo",
-
-  // Image-to-Video Models
-  KLING_IMAGE: "klingImageToVideo",
-  SEEDANCE_IMAGE: "seeDanceImageToVideo",
-  LUCY_IMAGE: "lucyImageToVideo",
-} as const;
+// Re-export constants for better discoverability
+export { VIDEO_MODELS } from "./clients/video/videoModels";
 
 export const VIDEO_PREFERENCES = {
   QUALITY: "quality",
@@ -32,12 +24,12 @@ export const VIDEO_TYPES = {
 import {
   generateKlingTextToVideo,
   generateKlingImageToVideo,
-} from "./clients/klingVideoClient";
+} from "./clients/video/klingVideoClient";
+import { generateLucyImageToVideo } from "./clients/video/lucyVideoClient";
 import {
-  generateLucyImageToVideo,
   generateSeeDanceImageToVideo,
   generateSeeDanceTextToVideo,
-} from "./clients/fastVideoClient";
+} from "./clients/video/seeDanceVideoClient";
 
 // Convex validators for Kling Video enums
 const klingVideoAspectRatioValidator = v.union(
@@ -78,7 +70,7 @@ const klingVideoDurationValidator = v.union(v.literal(5), v.literal(10));
  *   aspect_ratio: "16:9"
  * });
  */
-export const klingTextToVideo = action({
+export const klingTextToVideo = internalAction({
   args: {
     prompt: v.string(), // Text description (max 2500 characters)
     duration: v.optional(klingVideoDurationValidator), // 5 or 10 seconds, default: 5
@@ -176,7 +168,7 @@ export const klingTextToVideo = action({
  *   duration: 5
  * });
  */
-export const klingImageToVideo = action({
+export const klingImageToVideo = internalAction({
   args: {
     prompt: v.string(), // Text description guiding the video
     image_url: v.string(), // Source image URL (required)
@@ -262,30 +254,30 @@ export const klingImageToVideo = action({
  * - 720p resolution
  *
  * Output Format:
- * - sync_mode: true (default) - Returns base64 encoded video data
- * - sync_mode: false - Returns a hosted URL
+ * - sync_mode: false (default) - Returns a hosted URL
+ * - sync_mode: true - Returns base64 encoded video data
  *
  * @example
- * // Get base64 encoded video (default, faster)
- * await ctx.runAction(api.utils.fal.falVideoActions.lucyImageToVideo, {
+ * // Get hosted URL (default, recommended)
+ * await ctx.runAction(internal.utils.fal.falVideoActions.lucyImageToVideo, {
  *   prompt: "The person starts dancing with energetic movements",
  *   image_url: "https://example.com/person.jpg"
  * });
  *
  * @example
- * // Get hosted URL
- * await ctx.runAction(api.utils.fal.falVideoActions.lucyImageToVideo, {
+ * // Get base64 encoded video (if needed)
+ * await ctx.runAction(internal.utils.fal.falVideoActions.lucyImageToVideo, {
  *   prompt: "The person starts dancing with energetic movements",
  *   image_url: "https://example.com/person.jpg",
- *   sync_mode: false
+ *   sync_mode: true
  * });
  */
-export const lucyImageToVideo = action({
+export const lucyImageToVideo = internalAction({
   args: {
     prompt: v.string(), // Max 1500 characters
     image_url: v.string(), // Required - source image
     aspect_ratio: v.optional(v.union(v.literal("16:9"), v.literal("9:16"))), // Default: "16:9"
-    sync_mode: v.optional(v.boolean()), // Default: true for speed
+    sync_mode: v.optional(v.boolean()), // Default: false for URLs
     apiKey: v.optional(v.string()), // Optional API key override
   },
   returns: v.object({
@@ -365,7 +357,7 @@ export const lucyImageToVideo = action({
  *   camera_fixed: true
  * });
  */
-export const seeDanceImageToVideo = action({
+export const seeDanceImageToVideo = internalAction({
   args: {
     prompt: v.string(), // Text description
     image_url: v.string(), // Required - source image
@@ -467,7 +459,7 @@ export const seeDanceImageToVideo = action({
  *   resolution: "1080p"
  * });
  */
-export const seeDanceTextToVideo = action({
+export const seeDanceTextToVideo = internalAction({
   args: {
     prompt: v.string(), // Text description
     aspect_ratio: v.optional(
@@ -604,7 +596,7 @@ export type VideoGenerationResult = Infer<typeof generateVideoReturns>;
  *   model: "klingTextToVideo"  // Bypasses preference
  * })
  */
-export const generateVideo = action({
+export const generateVideo = internalAction({
   args: {
     prompt: v.string(),
     imageUrl: v.optional(v.string()), // Determines operation: present → animate, absent → generate
@@ -630,7 +622,7 @@ export const generateVideo = action({
   handler: async (ctx, args) => {
     // Dynamic import of configuration
     const { getVideoConfig, calculateVideoCost } = await import(
-      "./videoModels"
+      "./clients/video/videoModels"
     );
 
     // 1. Handle direct model override
@@ -882,9 +874,9 @@ async function executeVideoModel(
 ): Promise<VideoModelResult> {
   // Map model names to action calls
   switch (modelName) {
-    case "klingTextToVideo":
+    case VIDEO_MODELS.KLING_TEXT:
       return await ctx.runAction(
-        api.utils.fal.falVideoActions.klingTextToVideo,
+        internal.utils.fal.falVideoActions.klingTextToVideo,
         {
           prompt: params.prompt || "",
           duration: (typeof params.duration === "number"
@@ -900,9 +892,9 @@ async function executeVideoModel(
         },
       );
 
-    case "klingImageToVideo":
+    case VIDEO_MODELS.KLING_IMAGE:
       return await ctx.runAction(
-        api.utils.fal.falVideoActions.klingImageToVideo,
+        internal.utils.fal.falVideoActions.klingImageToVideo,
         {
           prompt: params.prompt || "",
           image_url: params.imageUrl || "",
@@ -915,9 +907,9 @@ async function executeVideoModel(
         },
       );
 
-    case "seeDanceTextToVideo":
+    case VIDEO_MODELS.SEEDANCE_TEXT:
       return await ctx.runAction(
-        api.utils.fal.falVideoActions.seeDanceTextToVideo,
+        internal.utils.fal.falVideoActions.seeDanceTextToVideo,
         {
           prompt: params.prompt || "",
           duration: String(params.duration || 5),
@@ -941,9 +933,9 @@ async function executeVideoModel(
         },
       );
 
-    case "seeDanceImageToVideo":
+    case VIDEO_MODELS.SEEDANCE_IMAGE:
       return await ctx.runAction(
-        api.utils.fal.falVideoActions.seeDanceImageToVideo,
+        internal.utils.fal.falVideoActions.seeDanceImageToVideo,
         {
           prompt: params.prompt || "",
           image_url: params.imageUrl || "",
@@ -961,16 +953,16 @@ async function executeVideoModel(
         },
       );
 
-    case "lucyImageToVideo":
+    case VIDEO_MODELS.LUCY_IMAGE:
       return await ctx.runAction(
-        api.utils.fal.falVideoActions.lucyImageToVideo,
+        internal.utils.fal.falVideoActions.lucyImageToVideo,
         {
           prompt: params.prompt || "",
           image_url: params.imageUrl || "",
           aspect_ratio: (params.aspectRatio ||
             params.aspect_ratio ||
             "16:9") as "16:9" | "9:16",
-          sync_mode: params.sync_mode !== undefined ? params.sync_mode : false,
+          sync_mode: params.sync_mode === true, // Default false for URLs
           apiKey: params.apiKey,
         },
       );

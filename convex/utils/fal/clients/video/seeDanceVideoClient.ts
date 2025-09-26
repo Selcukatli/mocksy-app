@@ -1,62 +1,66 @@
 "use node";
 
-import { callFalModel } from "./falImageClient";
+import { callFalModel } from "../falClient";
 import {
-  KlingTextToVideoParams,
-  KlingImageToVideoParams,
+  SeeDanceImageToVideoParams,
+  SeeDanceTextToVideoParams,
   FalVideoResponse,
   FalVideo,
   FalResponse,
   FalContentPolicyError,
-} from "../types";
+} from "../../types";
+import { FAL_VIDEO_MODELS } from "./videoModels";
 
 /**
- * Generate a video from text using Kling Video v2.5 Turbo Pro
+ * Generate a video from text using SeeDance v1 Lite
  *
  * @param params - Text-to-video generation parameters
  * @param apiKey - Optional FAL API key (uses env var if not provided)
  * @returns FalResponse with generated video or error
  *
- * Pricing:
- * - 5-second video: $0.35
- * - 10-second video: $0.70 ($0.35 + $0.35)
+ * Pricing: Varies by resolution and duration
+ * Speed: Fast
  *
  * @example
- * const result = await generateKlingTextToVideo({
- *   prompt: "A majestic eagle soaring through mountain clouds at sunset",
- *   duration: 5,
- *   aspect_ratio: "16:9"
+ * const result = await generateSeeDanceTextToVideo({
+ *   prompt: "A dog running in the sunshine through a garden",
+ *   duration: "5",
+ *   resolution: "720p"
  * });
  */
-export async function generateKlingTextToVideo(
-  params: KlingTextToVideoParams,
+export async function generateSeeDanceTextToVideo(
+  params: SeeDanceTextToVideoParams,
   apiKey?: string,
 ): Promise<FalResponse<FalVideoResponse>> {
   try {
-    // Validate prompt length
-    if (params.prompt.length > 2500) {
-      throw new Error("Prompt exceeds maximum length of 2500 characters");
+    // Validate duration if provided
+    if (params.duration) {
+      const duration = parseInt(params.duration);
+      if (duration < 3 || duration > 12) {
+        throw new Error("Duration must be between 3 and 12 seconds");
+      }
     }
 
     // Prepare input for FAL API
     const input = {
       prompt: params.prompt,
-      duration: params.duration || 5,
       aspect_ratio: params.aspect_ratio || "16:9",
-      negative_prompt:
-        params.negative_prompt || "blur, distort, and low quality",
-      cfg_scale: params.cfg_scale || 0.5,
-      ...(params.image_url && { image_url: params.image_url }),
+      resolution: params.resolution || "720p",
+      duration: params.duration || "5",
+      camera_fixed: params.camera_fixed || false,
+      enable_safety_checker: params.enable_safety_checker !== false,
+      ...(params.seed && { seed: params.seed }),
     };
 
-    console.log(`🎬 Generating ${input.duration}s video from text prompt...`);
+    console.log(`🎬 Generating video with SeeDance v1 Lite (text-to-video)...`);
+    console.log(`📝 Prompt: "${params.prompt}"`);
     console.log(
-      `💸 Estimated cost: $${input.duration === 5 ? "0.35" : "0.70"}`,
+      `⏱️  Duration: ${input.duration}s, Resolution: ${input.resolution}`,
     );
 
     // Call the FAL model
     const result = await callFalModel<typeof input, { video: FalVideo }>(
-      "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
+      FAL_VIDEO_MODELS.SEEDANCE_TEXT_TO_VIDEO,
       input,
       apiKey,
     );
@@ -80,7 +84,7 @@ export async function generateKlingTextToVideo(
       },
     };
   } catch (error) {
-    console.error("❌ Error in generateKlingTextToVideo:", error);
+    console.error("❌ Error in generateSeeDanceTextToVideo:", error);
 
     // Handle specific error types
     if (error instanceof FalContentPolicyError) {
@@ -111,52 +115,57 @@ export async function generateKlingTextToVideo(
 }
 
 /**
- * Generate a video from an image using Kling Video v2.5 Turbo Pro
+ * Generate a video using SeeDance v1 Lite (affordable and customizable)
  *
  * @param params - Image-to-video generation parameters
  * @param apiKey - Optional FAL API key (uses env var if not provided)
  * @returns FalResponse with generated video or error
  *
- * Pricing:
- * - 5-second video: $0.35
- * - 10-second video: $0.70 ($0.35 + $0.35)
+ * Pricing: $0.18 for 720p 5-second video
+ * Speed: Fast
  *
  * @example
- * const result = await generateKlingImageToVideo({
- *   prompt: "The car speeds forward, leaving trails of motion blur",
- *   image_url: "https://example.com/car.jpg",
- *   duration: 5
+ * const result = await generateSeeDanceImageToVideo({
+ *   prompt: "The scene comes alive with gentle motion and wind",
+ *   image_url: "https://example.com/landscape.jpg",
+ *   duration: 5,
+ *   camera_fixed: true
  * });
  */
-export async function generateKlingImageToVideo(
-  params: KlingImageToVideoParams,
+export async function generateSeeDanceImageToVideo(
+  params: SeeDanceImageToVideoParams,
   apiKey?: string,
 ): Promise<FalResponse<FalVideoResponse>> {
   try {
     // Validate required image URL
     if (!params.image_url) {
-      throw new Error("Image URL is required for image-to-video generation");
+      throw new Error("Image URL is required for SeeDance video generation");
     }
 
     // Prepare input for FAL API
     const input = {
       prompt: params.prompt,
       image_url: params.image_url,
+      aspect_ratio: params.aspect_ratio || "16:9",
+      resolution: params.resolution || "720p",
       duration: params.duration || 5,
-      negative_prompt:
-        params.negative_prompt || "blur, distort, and low quality",
-      cfg_scale: params.cfg_scale || 0.5,
+      camera_fixed: params.camera_fixed || false,
+      enable_safety_checker: params.enable_safety_checker !== false,
+      ...(params.seed && { seed: params.seed }),
     };
 
-    console.log(`🎬 Generating ${input.duration}s video from image...`);
+    console.log(`🎬 Generating video with SeeDance v1 Lite...`);
     console.log(`🖼️  Source image: ${params.image_url}`);
     console.log(
-      `💸 Estimated cost: $${input.duration === 5 ? "0.35" : "0.70"}`,
+      `⏱️  Duration: ${input.duration}s, Resolution: ${input.resolution}`,
+    );
+    console.log(
+      `💸 Estimated cost: $${input.resolution === "720p" && input.duration === 5 ? "0.18" : "varies"}`,
     );
 
     // Call the FAL model
     const result = await callFalModel<typeof input, { video: FalVideo }>(
-      "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
+      FAL_VIDEO_MODELS.SEEDANCE_IMAGE_TO_VIDEO,
       input,
       apiKey,
     );
@@ -180,7 +189,7 @@ export async function generateKlingImageToVideo(
       },
     };
   } catch (error) {
-    console.error("❌ Error in generateKlingImageToVideo:", error);
+    console.error("❌ Error in generateSeeDanceImageToVideo:", error);
 
     // Handle specific error types
     if (error instanceof FalContentPolicyError) {

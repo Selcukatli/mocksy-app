@@ -1,8 +1,8 @@
 "use node";
 
-import { action } from "../../../_generated/server";
+import { internalAction } from "../../../_generated/server";
 import { v } from "convex/values";
-import { api } from "../../../_generated/api";
+import { internal } from "../../../_generated/api";
 import type { ImageGenerationResult } from "../falImageActions";
 import type { VideoGenerationResult } from "../falVideoActions";
 
@@ -23,7 +23,7 @@ import type { VideoGenerationResult } from "../falVideoActions";
 /**
  * Test image generation with different control methods
  */
-export const testImageGeneration = action({
+export const testImageGeneration = internalAction({
   args: {},
   returns: v.any(),
   handler: async (ctx) => {
@@ -37,7 +37,7 @@ export const testImageGeneration = action({
     console.log("Using specific model: fluxProUltraTextToImage");
 
     const directModel: ImageGenerationResult = await ctx.runAction(
-      api.utils.fal.falImageActions.generateImage,
+      internal.utils.fal.falImageActions.generateImage,
       {
         prompt: "A futuristic city at sunset",
         model: "fluxProUltraTextToImage", // Direct model overrides everything
@@ -59,7 +59,7 @@ export const testImageGeneration = action({
     console.log("Requesting fast text-to-image generation");
 
     const typePreference: ImageGenerationResult = await ctx.runAction(
-      api.utils.fal.falImageActions.generateImage,
+      internal.utils.fal.falImageActions.generateImage,
       {
         prompt: "Quick sketch of a mountain",
         preference: "fast",
@@ -81,7 +81,7 @@ export const testImageGeneration = action({
     console.log("Providing image_url for automatic image-to-image detection");
 
     const autoDetect: ImageGenerationResult = await ctx.runAction(
-      api.utils.fal.falImageActions.generateImage,
+      internal.utils.fal.falImageActions.generateImage,
       {
         prompt: "Transform this into cyberpunk style",
         image_url:
@@ -107,7 +107,7 @@ export const testImageGeneration = action({
     console.log("Requesting highest quality generation");
 
     const quality: ImageGenerationResult = await ctx.runAction(
-      api.utils.fal.falImageActions.generateImage,
+      internal.utils.fal.falImageActions.generateImage,
       {
         prompt: "Ultra-detailed portrait photography",
         preference: "quality",
@@ -146,7 +146,7 @@ export const testImageGeneration = action({
 /**
  * Test video generation with different control methods
  */
-export const testVideoGeneration = action({
+export const testVideoGeneration = internalAction({
   args: {},
   returns: v.any(),
   handler: async (ctx) => {
@@ -161,7 +161,7 @@ export const testVideoGeneration = action({
     console.log("\n1. Fast Video Generation:");
 
     const fast: VideoGenerationResult = await ctx.runAction(
-      api.utils.fal.falVideoActions.generateVideo,
+      internal.utils.fal.falVideoActions.generateVideo,
       {
         prompt: "Add gentle motion",
         imageUrl,
@@ -184,7 +184,7 @@ export const testVideoGeneration = action({
     console.log("\n2. Quality Video Generation:");
 
     const quality: VideoGenerationResult = await ctx.runAction(
-      api.utils.fal.falVideoActions.generateVideo,
+      internal.utils.fal.falVideoActions.generateVideo,
       {
         prompt: "Cinematic camera movement with depth",
         imageUrl,
@@ -207,7 +207,7 @@ export const testVideoGeneration = action({
     console.log("\n3. Direct Model for Text-to-Video:");
 
     const directTextToVideo: VideoGenerationResult = await ctx.runAction(
-      api.utils.fal.falVideoActions.generateVideo,
+      internal.utils.fal.falVideoActions.generateVideo,
       {
         prompt: "Abstract flowing colors",
         model: "seeDanceTextToVideo",
@@ -246,7 +246,7 @@ export const testVideoGeneration = action({
 /**
  * Test the full hierarchy system
  */
-export const testFullHierarchy = action({
+export const testFullHierarchy = internalAction({
   args: {},
   returns: v.any(),
   handler: async (ctx) => {
@@ -264,7 +264,7 @@ export const testFullHierarchy = action({
     );
 
     const test1: ImageGenerationResult = await ctx.runAction(
-      api.utils.fal.falImageActions.generateImage,
+      internal.utils.fal.falImageActions.generateImage,
       {
         prompt: "Test hierarchy",
         model: "fluxProUltraTextToImage", // Quality model
@@ -289,7 +289,7 @@ export const testFullHierarchy = action({
     console.log("Expected: Uses quality tier image-to-image model\n");
 
     const test2: ImageGenerationResult = await ctx.runAction(
-      api.utils.fal.falImageActions.generateImage,
+      internal.utils.fal.falImageActions.generateImage,
       {
         prompt: "Test hierarchy",
         image_url: "https://example.com/image.jpg",
@@ -315,7 +315,7 @@ export const testFullHierarchy = action({
     );
 
     const test3: ImageGenerationResult = await ctx.runAction(
-      api.utils.fal.falImageActions.generateImage,
+      internal.utils.fal.falImageActions.generateImage,
       {
         prompt: "Test auto-detection",
         image_url: "https://example.com/image.jpg",

@@ -1,13 +1,14 @@
 "use node";
 
-import { callFalModel } from "./falImageClient";
+import { callFalModel } from "../falClient";
 import {
   FluxSrpoTextToImageParams,
   FluxSrpoImageToImageParams,
   FluxSrpoResponse,
   FalResponse,
   FalContentPolicyError,
-} from "../types";
+} from "../../types";
+import { FAL_IMAGE_MODELS } from "./imageModels";
 
 /**
  * FLUX SRPO Client - 12 billion parameter flow transformer
@@ -15,8 +16,8 @@ import {
  * Supports both text-to-image and image-to-image at $0.025 per megapixel
  */
 export class FluxSrpoClient {
-  static readonly TEXT_TO_IMAGE_MODEL = "fal-ai/flux/srpo";
-  static readonly IMAGE_TO_IMAGE_MODEL = "fal-ai/flux/srpo/image-to-image";
+  static readonly TEXT_TO_IMAGE_MODEL = FAL_IMAGE_MODELS.FLUX_SRPO_TEXT;
+  static readonly IMAGE_TO_IMAGE_MODEL = FAL_IMAGE_MODELS.FLUX_SRPO_IMAGE;
 
   /**
    * Generate image from text using FLUX SRPO

@@ -8,7 +8,7 @@ import {
   ImagenAspectRatio,
   KontextModel,
   KontextAspectRatio,
-} from "./types";
+} from "../../types";
 
 /**
  * FAL Image Model Identifiers - Use these exact strings when working with FAL

@@ -75,6 +75,26 @@ export interface GptEditImageParams {
 
 export interface GptImageResponse {
   images: FalImage[];
+  // Additional fields that FAL returns
+  has_nsfw_concepts?: boolean[];
+  prompt?: string;
+  seed?: number;
+  timings?: {
+    inference?: number;
+  };
+  // GPT-4o specific nested structure
+  data?: {
+    images: FalImage[];
+    usage?: {
+      input_tokens?: number;
+      output_tokens?: number;
+      total_tokens?: number;
+      input_tokens_details?: {
+        image_tokens?: number;
+        text_tokens?: number;
+      };
+    };
+  };
 }
 
 // Structured response types for better error handling
@@ -265,29 +285,18 @@ export class FalAPIError extends Error {
   }
 }
 
-// Available model endpoints (cleaned up to only include what we use)
-export type FalModel =
-  // FLUX models
-  | "fal-ai/flux-1/dev"
-  | "fal-ai/flux-1/schnell"
-  | "fal-ai/flux-pro/new"
-  // FLUX Kontext models
-  | "fal-ai/flux-pro/kontext"
-  | "fal-ai/flux-pro/kontext/max"
-  | "fal-ai/flux-pro/kontext/max/multi" // Multi-image variant of Kontext Max
-  // GPT Image models
-  | "fal-ai/gpt-image-1/text-to-image/byok"
-  | "fal-ai/gpt-image-1/edit-image/byok"
-  // Imagen4 models
-  | "fal-ai/imagen4/preview"
-  // Kling Video models
-  | "fal-ai/kling-video/v2.5-turbo/pro/text-to-video"
-  | "fal-ai/kling-video/v2.5-turbo/pro/image-to-video"
-  // Lucy-14b models (fast)
-  | "decart/lucy-14b/image-to-video"
-  // SeeDance models (fast)
-  | "fal-ai/bytedance/seedance/v1/lite/image-to-video"
-  | "fal-ai/bytedance/seedance/v1/lite/text-to-video";
+// Model types derived from constants to ensure single source of truth
+// These types are automatically generated from the model constants
+
+// Re-export the model constants for convenience
+export { FAL_IMAGE_MODELS } from './clients/image/imageModels';
+
+// Derive types from the constants
+export type FalImageModel = typeof import('./clients/image/imageModels').FAL_IMAGE_MODELS[keyof typeof import('./clients/image/imageModels').FAL_IMAGE_MODELS];
+
+// For backward compatibility, FalModel includes all image models
+// Use FalImageModel for type safety when working specifically with image models
+export type FalModel = FalImageModel;
 
 export interface FalImageSize {
   width: number;

@@ -1,8 +1,8 @@
 "use node";
 
-import { action } from "../../../_generated/server";
+import { internalAction } from "../../../_generated/server";
 import { v } from "convex/values";
-import { api } from "../../../_generated/api";
+import { internal } from "../../../_generated/api";
 import type { VideoGenerationResult } from "../falVideoActions";
 
 /**
@@ -38,7 +38,7 @@ type VideoTestResult = {
 /**
  * Test all text-to-video models
  */
-export const testAllTextToVideo = action({
+export const testAllTextToVideo = internalAction({
   args: {},
   handler: async (ctx): Promise<VideoTestResult[]> => {
     console.log("🎬 Testing ALL Text-to-Video Models");
@@ -80,7 +80,7 @@ export const testAllTextToVideo = action({
 
       try {
         const result = await ctx.runAction(
-          api.utils.fal.falVideoActions.generateVideo,
+          internal.utils.fal.falVideoActions.generateVideo,
           {
             prompt: test.params.prompt,
             model: test.model,
@@ -149,7 +149,7 @@ export const testAllTextToVideo = action({
 /**
  * Test all image-to-video models
  */
-export const testAllImageToVideo = action({
+export const testAllImageToVideo = internalAction({
   args: {
     imageUrl: v.optional(v.string()),
   },
@@ -205,7 +205,7 @@ export const testAllImageToVideo = action({
 
       try {
         const result = await ctx.runAction(
-          api.utils.fal.falVideoActions.generateVideo,
+          internal.utils.fal.falVideoActions.generateVideo,
           {
             prompt: test.params.prompt,
             imageUrl,
@@ -280,7 +280,7 @@ export const testAllImageToVideo = action({
 /**
  * Test video preference tiers
  */
-export const testPreferenceTiers = action({
+export const testPreferenceTiers = internalAction({
   args: {
     imageUrl: v.optional(v.string()),
   },
@@ -303,7 +303,7 @@ export const testPreferenceTiers = action({
 
       try {
         const result = await ctx.runAction(
-          api.utils.fal.falVideoActions.generateVideo,
+          internal.utils.fal.falVideoActions.generateVideo,
           {
             prompt: testPrompt,
             imageUrl, // This makes it image-to-video
@@ -376,7 +376,7 @@ export const testPreferenceTiers = action({
 /**
  * Test different video parameters (resolutions, durations, aspect ratios)
  */
-export const testVideoParameters = action({
+export const testVideoParameters = internalAction({
   args: {
     imageUrl: v.optional(v.string()),
   },
@@ -434,7 +434,7 @@ export const testVideoParameters = action({
 
       try {
         const result = await ctx.runAction(
-          api.utils.fal.falVideoActions.seeDanceImageToVideo,
+          internal.utils.fal.falVideoActions.seeDanceImageToVideo,
           {
             ...test.params,
             image_url: imageUrl,
@@ -500,7 +500,7 @@ export const testVideoParameters = action({
 /**
  * Run quick video tests (minimal cost)
  */
-export const runQuickTests = action({
+export const runQuickTests = internalAction({
   args: {
     imageUrl: v.optional(v.string()),
   },
@@ -520,7 +520,7 @@ export const runQuickTests = action({
     const quickTests = [
       {
         name: "SeeDance Fast (3s 480p)",
-        action: api.utils.fal.falVideoActions.seeDanceImageToVideo,
+        action: internal.utils.fal.falVideoActions.seeDanceImageToVideo,
         params: {
           prompt: "Quick motion test",
           image_url: imageUrl,
@@ -532,7 +532,7 @@ export const runQuickTests = action({
       },
       {
         name: "Fast Preference Test",
-        action: api.utils.fal.falVideoActions.generateVideo,
+        action: internal.utils.fal.falVideoActions.generateVideo,
         params: {
           prompt: "Fast generation test",
           imageUrl,
@@ -604,7 +604,7 @@ export const runQuickTests = action({
 /**
  * Run full comprehensive video tests (higher cost)
  */
-export const runFullTests = action({
+export const runFullTests = internalAction({
   args: {
     imageUrl: v.optional(v.string()),
   },
@@ -626,17 +626,17 @@ export const runFullTests = action({
     // Focus on image-to-video which is more practical
 
     const imageToVideo = await ctx.runAction(
-      api.utils.fal.test.testComprehensiveVideo.testAllImageToVideo,
+      internal.utils.fal.test.testComprehensiveVideo.testAllImageToVideo,
       { imageUrl: args.imageUrl },
     );
 
     const preferences = await ctx.runAction(
-      api.utils.fal.test.testComprehensiveVideo.testPreferenceTiers,
+      internal.utils.fal.test.testComprehensiveVideo.testPreferenceTiers,
       { imageUrl: args.imageUrl },
     );
 
     const parameters = await ctx.runAction(
-      api.utils.fal.test.testComprehensiveVideo.testVideoParameters,
+      internal.utils.fal.test.testComprehensiveVideo.testVideoParameters,
       { imageUrl: args.imageUrl },
     );
 

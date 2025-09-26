@@ -1,7 +1,8 @@
 "use node";
 
-import { callFalModel } from "./falImageClient";
-import { logger } from "../../logger";
+import { callFalModel } from "../falClient";
+import { logger } from "../../../logger";
+import { FAL_IMAGE_MODELS } from "./imageModels";
 
 const logInfo = (...args: unknown[]) => logger.info(...args);
 const logError = (...args: unknown[]) => logger.error(...args);
@@ -35,7 +36,7 @@ export interface FluxProUltraOutput {
 }
 
 export class FluxProUltraClient {
-  static readonly MODEL = "fal-ai/flux-pro/v1.1-ultra";
+  static readonly MODEL = FAL_IMAGE_MODELS.FLUX_PRO_ULTRA;
 
   static async generateImage(
     input: FluxProUltraInput,

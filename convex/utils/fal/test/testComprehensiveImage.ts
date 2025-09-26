@@ -1,9 +1,9 @@
 "use node";
 
-import { action } from "../../../_generated/server";
+import { internalAction } from "../../../_generated/server";
 import { v } from "convex/values";
-import { api } from "../../../_generated/api";
-import { FAL_IMAGE_MODELS } from "../imageModels";
+import { internal } from "../../../_generated/api";
+import { FAL_IMAGE_MODELS } from "../clients/image/imageModels";
 
 /**
  * Comprehensive Test Suite for FAL Image Models
@@ -35,7 +35,7 @@ type TestResult = {
 /**
  * Test all text-to-image models with FAL IDs
  */
-export const testAllTextToImage = action({
+export const testAllTextToImage = internalAction({
   args: {},
   handler: async (ctx): Promise<TestResult[]> => {
     console.log("🎨 Testing ALL Text-to-Image Models");
@@ -97,7 +97,7 @@ export const testAllTextToImage = action({
 
       try {
         const result = await ctx.runAction(
-          api.utils.fal.falImageActions.generateImage,
+          internal.utils.fal.falImageActions.generateImage,
           {
             prompt: test.prompt,
             model: test.modelId, // Use FAL's exact model ID
@@ -167,7 +167,7 @@ export const testAllTextToImage = action({
 /**
  * Test all image-to-image models
  */
-export const testAllImageToImage = action({
+export const testAllImageToImage = internalAction({
   args: {
     imageUrl: v.optional(v.string()),
   },
@@ -221,7 +221,7 @@ export const testAllImageToImage = action({
 
       try {
         const result = await ctx.runAction(
-          api.utils.fal.falImageActions.generateImage,
+          internal.utils.fal.falImageActions.generateImage,
           {
             prompt: test.prompt,
             image_url: imageUrl,
@@ -283,7 +283,7 @@ export const testAllImageToImage = action({
 /**
  * Test preference tiers (quality/default/fast)
  */
-export const testPreferenceTiers = action({
+export const testPreferenceTiers = internalAction({
   args: {},
   handler: async (ctx): Promise<TestResult[]> => {
     console.log("🎯 Testing Preference Tiers");
@@ -301,7 +301,7 @@ export const testPreferenceTiers = action({
 
       try {
         const result = await ctx.runAction(
-          api.utils.fal.falImageActions.generateImage,
+          internal.utils.fal.falImageActions.generateImage,
           {
             prompt: testPrompt,
             preference,
@@ -370,7 +370,7 @@ export const testPreferenceTiers = action({
 /**
  * Test fallback chains
  */
-export const testFallbackChains = action({
+export const testFallbackChains = internalAction({
   args: {},
   handler: async (ctx): Promise<TestResult[]> => {
     console.log("🔄 Testing Fallback Chains");
@@ -387,7 +387,7 @@ export const testFallbackChains = action({
     try {
       // This should fail on FLUX Pro Ultra and fall back to GPT-4O or Imagen
       const result = await ctx.runAction(
-        api.utils.fal.falImageActions.generateImage,
+        internal.utils.fal.falImageActions.generateImage,
         {
           prompt: "Test fallback mechanism",
           preference: "quality",
@@ -444,7 +444,7 @@ export const testFallbackChains = action({
 /**
  * Run quick tests (minimal cost)
  */
-export const runQuickTests = action({
+export const runQuickTests = internalAction({
   args: {},
   handler: async (
     ctx,
@@ -490,7 +490,7 @@ export const runQuickTests = action({
         }
 
         const result = await ctx.runAction(
-          api.utils.fal.falImageActions.generateImage,
+          internal.utils.fal.falImageActions.generateImage,
           params,
         );
 
@@ -545,7 +545,7 @@ export const runQuickTests = action({
 /**
  * Run full comprehensive tests (higher cost)
  */
-export const runFullTests = action({
+export const runFullTests = internalAction({
   args: {},
   handler: async (
     ctx,
@@ -561,17 +561,17 @@ export const runFullTests = action({
 
     // Run all test suites
     const textToImage = await ctx.runAction(
-      api.utils.fal.test.testComprehensiveImage.testAllTextToImage,
+      internal.utils.fal.test.testComprehensiveImage.testAllTextToImage,
       {},
     );
 
     const imageToImage = await ctx.runAction(
-      api.utils.fal.test.testComprehensiveImage.testAllImageToImage,
+      internal.utils.fal.test.testComprehensiveImage.testAllImageToImage,
       {},
     );
 
     const preferences = await ctx.runAction(
-      api.utils.fal.test.testComprehensiveImage.testPreferenceTiers,
+      internal.utils.fal.test.testComprehensiveImage.testPreferenceTiers,
       {},
     );
 

@@ -1,18 +1,52 @@
 // Business logic configuration for FAL video model selection
 // Defines model chains based on quality, speed, and cost priorities
 
-import { KlingVideoDuration } from "./types";
+import { KlingVideoDuration } from "../../types";
+
+/**
+ * FAL Video Model Identifiers - Use these exact strings when working with FAL
+ * These match FAL's official model endpoints
+ */
+export const FAL_VIDEO_MODELS = {
+  // Text-to-Video Models
+  KLING_TEXT_TO_VIDEO: "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
+  SEEDANCE_TEXT_TO_VIDEO: "fal-ai/bytedance/seedance/v1/lite/text-to-video",
+
+  // Image-to-Video Models
+  KLING_IMAGE_TO_VIDEO: "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
+  LUCY_IMAGE_TO_VIDEO: "decart/lucy-14b/image-to-video",
+  SEEDANCE_IMAGE_TO_VIDEO: "fal-ai/bytedance/seedance/v1/lite/image-to-video",
+} as const;
+
+/**
+ * Internal Video Model Names - Used for routing in falVideoActions
+ * These are the internal action identifiers used in our codebase
+ */
+export const VIDEO_MODELS = {
+  // Text-to-Video Actions
+  KLING_TEXT: "klingTextToVideo",
+  SEEDANCE_TEXT: "seeDanceTextToVideo",
+
+  // Image-to-Video Actions
+  KLING_IMAGE: "klingImageToVideo",
+  SEEDANCE_IMAGE: "seeDanceImageToVideo",
+  LUCY_IMAGE: "lucyImageToVideo",
+} as const;
+
+// Type exports for type safety
+export type FalVideoModel = typeof FAL_VIDEO_MODELS[keyof typeof FAL_VIDEO_MODELS];
+export type VideoModel = typeof VIDEO_MODELS[keyof typeof VIDEO_MODELS];
 
 /**
  * Video model configurations for different preferences
  * Strategy: Chain models from best to fallback based on use case
  */
-export const VIDEO_MODELS = {
+export const VIDEO_MODEL_CONFIG = {
   // Quality - cinematic results, cost no object
   quality: {
     textToVideo: {
       primary: {
-        model: "klingTextToVideo",
+        model: VIDEO_MODELS.KLING_TEXT,
         params: {
           duration: 10 as KlingVideoDuration,
           aspect_ratio: "16:9",
@@ -21,7 +55,7 @@ export const VIDEO_MODELS = {
       },
       fallbacks: [
         {
-          model: "klingTextToVideo",
+          model: VIDEO_MODELS.KLING_TEXT,
           params: {
             duration: 5 as KlingVideoDuration,
             aspect_ratio: "16:9",
@@ -29,7 +63,7 @@ export const VIDEO_MODELS = {
           },
         },
         {
-          model: "seeDanceTextToVideo",
+          model: VIDEO_MODELS.SEEDANCE_TEXT,
           params: {
             duration: "10",
             resolution: "1080p",
@@ -40,7 +74,7 @@ export const VIDEO_MODELS = {
     },
     imageToVideo: {
       primary: {
-        model: "klingImageToVideo",
+        model: VIDEO_MODELS.KLING_IMAGE,
         params: {
           duration: 10 as KlingVideoDuration,
           cfg_scale: 0.7,
@@ -48,7 +82,7 @@ export const VIDEO_MODELS = {
       },
       fallbacks: [
         {
-          model: "klingImageToVideo",
+          model: VIDEO_MODELS.KLING_IMAGE,
           params: {
             duration: 5 as KlingVideoDuration,
             cfg_scale: 0.5,
@@ -62,7 +96,7 @@ export const VIDEO_MODELS = {
   default: {
     textToVideo: {
       primary: {
-        model: "seeDanceTextToVideo",
+        model: VIDEO_MODELS.SEEDANCE_TEXT,
         params: {
           duration: "5",
           resolution: "720p",
@@ -71,7 +105,7 @@ export const VIDEO_MODELS = {
       },
       fallbacks: [
         {
-          model: "seeDanceTextToVideo",
+          model: VIDEO_MODELS.SEEDANCE_TEXT,
           params: {
             duration: "5",
             resolution: "480p",
@@ -79,7 +113,7 @@ export const VIDEO_MODELS = {
           },
         },
         {
-          model: "klingTextToVideo",
+          model: VIDEO_MODELS.KLING_TEXT,
           params: {
             duration: 5 as KlingVideoDuration,
             aspect_ratio: "16:9",
@@ -89,7 +123,7 @@ export const VIDEO_MODELS = {
     },
     imageToVideo: {
       primary: {
-        model: "seeDanceImageToVideo",
+        model: VIDEO_MODELS.SEEDANCE_IMAGE,
         params: {
           duration: 5,
           resolution: "720p",
@@ -97,14 +131,14 @@ export const VIDEO_MODELS = {
       },
       fallbacks: [
         {
-          model: "lucyImageToVideo",
+          model: VIDEO_MODELS.LUCY_IMAGE,
           params: {
             sync_mode: false, // Get URL instead of base64
             aspect_ratio: "16:9",
           },
         },
         {
-          model: "seeDanceImageToVideo",
+          model: VIDEO_MODELS.SEEDANCE_IMAGE,
           params: {
             duration: 5,
             resolution: "480p",
@@ -118,7 +152,7 @@ export const VIDEO_MODELS = {
   fast: {
     textToVideo: {
       primary: {
-        model: "seeDanceTextToVideo",
+        model: VIDEO_MODELS.SEEDANCE_TEXT,
         params: {
           duration: "3",
           resolution: "480p",
@@ -127,7 +161,7 @@ export const VIDEO_MODELS = {
       },
       fallbacks: [
         {
-          model: "seeDanceTextToVideo",
+          model: VIDEO_MODELS.SEEDANCE_TEXT,
           params: {
             duration: "5",
             resolution: "480p",
@@ -138,7 +172,7 @@ export const VIDEO_MODELS = {
     },
     imageToVideo: {
       primary: {
-        model: "lucyImageToVideo",
+        model: VIDEO_MODELS.LUCY_IMAGE,
         params: {
           sync_mode: true, // Base64 for faster response
           aspect_ratio: "16:9",
@@ -146,7 +180,7 @@ export const VIDEO_MODELS = {
       },
       fallbacks: [
         {
-          model: "seeDanceImageToVideo",
+          model: VIDEO_MODELS.SEEDANCE_IMAGE,
           params: {
             duration: 3,
             resolution: "480p",
@@ -251,9 +285,9 @@ export const VIDEO_SPEEDS = {
  */
 export function getVideoConfig(
   operation: "textToVideo" | "imageToVideo",
-  tier: keyof typeof VIDEO_MODELS = "default",
+  tier: keyof typeof VIDEO_MODEL_CONFIG = "default",
 ) {
-  const config = VIDEO_MODELS[tier][operation];
+  const config = VIDEO_MODEL_CONFIG[tier][operation];
 
   // Estimate cost based on model and duration
   const primaryModel = config.primary.model;
@@ -323,7 +357,7 @@ export function recommendVideoTier(requirements: {
   speed?: "fast" | "normal" | "slow";
   budget?: "unlimited" | "moderate" | "tight";
   duration?: number;
-}): keyof typeof VIDEO_MODELS {
+}): keyof typeof VIDEO_MODEL_CONFIG {
   const {
     quality = "medium",
     speed = "normal",

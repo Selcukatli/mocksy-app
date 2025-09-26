@@ -1,10 +1,10 @@
 "use node";
 
-import { action } from "../../_generated/server";
+import { internalAction } from "../../_generated/server";
 import { v, Infer } from "convex/values";
 
 // Re-export model identifiers from imageModels.ts for convenience
-export { FAL_IMAGE_MODELS } from "./imageModels";
+export { FAL_IMAGE_MODELS } from "./clients/image/imageModels";
 
 export const IMAGE_PREFERENCES = {
   QUALITY: "quality",
@@ -18,19 +18,19 @@ export const IMAGE_TYPES = {
 } as const;
 
 // Import model-specific clients
-import { generateFluxTextToImage } from "./clients/fluxImageClient";
+import { generateFluxTextToImage } from "./clients/image/fluxImageClient";
 import {
   editImageWithKontext,
   editImageWithKontextMulti,
-} from "./clients/kontextImageClient";
+} from "./clients/image/kontextImageClient";
 import {
   generateGptTextToImage,
   editImageWithGpt,
-} from "./clients/gptImageClient";
-import { generateImagenTextToImage } from "./clients/imagenImageClient";
-import { GeminiImageClient } from "./clients/geminiImageClient";
-import { QwenImageClient } from "./clients/qwenImageClient";
-import { FluxProUltraClient } from "./clients/fluxProUltraClient";
+} from "./clients/image/gptImageClient";
+import { generateImagenTextToImage } from "./clients/image/imagenImageClient";
+import { GeminiImageClient } from "./clients/image/geminiImageClient";
+import { QwenImageClient } from "./clients/image/qwenImageClient";
+import { FluxProUltraClient } from "./clients/image/fluxProUltraClient";
 
 // Convex validators for GPT Image enums
 const gptQualityValidator = v.union(
@@ -109,7 +109,7 @@ const kontextModelValidator = v.union(v.literal("pro"), v.literal("max"));
  * Generate image using FLUX models with FLUX-specific parameters
  * Supports FLUX Schnell (fastest), Dev (balanced), and Pro (highest quality)
  */
-export const fluxTextToImage = action({
+export const fluxTextToImage = internalAction({
   args: {
     prompt: v.string(), // Text description of what to generate
     model: v.optional(fluxModelValidator), // FLUX model: "schnell" | "dev" | "pro", default: "dev"
@@ -144,7 +144,7 @@ export const fluxTextToImage = action({
  * Uses OpenAI's models through fal.ai with your OpenAI API key
  * Requires OPENAI_API_KEY environment variable
  */
-export const gptTextToImage = action({
+export const gptTextToImage = internalAction({
   args: {
     prompt: v.string(), // Text description of what to generate
 
@@ -169,7 +169,7 @@ export const gptTextToImage = action({
  * Uses OpenAI's image editing models through fal.ai with your OpenAI API key
  * Requires OPENAI_API_KEY environment variable
  */
-export const gptEditImage = action({
+export const gptEditImage = internalAction({
   args: {
     prompt: v.string(), // Description of what to change in the image
     image_url: v.string(), // URL of the image to edit (publicly accessible)
@@ -199,7 +199,7 @@ export const gptEditImage = action({
  * High-quality photorealistic images with excellent text rendering
  * Known for superior composition and natural lighting
  */
-export const imagenTextToImage = action({
+export const imagenTextToImage = internalAction({
   args: {
     prompt: v.string(), // Text description of what to generate
 
@@ -226,7 +226,7 @@ export const imagenTextToImage = action({
  * Supports both Pro (standard) and Max (more powerful) versions
  * Perfect for making intuitive edits like "add a rainbow" or "change to winter scene"
  */
-export const kontextEditImage = action({
+export const kontextEditImage = internalAction({
   args: {
     prompt: v.string(), // Natural language description of what to change in the image
     image_url: v.string(), // URL of the image to edit (publicly accessible)
@@ -259,7 +259,7 @@ export const kontextEditImage = action({
  * Only available with Kontext Max model - perfect for combining multiple images
  * Examples: "Put the person from image 1 into the scene from image 2", "Combine these two products into one image"
  */
-export const kontextMultiEditImage = action({
+export const kontextMultiEditImage = internalAction({
   args: {
     prompt: v.string(), // Natural language description of how to combine/edit the images
     image_urls: v.array(v.string()), // Array of image URLs to edit/combine (2+ images recommended)
@@ -287,7 +287,7 @@ export const kontextMultiEditImage = action({
  * Generate image using Gemini 2.5 Flash - Fast, affordable image generation by Google
  * Best for quick prototyping and testing
  */
-export const geminiFlashTextToImage = action({
+export const geminiFlashTextToImage = internalAction({
   args: {
     prompt: v.string(),
     num_images: v.optional(v.number()),
@@ -304,7 +304,7 @@ export const geminiFlashTextToImage = action({
  * Edit image using Gemini 2.5 Flash Edit
  * Fast image editing with natural language instructions
  */
-export const geminiFlashEditImage = action({
+export const geminiFlashEditImage = internalAction({
   args: {
     prompt: v.string(),
     image_url: v.string(),
@@ -322,7 +322,7 @@ export const geminiFlashEditImage = action({
  * Generate image using Qwen Image - Excellent text rendering in images
  * Best for images that need clear, readable text
  */
-export const qwenTextToImage = action({
+export const qwenTextToImage = internalAction({
   args: {
     prompt: v.string(),
     num_images: v.optional(v.number()),
@@ -357,7 +357,7 @@ export const qwenTextToImage = action({
  * Edit image using Qwen Image Edit Plus
  * Advanced image editing with excellent text preservation
  */
-export const qwenEditImage = action({
+export const qwenEditImage = internalAction({
   args: {
     prompt: v.string(),
     image_url: v.string(),
@@ -393,7 +393,7 @@ export const qwenEditImage = action({
  * Generate image using FLUX Pro Ultra v1.1 - Ultra-high quality output
  * Premium model for the highest quality results with 2K-4MP resolution
  */
-export const fluxProUltraTextToImage = action({
+export const fluxProUltraTextToImage = internalAction({
   args: {
     prompt: v.string(),
     aspect_ratio: v.optional(
@@ -425,7 +425,7 @@ export const fluxProUltraTextToImage = action({
  * 12 billion parameter flow transformer with exceptional aesthetic quality
  * Cost: $0.025 per megapixel
  */
-export const fluxSrpoTextToImage = action({
+export const fluxSrpoTextToImage = internalAction({
   args: {
     prompt: v.string(),
     num_images: v.optional(v.number()),
@@ -441,7 +441,7 @@ export const fluxSrpoTextToImage = action({
   },
   returns: v.any(),
   handler: async (ctx, args) => {
-    const { FluxSrpoClient } = await import("./clients/fluxSrpoClient");
+    const { FluxSrpoClient } = await import("./clients/image/fluxSrpoClient");
     return await FluxSrpoClient.generateTextToImage(args);
   },
 });
@@ -451,7 +451,7 @@ export const fluxSrpoTextToImage = action({
  * High-quality image transformation with SRPO optimization
  * Cost: $0.025 per megapixel
  */
-export const fluxSrpoImageToImage = action({
+export const fluxSrpoImageToImage = internalAction({
   args: {
     prompt: v.string(),
     image_url: v.string(),
@@ -469,7 +469,7 @@ export const fluxSrpoImageToImage = action({
   },
   returns: v.any(),
   handler: async (ctx, args) => {
-    const { FluxSrpoClient } = await import("./clients/fluxSrpoClient");
+    const { FluxSrpoClient } = await import("./clients/image/fluxSrpoClient");
     return await FluxSrpoClient.generateImageToImage(args);
   },
 });
@@ -532,6 +532,15 @@ const generateImageReturns = v.object({
           ),
         }),
       ),
+      // Additional FAL fields that may appear in data
+      has_nsfw_concepts: v.optional(v.array(v.boolean())),
+      prompt: v.optional(v.string()),
+      seed: v.optional(v.number()),
+      timings: v.optional(
+        v.object({
+          inference: v.optional(v.number()),
+        }),
+      ),
     }),
   ),
 });
@@ -569,7 +578,7 @@ export type ImageGenerationResult = Infer<typeof generateImageReturns>;
  *   model: "fluxProUltraTextToImage"  // Bypasses preference
  * })
  */
-export const generateImage = action({
+export const generateImage = internalAction({
   args: {
     prompt: v.string(),
     image_url: v.optional(v.string()), // Determines operation: present → edit, absent → generate
@@ -592,60 +601,60 @@ export const generateImage = action({
   returns: generateImageReturns,
   handler: async (ctx, args) => {
     // Import the configuration function and model identifiers
-    const { getImageConfig, FAL_IMAGE_MODELS } = await import("./imageModels");
+    const { getImageConfig, FAL_IMAGE_MODELS } = await import("./clients/image/imageModels");
 
-    // Import api for action references
-    const { api } = await import("../../_generated/api");
+    // Import internal for internal action references
+    const { internal } = await import("../../_generated/api");
 
     // Model to action mapping using FAL's exact model identifiers
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const modelActions: Record<string, any> = {
       // Text-to-image models
       [FAL_IMAGE_MODELS.FLUX_PRO_ULTRA]:
-        api.utils.fal.falImageActions.fluxProUltraTextToImage,
+        internal.utils.fal.falImageActions.fluxProUltraTextToImage,
       [FAL_IMAGE_MODELS.FLUX_SRPO_TEXT]:
-        api.utils.fal.falImageActions.fluxSrpoTextToImage,
+        internal.utils.fal.falImageActions.fluxSrpoTextToImage,
       [FAL_IMAGE_MODELS.FLUX_DEV]:
-        api.utils.fal.falImageActions.fluxTextToImage,
+        internal.utils.fal.falImageActions.fluxTextToImage,
       [FAL_IMAGE_MODELS.FLUX_SCHNELL]:
-        api.utils.fal.falImageActions.fluxTextToImage,
+        internal.utils.fal.falImageActions.fluxTextToImage,
       [FAL_IMAGE_MODELS.GPT_4O_TEXT_TO_IMAGE]:
-        api.utils.fal.falImageActions.gptTextToImage,
+        internal.utils.fal.falImageActions.gptTextToImage,
       [FAL_IMAGE_MODELS.IMAGEN4_PREVIEW]:
-        api.utils.fal.falImageActions.imagenTextToImage,
+        internal.utils.fal.falImageActions.imagenTextToImage,
       [FAL_IMAGE_MODELS.GEMINI_FLASH]:
-        api.utils.fal.falImageActions.geminiFlashTextToImage,
+        internal.utils.fal.falImageActions.geminiFlashTextToImage,
       [FAL_IMAGE_MODELS.QWEN_TEXT]:
-        api.utils.fal.falImageActions.qwenTextToImage,
+        internal.utils.fal.falImageActions.qwenTextToImage,
 
       // Image-to-image models
       [FAL_IMAGE_MODELS.FLUX_SRPO_IMAGE]:
-        api.utils.fal.falImageActions.fluxSrpoImageToImage,
+        internal.utils.fal.falImageActions.fluxSrpoImageToImage,
       [FAL_IMAGE_MODELS.KONTEXT_PRO]:
-        api.utils.fal.falImageActions.kontextEditImage,
+        internal.utils.fal.falImageActions.kontextEditImage,
       [FAL_IMAGE_MODELS.KONTEXT_MAX]:
-        api.utils.fal.falImageActions.kontextEditImage,
+        internal.utils.fal.falImageActions.kontextEditImage,
       [FAL_IMAGE_MODELS.GPT_4O_EDIT]:
-        api.utils.fal.falImageActions.gptEditImage,
+        internal.utils.fal.falImageActions.gptEditImage,
       [FAL_IMAGE_MODELS.GEMINI_FLASH_EDIT]:
-        api.utils.fal.falImageActions.geminiFlashEditImage,
-      [FAL_IMAGE_MODELS.QWEN_EDIT]: api.utils.fal.falImageActions.qwenEditImage,
+        internal.utils.fal.falImageActions.geminiFlashEditImage,
+      [FAL_IMAGE_MODELS.QWEN_EDIT]: internal.utils.fal.falImageActions.qwenEditImage,
 
       // Also support our old naming for backward compatibility
       fluxProUltraTextToImage:
-        api.utils.fal.falImageActions.fluxProUltraTextToImage,
-      fluxSrpoTextToImage: api.utils.fal.falImageActions.fluxSrpoTextToImage,
-      fluxSrpoImageToImage: api.utils.fal.falImageActions.fluxSrpoImageToImage,
-      fluxTextToImage: api.utils.fal.falImageActions.fluxTextToImage,
-      gptTextToImage: api.utils.fal.falImageActions.gptTextToImage,
-      imagenTextToImage: api.utils.fal.falImageActions.imagenTextToImage,
+        internal.utils.fal.falImageActions.fluxProUltraTextToImage,
+      fluxSrpoTextToImage: internal.utils.fal.falImageActions.fluxSrpoTextToImage,
+      fluxSrpoImageToImage: internal.utils.fal.falImageActions.fluxSrpoImageToImage,
+      fluxTextToImage: internal.utils.fal.falImageActions.fluxTextToImage,
+      gptTextToImage: internal.utils.fal.falImageActions.gptTextToImage,
+      imagenTextToImage: internal.utils.fal.falImageActions.imagenTextToImage,
       geminiFlashTextToImage:
-        api.utils.fal.falImageActions.geminiFlashTextToImage,
-      qwenTextToImage: api.utils.fal.falImageActions.qwenTextToImage,
-      kontextEditImage: api.utils.fal.falImageActions.kontextEditImage,
-      gptEditImage: api.utils.fal.falImageActions.gptEditImage,
-      geminiFlashEditImage: api.utils.fal.falImageActions.geminiFlashEditImage,
-      qwenEditImage: api.utils.fal.falImageActions.qwenEditImage,
+        internal.utils.fal.falImageActions.geminiFlashTextToImage,
+      qwenTextToImage: internal.utils.fal.falImageActions.qwenTextToImage,
+      kontextEditImage: internal.utils.fal.falImageActions.kontextEditImage,
+      gptEditImage: internal.utils.fal.falImageActions.gptEditImage,
+      geminiFlashEditImage: internal.utils.fal.falImageActions.geminiFlashEditImage,
+      qwenEditImage: internal.utils.fal.falImageActions.qwenEditImage,
     };
 
     // 1. Handle direct model override

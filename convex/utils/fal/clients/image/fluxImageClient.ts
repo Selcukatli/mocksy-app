@@ -1,11 +1,12 @@
 "use node";
 
-import { callFalModel } from "./falImageClient";
+import { callFalModel } from "../falClient";
 import {
   FluxTextToImageParams,
   FluxModel,
   FalTextToImageResponse,
-} from "../types";
+} from "../../types";
+import { FAL_IMAGE_MODELS } from "./imageModels";
 
 /**
  * Map FLUX model name to fal.ai endpoint
@@ -13,13 +14,13 @@ import {
 function getFluxModelEndpoint(model: FluxModel): string {
   switch (model) {
     case "schnell":
-      return "fal-ai/flux-1/schnell";
+      return FAL_IMAGE_MODELS.FLUX_SCHNELL;
     case "dev":
-      return "fal-ai/flux-1/dev";
+      return FAL_IMAGE_MODELS.FLUX_DEV;
     case "pro":
-      return "fal-ai/flux-pro/new";
+      return FAL_IMAGE_MODELS.FLUX_PRO_ULTRA;
     default:
-      return "fal-ai/flux-1/dev"; // Default to dev
+      return FAL_IMAGE_MODELS.FLUX_DEV; // Default to dev
   }
 }
 

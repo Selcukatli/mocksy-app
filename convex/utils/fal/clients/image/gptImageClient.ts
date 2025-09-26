@@ -1,6 +1,6 @@
 "use node";
 
-import { callFalModel } from "./falImageClient";
+import { callFalModel } from "../falClient";
 import {
   GptTextToImageParams,
   GptEditImageParams,
@@ -9,7 +9,7 @@ import {
   FalContentPolicyError,
   FalValidationError,
   FalAPIError,
-} from "../types";
+} from "../../types";
 
 /**
  * Get OpenAI API key from environment variable

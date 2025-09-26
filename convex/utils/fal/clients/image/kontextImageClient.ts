@@ -1,12 +1,13 @@
 "use node";
 
-import { callFalModel } from "./falImageClient";
+import { callFalModel } from "../falClient";
 import {
   KontextEditImageParams,
   KontextMultiEditImageParams,
   KontextModel,
   FalTextToImageResponse,
-} from "../types";
+} from "../../types";
+import { FAL_IMAGE_MODELS } from "./imageModels";
 
 /**
  * Map Kontext model name to fal.ai endpoint
@@ -14,11 +15,11 @@ import {
 function getKontextModelEndpoint(model: KontextModel): string {
   switch (model) {
     case "pro":
-      return "fal-ai/flux-pro/kontext";
+      return FAL_IMAGE_MODELS.KONTEXT_PRO;
     case "max":
-      return "fal-ai/flux-pro/kontext/max";
+      return FAL_IMAGE_MODELS.KONTEXT_MAX;
     default:
-      return "fal-ai/flux-pro/kontext"; // Default to pro
+      return FAL_IMAGE_MODELS.KONTEXT_PRO; // Default to pro
   }
 }
 

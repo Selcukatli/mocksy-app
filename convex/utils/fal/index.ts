@@ -16,23 +16,23 @@ export {
 } from "./falVideoActions";
 
 // Client function exports
-export { generateFluxTextToImage } from "./clients/fluxImageClient";
-export { editImageWithKontext } from "./clients/kontextImageClient";
+export { generateFluxTextToImage } from "./clients/image/fluxImageClient";
+export { editImageWithKontext } from "./clients/image/kontextImageClient";
 export {
   generateGptTextToImage,
   editImageWithGpt,
-} from "./clients/gptImageClient";
-export { generateImagenTextToImage } from "./clients/imagenImageClient";
+} from "./clients/image/gptImageClient";
+export { generateImagenTextToImage } from "./clients/image/imagenImageClient";
 export {
   generateKlingTextToVideo,
   generateKlingImageToVideo,
-} from "./clients/klingVideoClient";
+} from "./clients/video/klingVideoClient";
+export { generateLucyImageToVideo } from "./clients/video/lucyVideoClient";
 export {
-  generateLucyImageToVideo,
   generateSeeDanceImageToVideo,
   generateSeeDanceTextToVideo,
-} from "./clients/fastVideoClient";
-export { callFalModel } from "./clients/falImageClient";
+} from "./clients/video/seeDanceVideoClient";
+export { callFalModel } from "./clients/falClient";
 
 // Type exports
 export * from "./types";

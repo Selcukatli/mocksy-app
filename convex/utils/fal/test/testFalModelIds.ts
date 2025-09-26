@@ -1,8 +1,8 @@
 "use node";
 
-import { action } from "../../../_generated/server";
-import { api } from "../../../_generated/api";
-import { FAL_IMAGE_MODELS } from "../imageModels";
+import { internalAction } from "../../../_generated/server";
+import { internal } from "../../../_generated/api";
+import { FAL_IMAGE_MODELS } from "../clients/image/imageModels";
 import type { ImageGenerationResult } from "../falImageActions";
 
 /**
@@ -21,7 +21,7 @@ interface TestResult {
   error?: string;
 }
 
-export const testWithFalIds = action({
+export const testWithFalIds = internalAction({
   args: {},
   handler: async (ctx): Promise<TestResult[]> => {
     console.log("🎨 Testing with FAL's Exact Model IDs");
@@ -32,7 +32,7 @@ export const testWithFalIds = action({
     // Test 1: Use FAL's exact model ID
     console.log("\n1. Using FAL model ID: fal-ai/flux-1/dev");
     const result1 = await ctx.runAction(
-      api.utils.fal.falImageActions.generateImage,
+      internal.utils.fal.falImageActions.generateImage,
       {
         prompt,
         model: "fal-ai/flux-1/dev", // FAL's exact model ID
@@ -48,7 +48,7 @@ export const testWithFalIds = action({
     // Test 2: Use another FAL model ID
     console.log("\n2. Using FAL model ID: fal-ai/nano-banana/text-to-image");
     const result2 = await ctx.runAction(
-      api.utils.fal.falImageActions.generateImage,
+      internal.utils.fal.falImageActions.generateImage,
       {
         prompt,
         model: "fal-ai/nano-banana/text-to-image",
@@ -64,7 +64,7 @@ export const testWithFalIds = action({
     // Test 3: Test that preference-based selection also uses FAL IDs
     console.log("\n3. Using preference (should return FAL model ID):");
     const result3 = await ctx.runAction(
-      api.utils.fal.falImageActions.generateImage,
+      internal.utils.fal.falImageActions.generateImage,
       {
         prompt,
         preference: "fast",
@@ -130,7 +130,7 @@ interface ModelTestResult {
   }>;
 }
 
-export const testAllModelConstants = action({
+export const testAllModelConstants = internalAction({
   args: {},
   handler: async (): Promise<ModelTestResult> => {
     console.log("🔍 Testing All FAL Model Constants");
@@ -191,7 +191,7 @@ interface ValidationResult {
   response?: ImageGenerationResult;
 }
 
-export const validateModelIds = action({
+export const validateModelIds = internalAction({
   args: {},
   handler: async (ctx): Promise<ValidationResult[]> => {
     console.log("✅ Validating Model IDs with FAL API");
@@ -212,7 +212,7 @@ export const validateModelIds = action({
 
       try {
         const result = await ctx.runAction(
-          api.utils.fal.falImageActions.generateImage,
+          internal.utils.fal.falImageActions.generateImage,
           {
             prompt: testPrompt,
             model: model.id,

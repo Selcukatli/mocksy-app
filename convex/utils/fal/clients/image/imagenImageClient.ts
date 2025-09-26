@@ -1,6 +1,6 @@
 "use node";
 
-import { callFalModel } from "./falImageClient";
+import { callFalModel } from "../falClient";
 import {
   ImagenTextToImageParams,
   FalTextToImageResponse,
@@ -8,7 +8,7 @@ import {
   FalContentPolicyError,
   FalValidationError,
   FalAPIError,
-} from "../types";
+} from "../../types";
 
 /**
  * Handle Imagen4 errors and return structured response

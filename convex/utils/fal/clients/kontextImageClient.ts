@@ -1,7 +1,12 @@
 "use node";
 
 import { callFalModel } from "./falImageClient";
-import { KontextEditImageParams, KontextMultiEditImageParams, KontextModel, FalTextToImageResponse } from "../types";
+import {
+  KontextEditImageParams,
+  KontextMultiEditImageParams,
+  KontextModel,
+  FalTextToImageResponse,
+} from "../types";
 
 /**
  * Map Kontext model name to fal.ai endpoint
@@ -22,10 +27,10 @@ function getKontextModelEndpoint(model: KontextModel): string {
  * Handles Kontext-specific endpoint routing and parameter mapping
  */
 export async function editImageWithKontext(
-  params: KontextEditImageParams
+  params: KontextEditImageParams,
 ): Promise<FalTextToImageResponse | null> {
-  const { 
-    prompt, 
+  const {
+    prompt,
     image_url,
     aspect_ratio,
     model,
@@ -33,22 +38,22 @@ export async function editImageWithKontext(
     num_images = 1,
     safety_tolerance = "5",
     output_format = "jpeg",
-    ...options 
+    ...options
   } = params;
-  
+
   const modelEndpoint = getKontextModelEndpoint(model);
-  
+
   // Build input object for FLUX Kontext image editing
-  const input: Record<string, unknown> = { 
+  const input: Record<string, unknown> = {
     prompt,
     image_url,
     aspect_ratio,
     guidance_scale,
     num_images,
     safety_tolerance,
-    output_format
+    output_format,
   };
-  
+
   // Add optional parameters if provided
   Object.entries(options).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -56,19 +61,21 @@ export async function editImageWithKontext(
     }
   });
 
-  console.log(`Editing image with FLUX Kontext ${model} model (${modelEndpoint})`);
-  console.log(`Kontext Parameters:`, { 
-    model, 
-    aspect_ratio, 
-    guidance_scale, 
-    num_images, 
-    safety_tolerance, 
-    output_format 
+  console.log(
+    `Editing image with FLUX Kontext ${model} model (${modelEndpoint})`,
+  );
+  console.log(`Kontext Parameters:`, {
+    model,
+    aspect_ratio,
+    guidance_scale,
+    num_images,
+    safety_tolerance,
+    output_format,
   });
-  
+
   return await callFalModel<Record<string, unknown>, FalTextToImageResponse>(
-    modelEndpoint, 
-    input
+    modelEndpoint,
+    input,
   );
 }
 
@@ -78,33 +85,33 @@ export async function editImageWithKontext(
  * Only available with the Max model
  */
 export async function editImageWithKontextMulti(
-  params: KontextMultiEditImageParams
+  params: KontextMultiEditImageParams,
 ): Promise<FalTextToImageResponse | null> {
-  const { 
-    prompt, 
+  const {
+    prompt,
     image_urls,
     aspect_ratio,
     guidance_scale = 3.5,
     num_images = 1,
     safety_tolerance = "2",
     output_format = "jpeg",
-    ...options 
+    ...options
   } = params;
-  
+
   // Multi-image editing is only available with the Max model
   const modelEndpoint = "fal-ai/flux-pro/kontext/max/multi";
-  
+
   // Build input object for FLUX Kontext Multi image editing
-  const input: Record<string, unknown> = { 
+  const input: Record<string, unknown> = {
     prompt,
     image_urls,
     aspect_ratio,
     guidance_scale,
     num_images,
     safety_tolerance,
-    output_format
+    output_format,
   };
-  
+
   // Add optional parameters if provided
   Object.entries(options).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -112,18 +119,20 @@ export async function editImageWithKontextMulti(
     }
   });
 
-  console.log(`Editing ${image_urls.length} images with FLUX Kontext Max Multi model`);
-  console.log(`Kontext Multi Parameters:`, { 
-    imageCount: image_urls.length,
-    aspect_ratio, 
-    guidance_scale, 
-    num_images, 
-    safety_tolerance, 
-    output_format 
-  });
-  
-  return await callFalModel<Record<string, unknown>, FalTextToImageResponse>(
-    modelEndpoint, 
-    input
+  console.log(
+    `Editing ${image_urls.length} images with FLUX Kontext Max Multi model`,
   );
-} 
+  console.log(`Kontext Multi Parameters:`, {
+    imageCount: image_urls.length,
+    aspect_ratio,
+    guidance_scale,
+    num_images,
+    safety_tolerance,
+    output_format,
+  });
+
+  return await callFalModel<Record<string, unknown>, FalTextToImageResponse>(
+    modelEndpoint,
+    input,
+  );
+}

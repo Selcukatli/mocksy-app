@@ -15,12 +15,14 @@ export const createVariant = mutation({
       mood: v.optional(v.string()),
       effects: v.optional(v.array(v.string())),
     }),
-    deviceFrameSettings: v.optional(v.object({
-      showFrame: v.boolean(),
-      frameColor: v.string(),
-      frameThickness: v.number(),
-      showDynamicIsland: v.optional(v.boolean()),
-    })),
+    deviceFrameSettings: v.optional(
+      v.object({
+        showFrame: v.boolean(),
+        frameColor: v.string(),
+        frameThickness: v.number(),
+        showDynamicIsland: v.optional(v.boolean()),
+      }),
+    ),
     notes: v.optional(v.string()),
     setAsActive: v.optional(v.boolean()),
   },
@@ -42,9 +44,10 @@ export const createVariant = mutation({
       .withIndex("by_template", (q) => q.eq("templateId", args.templateId))
       .collect();
 
-    const nextVersion = existingVariants.length > 0
-      ? Math.max(...existingVariants.map(v => v.version)) + 1
-      : 1;
+    const nextVersion =
+      existingVariants.length > 0
+        ? Math.max(...existingVariants.map((v) => v.version)) + 1
+        : 1;
 
     // If setting as active, deactivate other versions
     if (args.setAsActive) {
@@ -86,18 +89,22 @@ export const updateVariant = mutation({
   args: {
     variantId: v.id("templateVariants"),
     basePrompt: v.optional(v.string()),
-    styleSettings: v.optional(v.object({
-      colorScheme: v.optional(v.string()),
-      artStyle: v.optional(v.string()),
-      mood: v.optional(v.string()),
-      effects: v.optional(v.array(v.string())),
-    })),
-    deviceFrameSettings: v.optional(v.object({
-      showFrame: v.boolean(),
-      frameColor: v.string(),
-      frameThickness: v.number(),
-      showDynamicIsland: v.optional(v.boolean()),
-    })),
+    styleSettings: v.optional(
+      v.object({
+        colorScheme: v.optional(v.string()),
+        artStyle: v.optional(v.string()),
+        mood: v.optional(v.string()),
+        effects: v.optional(v.array(v.string())),
+      }),
+    ),
+    deviceFrameSettings: v.optional(
+      v.object({
+        showFrame: v.boolean(),
+        frameColor: v.string(),
+        frameThickness: v.number(),
+        showDynamicIsland: v.optional(v.boolean()),
+      }),
+    ),
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -119,8 +126,12 @@ export const updateVariant = mutation({
 
     await ctx.db.patch(args.variantId, {
       ...(args.basePrompt !== undefined && { basePrompt: args.basePrompt }),
-      ...(args.styleSettings !== undefined && { styleSettings: args.styleSettings }),
-      ...(args.deviceFrameSettings !== undefined && { deviceFrameSettings: args.deviceFrameSettings }),
+      ...(args.styleSettings !== undefined && {
+        styleSettings: args.styleSettings,
+      }),
+      ...(args.deviceFrameSettings !== undefined && {
+        deviceFrameSettings: args.deviceFrameSettings,
+      }),
       ...(args.notes !== undefined && { notes: args.notes }),
     });
 
@@ -193,13 +204,18 @@ export const getTemplateVariants = query({
 
     // Check if user has access
     const profile = await getCurrentUser(ctx);
-    if (!template.isPublic && (!profile || template.profileId !== profile._id)) {
+    if (
+      !template.isPublic &&
+      (!profile || template.profileId !== profile._id)
+    ) {
       throw new Error("Access denied");
     }
 
     const variants = await ctx.db
       .query("templateVariants")
-      .withIndex("by_template_and_version", (q) => q.eq("templateId", args.templateId))
+      .withIndex("by_template_and_version", (q) =>
+        q.eq("templateId", args.templateId),
+      )
       .order("desc")
       .collect();
 
@@ -243,7 +259,7 @@ export const deleteVariant = mutation({
 
     // If this was active, activate another version
     if (variant.isActive) {
-      const otherVariant = allVariants.find(v => v._id !== args.variantId);
+      const otherVariant = allVariants.find((v) => v._id !== args.variantId);
       if (otherVariant) {
         await ctx.db.patch(otherVariant._id, { isActive: true });
         await ctx.db.patch(variant.templateId, {
@@ -255,7 +271,9 @@ export const deleteVariant = mutation({
     // Delete associated screenshots
     const screenshots = await ctx.db
       .query("templateScreenshots")
-      .withIndex("by_template_variant", (q) => q.eq("templateVariantId", args.variantId))
+      .withIndex("by_template_variant", (q) =>
+        q.eq("templateVariantId", args.variantId),
+      )
       .collect();
 
     for (const screenshot of screenshots) {
@@ -294,7 +312,10 @@ export const compareVariants = query({
 
     // Check access
     const profile = await getCurrentUser(ctx);
-    if (!template.isPublic && (!profile || template.profileId !== profile._id)) {
+    if (
+      !template.isPublic &&
+      (!profile || template.profileId !== profile._id)
+    ) {
       throw new Error("Access denied");
     }
 
@@ -303,11 +324,18 @@ export const compareVariants = query({
       variant2,
       differences: {
         basePrompt: variant1.basePrompt !== variant2.basePrompt,
-        colorScheme: variant1.styleSettings.colorScheme !== variant2.styleSettings.colorScheme,
-        artStyle: variant1.styleSettings.artStyle !== variant2.styleSettings.artStyle,
+        colorScheme:
+          variant1.styleSettings.colorScheme !==
+          variant2.styleSettings.colorScheme,
+        artStyle:
+          variant1.styleSettings.artStyle !== variant2.styleSettings.artStyle,
         mood: variant1.styleSettings.mood !== variant2.styleSettings.mood,
-        effects: JSON.stringify(variant1.styleSettings.effects) !== JSON.stringify(variant2.styleSettings.effects),
-        deviceFrameSettings: JSON.stringify(variant1.deviceFrameSettings) !== JSON.stringify(variant2.deviceFrameSettings),
+        effects:
+          JSON.stringify(variant1.styleSettings.effects) !==
+          JSON.stringify(variant2.styleSettings.effects),
+        deviceFrameSettings:
+          JSON.stringify(variant1.deviceFrameSettings) !==
+          JSON.stringify(variant2.deviceFrameSettings),
       },
     };
   },

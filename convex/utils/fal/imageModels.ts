@@ -7,7 +7,7 @@ import {
   GptImageSize,
   ImagenAspectRatio,
   KontextModel,
-  KontextAspectRatio
+  KontextAspectRatio,
 } from "./types";
 
 /**
@@ -17,20 +17,20 @@ import {
 export const FAL_IMAGE_MODELS = {
   // Text-to-Image Models
   FLUX_PRO_ULTRA: "fal-ai/flux-pro/v1.1-ultra",
+  FLUX_SRPO_TEXT: "fal-ai/flux/srpo", // High-quality with SRPO optimization
   FLUX_DEV: "fal-ai/flux/dev",
   FLUX_SCHNELL: "fal-ai/flux/schnell",
   GPT_4O_TEXT_TO_IMAGE: "fal-ai/gpt-4o/text-to-image",
   IMAGEN4_PREVIEW: "fal-ai/imagen4/preview/text-to-image",
-  GEMINI_FLASH_TEXT: "fal-ai/gemini-flash/text-to-image",
-  NANO_BANANA_TEXT: "fal-ai/nano-banana/text-to-image",
+  GEMINI_FLASH: "fal-ai/gemini-flash/text-to-image",
   QWEN_TEXT: "fal-ai/qwen/text-to-image",
 
   // Image-to-Image Models (Editing)
+  FLUX_SRPO_IMAGE: "fal-ai/flux/srpo/image-to-image", // SRPO image transformation
   KONTEXT_PRO: "fal-ai/flux-pro/kontext",
   KONTEXT_MAX: "fal-ai/flux-pro/kontext/max",
   GPT_4O_EDIT: "fal-ai/gpt-4o/edit-image",
   GEMINI_FLASH_EDIT: "fal-ai/gemini-flash/edit-image",
-  NANO_BANANA_EDIT: "fal-ai/nano-banana/edit-image",
   QWEN_EDIT: "fal-ai/qwen/edit-image",
 } as const;
 
@@ -55,25 +55,33 @@ export const IMAGE_MODELS = {
         params: {
           num_inference_steps: 50,
           guidance_scale: 3.5,
-          safety_tolerance: "5"
-        }
+          safety_tolerance: "5",
+        },
       },
       fallbacks: [
+        {
+          model: FAL_IMAGE_MODELS.FLUX_SRPO_TEXT, // High-quality alternative with SRPO
+          params: {
+            num_inference_steps: 50,
+            guidance_scale: 4.5,
+            acceleration: "none", // Best quality mode
+          },
+        },
         {
           model: FAL_IMAGE_MODELS.GPT_4O_TEXT_TO_IMAGE,
           params: {
             quality: "high" as GptImageQuality,
-            image_size: "1536x1024" as GptImageSize
-          }
+            image_size: "1536x1024" as GptImageSize,
+          },
         },
         {
           model: FAL_IMAGE_MODELS.IMAGEN4_PREVIEW,
           params: {
             aspect_ratio: "16:9" as ImagenAspectRatio,
-            num_images: 2
-          }
-        }
-      ]
+            num_images: 2,
+          },
+        },
+      ],
     },
     imageToImage: {
       primary: {
@@ -81,19 +89,28 @@ export const IMAGE_MODELS = {
         params: {
           model: "max" as KontextModel,
           aspect_ratio: "16:9" as KontextAspectRatio,
-          guidance_scale: 3.5
-        }
+          guidance_scale: 3.5,
+        },
       },
       fallbacks: [
+        {
+          model: FAL_IMAGE_MODELS.FLUX_SRPO_IMAGE, // SRPO image transformation
+          params: {
+            strength: 0.95,
+            num_inference_steps: 40,
+            guidance_scale: 4.5,
+            acceleration: "none",
+          },
+        },
         {
           model: FAL_IMAGE_MODELS.GPT_4O_EDIT,
           params: {
             quality: "high" as GptImageQuality,
-            image_size: "1536x1024" as GptImageSize
-          }
-        }
-      ]
-    }
+            image_size: "1536x1024" as GptImageSize,
+          },
+        },
+      ],
+    },
   },
 
   // Default - balanced quality/speed for most use cases
@@ -104,41 +121,41 @@ export const IMAGE_MODELS = {
         params: {
           model: "dev" as FluxModel,
           num_inference_steps: 28,
-          guidance_scale: 3.5
-        }
+          guidance_scale: 3.5,
+        },
       },
       fallbacks: [
         {
           model: FAL_IMAGE_MODELS.GPT_4O_TEXT_TO_IMAGE,
           params: {
             quality: "medium" as GptImageQuality,
-            image_size: "1024x1024" as GptImageSize
-          }
+            image_size: "1024x1024" as GptImageSize,
+          },
         },
         {
-          model: FAL_IMAGE_MODELS.GEMINI_FLASH_TEXT,
-          params: {}
-        }
-      ]
+          model: FAL_IMAGE_MODELS.GEMINI_FLASH,
+          params: {},
+        },
+      ],
     },
     imageToImage: {
       primary: {
         model: FAL_IMAGE_MODELS.KONTEXT_MAX,
         params: {
           model: "pro" as KontextModel,
-          aspect_ratio: "16:9" as KontextAspectRatio
-        }
+          aspect_ratio: "16:9" as KontextAspectRatio,
+        },
       },
       fallbacks: [
         {
           model: FAL_IMAGE_MODELS.GPT_4O_EDIT,
           params: {
             quality: "medium" as GptImageQuality,
-            image_size: "1024x1024" as GptImageSize
-          }
-        }
-      ]
-    }
+            image_size: "1024x1024" as GptImageSize,
+          },
+        },
+      ],
+    },
   },
 
   // Fast - quick iterations, drafts
@@ -149,36 +166,32 @@ export const IMAGE_MODELS = {
         params: {
           model: "schnell" as FluxModel,
           num_inference_steps: 4,
-          guidance_scale: 1.0
-        }
+          guidance_scale: 1.0,
+        },
       },
       fallbacks: [
         {
-          model: FAL_IMAGE_MODELS.GEMINI_FLASH_TEXT,
-          params: {}
+          model: FAL_IMAGE_MODELS.GEMINI_FLASH,
+          params: {},
         },
-        {
-          model: FAL_IMAGE_MODELS.NANO_BANANA_TEXT,
-          params: {}
-        }
-      ]
+      ],
     },
     imageToImage: {
       primary: {
         model: "nanoBananaEditImage",
-        params: {}
+        params: {},
       },
       fallbacks: [
         {
           model: "geminiFlashEditImage",
           params: {
             quality: "low",
-            image_size: "1024x1024"
-          }
-        }
-      ]
-    }
-  }
+            image_size: "1024x1024",
+          },
+        },
+      ],
+    },
+  },
 };
 
 /**
@@ -211,7 +224,7 @@ export const IMAGE_PARAMS = {
     tier: "quality",
     aspectRatio: "9:16",
     numImages: 1,
-    enhancePrompt: true
+    enhancePrompt: true,
   },
 
   // Marketing materials
@@ -219,7 +232,7 @@ export const IMAGE_PARAMS = {
     tier: "default",
     aspectRatio: "16:9",
     numImages: 3,
-    enhancePrompt: true
+    enhancePrompt: true,
   },
 
   // Quick drafts
@@ -227,7 +240,7 @@ export const IMAGE_PARAMS = {
     tier: "fast",
     aspectRatio: "1:1",
     numImages: 1,
-    enhancePrompt: false
+    enhancePrompt: false,
   },
 
   // Bulk generation
@@ -235,8 +248,8 @@ export const IMAGE_PARAMS = {
     tier: "fast",
     aspectRatio: "1:1",
     numImages: 1,
-    enhancePrompt: false
-  }
+    enhancePrompt: false,
+  },
 };
 
 /**
@@ -272,6 +285,8 @@ export const IMAGE_COSTS = {
  */
 export const FAL_IMAGE_COSTS: Record<string, number> = {
   [FAL_IMAGE_MODELS.FLUX_PRO_ULTRA]: 0.06,
+  [FAL_IMAGE_MODELS.FLUX_SRPO_TEXT]: 0.025, // $0.025 per megapixel
+  [FAL_IMAGE_MODELS.FLUX_SRPO_IMAGE]: 0.025, // $0.025 per megapixel
   [FAL_IMAGE_MODELS.FLUX_DEV]: 0.025,
   [FAL_IMAGE_MODELS.FLUX_SCHNELL]: 0.003,
   [FAL_IMAGE_MODELS.GPT_4O_TEXT_TO_IMAGE]: 0.02,
@@ -279,9 +294,7 @@ export const FAL_IMAGE_COSTS: Record<string, number> = {
   [FAL_IMAGE_MODELS.IMAGEN4_PREVIEW]: 0.04,
   [FAL_IMAGE_MODELS.KONTEXT_MAX]: 0.04,
   [FAL_IMAGE_MODELS.KONTEXT_PRO]: 0.03,
-  [FAL_IMAGE_MODELS.NANO_BANANA_TEXT]: 0.00325,
-  [FAL_IMAGE_MODELS.NANO_BANANA_EDIT]: 0.00325,
-  [FAL_IMAGE_MODELS.GEMINI_FLASH_TEXT]: 0.01,
+  [FAL_IMAGE_MODELS.GEMINI_FLASH]: 0.01,
   [FAL_IMAGE_MODELS.GEMINI_FLASH_EDIT]: 0.01,
   [FAL_IMAGE_MODELS.QWEN_TEXT]: 0.015,
   [FAL_IMAGE_MODELS.QWEN_EDIT]: 0.015,
@@ -289,7 +302,7 @@ export const FAL_IMAGE_COSTS: Record<string, number> = {
 
 export function getImageConfig(
   operation: "textToImage" | "imageToImage",
-  tier: "quality" | "default" | "fast" = "default"
+  tier: "quality" | "default" | "fast" = "default",
 ) {
   const config = IMAGE_MODELS[tier][operation];
 
@@ -299,7 +312,7 @@ export function getImageConfig(
   return {
     primary: config.primary,
     fallbacks: config.fallbacks,
-    estimatedCost
+    estimatedCost,
   };
 }
 
@@ -311,7 +324,11 @@ export function recommendImageTier(requirements: {
   speed?: "fast" | "normal" | "slow";
   budget?: "unlimited" | "moderate" | "tight";
 }): keyof typeof IMAGE_MODELS {
-  const { quality = "medium", speed = "normal", budget = "moderate" } = requirements;
+  const {
+    quality = "medium",
+    speed = "normal",
+    budget = "moderate",
+  } = requirements;
 
   // Quality is most important
   if (quality === "high" && budget !== "tight") {

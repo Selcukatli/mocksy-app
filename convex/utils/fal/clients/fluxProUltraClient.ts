@@ -37,7 +37,9 @@ export interface FluxProUltraOutput {
 export class FluxProUltraClient {
   static readonly MODEL = "fal-ai/flux-pro/v1.1-ultra";
 
-  static async generateImage(input: FluxProUltraInput): Promise<FluxProUltraOutput> {
+  static async generateImage(
+    input: FluxProUltraInput,
+  ): Promise<FluxProUltraOutput> {
     logInfo(`Generating image with FLUX Pro Ultra v1.1 model`);
     logInfo(`FLUX Pro Ultra Parameters:`, {
       aspect_ratio: input.aspect_ratio || "16:9",

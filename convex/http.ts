@@ -79,7 +79,7 @@ http.route({
           profile_image_url,
           email_addresses,
           first_name,
-          last_name
+          last_name,
         } = evt.data;
 
         // Build username from available data
@@ -88,8 +88,12 @@ http.route({
           displayUsername = `${first_name} ${last_name}`;
         } else if (!displayUsername && first_name) {
           displayUsername = first_name;
-        } else if (!displayUsername && email_addresses && email_addresses.length > 0) {
-          displayUsername = email_addresses[0].email_address.split('@')[0];
+        } else if (
+          !displayUsername &&
+          email_addresses &&
+          email_addresses.length > 0
+        ) {
+          displayUsername = email_addresses[0].email_address.split("@")[0];
         }
 
         // Use profile_image_url if available, fallback to image_url

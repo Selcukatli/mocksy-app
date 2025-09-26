@@ -38,7 +38,9 @@ export class GeminiImageClient {
   static readonly FLASH_EDIT_MODEL = "fal-ai/gemini-25-flash-image/edit";
   static readonly FLASH_EDIT_OLD_MODEL = "fal-ai/gemini-flash-edit";
 
-  static async generateFlashImage(input: GeminiFlashImageInput): Promise<GeminiFlashImageOutput> {
+  static async generateFlashImage(
+    input: GeminiFlashImageInput,
+  ): Promise<GeminiFlashImageOutput> {
     logInfo(`Generating image with Gemini 2.5 Flash model`);
     logInfo(`Gemini Flash Parameters:`, {
       num_images: input.num_images || 1,
@@ -50,7 +52,10 @@ export class GeminiImageClient {
       logInfo(`Calling fal.ai model: ${this.FLASH_MODEL}`);
       logInfo(`Input:`, input);
 
-      const result = await callFalModel(this.FLASH_MODEL, input as unknown as Record<string, unknown>);
+      const result = await callFalModel(
+        this.FLASH_MODEL,
+        input as unknown as Record<string, unknown>,
+      );
 
       logInfo(`✅ Success! Got result from ${this.FLASH_MODEL}`);
       return result as GeminiFlashImageOutput;
@@ -60,7 +65,9 @@ export class GeminiImageClient {
     }
   }
 
-  static async editFlashImage(input: GeminiFlashEditInput): Promise<GeminiFlashImageOutput> {
+  static async editFlashImage(
+    input: GeminiFlashEditInput,
+  ): Promise<GeminiFlashImageOutput> {
     logInfo(`Editing image with Gemini 2.5 Flash Edit model`);
     logInfo(`Gemini Flash Edit Parameters:`, {
       num_images: input.num_images || 1,
@@ -74,7 +81,10 @@ export class GeminiImageClient {
       logInfo(`Calling fal.ai model: ${this.FLASH_EDIT_MODEL}`);
       logInfo(`Input:`, input);
 
-      const result = await callFalModel(this.FLASH_EDIT_MODEL, input as unknown as Record<string, unknown>);
+      const result = await callFalModel(
+        this.FLASH_EDIT_MODEL,
+        input as unknown as Record<string, unknown>,
+      );
 
       logInfo(`✅ Success! Got result from ${this.FLASH_EDIT_MODEL}`);
       return result as GeminiFlashImageOutput;
@@ -84,14 +94,19 @@ export class GeminiImageClient {
     }
   }
 
-  static async editImage(input: GeminiFlashEditInput): Promise<GeminiFlashImageOutput> {
+  static async editImage(
+    input: GeminiFlashEditInput,
+  ): Promise<GeminiFlashImageOutput> {
     logInfo(`Editing image with Gemini Flash Edit model (old)`);
 
     try {
       logInfo(`Calling fal.ai model: ${this.FLASH_EDIT_OLD_MODEL}`);
       logInfo(`Input:`, input);
 
-      const result = await callFalModel(this.FLASH_EDIT_OLD_MODEL, input as unknown as Record<string, unknown>);
+      const result = await callFalModel(
+        this.FLASH_EDIT_OLD_MODEL,
+        input as unknown as Record<string, unknown>,
+      );
 
       logInfo(`✅ Success! Got result from ${this.FLASH_EDIT_OLD_MODEL}`);
       return result as GeminiFlashImageOutput;

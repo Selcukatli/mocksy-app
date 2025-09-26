@@ -42,7 +42,7 @@ export const testAllTextToVideo = action({
   args: {},
   handler: async (ctx): Promise<VideoTestResult[]> => {
     console.log("🎬 Testing ALL Text-to-Video Models");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
     console.log("⚠️ Note: Text-to-video is expensive and slower\n");
 
     const results: VideoTestResult[] = [];
@@ -87,7 +87,7 @@ export const testAllTextToVideo = action({
             duration: test.params.duration as number | undefined,
             resolution: test.params.resolution,
             aspectRatio: test.params.aspect_ratio,
-          }
+          },
         );
 
         const duration = (Date.now() - startTime) / 1000;
@@ -131,14 +131,14 @@ export const testAllTextToVideo = action({
       }
     }
 
-    const successful = results.filter(r => r.success).length;
+    const successful = results.filter((r) => r.success).length;
     const totalCost = results
-      .filter(r => r.success)
+      .filter((r) => r.success)
       .reduce((sum, r) => sum + (r.cost || 0), 0);
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 TEXT-TO-VIDEO TEST SUMMARY");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
     console.log(`✅ Successful: ${successful}/${results.length}`);
     console.log(`💰 Total cost: $${totalCost.toFixed(2)}`);
 
@@ -155,9 +155,11 @@ export const testAllImageToVideo = action({
   },
   handler: async (ctx, args): Promise<VideoTestResult[]> => {
     console.log("🎬 Testing ALL Image-to-Video Models");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
-    const imageUrl = args.imageUrl || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop";
+    const imageUrl =
+      args.imageUrl ||
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop";
     console.log(`🖼️ Source image: ${imageUrl}\n`);
 
     const results: VideoTestResult[] = [];
@@ -191,7 +193,7 @@ export const testAllImageToVideo = action({
           aspect_ratio: "16:9" as const,
           sync_mode: false,
         },
-        estimatedCost: 0.40, // ~5s at $0.08/s
+        estimatedCost: 0.4, // ~5s at $0.08/s
       },
     ];
 
@@ -211,14 +213,16 @@ export const testAllImageToVideo = action({
             duration: test.params.duration as number | undefined,
             resolution: test.params.resolution,
             aspectRatio: test.params.aspect_ratio,
-          }
+          },
         );
 
         const duration = (Date.now() - startTime) / 1000;
 
         if (result.success) {
           console.log(`✅ Success in ${duration.toFixed(1)}s`);
-          console.log(`⏱️ Generation time: ${result.generationTime?.toFixed(1)}s`);
+          console.log(
+            `⏱️ Generation time: ${result.generationTime?.toFixed(1)}s`,
+          );
           console.log(`📎 Video: ${result.videoUrl?.substring(0, 50)}...`);
 
           results.push({
@@ -255,17 +259,19 @@ export const testAllImageToVideo = action({
       }
     }
 
-    const successful = results.filter(r => r.success).length;
+    const successful = results.filter((r) => r.success).length;
     const totalCost = results
-      .filter(r => r.success)
+      .filter((r) => r.success)
       .reduce((sum, r) => sum + (r.cost || 0), 0);
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 IMAGE-TO-VIDEO TEST SUMMARY");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
     console.log(`✅ Successful: ${successful}/${results.length}`);
     console.log(`💰 Total cost: $${totalCost.toFixed(2)}`);
-    console.log(`⏱️ Average generation: ${(results.reduce((sum, r) => sum + (r.generationTime || 0), 0) / results.length).toFixed(1)}s`);
+    console.log(
+      `⏱️ Average generation: ${(results.reduce((sum, r) => sum + (r.generationTime || 0), 0) / results.length).toFixed(1)}s`,
+    );
 
     return results;
   },
@@ -280,9 +286,11 @@ export const testPreferenceTiers = action({
   },
   handler: async (ctx, args): Promise<VideoTestResult[]> => {
     console.log("🎯 Testing Video Preference Tiers");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
-    const imageUrl = args.imageUrl || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop";
+    const imageUrl =
+      args.imageUrl ||
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop";
     const results: VideoTestResult[] = [];
     const testPrompt = "Add natural motion to the scene";
 
@@ -301,7 +309,7 @@ export const testPreferenceTiers = action({
             imageUrl, // This makes it image-to-video
             preference,
             // No model specified - let preference system choose
-          }
+          },
         );
 
         const duration = (Date.now() - startTime) / 1000;
@@ -309,7 +317,9 @@ export const testPreferenceTiers = action({
         if (result.success) {
           console.log(`✅ Success with model: ${result.model}`);
           console.log(`⏱️ Total time: ${duration.toFixed(1)}s`);
-          console.log(`⚡ Generation time: ${result.generationTime?.toFixed(1)}s`);
+          console.log(
+            `⚡ Generation time: ${result.generationTime?.toFixed(1)}s`,
+          );
           console.log(`💰 Cost: $${result.cost?.toFixed(2)}`);
 
           results.push({
@@ -347,9 +357,9 @@ export const testPreferenceTiers = action({
       }
     }
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 VIDEO PREFERENCE TIER SUMMARY");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
     for (const result of results) {
       console.log(`\n${result.name}:`);
@@ -372,9 +382,11 @@ export const testVideoParameters = action({
   },
   handler: async (ctx, args): Promise<VideoTestResult[]> => {
     console.log("⚙️ Testing Video Parameters");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
-    const imageUrl = args.imageUrl || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop";
+    const imageUrl =
+      args.imageUrl ||
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop";
     const results: VideoTestResult[] = [];
 
     // Test SeeDance with different parameters (most flexible)
@@ -426,7 +438,7 @@ export const testVideoParameters = action({
           {
             ...test.params,
             image_url: imageUrl,
-          }
+          },
         );
 
         const duration = (Date.now() - startTime) / 1000;
@@ -465,11 +477,11 @@ export const testVideoParameters = action({
       }
     }
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 VIDEO PARAMETERS SUMMARY");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
-    const successful = results.filter(r => r.success).length;
+    const successful = results.filter((r) => r.success).length;
     console.log(`✅ Successful: ${successful}/${results.length}`);
 
     for (const result of results) {
@@ -492,11 +504,16 @@ export const runQuickTests = action({
   args: {
     imageUrl: v.optional(v.string()),
   },
-  handler: async (ctx, args): Promise<{ results: VideoTestResult[]; totalCost: number }> => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ results: VideoTestResult[]; totalCost: number }> => {
     console.log("⚡ Running QUICK Video Tests (Low Cost)");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
-    const imageUrl = args.imageUrl || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800";
+    const imageUrl =
+      args.imageUrl ||
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800";
     const results: VideoTestResult[] = [];
 
     // Test only the fastest/cheapest options
@@ -531,7 +548,10 @@ export const runQuickTests = action({
       const startTime = Date.now();
 
       try {
-        const result = await ctx.runAction(test.action, test.params) as VideoGenerationResult;
+        const result = (await ctx.runAction(
+          test.action,
+          test.params,
+        )) as VideoGenerationResult;
         const duration = (Date.now() - startTime) / 1000;
 
         if (result.success) {
@@ -566,13 +586,15 @@ export const runQuickTests = action({
     }
 
     const totalCost = results
-      .filter(r => r.success)
+      .filter((r) => r.success)
       .reduce((sum, r) => sum + (r.cost || 0), 0);
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 QUICK VIDEO TEST SUMMARY");
-    console.log("=" .repeat(60));
-    console.log(`✅ Successful: ${results.filter(r => r.success).length}/${results.length}`);
+    console.log("=".repeat(60));
+    console.log(
+      `✅ Successful: ${results.filter((r) => r.success).length}/${results.length}`,
+    );
     console.log(`💰 Total cost: $${totalCost.toFixed(2)}`);
 
     return { results, totalCost };
@@ -586,14 +608,17 @@ export const runFullTests = action({
   args: {
     imageUrl: v.optional(v.string()),
   },
-  handler: async (ctx, args): Promise<{
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
     imageToVideo: VideoTestResult[];
     preferences: VideoTestResult[];
     parameters: VideoTestResult[];
     totalCost: number;
   }> => {
     console.log("🔬 Running FULL Comprehensive Video Tests");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
     console.log("⚠️ Warning: This will test multiple video models");
     console.log("💰 Estimated total cost: ~$2-3\n");
 
@@ -602,31 +627,44 @@ export const runFullTests = action({
 
     const imageToVideo = await ctx.runAction(
       api.utils.fal.test.testComprehensiveVideo.testAllImageToVideo,
-      { imageUrl: args.imageUrl }
+      { imageUrl: args.imageUrl },
     );
 
     const preferences = await ctx.runAction(
       api.utils.fal.test.testComprehensiveVideo.testPreferenceTiers,
-      { imageUrl: args.imageUrl }
+      { imageUrl: args.imageUrl },
     );
 
     const parameters = await ctx.runAction(
       api.utils.fal.test.testComprehensiveVideo.testVideoParameters,
-      { imageUrl: args.imageUrl }
+      { imageUrl: args.imageUrl },
     );
 
     // Calculate total cost
+    type TestResult = { success: boolean; cost?: number };
     const totalCost =
-      imageToVideo.filter(r => r.success).reduce((sum, r) => sum + (r.cost || 0), 0) +
-      preferences.filter(r => r.success).reduce((sum, r) => sum + (r.cost || 0), 0) +
-      parameters.filter(r => r.success).reduce((sum, r) => sum + (r.cost || 0), 0);
+      imageToVideo
+        .filter((r: TestResult) => r.success)
+        .reduce((sum: number, r: TestResult) => sum + (r.cost || 0), 0) +
+      preferences
+        .filter((r: TestResult) => r.success)
+        .reduce((sum: number, r: TestResult) => sum + (r.cost || 0), 0) +
+      parameters
+        .filter((r: TestResult) => r.success)
+        .reduce((sum: number, r: TestResult) => sum + (r.cost || 0), 0);
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("🎯 FULL VIDEO TEST COMPLETE");
-    console.log("=" .repeat(60));
-    console.log(`Image-to-Video: ${imageToVideo.filter(r => r.success).length}/${imageToVideo.length} passed`);
-    console.log(`Preferences: ${preferences.filter(r => r.success).length}/${preferences.length} passed`);
-    console.log(`Parameters: ${parameters.filter(r => r.success).length}/${parameters.length} passed`);
+    console.log("=".repeat(60));
+    console.log(
+      `Image-to-Video: ${imageToVideo.filter((r: TestResult) => r.success).length}/${imageToVideo.length} passed`,
+    );
+    console.log(
+      `Preferences: ${preferences.filter((r: TestResult) => r.success).length}/${preferences.length} passed`,
+    );
+    console.log(
+      `Parameters: ${parameters.filter((r: TestResult) => r.success).length}/${parameters.length} passed`,
+    );
     console.log(`\n💰 Total cost: $${totalCost.toFixed(2)}`);
 
     return { imageToVideo, preferences, parameters, totalCost };

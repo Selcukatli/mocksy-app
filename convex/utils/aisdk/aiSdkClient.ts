@@ -198,7 +198,9 @@ export async function generateTextWithAI(
         ? {
             ...baseConfig,
             // Add temperature for GPT-5 models when specified
-            ...(params.temperature !== undefined && { temperature: params.temperature }),
+            ...(params.temperature !== undefined && {
+              temperature: params.temperature,
+            }),
           }
         : {
             ...baseConfig,
@@ -232,13 +234,17 @@ export async function generateTextWithAI(
       }
 
       // Build the response
-      if (!result.text && result.usage?.outputTokens && result.usage.outputTokens > 0) {
+      if (
+        !result.text &&
+        result.usage?.outputTokens &&
+        result.usage.outputTokens > 0
+      ) {
         console.warn(
           `[AI SDK] Warning: Model generated ${result.usage.outputTokens} tokens but returned empty text. ` +
-          `This usually means the token limit was hit mid-generation. Consider increasing maxOutputTokens.`
+            `This usually means the token limit was hit mid-generation. Consider increasing maxOutputTokens.`,
         );
       }
-      
+
       const response: TextGenerationResponse = {
         content: result.text || "",
         usage: result.usage

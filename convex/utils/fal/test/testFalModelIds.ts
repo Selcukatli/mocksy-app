@@ -25,10 +25,10 @@ export const testWithFalIds = action({
   args: {},
   handler: async (ctx): Promise<TestResult[]> => {
     console.log("🎨 Testing with FAL's Exact Model IDs");
-    console.log("=" .repeat(60));
-    
+    console.log("=".repeat(60));
+
     const prompt = "A serene forest path with sunlight filtering through trees";
-    
+
     // Test 1: Use FAL's exact model ID
     console.log("\n1. Using FAL model ID: fal-ai/flux-1/dev");
     const result1 = await ctx.runAction(
@@ -36,15 +36,15 @@ export const testWithFalIds = action({
       {
         prompt,
         model: "fal-ai/flux-1/dev", // FAL's exact model ID
-      }
+      },
     );
-    
-    console.log(`Result: ${result1.success ? '✅ Success' : '❌ Failed'}`);
+
+    console.log(`Result: ${result1.success ? "✅ Success" : "❌ Failed"}`);
     console.log(`Model used: ${result1.model}`);
     if (result1.success && result1.images?.[0]) {
       console.log(`Image URL: ${result1.images[0].url}`);
     }
-    
+
     // Test 2: Use another FAL model ID
     console.log("\n2. Using FAL model ID: fal-ai/nano-banana/text-to-image");
     const result2 = await ctx.runAction(
@@ -52,15 +52,15 @@ export const testWithFalIds = action({
       {
         prompt,
         model: "fal-ai/nano-banana/text-to-image",
-      }
+      },
     );
-    
-    console.log(`Result: ${result2.success ? '✅ Success' : '❌ Failed'}`);
+
+    console.log(`Result: ${result2.success ? "✅ Success" : "❌ Failed"}`);
     console.log(`Model used: ${result2.model}`);
     if (result2.success && result2.images?.[0]) {
       console.log(`Image URL: ${result2.images[0].url}`);
     }
-    
+
     // Test 3: Test that preference-based selection also uses FAL IDs
     console.log("\n3. Using preference (should return FAL model ID):");
     const result3 = await ctx.runAction(
@@ -68,30 +68,32 @@ export const testWithFalIds = action({
       {
         prompt,
         preference: "fast",
-      }
+      },
     );
-    
-    console.log(`Result: ${result3.success ? '✅ Success' : '❌ Failed'}`);
+
+    console.log(`Result: ${result3.success ? "✅ Success" : "❌ Failed"}`);
     console.log(`Model used: ${result3.model}`);
-    console.log(`Is FAL ID format: ${result3.model?.startsWith('fal-ai/') ? 'Yes ✅' : 'No ❌'}`);
-    
+    console.log(
+      `Is FAL ID format: ${result3.model?.startsWith("fal-ai/") ? "Yes ✅" : "No ❌"}`,
+    );
+
     // Already imported at the top
-    
-    console.log("\n" + "=" .repeat(60));
+
+    console.log("\n" + "=".repeat(60));
     console.log("📝 Available FAL Model IDs:");
-    console.log("=" .repeat(60));
-    
+    console.log("=".repeat(60));
+
     console.log("\nText-to-Image Models:");
     console.log(`  FLUX_PRO_ULTRA: ${FAL_IMAGE_MODELS.FLUX_PRO_ULTRA}`);
     console.log(`  FLUX_DEV: ${FAL_IMAGE_MODELS.FLUX_DEV}`);
     console.log(`  FLUX_SCHNELL: ${FAL_IMAGE_MODELS.FLUX_SCHNELL}`);
     console.log(`  GPT_4O: ${FAL_IMAGE_MODELS.GPT_4O_TEXT_TO_IMAGE}`);
-    console.log(`  NANO_BANANA: ${FAL_IMAGE_MODELS.NANO_BANANA_TEXT}`);
-    
+    console.log(`  GEMINI_FLASH: ${FAL_IMAGE_MODELS.GEMINI_FLASH}`);
+
     console.log("\nImage-to-Image Models:");
     console.log(`  KONTEXT_MAX: ${FAL_IMAGE_MODELS.KONTEXT_MAX}`);
     console.log(`  GPT_4O_EDIT: ${FAL_IMAGE_MODELS.GPT_4O_EDIT}`);
-    
+
     return [
       {
         test: "FAL model ID: fal-ai/flux-1/dev",
@@ -132,7 +134,7 @@ export const testAllModelConstants = action({
   args: {},
   handler: async (): Promise<ModelTestResult> => {
     console.log("🔍 Testing All FAL Model Constants");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
     const results = {
       validIds: [] as string[],
@@ -145,7 +147,7 @@ export const testAllModelConstants = action({
       console.log(`  ${key}: ${value}`);
 
       // Validate format (should start with fal-ai/)
-      if (value.startsWith('fal-ai/')) {
+      if (value.startsWith("fal-ai/")) {
         results.validIds.push(value);
       } else {
         console.warn(`  ⚠️ Invalid format: ${value}`);
@@ -154,14 +156,14 @@ export const testAllModelConstants = action({
     }
 
     // Summary
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 VALIDATION SUMMARY:");
     console.log(`✅ Valid FAL IDs: ${results.validIds.length}`);
     console.log(`❌ Invalid IDs: ${results.invalidIds.length}`);
 
     if (results.invalidIds.length > 0) {
       console.log("\n⚠️ Invalid IDs found:");
-      results.invalidIds.forEach(id => console.log(`  - ${id}`));
+      results.invalidIds.forEach((id) => console.log(`  - ${id}`));
     }
 
     const details = Object.entries(FAL_IMAGE_MODELS).map(([, id]) => ({
@@ -193,7 +195,7 @@ export const validateModelIds = action({
   args: {},
   handler: async (ctx): Promise<ValidationResult[]> => {
     console.log("✅ Validating Model IDs with FAL API");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
     const testPrompt = "Simple test image";
     const results: ValidationResult[] = [];
@@ -202,7 +204,7 @@ export const validateModelIds = action({
     const modelsToValidate = [
       { name: "FLUX Dev", id: FAL_IMAGE_MODELS.FLUX_DEV },
       { name: "FLUX Schnell", id: FAL_IMAGE_MODELS.FLUX_SCHNELL },
-      { name: "Nano Banana", id: FAL_IMAGE_MODELS.NANO_BANANA_TEXT },
+      { name: "Gemini Flash", id: FAL_IMAGE_MODELS.GEMINI_FLASH },
     ];
 
     for (const model of modelsToValidate) {
@@ -214,7 +216,7 @@ export const validateModelIds = action({
           {
             prompt: testPrompt,
             model: model.id,
-          }
+          },
         );
 
         if (result.success) {
@@ -246,17 +248,19 @@ export const validateModelIds = action({
     }
 
     // Summary
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 VALIDATION RESULTS:");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
-    const validCount = results.filter(r => r.status === "success").length;
+    const validCount = results.filter((r) => r.status === "success").length;
     console.log(`\n✅ Valid models: ${validCount}/${results.length}`);
 
     for (const result of results) {
       console.log(`\n${result.name}:`);
       console.log(`  ID: ${result.id}`);
-      console.log(`  Status: ${result.status === "success" ? '✅ Valid' : '❌ Invalid'}`);
+      console.log(
+        `  Status: ${result.status === "success" ? "✅ Valid" : "❌ Invalid"}`,
+      );
       if (result.error) {
         console.log(`  Error: ${result.error}`);
       }

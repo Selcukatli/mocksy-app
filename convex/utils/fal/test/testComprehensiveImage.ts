@@ -39,7 +39,7 @@ export const testAllTextToImage = action({
   args: {},
   handler: async (ctx): Promise<TestResult[]> => {
     console.log("🎨 Testing ALL Text-to-Image Models");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
     const results: TestResult[] = [];
 
@@ -77,15 +77,9 @@ export const testAllTextToImage = action({
       },
       {
         name: "Gemini Flash",
-        modelId: FAL_IMAGE_MODELS.GEMINI_FLASH_TEXT,
+        modelId: FAL_IMAGE_MODELS.GEMINI_FLASH,
         prompt: "Abstract colorful art",
         estimatedCost: 0.01,
-      },
-      {
-        name: "Nano Banana",
-        modelId: FAL_IMAGE_MODELS.NANO_BANANA_TEXT,
-        prompt: "A cute cartoon character",
-        estimatedCost: 0.00325,
       },
       {
         name: "Qwen",
@@ -107,7 +101,7 @@ export const testAllTextToImage = action({
           {
             prompt: test.prompt,
             model: test.modelId, // Use FAL's exact model ID
-          }
+          },
         );
 
         const duration = (Date.now() - startTime) / 1000;
@@ -115,7 +109,9 @@ export const testAllTextToImage = action({
         if (result.success) {
           console.log(`✅ Success in ${duration.toFixed(1)}s`);
           if (result.images?.[0]?.url) {
-            console.log(`📎 Image: ${result.images[0].url.substring(0, 50)}...`);
+            console.log(
+              `📎 Image: ${result.images[0].url.substring(0, 50)}...`,
+            );
           }
 
           results.push({
@@ -150,17 +146,19 @@ export const testAllTextToImage = action({
     }
 
     // Summary
-    const successful = results.filter(r => r.success).length;
+    const successful = results.filter((r) => r.success).length;
     const totalCost = results
-      .filter(r => r.success)
+      .filter((r) => r.success)
       .reduce((sum, r) => sum + (r.cost || 0), 0);
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 TEXT-TO-IMAGE TEST SUMMARY");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
     console.log(`✅ Successful: ${successful}/${results.length}`);
     console.log(`💰 Total cost: $${totalCost.toFixed(2)}`);
-    console.log(`⏱️ Average time: ${(results.reduce((sum, r) => sum + (r.duration || 0), 0) / results.length).toFixed(1)}s`);
+    console.log(
+      `⏱️ Average time: ${(results.reduce((sum, r) => sum + (r.duration || 0), 0) / results.length).toFixed(1)}s`,
+    );
 
     return results;
   },
@@ -175,9 +173,11 @@ export const testAllImageToImage = action({
   },
   handler: async (ctx, args): Promise<TestResult[]> => {
     console.log("🎨 Testing ALL Image-to-Image Models");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
-    const imageUrl = args.imageUrl || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800";
+    const imageUrl =
+      args.imageUrl ||
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800";
     const results: TestResult[] = [];
 
     const modelsToTest = [
@@ -206,12 +206,6 @@ export const testAllImageToImage = action({
         estimatedCost: 0.01,
       },
       {
-        name: "Nano Banana Edit",
-        modelId: FAL_IMAGE_MODELS.NANO_BANANA_EDIT,
-        prompt: "Cartoonify the image",
-        estimatedCost: 0.00325,
-      },
-      {
         name: "Qwen Edit",
         modelId: FAL_IMAGE_MODELS.QWEN_EDIT,
         prompt: "Enhance and upscale",
@@ -232,7 +226,7 @@ export const testAllImageToImage = action({
             prompt: test.prompt,
             image_url: imageUrl,
             model: test.modelId,
-          }
+          },
         );
 
         const duration = (Date.now() - startTime) / 1000;
@@ -271,14 +265,14 @@ export const testAllImageToImage = action({
     }
 
     // Summary
-    const successful = results.filter(r => r.success).length;
+    const successful = results.filter((r) => r.success).length;
     const totalCost = results
-      .filter(r => r.success)
+      .filter((r) => r.success)
       .reduce((sum, r) => sum + (r.cost || 0), 0);
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 IMAGE-TO-IMAGE TEST SUMMARY");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
     console.log(`✅ Successful: ${successful}/${results.length}`);
     console.log(`💰 Total cost: $${totalCost.toFixed(2)}`);
 
@@ -293,7 +287,7 @@ export const testPreferenceTiers = action({
   args: {},
   handler: async (ctx): Promise<TestResult[]> => {
     console.log("🎯 Testing Preference Tiers");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
     const results: TestResult[] = [];
     const testPrompt = "A beautiful landscape with mountains";
@@ -312,7 +306,7 @@ export const testPreferenceTiers = action({
             prompt: testPrompt,
             preference,
             // No model specified - let preference system choose
-          }
+          },
         );
 
         const duration = (Date.now() - startTime) / 1000;
@@ -320,7 +314,9 @@ export const testPreferenceTiers = action({
         if (result.success) {
           console.log(`✅ Success with model: ${result.model}`);
           console.log(`⏱️ Time: ${duration.toFixed(1)}s`);
-          console.log(`💰 Estimated cost: $${result.estimatedCost?.toFixed(3) || "N/A"}`);
+          console.log(
+            `💰 Estimated cost: $${result.estimatedCost?.toFixed(3) || "N/A"}`,
+          );
 
           results.push({
             name: `${preference} tier`,
@@ -355,9 +351,9 @@ export const testPreferenceTiers = action({
       }
     }
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 PREFERENCE TIER SUMMARY");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
     for (const result of results) {
       console.log(`\n${result.name}:`);
@@ -378,7 +374,7 @@ export const testFallbackChains = action({
   args: {},
   handler: async (ctx): Promise<TestResult[]> => {
     console.log("🔄 Testing Fallback Chains");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
     console.log("\nNote: This test intentionally uses invalid parameters");
     console.log("to trigger fallbacks and test the chain behavior.\n");
 
@@ -397,7 +393,7 @@ export const testFallbackChains = action({
           preference: "quality",
           // Add an intentionally problematic parameter that might cause FLUX Pro Ultra to fail
           // but other models might handle
-        }
+        },
       );
 
       if (result.success) {
@@ -427,9 +423,9 @@ export const testFallbackChains = action({
       });
     }
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 FALLBACK CHAIN SUMMARY");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
     for (const result of results) {
       console.log(`\n${result.name}:`);
@@ -450,9 +446,11 @@ export const testFallbackChains = action({
  */
 export const runQuickTests = action({
   args: {},
-  handler: async (ctx): Promise<{ results: TestResult[]; totalCost: number }> => {
+  handler: async (
+    ctx,
+  ): Promise<{ results: TestResult[]; totalCost: number }> => {
     console.log("⚡ Running QUICK Image Tests (Low Cost)");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
 
     const results: TestResult[] = [];
 
@@ -463,12 +461,6 @@ export const runQuickTests = action({
         modelId: FAL_IMAGE_MODELS.FLUX_SCHNELL,
         prompt: "Simple test image",
         cost: 0.003,
-      },
-      {
-        name: "Nano Banana (Cheapest)",
-        modelId: FAL_IMAGE_MODELS.NANO_BANANA_TEXT,
-        prompt: "Quick test",
-        cost: 0.00325,
       },
       {
         name: "Fast Preference Tier",
@@ -499,7 +491,7 @@ export const runQuickTests = action({
 
         const result = await ctx.runAction(
           api.utils.fal.falImageActions.generateImage,
-          params
+          params,
         );
 
         const duration = (Date.now() - startTime) / 1000;
@@ -535,13 +527,15 @@ export const runQuickTests = action({
     }
 
     const totalCost = results
-      .filter(r => r.success)
+      .filter((r) => r.success)
       .reduce((sum, r) => sum + (r.cost || 0), 0);
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("📊 QUICK TEST SUMMARY");
-    console.log("=" .repeat(60));
-    console.log(`✅ Successful: ${results.filter(r => r.success).length}/${results.length}`);
+    console.log("=".repeat(60));
+    console.log(
+      `✅ Successful: ${results.filter((r) => r.success).length}/${results.length}`,
+    );
     console.log(`💰 Total cost: $${totalCost.toFixed(3)}`);
 
     return { results, totalCost };
@@ -553,44 +547,61 @@ export const runQuickTests = action({
  */
 export const runFullTests = action({
   args: {},
-  handler: async (ctx): Promise<{
+  handler: async (
+    ctx,
+  ): Promise<{
     textToImage: TestResult[];
     imageToImage: TestResult[];
     preferences: TestResult[];
     totalCost: number;
   }> => {
     console.log("🔬 Running FULL Comprehensive Image Tests");
-    console.log("=" .repeat(60));
+    console.log("=".repeat(60));
     console.log("⚠️ Warning: This will test ALL models and cost more\n");
 
     // Run all test suites
     const textToImage = await ctx.runAction(
       api.utils.fal.test.testComprehensiveImage.testAllTextToImage,
-      {}
+      {},
     );
 
     const imageToImage = await ctx.runAction(
       api.utils.fal.test.testComprehensiveImage.testAllImageToImage,
-      {}
+      {},
     );
 
     const preferences = await ctx.runAction(
       api.utils.fal.test.testComprehensiveImage.testPreferenceTiers,
-      {}
+      {},
     );
+
+    // Define type for test results
+    type TestResult = { success: boolean; cost?: number };
 
     // Calculate total cost
     const totalCost =
-      textToImage.filter(r => r.success).reduce((sum, r) => sum + (r.cost || 0), 0) +
-      imageToImage.filter(r => r.success).reduce((sum, r) => sum + (r.cost || 0), 0) +
-      preferences.filter(r => r.success).reduce((sum, r) => sum + (r.cost || 0), 0);
+      textToImage
+        .filter((r: TestResult) => r.success)
+        .reduce((sum: number, r: TestResult) => sum + (r.cost || 0), 0) +
+      imageToImage
+        .filter((r: TestResult) => r.success)
+        .reduce((sum: number, r: TestResult) => sum + (r.cost || 0), 0) +
+      preferences
+        .filter((r: TestResult) => r.success)
+        .reduce((sum: number, r: TestResult) => sum + (r.cost || 0), 0);
 
-    console.log("\n" + "=" .repeat(60));
+    console.log("\n" + "=".repeat(60));
     console.log("🎯 FULL TEST COMPLETE");
-    console.log("=" .repeat(60));
-    console.log(`Text-to-Image: ${textToImage.filter(r => r.success).length}/${textToImage.length} passed`);
-    console.log(`Image-to-Image: ${imageToImage.filter(r => r.success).length}/${imageToImage.length} passed`);
-    console.log(`Preferences: ${preferences.filter(r => r.success).length}/${preferences.length} passed`);
+    console.log("=".repeat(60));
+    console.log(
+      `Text-to-Image: ${textToImage.filter((r: TestResult) => r.success).length}/${textToImage.length} passed`,
+    );
+    console.log(
+      `Image-to-Image: ${imageToImage.filter((r: TestResult) => r.success).length}/${imageToImage.length} passed`,
+    );
+    console.log(
+      `Preferences: ${preferences.filter((r: TestResult) => r.success).length}/${preferences.length} passed`,
+    );
     console.log(`\n💰 Total cost: $${totalCost.toFixed(2)}`);
 
     return { textToImage, imageToImage, preferences, totalCost };

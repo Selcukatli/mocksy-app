@@ -53,12 +53,12 @@ export interface TextGenerationParams {
   maxOutputTokens?: number;
   // Tool-related fields
   tools?: Record<string, unknown>; // AI SDK tools have their own type
-  toolChoice?: 'auto' | 'none' | 'required';
+  toolChoice?: "auto" | "none" | "required";
   maxSteps?: number;
   // Fallback providers to try if the primary fails
   fallbackProviders?: AIProvider[];
   // GPT-5 reasoning optimization
-  reasoningEffort?: 'minimal' | 'low' | 'medium' | 'high';
+  reasoningEffort?: "minimal" | "low" | "medium" | "high";
 }
 
 export interface TextGenerationResponse {

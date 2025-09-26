@@ -4,29 +4,33 @@ import { v } from "convex/values";
 // Query to get all apps for the current user
 export const getApps = query({
   args: {},
-  returns: v.array(v.object({
-    _id: v.id("apps"),
-    _creationTime: v.number(),
-    profileId: v.id("profiles"),
-    name: v.string(),
-    description: v.optional(v.string()),
-    iconStorageId: v.optional(v.id("_storage")),
-    iconUrl: v.optional(v.union(v.string(), v.null())),
-    category: v.optional(v.string()),
-    platforms: v.optional(v.object({
-      ios: v.boolean(),
-      android: v.boolean(),
-    })),
-    languages: v.optional(v.array(v.string())),
-    appStoreUrl: v.optional(v.string()),
-    playStoreUrl: v.optional(v.string()),
-    websiteUrl: v.optional(v.string()),
-    bundleId: v.optional(v.string()),
-    keywords: v.optional(v.array(v.string())),
-    ageRating: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("apps"),
+      _creationTime: v.number(),
+      profileId: v.id("profiles"),
+      name: v.string(),
+      description: v.optional(v.string()),
+      iconStorageId: v.optional(v.id("_storage")),
+      iconUrl: v.optional(v.union(v.string(), v.null())),
+      category: v.optional(v.string()),
+      platforms: v.optional(
+        v.object({
+          ios: v.boolean(),
+          android: v.boolean(),
+        }),
+      ),
+      languages: v.optional(v.array(v.string())),
+      appStoreUrl: v.optional(v.string()),
+      playStoreUrl: v.optional(v.string()),
+      websiteUrl: v.optional(v.string()),
+      bundleId: v.optional(v.string()),
+      keywords: v.optional(v.array(v.string())),
+      ageRating: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+  ),
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -46,7 +50,9 @@ export const getApps = query({
     // Get all apps for this profile
     const apps = await ctx.db
       .query("apps")
-      .withIndex("by_profile_and_created", (q) => q.eq("profileId", profile._id))
+      .withIndex("by_profile_and_created", (q) =>
+        q.eq("profileId", profile._id),
+      )
       .order("desc")
       .collect();
 
@@ -61,7 +67,7 @@ export const getApps = query({
           ...app,
           iconUrl: iconUrl ?? undefined,
         };
-      })
+      }),
     );
 
     return appsWithUrls;
@@ -81,10 +87,12 @@ export const getApp = query({
       iconStorageId: v.optional(v.id("_storage")),
       iconUrl: v.optional(v.union(v.string(), v.null())),
       category: v.optional(v.string()),
-      platforms: v.optional(v.object({
-        ios: v.boolean(),
-        android: v.boolean(),
-      })),
+      platforms: v.optional(
+        v.object({
+          ios: v.boolean(),
+          android: v.boolean(),
+        }),
+      ),
       languages: v.optional(v.array(v.string())),
       appStoreUrl: v.optional(v.string()),
       playStoreUrl: v.optional(v.string()),
@@ -95,7 +103,7 @@ export const getApp = query({
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
-    v.null()
+    v.null(),
   ),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -141,10 +149,12 @@ export const createApp = mutation({
     description: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")),
     category: v.optional(v.string()),
-    platforms: v.optional(v.object({
-      ios: v.boolean(),
-      android: v.boolean(),
-    })),
+    platforms: v.optional(
+      v.object({
+        ios: v.boolean(),
+        android: v.boolean(),
+      }),
+    ),
     languages: v.optional(v.array(v.string())),
   },
   returns: v.id("apps"),
@@ -191,10 +201,12 @@ export const updateApp = mutation({
     description: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")),
     category: v.optional(v.string()),
-    platforms: v.optional(v.object({
-      ios: v.boolean(),
-      android: v.boolean(),
-    })),
+    platforms: v.optional(
+      v.object({
+        ios: v.boolean(),
+        android: v.boolean(),
+      }),
+    ),
     languages: v.optional(v.array(v.string())),
     appStoreUrl: v.optional(v.string()),
     playStoreUrl: v.optional(v.string()),

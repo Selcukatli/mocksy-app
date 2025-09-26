@@ -24,7 +24,7 @@ export const uploadAppScreen = mutation({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile) {
@@ -58,22 +58,24 @@ export const uploadAppScreen = mutation({
 // Get all app screens for an app
 export const getAppScreens = query({
   args: { appId: v.id("apps") },
-  returns: v.array(v.object({
-    _id: v.id("appScreens"),
-    _creationTime: v.number(),
-    appId: v.id("apps"),
-    profileId: v.id("profiles"),
-    name: v.string(),
-    storageId: v.id("_storage"),
-    screenUrl: v.optional(v.string()),
-    dimensions: v.object({
-      width: v.number(),
-      height: v.number(),
+  returns: v.array(
+    v.object({
+      _id: v.id("appScreens"),
+      _creationTime: v.number(),
+      appId: v.id("apps"),
+      profileId: v.id("profiles"),
+      name: v.string(),
+      storageId: v.id("_storage"),
+      screenUrl: v.optional(v.string()),
+      dimensions: v.object({
+        width: v.number(),
+        height: v.number(),
+      }),
+      size: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
     }),
-    size: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })),
+  ),
   handler: async (ctx, { appId }) => {
     // Get the app to verify access
     const app = await ctx.db.get(appId);
@@ -90,7 +92,7 @@ export const getAppScreens = query({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || app.profileId !== profile._id) {
@@ -101,7 +103,7 @@ export const getAppScreens = query({
     const screens = await ctx.db
       .query("appScreens")
       .withIndex("by_app")
-      .filter(q => q.eq(q.field("appId"), appId))
+      .filter((q) => q.eq(q.field("appId"), appId))
       .collect();
 
     // Add storage URLs to each screen
@@ -109,7 +111,7 @@ export const getAppScreens = query({
       screens.map(async (screen) => {
         const screenUrl = await ctx.storage.getUrl(screen.storageId);
         return { ...screen, screenUrl: screenUrl || undefined };
-      })
+      }),
     );
 
     return screensWithUrls;
@@ -136,7 +138,7 @@ export const getAppScreen = query({
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
-    v.null()
+    v.null(),
   ),
   handler: async (ctx, { screenId }) => {
     const screen = await ctx.db.get(screenId);
@@ -153,7 +155,7 @@ export const getAppScreen = query({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || screen.profileId !== profile._id) {
@@ -190,7 +192,7 @@ export const updateAppScreenName = mutation({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || screen.profileId !== profile._id) {
@@ -226,7 +228,7 @@ export const deleteAppScreen = mutation({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || screen.profileId !== profile._id) {

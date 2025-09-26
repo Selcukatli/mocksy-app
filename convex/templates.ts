@@ -63,7 +63,9 @@ export const getMyTemplates = query({
         }
         let referenceImageUrl = null;
         if (template.referenceImageStorageId) {
-          referenceImageUrl = await ctx.storage.getUrl(template.referenceImageStorageId);
+          referenceImageUrl = await ctx.storage.getUrl(
+            template.referenceImageStorageId,
+          );
         }
         return {
           ...template,
@@ -71,7 +73,7 @@ export const getMyTemplates = query({
           imageUrl,
           referenceImageUrl,
         };
-      })
+      }),
     );
 
     return templatesWithVariants;
@@ -108,19 +110,23 @@ export const getPublicTemplates = query({
         }
         let referenceImageUrl = null;
         if (template.referenceImageStorageId) {
-          referenceImageUrl = await ctx.storage.getUrl(template.referenceImageStorageId);
+          referenceImageUrl = await ctx.storage.getUrl(
+            template.referenceImageStorageId,
+          );
         }
         return {
           ...template,
-          profile: profile ? {
-            username: profile.username,
-            imageUrl: profile.imageUrl,
-          } : null,
+          profile: profile
+            ? {
+                username: profile.username,
+                imageUrl: profile.imageUrl,
+              }
+            : null,
           activeVariant,
           imageUrl,
           referenceImageUrl,
         };
-      })
+      }),
     );
 
     return templatesWithDetails;
@@ -142,7 +148,10 @@ export const getTemplate = query({
 
     // Check if user has access (owner or public)
     const profile = await getCurrentUser(ctx);
-    if (!template.isPublic && (!profile || template.profileId !== profile._id)) {
+    if (
+      !template.isPublic &&
+      (!profile || template.profileId !== profile._id)
+    ) {
       throw new Error("Access denied");
     }
 
@@ -159,7 +168,9 @@ export const getTemplate = query({
     }
     let referenceImageUrl = null;
     if (template.referenceImageStorageId) {
-      referenceImageUrl = await ctx.storage.getUrl(template.referenceImageStorageId);
+      referenceImageUrl = await ctx.storage.getUrl(
+        template.referenceImageStorageId,
+      );
     }
 
     // Get all variants for this template
@@ -274,7 +285,10 @@ export const duplicateTemplate = mutation({
     }
 
     // Check if template is public or owned by user
-    if (!originalTemplate.isPublic && originalTemplate.profileId !== profile._id) {
+    if (
+      !originalTemplate.isPublic &&
+      originalTemplate.profileId !== profile._id
+    ) {
       throw new Error("Access denied");
     }
 
@@ -291,7 +305,9 @@ export const duplicateTemplate = mutation({
 
     // Copy variants if they exist
     if (originalTemplate.currentVariantId) {
-      const originalVariant = await ctx.db.get(originalTemplate.currentVariantId);
+      const originalVariant = await ctx.db.get(
+        originalTemplate.currentVariantId,
+      );
       if (originalVariant) {
         const newVariantId = await ctx.db.insert("templateVariants", {
           templateId: newTemplateId,

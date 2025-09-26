@@ -43,7 +43,7 @@ import {
  */
 export async function generateLucyImageToVideo(
   params: LucyImageToVideoParams,
-  apiKey?: string
+  apiKey?: string,
 ): Promise<FalResponse<FalVideoResponse>> {
   try {
     // Validate prompt length
@@ -73,7 +73,7 @@ export async function generateLucyImageToVideo(
     const result = await callFalModel<typeof input, { video: FalVideo }>(
       "decart/lucy-14b/image-to-video",
       input,
-      apiKey
+      apiKey,
     );
 
     if (!result) {
@@ -106,7 +106,8 @@ export async function generateLucyImageToVideo(
           type: "content_policy_violation",
           message: error.message,
           rejectedPrompt: error.rejectedPrompt,
-          suggestion: "Try modifying your prompt to avoid potentially sensitive content",
+          suggestion:
+            "Try modifying your prompt to avoid potentially sensitive content",
           helpUrl: error.url,
         },
       };
@@ -117,7 +118,8 @@ export async function generateLucyImageToVideo(
       success: false,
       error: {
         type: "api_error",
-        message: error instanceof Error ? error.message : "Unknown error occurred",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
         details: error,
       },
     };
@@ -143,7 +145,7 @@ export async function generateLucyImageToVideo(
  */
 export async function generateSeeDanceTextToVideo(
   params: SeeDanceTextToVideoParams,
-  apiKey?: string
+  apiKey?: string,
 ): Promise<FalResponse<FalVideoResponse>> {
   try {
     // Validate duration if provided
@@ -167,13 +169,15 @@ export async function generateSeeDanceTextToVideo(
 
     console.log(`🎬 Generating video with SeeDance v1 Lite (text-to-video)...`);
     console.log(`📝 Prompt: "${params.prompt}"`);
-    console.log(`⏱️  Duration: ${input.duration}s, Resolution: ${input.resolution}`);
+    console.log(
+      `⏱️  Duration: ${input.duration}s, Resolution: ${input.resolution}`,
+    );
 
     // Call the FAL model
     const result = await callFalModel<typeof input, { video: FalVideo }>(
       "fal-ai/bytedance/seedance/v1/lite/text-to-video",
       input,
-      apiKey
+      apiKey,
     );
 
     if (!result) {
@@ -205,7 +209,8 @@ export async function generateSeeDanceTextToVideo(
           type: "content_policy_violation",
           message: error.message,
           rejectedPrompt: error.rejectedPrompt,
-          suggestion: "Try modifying your prompt to avoid potentially sensitive content",
+          suggestion:
+            "Try modifying your prompt to avoid potentially sensitive content",
           helpUrl: error.url,
         },
       };
@@ -216,7 +221,8 @@ export async function generateSeeDanceTextToVideo(
       success: false,
       error: {
         type: "api_error",
-        message: error instanceof Error ? error.message : "Unknown error occurred",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
         details: error,
       },
     };
@@ -243,7 +249,7 @@ export async function generateSeeDanceTextToVideo(
  */
 export async function generateSeeDanceImageToVideo(
   params: SeeDanceImageToVideoParams,
-  apiKey?: string
+  apiKey?: string,
 ): Promise<FalResponse<FalVideoResponse>> {
   try {
     // Validate required image URL
@@ -265,14 +271,18 @@ export async function generateSeeDanceImageToVideo(
 
     console.log(`🎬 Generating video with SeeDance v1 Lite...`);
     console.log(`🖼️  Source image: ${params.image_url}`);
-    console.log(`⏱️  Duration: ${input.duration}s, Resolution: ${input.resolution}`);
-    console.log(`💸 Estimated cost: $${input.resolution === "720p" && input.duration === 5 ? '0.18' : 'varies'}`);
+    console.log(
+      `⏱️  Duration: ${input.duration}s, Resolution: ${input.resolution}`,
+    );
+    console.log(
+      `💸 Estimated cost: $${input.resolution === "720p" && input.duration === 5 ? "0.18" : "varies"}`,
+    );
 
     // Call the FAL model
     const result = await callFalModel<typeof input, { video: FalVideo }>(
       "fal-ai/bytedance/seedance/v1/lite/image-to-video",
       input,
-      apiKey
+      apiKey,
     );
 
     if (!result) {
@@ -304,7 +314,8 @@ export async function generateSeeDanceImageToVideo(
           type: "content_policy_violation",
           message: error.message,
           rejectedPrompt: error.rejectedPrompt,
-          suggestion: "Try modifying your prompt to avoid potentially sensitive content",
+          suggestion:
+            "Try modifying your prompt to avoid potentially sensitive content",
           helpUrl: error.url,
         },
       };
@@ -315,7 +326,8 @@ export async function generateSeeDanceImageToVideo(
       success: false,
       error: {
         type: "api_error",
-        message: error instanceof Error ? error.message : "Unknown error occurred",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
         details: error,
       },
     };

@@ -17,7 +17,7 @@ export const VIDEO_MODELS = {
           duration: 10 as KlingVideoDuration,
           aspect_ratio: "16:9",
           cfg_scale: 0.7, // Higher adherence to prompt
-        }
+        },
       },
       fallbacks: [
         {
@@ -25,37 +25,37 @@ export const VIDEO_MODELS = {
           params: {
             duration: 5 as KlingVideoDuration,
             aspect_ratio: "16:9",
-            cfg_scale: 0.5
-          }
+            cfg_scale: 0.5,
+          },
         },
         {
           model: "seeDanceTextToVideo",
           params: {
             duration: "10",
             resolution: "1080p",
-            aspect_ratio: "16:9"
-          }
-        }
-      ]
+            aspect_ratio: "16:9",
+          },
+        },
+      ],
     },
     imageToVideo: {
       primary: {
         model: "klingImageToVideo",
         params: {
           duration: 10 as KlingVideoDuration,
-          cfg_scale: 0.7
-        }
+          cfg_scale: 0.7,
+        },
       },
       fallbacks: [
         {
           model: "klingImageToVideo",
           params: {
             duration: 5 as KlingVideoDuration,
-            cfg_scale: 0.5
-          }
-        }
-      ]
-    }
+            cfg_scale: 0.5,
+          },
+        },
+      ],
+    },
   },
 
   // Default - balanced quality/speed/cost for most use cases
@@ -66,8 +66,8 @@ export const VIDEO_MODELS = {
         params: {
           duration: "5",
           resolution: "720p",
-          aspect_ratio: "16:9"
-        }
+          aspect_ratio: "16:9",
+        },
       },
       fallbacks: [
         {
@@ -75,43 +75,43 @@ export const VIDEO_MODELS = {
           params: {
             duration: "5",
             resolution: "480p",
-            aspect_ratio: "16:9"
-          }
+            aspect_ratio: "16:9",
+          },
         },
         {
           model: "klingTextToVideo",
           params: {
             duration: 5 as KlingVideoDuration,
-            aspect_ratio: "16:9"
-          }
-        }
-      ]
+            aspect_ratio: "16:9",
+          },
+        },
+      ],
     },
     imageToVideo: {
       primary: {
         model: "seeDanceImageToVideo",
         params: {
           duration: 5,
-          resolution: "720p"
-        }
+          resolution: "720p",
+        },
       },
       fallbacks: [
         {
           model: "lucyImageToVideo",
           params: {
             sync_mode: false, // Get URL instead of base64
-            aspect_ratio: "16:9"
-          }
+            aspect_ratio: "16:9",
+          },
         },
         {
           model: "seeDanceImageToVideo",
           params: {
             duration: 5,
-            resolution: "480p"
-          }
-        }
-      ]
-    }
+            resolution: "480p",
+          },
+        },
+      ],
+    },
   },
 
   // Fast - quick iterations, drafts
@@ -122,8 +122,8 @@ export const VIDEO_MODELS = {
         params: {
           duration: "3",
           resolution: "480p",
-          aspect_ratio: "16:9"
-        }
+          aspect_ratio: "16:9",
+        },
       },
       fallbacks: [
         {
@@ -131,30 +131,30 @@ export const VIDEO_MODELS = {
           params: {
             duration: "5",
             resolution: "480p",
-            aspect_ratio: "1:1" // Smaller aspect ratio for speed
-          }
-        }
-      ]
+            aspect_ratio: "1:1", // Smaller aspect ratio for speed
+          },
+        },
+      ],
     },
     imageToVideo: {
       primary: {
         model: "lucyImageToVideo",
         params: {
           sync_mode: true, // Base64 for faster response
-          aspect_ratio: "16:9"
-        }
+          aspect_ratio: "16:9",
+        },
       },
       fallbacks: [
         {
           model: "seeDanceImageToVideo",
           params: {
             duration: 3,
-            resolution: "480p"
-          }
-        }
-      ]
-    }
-  }
+            resolution: "480p",
+          },
+        },
+      ],
+    },
+  },
 };
 
 /**
@@ -166,7 +166,7 @@ export const VIDEO_PARAMS = {
     tier: "default",
     duration: 5,
     aspectRatio: "9:16",
-    resolution: "720p"
+    resolution: "720p",
   },
 
   // Marketing videos
@@ -174,7 +174,7 @@ export const VIDEO_PARAMS = {
     tier: "quality",
     duration: 10,
     aspectRatio: "16:9",
-    resolution: "1080p"
+    resolution: "1080p",
   },
 
   // Social media clips
@@ -182,7 +182,7 @@ export const VIDEO_PARAMS = {
     tier: "default",
     duration: 5,
     aspectRatio: "1:1",
-    resolution: "720p"
+    resolution: "720p",
   },
 
   // Quick drafts
@@ -190,7 +190,7 @@ export const VIDEO_PARAMS = {
     tier: "fast",
     duration: 3,
     aspectRatio: "16:9",
-    resolution: "480p"
+    resolution: "480p",
   },
 
   // Bulk generation
@@ -198,8 +198,8 @@ export const VIDEO_PARAMS = {
     tier: "fast",
     duration: 3,
     aspectRatio: "1:1",
-    resolution: "480p"
-  }
+    resolution: "480p",
+  },
 };
 
 /**
@@ -208,10 +208,10 @@ export const VIDEO_PARAMS = {
 export const VIDEO_COSTS = {
   // Kling (Premium)
   kling_5s: 0.35,
-  kling_10s: 0.70,
+  kling_10s: 0.7,
 
   // Lucy-14b (Fast, image-to-video only)
-  lucy_5s: 0.40, // 5s × $0.08/s
+  lucy_5s: 0.4, // 5s × $0.08/s
 
   // SeeDance (Best value)
   seedance_3s_480p: 0.11, // Estimated
@@ -228,22 +228,22 @@ export const VIDEO_SPEEDS = {
   kling: {
     min: 30,
     max: 60,
-    typical: 45
+    typical: 45,
   },
 
   // Lucy-14b: Lightning fast
   lucy: {
     min: 10,
     max: 30,
-    typical: 20
+    typical: 20,
   },
 
   // SeeDance: Fast and versatile
   seedance: {
     min: 10,
     max: 30,
-    typical: 20
-  }
+    typical: 20,
+  },
 };
 
 /**
@@ -251,23 +251,25 @@ export const VIDEO_SPEEDS = {
  */
 export function getVideoConfig(
   operation: "textToVideo" | "imageToVideo",
-  tier: keyof typeof VIDEO_MODELS = "default"
+  tier: keyof typeof VIDEO_MODELS = "default",
 ) {
   const config = VIDEO_MODELS[tier][operation];
 
   // Estimate cost based on model and duration
   const primaryModel = config.primary.model;
   const params = config.primary.params;
-  const duration = 'duration' in params ? params.duration : 5;
+  const duration = "duration" in params ? params.duration : 5;
   let estimatedCost = 0.18; // Default to SeeDance 5s
 
   if (primaryModel.includes("kling")) {
-    estimatedCost = duration === 10 ? VIDEO_COSTS.kling_10s : VIDEO_COSTS.kling_5s;
+    estimatedCost =
+      duration === 10 ? VIDEO_COSTS.kling_10s : VIDEO_COSTS.kling_5s;
   } else if (primaryModel.includes("lucy")) {
     estimatedCost = VIDEO_COSTS.lucy_5s;
   } else if (primaryModel.includes("seedance")) {
-    const resolution = 'resolution' in params ? params.resolution : "720p";
-    const durationNum = typeof duration === 'string' ? parseInt(duration) : duration || 5;
+    const resolution = "resolution" in params ? params.resolution : "720p";
+    const durationNum =
+      typeof duration === "string" ? parseInt(duration) : duration || 5;
 
     if (durationNum === 3 && resolution === "480p") {
       estimatedCost = VIDEO_COSTS.seedance_3s_480p;
@@ -281,8 +283,11 @@ export function getVideoConfig(
   }
 
   // Get speed estimate
-  const modelType = primaryModel.includes("kling") ? "kling" :
-                   primaryModel.includes("lucy") ? "lucy" : "seedance";
+  const modelType = primaryModel.includes("kling")
+    ? "kling"
+    : primaryModel.includes("lucy")
+      ? "lucy"
+      : "seedance";
   const speed = VIDEO_SPEEDS[modelType];
 
   return {
@@ -291,14 +296,22 @@ export function getVideoConfig(
     estimatedCost,
     estimatedSpeed: speed,
     capabilities: {
-      supportsTextToVideo: operation === "textToVideo" || primaryModel.includes("kling") || primaryModel.includes("seedance"),
+      supportsTextToVideo:
+        operation === "textToVideo" ||
+        primaryModel.includes("kling") ||
+        primaryModel.includes("seedance"),
       supportsImageToVideo: true, // All our models support this
-      maxDuration: primaryModel.includes("seedance") ? 12 :
-                  primaryModel.includes("kling") ? 10 : 5,
-      resolutions: primaryModel.includes("seedance") ? ["480p", "720p", "1080p"] :
-                   primaryModel.includes("lucy") ? ["720p"] :
-                   ["720p"], // Kling default
-    }
+      maxDuration: primaryModel.includes("seedance")
+        ? 12
+        : primaryModel.includes("kling")
+          ? 10
+          : 5,
+      resolutions: primaryModel.includes("seedance")
+        ? ["480p", "720p", "1080p"]
+        : primaryModel.includes("lucy")
+          ? ["720p"]
+          : ["720p"], // Kling default
+    },
   };
 }
 
@@ -311,7 +324,12 @@ export function recommendVideoTier(requirements: {
   budget?: "unlimited" | "moderate" | "tight";
   duration?: number;
 }): keyof typeof VIDEO_MODELS {
-  const { quality = "medium", speed = "normal", budget = "moderate", duration = 5 } = requirements;
+  const {
+    quality = "medium",
+    speed = "normal",
+    budget = "moderate",
+    duration = 5,
+  } = requirements;
 
   // Long duration requires quality tier (Kling or SeeDance)
   if (duration > 5 && budget !== "tight") {
@@ -338,7 +356,7 @@ export function recommendVideoTier(requirements: {
 export function calculateVideoCost(
   model: string,
   duration: number,
-  resolution?: string
+  resolution?: string,
 ): number {
   // Kling pricing
   if (model.includes("kling")) {
@@ -356,8 +374,7 @@ export function calculateVideoCost(
     const basePrice = 0.18; // 5s at 720p
     const durationMultiplier = duration / 5;
     const resolutionMultiplier =
-      resolution === "1080p" ? 1.4 :
-      resolution === "480p" ? 0.6 : 1.0;
+      resolution === "1080p" ? 1.4 : resolution === "480p" ? 0.6 : 1.0;
 
     return basePrice * durationMultiplier * resolutionMultiplier;
   }

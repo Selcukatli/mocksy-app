@@ -4,23 +4,25 @@ import { mutation, query } from "./_generated/server";
 // Get all screenshots for a set
 export const getScreenshotsForSet = query({
   args: { setId: v.id("screenshotSets") },
-  returns: v.array(v.object({
-    _id: v.id("screenshots"),
-    _creationTime: v.number(),
-    setId: v.id("screenshotSets"),
-    appId: v.id("apps"),
-    createdBy: v.id("profiles"),
-    slotNumber: v.number(),
-    title: v.optional(v.string()),
-    subtitle: v.optional(v.string()),
-    imageUrl: v.optional(v.string()),
-    imageStorageId: v.optional(v.id("_storage")),
-    themeId: v.optional(v.string()),
-    layoutId: v.optional(v.string()),
-    isEmpty: v.boolean(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("screenshots"),
+      _creationTime: v.number(),
+      setId: v.id("screenshotSets"),
+      appId: v.id("apps"),
+      createdBy: v.id("profiles"),
+      slotNumber: v.number(),
+      title: v.optional(v.string()),
+      subtitle: v.optional(v.string()),
+      imageUrl: v.optional(v.string()),
+      imageStorageId: v.optional(v.id("_storage")),
+      themeId: v.optional(v.string()),
+      layoutId: v.optional(v.string()),
+      isEmpty: v.boolean(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+  ),
   handler: async (ctx, { setId }) => {
     // Get the set to verify access
     const set = await ctx.db.get(setId);
@@ -37,7 +39,7 @@ export const getScreenshotsForSet = query({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || set.createdBy !== profile._id) {
@@ -48,11 +50,13 @@ export const getScreenshotsForSet = query({
     const screenshots = await ctx.db
       .query("screenshots")
       .withIndex("by_set")
-      .filter(q => q.eq(q.field("setId"), setId))
+      .filter((q) => q.eq(q.field("setId"), setId))
       .collect();
 
     // Sort by slot number
-    const sortedScreenshots = screenshots.sort((a, b) => a.slotNumber - b.slotNumber);
+    const sortedScreenshots = screenshots.sort(
+      (a, b) => a.slotNumber - b.slotNumber,
+    );
 
     // Add storage URLs for screenshots with images
     const screenshotsWithUrls = await Promise.all(
@@ -65,7 +69,7 @@ export const getScreenshotsForSet = query({
           ...screenshot,
           imageUrl: imageUrl || undefined,
         };
-      })
+      }),
     );
 
     return screenshotsWithUrls;
@@ -100,7 +104,7 @@ export const updateScreenshot = mutation({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || screenshot.createdBy !== profile._id) {
@@ -147,7 +151,7 @@ export const clearScreenshot = mutation({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || screenshot.createdBy !== profile._id) {
@@ -195,7 +199,7 @@ export const getScreenshot = query({
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
-    v.null()
+    v.null(),
   ),
   handler: async (ctx, { screenshotId }) => {
     const screenshot = await ctx.db.get(screenshotId);
@@ -212,7 +216,7 @@ export const getScreenshot = query({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || screenshot.createdBy !== profile._id) {
@@ -259,7 +263,7 @@ export const createScreenshot = mutation({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || set.createdBy !== profile._id) {
@@ -270,11 +274,11 @@ export const createScreenshot = mutation({
     const existingScreenshot = await ctx.db
       .query("screenshots")
       .withIndex("by_set")
-      .filter(q =>
+      .filter((q) =>
         q.and(
           q.eq(q.field("setId"), args.setId),
-          q.eq(q.field("slotNumber"), args.slotNumber)
-        )
+          q.eq(q.field("slotNumber"), args.slotNumber),
+        ),
       )
       .first();
 

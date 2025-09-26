@@ -30,11 +30,15 @@ export const storeFromUrl = internalAction({
     try {
       const response = await fetch(args.sourceUrl);
       if (!response.ok) {
-        throw new Error(`Failed to fetch URL (${response.status}): ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch URL (${response.status}): ${response.statusText}`,
+        );
       }
       const blob = await response.blob();
       const storageId = await ctx.storage.store(blob);
-      console.log(`Stored file from URL ${args.sourceUrl} with ID: ${storageId}`);
+      console.log(
+        `Stored file from URL ${args.sourceUrl} with ID: ${storageId}`,
+      );
       return storageId;
     } catch (error) {
       console.error(`Error storing file from URL ${args.sourceUrl}:`, error);
@@ -57,7 +61,7 @@ export const storeFromUrl = internalAction({
  */
 export const getFileUrl = query({
   args: {
-    storageId: v.id("_storage")
+    storageId: v.id("_storage"),
   },
   returns: v.union(v.string(), v.null()),
   handler: async (ctx, args) => {

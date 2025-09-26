@@ -20,7 +20,7 @@ export const createSet = mutation({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile) {
@@ -57,26 +57,30 @@ export const createSet = mutation({
 // Get recent sets for the current user
 export const getRecentSets = query({
   args: {},
-  returns: v.array(v.object({
-    _id: v.id("screenshotSets"),
-    _creationTime: v.number(),
-    appId: v.id("apps"),
-    createdBy: v.id("profiles"),
-    name: v.string(),
-    deviceType: v.optional(v.string()),
-    language: v.optional(v.string()),
-    status: v.optional(v.string()),
-    screenshotCount: v.number(),
-    filledCount: v.number(),
-    app: v.optional(v.object({
-      _id: v.id("apps"),
+  returns: v.array(
+    v.object({
+      _id: v.id("screenshotSets"),
+      _creationTime: v.number(),
+      appId: v.id("apps"),
+      createdBy: v.id("profiles"),
       name: v.string(),
-      description: v.optional(v.string()),
-      iconUrl: v.optional(v.string()),
-    })),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })),
+      deviceType: v.optional(v.string()),
+      language: v.optional(v.string()),
+      status: v.optional(v.string()),
+      screenshotCount: v.number(),
+      filledCount: v.number(),
+      app: v.optional(
+        v.object({
+          _id: v.id("apps"),
+          name: v.string(),
+          description: v.optional(v.string()),
+          iconUrl: v.optional(v.string()),
+        }),
+      ),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+  ),
   handler: async (ctx) => {
     // Get the current user's profile
     const identity = await ctx.auth.getUserIdentity();
@@ -87,7 +91,7 @@ export const getRecentSets = query({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile) {
@@ -98,7 +102,7 @@ export const getRecentSets = query({
     const sets = await ctx.db
       .query("screenshotSets")
       .withIndex("by_creator")
-      .filter(q => q.eq(q.field("createdBy"), profile._id))
+      .filter((q) => q.eq(q.field("createdBy"), profile._id))
       .order("desc")
       .take(3);
 
@@ -118,23 +122,25 @@ export const getRecentSets = query({
         const screenshots = await ctx.db
           .query("screenshots")
           .withIndex("by_set")
-          .filter(q => q.eq(q.field("setId"), set._id))
+          .filter((q) => q.eq(q.field("setId"), set._id))
           .collect();
 
-        const filledCount = screenshots.filter(s => !s.isEmpty).length;
+        const filledCount = screenshots.filter((s) => !s.isEmpty).length;
 
         return {
           ...set,
           screenshotCount: screenshots.length,
           filledCount,
-          app: app ? {
-            _id: app._id,
-            name: app.name,
-            description: app.description,
-            iconUrl,
-          } : undefined,
+          app: app
+            ? {
+                _id: app._id,
+                name: app.name,
+                description: app.description,
+                iconUrl,
+              }
+            : undefined,
         };
-      })
+      }),
     );
 
     return setsWithDetails;
@@ -157,7 +163,7 @@ export const getSet = query({
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
-    v.null()
+    v.null(),
   ),
   handler: async (ctx, { setId }) => {
     const set = await ctx.db.get(setId);
@@ -174,7 +180,7 @@ export const getSet = query({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || set.createdBy !== profile._id) {
@@ -188,20 +194,22 @@ export const getSet = query({
 // Get all sets for an app
 export const getSetsForApp = query({
   args: { appId: v.id("apps") },
-  returns: v.array(v.object({
-    _id: v.id("screenshotSets"),
-    _creationTime: v.number(),
-    appId: v.id("apps"),
-    createdBy: v.id("profiles"),
-    name: v.string(),
-    deviceType: v.optional(v.string()),
-    language: v.optional(v.string()),
-    status: v.optional(v.string()),
-    screenshotCount: v.number(),
-    filledCount: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("screenshotSets"),
+      _creationTime: v.number(),
+      appId: v.id("apps"),
+      createdBy: v.id("profiles"),
+      name: v.string(),
+      deviceType: v.optional(v.string()),
+      language: v.optional(v.string()),
+      status: v.optional(v.string()),
+      screenshotCount: v.number(),
+      filledCount: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+  ),
   handler: async (ctx, { appId }) => {
     // Get the app to verify access
     const app = await ctx.db.get(appId);
@@ -218,7 +226,7 @@ export const getSetsForApp = query({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || app.profileId !== profile._id) {
@@ -229,7 +237,7 @@ export const getSetsForApp = query({
     const sets = await ctx.db
       .query("screenshotSets")
       .withIndex("by_app")
-      .filter(q => q.eq(q.field("appId"), appId))
+      .filter((q) => q.eq(q.field("appId"), appId))
       .collect();
 
     // For each set, count screenshots
@@ -238,17 +246,17 @@ export const getSetsForApp = query({
         const screenshots = await ctx.db
           .query("screenshots")
           .withIndex("by_set")
-          .filter(q => q.eq(q.field("setId"), set._id))
+          .filter((q) => q.eq(q.field("setId"), set._id))
           .collect();
 
-        const filledCount = screenshots.filter(s => !s.isEmpty).length;
+        const filledCount = screenshots.filter((s) => !s.isEmpty).length;
 
         return {
           ...set,
           screenshotCount: screenshots.length,
           filledCount,
         };
-      })
+      }),
     );
 
     return setsWithCounts;
@@ -281,7 +289,7 @@ export const updateSet = mutation({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || set.createdBy !== profile._id) {
@@ -317,7 +325,7 @@ export const deleteSet = mutation({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id")
-      .filter(q => q.eq(q.field("userId"), identity.subject))
+      .filter((q) => q.eq(q.field("userId"), identity.subject))
       .first();
 
     if (!profile || set.createdBy !== profile._id) {
@@ -328,7 +336,7 @@ export const deleteSet = mutation({
     const screenshots = await ctx.db
       .query("screenshots")
       .withIndex("by_set")
-      .filter(q => q.eq(q.field("setId"), setId))
+      .filter((q) => q.eq(q.field("setId"), setId))
       .collect();
 
     for (const screenshot of screenshots) {

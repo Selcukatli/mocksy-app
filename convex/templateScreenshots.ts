@@ -17,23 +17,27 @@ export const createTemplateScreenshot = mutation({
         v.literal("top"),
         v.literal("bottom"),
         v.literal("overlay-top"),
-        v.literal("overlay-bottom")
+        v.literal("overlay-bottom"),
       ),
       textAlignment: v.union(
         v.literal("left"),
         v.literal("center"),
-        v.literal("right")
+        v.literal("right"),
       ),
-      headerStyle: v.optional(v.object({
-        fontSize: v.optional(v.string()),
-        fontWeight: v.optional(v.string()),
-        color: v.optional(v.string()),
-      })),
-      subheaderStyle: v.optional(v.object({
-        fontSize: v.optional(v.string()),
-        fontWeight: v.optional(v.string()),
-        color: v.optional(v.string()),
-      })),
+      headerStyle: v.optional(
+        v.object({
+          fontSize: v.optional(v.string()),
+          fontWeight: v.optional(v.string()),
+          color: v.optional(v.string()),
+        }),
+      ),
+      subheaderStyle: v.optional(
+        v.object({
+          fontSize: v.optional(v.string()),
+          fontWeight: v.optional(v.string()),
+          color: v.optional(v.string()),
+        }),
+      ),
     }),
     sourceScreenId: v.optional(v.id("appScreens")),
     slotNumber: v.optional(v.number()),
@@ -101,29 +105,35 @@ export const updateTemplateScreenshot = mutation({
     screenshotId: v.id("templateScreenshots"),
     headerText: v.optional(v.string()),
     subheaderText: v.optional(v.string()),
-    layoutSettings: v.optional(v.object({
-      textPosition: v.union(
-        v.literal("top"),
-        v.literal("bottom"),
-        v.literal("overlay-top"),
-        v.literal("overlay-bottom")
-      ),
-      textAlignment: v.union(
-        v.literal("left"),
-        v.literal("center"),
-        v.literal("right")
-      ),
-      headerStyle: v.optional(v.object({
-        fontSize: v.optional(v.string()),
-        fontWeight: v.optional(v.string()),
-        color: v.optional(v.string()),
-      })),
-      subheaderStyle: v.optional(v.object({
-        fontSize: v.optional(v.string()),
-        fontWeight: v.optional(v.string()),
-        color: v.optional(v.string()),
-      })),
-    })),
+    layoutSettings: v.optional(
+      v.object({
+        textPosition: v.union(
+          v.literal("top"),
+          v.literal("bottom"),
+          v.literal("overlay-top"),
+          v.literal("overlay-bottom"),
+        ),
+        textAlignment: v.union(
+          v.literal("left"),
+          v.literal("center"),
+          v.literal("right"),
+        ),
+        headerStyle: v.optional(
+          v.object({
+            fontSize: v.optional(v.string()),
+            fontWeight: v.optional(v.string()),
+            color: v.optional(v.string()),
+          }),
+        ),
+        subheaderStyle: v.optional(
+          v.object({
+            fontSize: v.optional(v.string()),
+            fontWeight: v.optional(v.string()),
+            color: v.optional(v.string()),
+          }),
+        ),
+      }),
+    ),
     imageStorageId: v.optional(v.id("_storage")),
     tags: v.optional(v.array(v.string())),
   },
@@ -146,9 +156,15 @@ export const updateTemplateScreenshot = mutation({
 
     await ctx.db.patch(args.screenshotId, {
       ...(args.headerText !== undefined && { headerText: args.headerText }),
-      ...(args.subheaderText !== undefined && { subheaderText: args.subheaderText }),
-      ...(args.layoutSettings !== undefined && { layoutSettings: args.layoutSettings }),
-      ...(args.imageStorageId !== undefined && { imageStorageId: args.imageStorageId }),
+      ...(args.subheaderText !== undefined && {
+        subheaderText: args.subheaderText,
+      }),
+      ...(args.layoutSettings !== undefined && {
+        layoutSettings: args.layoutSettings,
+      }),
+      ...(args.imageStorageId !== undefined && {
+        imageStorageId: args.imageStorageId,
+      }),
       ...(args.tags !== undefined && { tags: args.tags }),
       updatedAt: Date.now(),
     });
@@ -171,7 +187,10 @@ export const getTemplateScreenshots = query({
 
     // Check access
     const profile = await getCurrentUser(ctx);
-    if (!template.isPublic && (!profile || template.profileId !== profile._id)) {
+    if (
+      !template.isPublic &&
+      (!profile || template.profileId !== profile._id)
+    ) {
       throw new Error("Access denied");
     }
 
@@ -193,7 +212,7 @@ export const getTemplateScreenshots = query({
           ...screenshot,
           imageUrl,
         };
-      })
+      }),
     );
 
     return screenshotsWithUrls;
@@ -220,13 +239,18 @@ export const getVariantScreenshots = query({
 
     // Check access
     const profile = await getCurrentUser(ctx);
-    if (!template.isPublic && (!profile || template.profileId !== profile._id)) {
+    if (
+      !template.isPublic &&
+      (!profile || template.profileId !== profile._id)
+    ) {
       throw new Error("Access denied");
     }
 
     const screenshots = await ctx.db
       .query("templateScreenshots")
-      .withIndex("by_template_variant", (q) => q.eq("templateVariantId", args.templateVariantId))
+      .withIndex("by_template_variant", (q) =>
+        q.eq("templateVariantId", args.templateVariantId),
+      )
       .order("desc")
       .collect();
 
@@ -241,7 +265,7 @@ export const getVariantScreenshots = query({
           ...screenshot,
           imageUrl,
         };
-      })
+      }),
     );
 
     return screenshotsWithUrls;
@@ -283,35 +307,41 @@ export const batchCreateScreenshots = mutation({
   args: {
     templateVariantId: v.id("templateVariants"),
     appId: v.optional(v.id("apps")),
-    screenshots: v.array(v.object({
-      headerText: v.string(),
-      subheaderText: v.optional(v.string()),
-      layoutSettings: v.object({
-        textPosition: v.union(
-          v.literal("top"),
-          v.literal("bottom"),
-          v.literal("overlay-top"),
-          v.literal("overlay-bottom")
-        ),
-        textAlignment: v.union(
-          v.literal("left"),
-          v.literal("center"),
-          v.literal("right")
-        ),
-        headerStyle: v.optional(v.object({
-          fontSize: v.optional(v.string()),
-          fontWeight: v.optional(v.string()),
-          color: v.optional(v.string()),
-        })),
-        subheaderStyle: v.optional(v.object({
-          fontSize: v.optional(v.string()),
-          fontWeight: v.optional(v.string()),
-          color: v.optional(v.string()),
-        })),
+    screenshots: v.array(
+      v.object({
+        headerText: v.string(),
+        subheaderText: v.optional(v.string()),
+        layoutSettings: v.object({
+          textPosition: v.union(
+            v.literal("top"),
+            v.literal("bottom"),
+            v.literal("overlay-top"),
+            v.literal("overlay-bottom"),
+          ),
+          textAlignment: v.union(
+            v.literal("left"),
+            v.literal("center"),
+            v.literal("right"),
+          ),
+          headerStyle: v.optional(
+            v.object({
+              fontSize: v.optional(v.string()),
+              fontWeight: v.optional(v.string()),
+              color: v.optional(v.string()),
+            }),
+          ),
+          subheaderStyle: v.optional(
+            v.object({
+              fontSize: v.optional(v.string()),
+              fontWeight: v.optional(v.string()),
+              color: v.optional(v.string()),
+            }),
+          ),
+        }),
+        sourceScreenId: v.optional(v.id("appScreens")),
+        slotNumber: v.optional(v.number()),
       }),
-      sourceScreenId: v.optional(v.id("appScreens")),
-      slotNumber: v.optional(v.number()),
-    })),
+    ),
   },
   handler: async (ctx, args) => {
     const profile = await getCurrentUser(ctx);

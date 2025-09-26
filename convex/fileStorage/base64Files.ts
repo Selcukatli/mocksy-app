@@ -25,8 +25,8 @@ export const storeBase64File = action({
     try {
       // Remove data URI prefix if present (e.g., "data:image/png;base64,")
       let base64Content = args.base64Data;
-      if (base64Content.includes(',')) {
-        base64Content = base64Content.split(',')[1];
+      if (base64Content.includes(",")) {
+        base64Content = base64Content.split(",")[1];
       }
 
       // Validate base64 string
@@ -34,15 +34,19 @@ export const storeBase64File = action({
         throw new Error("Invalid base64 string provided");
       }
 
-      console.log(`Processing base64 data - length: ${base64Content.length}, contentType: ${args.contentType}`);
+      console.log(
+        `Processing base64 data - length: ${base64Content.length}, contentType: ${args.contentType}`,
+      );
 
       // Convert base64 to Buffer (Node.js specific)
-      const buffer = Buffer.from(base64Content, 'base64');
+      const buffer = Buffer.from(base64Content, "base64");
       console.log(`Converted to buffer - size: ${buffer.length} bytes`);
 
       // Create blob from buffer
       const blob = new Blob([buffer], { type: args.contentType });
-      console.log(`Created blob - size: ${blob.size} bytes, type: ${blob.type}`);
+      console.log(
+        `Created blob - size: ${blob.size} bytes, type: ${blob.type}`,
+      );
 
       // Store in Convex storage
       const storageId = await ctx.storage.store(blob);

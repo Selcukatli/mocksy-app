@@ -30,7 +30,7 @@ import {
  */
 export async function generateKlingTextToVideo(
   params: KlingTextToVideoParams,
-  apiKey?: string
+  apiKey?: string,
 ): Promise<FalResponse<FalVideoResponse>> {
   try {
     // Validate prompt length
@@ -43,19 +43,22 @@ export async function generateKlingTextToVideo(
       prompt: params.prompt,
       duration: params.duration || 5,
       aspect_ratio: params.aspect_ratio || "16:9",
-      negative_prompt: params.negative_prompt || "blur, distort, and low quality",
+      negative_prompt:
+        params.negative_prompt || "blur, distort, and low quality",
       cfg_scale: params.cfg_scale || 0.5,
       ...(params.image_url && { image_url: params.image_url }),
     };
 
     console.log(`🎬 Generating ${input.duration}s video from text prompt...`);
-    console.log(`💸 Estimated cost: $${input.duration === 5 ? '0.35' : '0.70'}`);
+    console.log(
+      `💸 Estimated cost: $${input.duration === 5 ? "0.35" : "0.70"}`,
+    );
 
     // Call the FAL model
     const result = await callFalModel<typeof input, { video: FalVideo }>(
       "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
       input,
-      apiKey
+      apiKey,
     );
 
     if (!result) {
@@ -87,7 +90,8 @@ export async function generateKlingTextToVideo(
           type: "content_policy_violation",
           message: error.message,
           rejectedPrompt: error.rejectedPrompt,
-          suggestion: "Try modifying your prompt to avoid potentially sensitive content",
+          suggestion:
+            "Try modifying your prompt to avoid potentially sensitive content",
           helpUrl: error.url,
         },
       };
@@ -98,7 +102,8 @@ export async function generateKlingTextToVideo(
       success: false,
       error: {
         type: "api_error",
-        message: error instanceof Error ? error.message : "Unknown error occurred",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
         details: error,
       },
     };
@@ -125,7 +130,7 @@ export async function generateKlingTextToVideo(
  */
 export async function generateKlingImageToVideo(
   params: KlingImageToVideoParams,
-  apiKey?: string
+  apiKey?: string,
 ): Promise<FalResponse<FalVideoResponse>> {
   try {
     // Validate required image URL
@@ -138,19 +143,22 @@ export async function generateKlingImageToVideo(
       prompt: params.prompt,
       image_url: params.image_url,
       duration: params.duration || 5,
-      negative_prompt: params.negative_prompt || "blur, distort, and low quality",
+      negative_prompt:
+        params.negative_prompt || "blur, distort, and low quality",
       cfg_scale: params.cfg_scale || 0.5,
     };
 
     console.log(`🎬 Generating ${input.duration}s video from image...`);
     console.log(`🖼️  Source image: ${params.image_url}`);
-    console.log(`💸 Estimated cost: $${input.duration === 5 ? '0.35' : '0.70'}`);
+    console.log(
+      `💸 Estimated cost: $${input.duration === 5 ? "0.35" : "0.70"}`,
+    );
 
     // Call the FAL model
     const result = await callFalModel<typeof input, { video: FalVideo }>(
       "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
       input,
-      apiKey
+      apiKey,
     );
 
     if (!result) {
@@ -182,7 +190,8 @@ export async function generateKlingImageToVideo(
           type: "content_policy_violation",
           message: error.message,
           rejectedPrompt: error.rejectedPrompt,
-          suggestion: "Try modifying your prompt to avoid potentially sensitive content",
+          suggestion:
+            "Try modifying your prompt to avoid potentially sensitive content",
           helpUrl: error.url,
         },
       };
@@ -193,7 +202,8 @@ export async function generateKlingImageToVideo(
       success: false,
       error: {
         type: "api_error",
-        message: error instanceof Error ? error.message : "Unknown error occurred",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
         details: error,
       },
     };

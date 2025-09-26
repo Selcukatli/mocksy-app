@@ -9,7 +9,14 @@ const logError = (...args: unknown[]) => logger.error(...args);
 export interface QwenImageInput {
   prompt: string;
   num_images?: number;
-  image_size?: string | "landscape_4_3" | "portrait_3_4" | "square" | "square_hd" | "landscape_16_9" | "portrait_9_16";
+  image_size?:
+    | string
+    | "landscape_4_3"
+    | "portrait_3_4"
+    | "square"
+    | "square_hd"
+    | "landscape_16_9"
+    | "portrait_9_16";
   acceleration?: "none" | "regular" | "high";
   output_format?: "jpeg" | "png";
   sync_mode?: boolean;

@@ -7,7 +7,7 @@ import { Doc } from "./_generated/dataModel";
  * Can be used within queries and mutations
  */
 export async function getCurrentUser(
-  ctx: QueryCtx | MutationCtx
+  ctx: QueryCtx | MutationCtx,
 ): Promise<Doc<"profiles"> | null> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
@@ -37,7 +37,7 @@ export const getCurrentProfile = query({
       preferences: v.optional(v.object({})),
       createdAt: v.number(),
       updatedAt: v.number(),
-    })
+    }),
   ),
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -107,7 +107,10 @@ export const ensureCurrentUserProfile = mutation({
       return {
         created: false,
         profileId: existingProfile._id,
-        message: usernameChanged || imageUrlChanged ? "Profile synced from Clerk" : "Profile already exists"
+        message:
+          usernameChanged || imageUrlChanged
+            ? "Profile synced from Clerk"
+            : "Profile already exists",
       };
     }
 
@@ -142,7 +145,7 @@ export const getProfileByUsername = query({
       preferences: v.optional(v.object({})),
       createdAt: v.number(),
       updatedAt: v.number(),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const profile = await ctx.db

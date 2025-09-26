@@ -8,9 +8,11 @@ export default defineSchema({
     usernameUpdatedAt: v.optional(v.number()), // Last time username was synced
     imageUrl: v.optional(v.string()), // Profile image URL from Clerk
     imageUrlUpdatedAt: v.optional(v.number()), // Last time image was synced from Clerk
-    preferences: v.optional(v.object({
-      // Future preferences can be added here
-    })),
+    preferences: v.optional(
+      v.object({
+        // Future preferences can be added here
+      }),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -23,10 +25,12 @@ export default defineSchema({
     description: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")), // App icon in file storage
     category: v.optional(v.string()),
-    platforms: v.optional(v.object({
-      ios: v.boolean(),
-      android: v.boolean(),
-    })),
+    platforms: v.optional(
+      v.object({
+        ios: v.boolean(),
+        android: v.boolean(),
+      }),
+    ),
     languages: v.optional(v.array(v.string())),
     // Store links (optional)
     appStoreUrl: v.optional(v.string()),
@@ -118,12 +122,14 @@ export default defineSchema({
       mood: v.optional(v.string()), // Mood/feeling
       effects: v.optional(v.array(v.string())), // Special effects/filters
     }),
-    deviceFrameSettings: v.optional(v.object({
-      showFrame: v.boolean(),
-      frameColor: v.string(),
-      frameThickness: v.number(),
-      showDynamicIsland: v.optional(v.boolean()),
-    })),
+    deviceFrameSettings: v.optional(
+      v.object({
+        showFrame: v.boolean(),
+        frameColor: v.string(),
+        frameThickness: v.number(),
+        showDynamicIsland: v.optional(v.boolean()),
+      }),
+    ),
     isActive: v.boolean(), // Whether this is the active variant
     notes: v.optional(v.string()), // Version notes/changelog
     createdAt: v.number(),
@@ -147,23 +153,27 @@ export default defineSchema({
         v.literal("top"),
         v.literal("bottom"),
         v.literal("overlay-top"),
-        v.literal("overlay-bottom")
+        v.literal("overlay-bottom"),
       ),
       textAlignment: v.union(
         v.literal("left"),
         v.literal("center"),
-        v.literal("right")
+        v.literal("right"),
       ),
-      headerStyle: v.optional(v.object({
-        fontSize: v.optional(v.string()),
-        fontWeight: v.optional(v.string()),
-        color: v.optional(v.string()),
-      })),
-      subheaderStyle: v.optional(v.object({
-        fontSize: v.optional(v.string()),
-        fontWeight: v.optional(v.string()),
-        color: v.optional(v.string()),
-      })),
+      headerStyle: v.optional(
+        v.object({
+          fontSize: v.optional(v.string()),
+          fontWeight: v.optional(v.string()),
+          color: v.optional(v.string()),
+        }),
+      ),
+      subheaderStyle: v.optional(
+        v.object({
+          fontSize: v.optional(v.string()),
+          fontWeight: v.optional(v.string()),
+          color: v.optional(v.string()),
+        }),
+      ),
     }),
 
     // Generated assets

@@ -86,13 +86,17 @@ export interface FalSuccessResponse<T = unknown> {
 export interface FalErrorResponse {
   success: false;
   error: {
-    type: "content_policy_violation" | "validation_error" | "api_error" | "unknown_error";
+    type:
+      | "content_policy_violation"
+      | "validation_error"
+      | "api_error"
+      | "unknown_error";
     message: string;
-    rejectedPrompt?: string;  // For content policy violations
-    suggestion?: string;      // Helpful suggestion for content policy violations
-    helpUrl?: string;         // Link to error documentation
-    details?: unknown;        // Additional error details
-    status?: number;          // HTTP status code
+    rejectedPrompt?: string; // For content policy violations
+    suggestion?: string; // Helpful suggestion for content policy violations
+    helpUrl?: string; // Link to error documentation
+    details?: unknown; // Additional error details
+    status?: number; // HTTP status code
   };
 }
 
@@ -100,12 +104,12 @@ export type FalResponse<T = unknown> = FalSuccessResponse<T> | FalErrorResponse;
 
 // FLUX specific types
 export type FluxModel = "schnell" | "dev" | "pro";
-export type FluxImageSize = 
-  | "square_hd" 
-  | "square" 
-  | "portrait_4_3" 
-  | "portrait_16_9" 
-  | "landscape_4_3" 
+export type FluxImageSize =
+  | "square_hd"
+  | "square"
+  | "portrait_4_3"
+  | "portrait_16_9"
+  | "landscape_4_3"
   | "landscape_16_9";
 
 export type FluxSafetyTolerance = "1" | "2" | "3" | "4" | "5" | "6";
@@ -138,10 +142,19 @@ export interface FluxImageToImageParams {
   num_images?: number;
   safety_tolerance?: "1" | "2" | "3" | "4" | "5" | "6";
   output_format?: "jpeg" | "png";
-  aspect_ratio?: "21:9" | "16:9" | "4:3" | "3:2" | "1:1" | "2:3" | "3:4" | "9:16" | "9:21";
+  aspect_ratio?:
+    | "21:9"
+    | "16:9"
+    | "4:3"
+    | "3:2"
+    | "1:1"
+    | "2:3"
+    | "3:4"
+    | "9:16"
+    | "9:21";
 }
 
-// Imagen4 model types  
+// Imagen4 model types
 export type ImagenAspectRatio = "1:1" | "16:9" | "9:16" | "3:4" | "4:3";
 
 export interface ImagenTextToImageParams {
@@ -155,7 +168,16 @@ export interface ImagenTextToImageParams {
 
 // FLUX Kontext model types
 export type KontextModel = "pro" | "max";
-export type KontextAspectRatio = "21:9" | "16:9" | "4:3" | "3:2" | "1:1" | "2:3" | "3:4" | "9:16" | "9:21";
+export type KontextAspectRatio =
+  | "21:9"
+  | "16:9"
+  | "4:3"
+  | "3:2"
+  | "1:1"
+  | "2:3"
+  | "3:4"
+  | "9:16"
+  | "9:21";
 export type KontextSafetyTolerance = "1" | "2" | "3" | "4" | "5" | "6";
 
 // FLUX Kontext is an image editing model only - requires an input image
@@ -209,7 +231,7 @@ export class FalContentPolicyError extends Error {
   readonly status = 422;
   readonly url: string;
   readonly rejectedPrompt: string;
-  
+
   constructor(message: string, prompt: string, helpUrl?: string) {
     super(message);
     this.name = "FalContentPolicyError";
@@ -222,7 +244,7 @@ export class FalValidationError extends Error {
   readonly type = "validation_error";
   readonly status = 422;
   readonly details: unknown;
-  
+
   constructor(message: string, details?: unknown) {
     super(message);
     this.name = "FalValidationError";
@@ -234,7 +256,7 @@ export class FalAPIError extends Error {
   readonly type = "api_error";
   readonly status: number;
   readonly details: unknown;
-  
+
   constructor(message: string, status: number, details?: unknown) {
     super(message);
     this.name = "FalAPIError";
@@ -252,7 +274,7 @@ export type FalModel =
   // FLUX Kontext models
   | "fal-ai/flux-pro/kontext"
   | "fal-ai/flux-pro/kontext/max"
-  | "fal-ai/flux-pro/kontext/max/multi"  // Multi-image variant of Kontext Max
+  | "fal-ai/flux-pro/kontext/max/multi" // Multi-image variant of Kontext Max
   // GPT Image models
   | "fal-ai/gpt-image-1/text-to-image/byok"
   | "fal-ai/gpt-image-1/edit-image/byok"
@@ -272,12 +294,12 @@ export interface FalImageSize {
   height: number;
 }
 
-export type FalImageSizePreset = 
-  | "square_hd" 
-  | "square" 
-  | "portrait_4_3" 
-  | "portrait_16_9" 
-  | "landscape_4_3" 
+export type FalImageSizePreset =
+  | "square_hd"
+  | "square"
+  | "portrait_4_3"
+  | "portrait_16_9"
+  | "landscape_4_3"
   | "landscape_16_9";
 
 export type FalOutputFormat = "jpeg" | "png";
@@ -357,7 +379,48 @@ export interface SeeDanceTextToVideoParams {
   enable_safety_checker?: boolean; // Default: true
 }
 
+// FLUX SRPO specific types
+export type FluxSrpoAcceleration = "none" | "regular" | "high";
+
+export interface FluxSrpoTextToImageParams {
+  prompt: string;
+  num_images?: number; // 1-4, default: 1
+  acceleration?: FluxSrpoAcceleration; // Speed/quality tradeoff
+  output_format?: "jpeg" | "png";
+  sync_mode?: boolean;
+  guidance_scale?: number; // 1-20, default: 4.5
+  num_inference_steps?: number; // 10-50, default: 40
+  seed?: number;
+  enable_safety_checker?: boolean;
+}
+
+export interface FluxSrpoImageToImageParams {
+  prompt: string;
+  image_url: string;
+  strength?: number; // 0.01-1, default: 0.95 (higher values work better for SRPO)
+  num_images?: number; // 1-4, default: 1
+  acceleration?: FluxSrpoAcceleration;
+  output_format?: "jpeg" | "png";
+  sync_mode?: boolean;
+  guidance_scale?: number; // 1-20, default: 4.5
+  num_inference_steps?: number; // 10-50, default: 40
+  seed?: number;
+  enable_safety_checker?: boolean;
+}
+
+export interface FluxSrpoResponse {
+  prompt: string;
+  images: FalImage[];
+  seed: number;
+  has_nsfw_concepts: boolean[];
+  timings: {
+    inference?: number;
+  };
+}
+
 // Pricing constants for reference (in comments for documentation)
+// FLUX SRPO Pricing:
+// - $0.025 per megapixel (both text-to-image and image-to-image)
 // Kling Video Pricing:
 // - $0.35 for 5-second video
 // - $0.07 per additional second (so 10-second video = $0.35 + $0.35 = $0.70)
@@ -365,4 +428,4 @@ export interface SeeDanceTextToVideoParams {
 // - $0.08 per second of generated video
 // SeeDance Pricing:
 // - $0.18 for 720p 5-second video
-// - Token calculation: (height x width x FPS x duration) / 1024 
+// - Token calculation: (height x width x FPS x duration) / 1024

@@ -10,7 +10,7 @@
  * Default is 'info' if not set.
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
@@ -25,7 +25,7 @@ const getCurrentLogLevel = (): LogLevel => {
   if (envLevel && envLevel in LOG_LEVELS) {
     return envLevel as LogLevel;
   }
-  return 'info';
+  return "info";
 };
 
 const currentLogLevel = getCurrentLogLevel();
@@ -34,7 +34,7 @@ const currentLogLevelValue = LOG_LEVELS[currentLogLevel];
 export const logger = {
   debug: (...args: unknown[]) => {
     if (currentLogLevelValue <= LOG_LEVELS.debug) {
-      console.log('[DEBUG]', ...args);
+      console.log("[DEBUG]", ...args);
     }
   },
 
@@ -46,13 +46,13 @@ export const logger = {
 
   warn: (...args: unknown[]) => {
     if (currentLogLevelValue <= LOG_LEVELS.warn) {
-      console.warn('[WARN]', ...args);
+      console.warn("[WARN]", ...args);
     }
   },
 
   error: (...args: unknown[]) => {
     // Always log errors
-    console.error('[ERROR]', ...args);
+    console.error("[ERROR]", ...args);
   },
 
   // Special method for AI SDK logs with consistent formatting
@@ -79,5 +79,5 @@ export const logger = {
 };
 
 // Export current log level for conditional logic if needed
-export const isDebugMode = currentLogLevel === 'debug';
-export const isProductionMode = currentLogLevel === 'error';
+export const isDebugMode = currentLogLevel === "debug";
+export const isProductionMode = currentLogLevel === "error";

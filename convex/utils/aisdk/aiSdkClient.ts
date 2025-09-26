@@ -126,11 +126,23 @@ export async function generateTextWithAI(
     const isLastProvider = i === providers.length - 1;
     const isGPT5Model = provider.model.includes("gpt-5");
 
+    // GPT-5 models need much higher token limits due to reasoning tokens
+    // Research shows they need at least 1000-2000 tokens to produce text after reasoning
+    const effectiveMaxTokens = isGPT5Model
+      ? Math.max(maxOutputTokens, 2000)
+      : maxOutputTokens;
+
     try {
       const startTime = Date.now();
       console.log(
         `[AI SDK] Attempting with ${provider.name}/${provider.model} at ${new Date(startTime).toISOString()}`,
       );
+
+      if (isGPT5Model && effectiveMaxTokens !== maxOutputTokens) {
+        console.log(
+          `[AI SDK] Increased maxOutputTokens from ${maxOutputTokens} to ${effectiveMaxTokens} for GPT-5 model`,
+        );
+      }
 
       // OPTIMIZATION UPDATE: v5 SDK's openai.responses() model is 2x faster than direct API
       // Direct API: ~1500ms, v5 SDK responses: ~860ms
@@ -179,11 +191,15 @@ export async function generateTextWithAI(
       const baseConfig = {
         model,
         messages,
-        maxOutputTokens,
+        maxOutputTokens: effectiveMaxTokens,
       } as const;
 
       const config = isGPT5Model
-        ? baseConfig
+        ? {
+            ...baseConfig,
+            // Add temperature for GPT-5 models when specified
+            ...(params.temperature !== undefined && { temperature: params.temperature }),
+          }
         : {
             ...baseConfig,
             temperature: params.temperature || 0.7,

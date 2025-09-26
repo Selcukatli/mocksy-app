@@ -15,7 +15,7 @@ export const AI_MODELS = {
       model: "openai/gpt-5" 
     } as AIProvider,
     fallbackProviders: [
-      { name: "openrouter", model: "anthropic/claude-sonnet-4-20250514" },
+      { name: "openrouter", model: "anthropic/claude-sonnet-4" },
       { name: "openrouter", model: "openai/gpt-5-mini" },
       { name: "openrouter", model: "mistralai/mistral-large-2411" },
       { name: "openrouter", model: "anthropic/claude-3-5-haiku-20241022" }

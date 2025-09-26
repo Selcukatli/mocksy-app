@@ -1,6 +1,33 @@
 # AI SDK Integration
 
-This module provides a unified interface for AI text generation with multiple providers.
+This module provides a unified interface for AI text generation with multiple providers, featuring a simple preset system for common use cases.
+
+## 🎯 Quick Start - Model Presets (Recommended)
+
+The easiest way to use this SDK is with **model presets** - pre-configured model chains optimized for specific tasks:
+
+```typescript
+// Using Convex action
+await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
+  messages: [{ role: "user", content: "Write a story" }],
+  modelPreset: "creative"  // That's it! Auto-selects GPT-5 with fallbacks
+});
+```
+
+### Available Presets
+
+| Preset | Primary Model | Best For | Fallback Chain |
+|--------|--------------|----------|----------------|
+| **`creative`** | GPT-5 | Long-form content, articles, stories | → Claude Sonnet 4 → GPT-5 Mini → Mistral Large |
+| **`fast`** | GPT-5 Nano | Quick decisions, routing, simple tasks | → GPT-5 Mini → Claude Haiku → Gemini Flash |
+| **`outline`** | GPT-5 Mini | Outlines, summaries, structured content | → Claude Haiku → Gemini Flash → GPT-5 Nano |
+| **`vision`** | Qwen 72B Vision | Image analysis, visual understanding | → Gemini 2.0 Flash → Llama 90B Vision |
+
+Each preset includes:
+- ✅ Optimized temperature settings
+- ✅ Appropriate token limits
+- ✅ Automatic fallback to alternative models if primary fails
+- ✅ Cost-optimized model selection for the task type
 
 ## 🚀 Portability & Reuse
 
@@ -90,6 +117,72 @@ We now target **AI SDK v5**, which shipped a breaking change to token accounting
 - Unified error handling
 - Consistent logging
 - Smart provider selection based on available API keys
+
+## 📚 Usage Examples
+
+### Three Ways to Specify Models
+
+#### 1. Model Presets (Simplest - Recommended)
+```typescript
+// Just specify the task type - everything else is handled!
+await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
+  messages: [{ role: "user", content: "Explain quantum computing" }],
+  modelPreset: "creative"  // Auto-configures model + fallbacks
+});
+
+// Fast routing/classification
+await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
+  messages: [{ role: "user", content: "Is this email spam? Yes/No" }],
+  modelPreset: "fast"  // Uses GPT-5 Nano for speed
+});
+
+// Image analysis
+await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
+  messages: [{
+    role: "user",
+    content: [
+      { type: "text", text: "What's in this image?" },
+      { type: "image", image: imageUrl }
+    ]
+  }],
+  modelPreset: "vision"  // Auto-selects vision model
+});
+```
+
+#### 2. Direct Model Specification (Full Control)
+```typescript
+// Specify exact provider and model
+await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
+  messages: [{ role: "user", content: "Hello" }],
+  provider: {
+    name: "openrouter",
+    model: "anthropic/claude-opus-4.1"
+  },
+  temperature: 0.7,
+  maxTokens: 1000
+});
+
+// With custom fallback chain
+await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
+  messages: [...],
+  provider: { name: "openrouter", model: "openai/gpt-5" },
+  fallbackProviders: [
+    { name: "anthropic", model: "claude-3-5-sonnet-20241022" },
+    { name: "google", model: "gemini-2.5-pro" }
+  ]
+});
+```
+
+#### 3. Preset + Overrides (Best of Both)
+```typescript
+// Use preset but override specific settings
+await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
+  messages: [{ role: "user", content: "Write a poem" }],
+  modelPreset: "creative",  // Use creative preset
+  temperature: 0.9,         // But increase creativity
+  maxTokens: 500           // And limit length
+});
+```
 
 ## Architecture
 
@@ -202,6 +295,145 @@ If a model fails, the system automatically tries the next one:
 3. GPT-5-mini (secondary fallback)
 4. Mistral via OpenRouter (tertiary)
 5. Claude Haiku (last resort)
+
+## 🧪 Testing
+
+### Quick Test with NPM Scripts
+
+```bash
+# Test all AI SDK model presets
+npm run test:aisdk
+
+# Test text generation models specifically
+npm run test:aisdk:text
+
+# Test all GPT-5 models
+npm run test:aisdk:gpt5
+
+# Test vision models with images
+npm run test:aisdk:vision
+```
+
+### Available Test Actions
+
+The SDK includes comprehensive test actions in `test/testAiSdkActions.ts`:
+
+#### Test All Model Presets
+```bash
+# Test creative, fast, outline, and vision presets
+npm run test:aisdk
+# or directly:
+npx convex run utils/aisdk/test/testAiSdkActions:testAllModelPresets
+```
+
+#### Test Specific Model
+```bash
+# Test a specific provider/model combination
+npx convex run utils/aisdk/test/testAiSdkActions:testSpecificModel \
+  --provider openrouter \
+  --model "anthropic/claude-opus-4.1" \
+  --prompt "Hello, how are you?"
+```
+
+#### Test All GPT-5 Models
+```bash
+# Test GPT-5, GPT-5 Mini, and GPT-5 Nano
+npx convex run utils/aisdk/test/testAiSdkActions:testAllGPT5Models
+```
+
+#### Test Vision Models
+```bash
+# Test all vision-capable models with an image
+npx convex run utils/aisdk/test/testAiSdkActions:testAllVisionModels
+```
+
+#### Test Multimodal with Custom Image
+```bash
+# Test with your own image URL
+npx convex run utils/aisdk/test/testAiSdkActions:testMultimodalWithImage \
+  --provider openrouter \
+  --model "qwen/qwen2.5-vl-72b-instruct" \
+  --imageUrl "https://example.com/image.jpg" \
+  --prompt "What's in this image?"
+```
+
+### Quick Test Commands
+
+```bash
+# Test the default configuration
+npx convex run utils/aisdk/test/testAiSdkActions:testAllModelPresets
+
+# Test specific preset
+npx convex run utils/aisdk/test/testAiSdkActions:testInternalAction \
+  --modelPreset creative \
+  --prompt "Write a haiku"
+```
+
+### What Gets Tested
+
+Each test validates:
+- ✅ Model responds with content
+- ✅ Token usage is tracked correctly
+- ✅ Fallback chains work when primary fails
+- ✅ Response times are reasonable
+- ✅ Vision models handle images properly
+- ✅ GPT-5 models return actual text (not empty)
+
+### Interpreting Results
+
+Successful output shows:
+- Model name and response time
+- Token usage (input/output/total)
+- Actual response content
+- Success rate per model
+
+Example output:
+```
+✅ Fast model success: openai/gpt-5-nano
+   Response: 4
+   Tokens: 26
+   Time: 3343ms
+```
+
+## 🔧 Model Configuration
+
+The preset configurations are defined in `aiModels.ts`. Here's what each preset includes:
+
+### Temperature Settings
+- **Creative tasks**: 0.8-0.9 (more randomness)
+- **Outline generation**: 0.8-0.9 (variety in structure)
+- **Fast decisions**: 0.3-0.5 (more deterministic)
+- **Revision tasks**: 0.7 (balanced)
+
+### Token Limits by Task
+```typescript
+export const MAX_TOKENS = {
+  outline: 150,           // Brief 1-2 sentence outlines
+  outlineImproved: 200,   // Slightly more for improvements
+  header: 100,            // Headlines are short
+  summary: 200,           // 2-3 sentence summaries
+  content: 1000,          // Main article body
+  article: 3000,          // Full article generation
+  imagePrompt: 3000,      // Detailed image descriptions
+  revision: 200,          // General revision tasks
+};
+```
+
+### Customizing Presets
+To modify preset configurations, edit `convex/utils/aisdk/aiModels.ts`:
+
+```typescript
+export const AI_MODELS = {
+  creative: {
+    provider: { name: "openrouter", model: "openai/gpt-5" },
+    fallbackProviders: [
+      { name: "openrouter", model: "anthropic/claude-sonnet-4" },
+      // Add more fallbacks here
+    ]
+  },
+  // Add custom presets here
+};
+```
 
 ### Files Overview
 

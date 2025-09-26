@@ -30,6 +30,8 @@ import type * as utils_aisdk_aiSdkClient from "../utils/aisdk/aiSdkClient.js";
 import type * as utils_aisdk_aiSdkStreamClient from "../utils/aisdk/aiSdkStreamClient.js";
 import type * as utils_aisdk_index from "../utils/aisdk/index.js";
 import type * as utils_aisdk_openaiDirect from "../utils/aisdk/openaiDirect.js";
+import type * as utils_aisdk_test_testAiSdkActions from "../utils/aisdk/test/testAiSdkActions.js";
+import type * as utils_aisdk_test_testGpt5Direct from "../utils/aisdk/test/testGpt5Direct.js";
 import type * as utils_aisdk_types from "../utils/aisdk/types.js";
 import type * as utils_fal_clients_falImageClient from "../utils/fal/clients/falImageClient.js";
 import type * as utils_fal_clients_fluxImageClient from "../utils/fal/clients/fluxImageClient.js";
@@ -73,6 +75,8 @@ declare const fullApi: ApiFromModules<{
   "utils/aisdk/aiSdkStreamClient": typeof utils_aisdk_aiSdkStreamClient;
   "utils/aisdk/index": typeof utils_aisdk_index;
   "utils/aisdk/openaiDirect": typeof utils_aisdk_openaiDirect;
+  "utils/aisdk/test/testAiSdkActions": typeof utils_aisdk_test_testAiSdkActions;
+  "utils/aisdk/test/testGpt5Direct": typeof utils_aisdk_test_testGpt5Direct;
   "utils/aisdk/types": typeof utils_aisdk_types;
   "utils/fal/clients/falImageClient": typeof utils_fal_clients_falImageClient;
   "utils/fal/clients/fluxImageClient": typeof utils_fal_clients_fluxImageClient;

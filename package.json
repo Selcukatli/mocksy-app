@@ -7,7 +7,11 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test:fal": "npx convex run utils/fal/test/testImageActions:runAllTests"
+    "test:fal": "npx convex run utils/fal/test/testImageActions:runAllTests",
+    "test:aisdk": "npx convex run utils/aisdk/test/testAiSdkActions:testAllModelPresets",
+    "test:aisdk:text": "npx convex run utils/aisdk/test/testAiSdkActions:testAllModelPresets",
+    "test:aisdk:gpt5": "npx convex run utils/aisdk/test/testAiSdkActions:testAllGPT5Models",
+    "test:aisdk:vision": "npx convex run utils/aisdk/test/testAiSdkActions:testAllVisionModels"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.18",

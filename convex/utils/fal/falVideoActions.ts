@@ -1,8 +1,32 @@
 "use node";
 
-import { action } from "../../_generated/server";
-import { v } from "convex/values";
+import { action, ActionCtx } from "../../_generated/server";
+import { v, Infer } from "convex/values";
+import { api } from "../../_generated/api";
 import { FalErrorResponse } from "./types";
+
+// Export constants for better discoverability
+export const VIDEO_MODELS = {
+  // Text-to-Video Models
+  KLING_TEXT: "klingTextToVideo",
+  SEEDANCE_TEXT: "seeDanceTextToVideo",
+
+  // Image-to-Video Models
+  KLING_IMAGE: "klingImageToVideo",
+  SEEDANCE_IMAGE: "seeDanceImageToVideo",
+  LUCY_IMAGE: "lucyImageToVideo",
+} as const;
+
+export const VIDEO_PREFERENCES = {
+  QUALITY: "quality",
+  DEFAULT: "default",
+  FAST: "fast",
+} as const;
+
+export const VIDEO_TYPES = {
+  TEXT_TO_VIDEO: "text-to-video",
+  IMAGE_TO_VIDEO: "image-to-video",
+} as const;
 
 // Import video generation clients
 import {
@@ -520,3 +544,349 @@ export const seeDanceTextToVideo = action({
     }
   },
 });
+
+// Define the return validator separately so we can export its type
+const generateVideoReturns = v.object({
+  success: v.boolean(),
+  model: v.optional(v.string()),
+  preference: v.optional(v.string()),
+  tier: v.optional(v.string()),
+  operation: v.optional(v.string()),
+  videoUrl: v.optional(v.string()),
+  duration: v.optional(v.number()),
+  width: v.optional(v.number()),
+  height: v.optional(v.number()),
+  generationTime: v.optional(v.number()),
+  cost: v.optional(v.number()),
+  capabilities: v.optional(v.any()),
+  error: v.optional(v.string()),
+  attemptedModels: v.optional(v.array(v.string())),
+});
+
+// Export the type for use in other files
+export type VideoGenerationResult = Infer<typeof generateVideoReturns>;
+
+/**
+ * Unified video generation with flexible control
+ *
+ * Control hierarchy:
+ * 1. model - Direct model selection (overrides everything)
+ * 2. preference - Quality/speed preference
+ * 3. Auto-detection - Based on imageUrl presence (imageUrl → animate, no imageUrl → generate)
+ *
+ * @example
+ * // Simple - auto-detects everything
+ * await generateVideo({ prompt: "Sunset timelapse" })
+ *
+ * @example
+ * // With preference
+ * await generateVideo({ prompt: "Professional video", preference: "quality", duration: 10 })
+ *
+ * @example
+ * // Animate image (auto-detected from imageUrl)
+ * await generateVideo({
+ *   prompt: "Add gentle motion to the scene",
+ *   imageUrl: "https://static-image.jpg"
+ * })
+ *
+ * @example
+ * // Direct model control (power user)
+ * await generateVideo({
+ *   prompt: "Ocean waves",
+ *   model: "klingTextToVideo"  // Bypasses preference
+ * })
+ */
+export const generateVideo = action({
+  args: {
+    prompt: v.string(),
+    imageUrl: v.optional(v.string()),  // Determines operation: present → animate, absent → generate
+
+    // Control hierarchy (each level overrides the ones below)
+    model: v.optional(v.string()),  // Direct model name (overrides everything)
+    preference: v.optional(v.union( // Quality/speed preference
+      v.literal("quality"),
+      v.literal("default"),
+      v.literal("fast")
+    )),
+
+    // Additional parameters
+    duration: v.optional(v.number()),
+    resolution: v.optional(v.string()),
+    aspectRatio: v.optional(v.string()),
+    apiKey: v.optional(v.string()),
+  },
+  returns: generateVideoReturns,
+  handler: async (ctx, args) => {
+    // Dynamic import of configuration
+    const { getVideoConfig, calculateVideoCost } = await import("./videoModels");
+
+    // 1. Handle direct model override
+    if (args.model) {
+      console.log(`🎬 Using specific model: ${args.model}`);
+
+      try {
+        const startTime = Date.now();
+        const result = await executeVideoModel(ctx, args.model, {
+          prompt: args.prompt,
+          imageUrl: args.imageUrl,
+          duration: args.duration,
+          resolution: args.resolution,
+          aspectRatio: args.aspectRatio,
+          apiKey: args.apiKey,
+        });
+
+        if (result.success) {
+          const generationTime = (Date.now() - startTime) / 1000;
+          const actualCost = calculateVideoCost(args.model, result.duration || args.duration || 5, args.resolution);
+
+          return {
+            success: true,
+            model: args.model,
+            mode: "direct",
+            videoUrl: result.videoUrl,
+            duration: result.duration,
+            width: result.width,
+            height: result.height,
+            generationTime,
+            cost: actualCost,
+          };
+        } else {
+          return {
+            success: false,
+            model: args.model,
+            error: result.error || "Model execution failed"
+          };
+        }
+      } catch (error) {
+        console.error(`Model ${args.model} failed:`, error);
+        return {
+          success: false,
+          model: args.model,
+          error: error instanceof Error ? error.message : "Model execution failed"
+        };
+      }
+    }
+
+    // 2. Determine operation type based on imageUrl presence
+    const operation = args.imageUrl ? "imageToVideo" : "textToVideo";
+
+    // 3. Use preference (explicit or default)
+    const preference = args.preference || "default";
+
+    console.log(`🎬 Generating video with ${preference} preference (${operation})`);
+
+    // Get model configuration with fallback chain
+    const config = getVideoConfig(operation, preference);
+    const attemptedModels: string[] = [];
+
+    // Try primary model
+    try {
+      const modelName = config.primary.model;
+      attemptedModels.push(modelName);
+
+      console.log(`Trying primary model: ${modelName}`);
+      console.log(`⏱️ Estimated time: ${config.estimatedSpeed.typical}s`);
+      console.log(`💰 Estimated cost: $${config.estimatedCost.toFixed(2)}`);
+
+      const startTime = Date.now();
+      const primaryParams = config.primary.params as {
+        duration?: string | number;
+        resolution?: string;
+        aspect_ratio?: string;
+        cfg_scale?: number;
+        [key: string]: string | number | boolean | undefined;
+      };
+      const result = await executeVideoModel(ctx, modelName, {
+        prompt: args.prompt,
+        imageUrl: args.imageUrl,
+        duration: args.duration || primaryParams.duration as string | number | undefined,
+        resolution: args.resolution || primaryParams.resolution as string | undefined,
+        aspectRatio: args.aspectRatio || primaryParams.aspect_ratio as string | undefined,
+        apiKey: args.apiKey,
+        ...config.primary.params
+      });
+
+      if (result.success) {
+        const generationTime = (Date.now() - startTime) / 1000;
+        const actualDuration = result.duration || args.duration || (typeof primaryParams.duration === 'number' ? primaryParams.duration : parseInt(String(primaryParams.duration) || "5"));
+        const actualCost = calculateVideoCost(modelName, actualDuration, args.resolution);
+
+        console.log(`✅ Success with ${modelName}`);
+        console.log(`⏱️ Actual time: ${generationTime.toFixed(1)}s`);
+        console.log(`💰 Actual cost: $${actualCost.toFixed(2)}`);
+
+        return {
+          success: true,
+          model: modelName,
+          preference,
+          operation,
+          videoUrl: result.videoUrl,
+          duration: result.duration,
+          width: result.width,
+          height: result.height,
+          generationTime,
+          cost: actualCost,
+          capabilities: config.capabilities,
+        };
+      }
+    } catch (error) {
+      console.error(`Primary model failed:`, error);
+    }
+
+    // Try fallback models
+    for (const fallback of config.fallbacks) {
+      try {
+        const modelName = fallback.model;
+        attemptedModels.push(modelName);
+
+        console.log(`Trying fallback: ${modelName}`);
+
+        const startTime = Date.now();
+        const fallbackParams = fallback.params as {
+          duration?: string | number;
+          resolution?: string;
+          aspect_ratio?: string;
+          cfg_scale?: number;
+          [key: string]: string | number | boolean | undefined;
+        };
+        const result = await executeVideoModel(ctx, modelName, {
+          prompt: args.prompt,
+          imageUrl: args.imageUrl,
+          duration: args.duration || fallbackParams.duration as string | number | undefined,
+          resolution: args.resolution || fallbackParams.resolution as string | undefined,
+          aspectRatio: args.aspectRatio || fallbackParams.aspect_ratio as string | undefined,
+          apiKey: args.apiKey,
+          ...fallback.params
+        });
+
+        if (result.success) {
+          const generationTime = (Date.now() - startTime) / 1000;
+          const actualDuration = result.duration || args.duration || (typeof fallbackParams.duration === 'number' ? fallbackParams.duration : parseInt(String(fallbackParams.duration) || "5"));
+          const actualCost = calculateVideoCost(modelName, actualDuration, args.resolution);
+
+          console.log(`✅ Success with fallback: ${modelName}`);
+          console.log(`⏱️ Actual time: ${generationTime.toFixed(1)}s`);
+          console.log(`💰 Actual cost: $${actualCost.toFixed(2)}`);
+
+          return {
+            success: true,
+            model: modelName,
+            preference,
+            operation,
+            videoUrl: result.videoUrl,
+            duration: result.duration,
+            width: result.width,
+            height: result.height,
+            generationTime,
+            cost: actualCost,
+            capabilities: config.capabilities,
+          };
+        }
+      } catch (error) {
+        console.error(`Fallback ${fallback.model} failed:`, error);
+      }
+    }
+
+    // All models failed
+    console.error(`❌ All models failed for ${preference} preference`);
+    return {
+      success: false,
+      model: config.primary.model, // Return the primary model that was attempted
+      preference,
+      operation,
+      error: "All models failed to generate video",
+      attemptedModels,
+    };
+  },
+});
+
+// Helper function to execute the appropriate video model
+interface VideoModelParams {
+  prompt?: string;
+  imageUrl?: string;
+  duration?: number | string;
+  resolution?: string;
+  aspectRatio?: string;
+  aspect_ratio?: string;
+  apiKey?: string;
+  sync_mode?: boolean;
+  cfg_scale?: number;
+  negative_prompt?: string;
+  camera_fixed?: boolean;
+  seed?: number;
+  [key: string]: string | number | boolean | undefined; // Allow additional properties
+}
+
+interface VideoModelResult {
+  success: boolean;
+  videoUrl?: string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  error?: string;
+}
+
+async function executeVideoModel(
+  ctx: ActionCtx,
+  modelName: string,
+  params: VideoModelParams
+): Promise<VideoModelResult> {
+  // Map model names to action calls
+  switch (modelName) {
+    case "klingTextToVideo":
+      return await ctx.runAction(api.utils.fal.falVideoActions.klingTextToVideo, {
+        prompt: params.prompt || "",
+        duration: (typeof params.duration === 'number' ? params.duration : parseInt(params.duration || "5")) as 5 | 10,
+        aspect_ratio: (params.aspectRatio || params.aspect_ratio || "16:9") as "16:9" | "1:1" | "9:16",
+        cfg_scale: params.cfg_scale,
+        negative_prompt: params.negative_prompt,
+        image_url: params.imageUrl,
+        apiKey: params.apiKey,
+      });
+
+    case "klingImageToVideo":
+      return await ctx.runAction(api.utils.fal.falVideoActions.klingImageToVideo, {
+        prompt: params.prompt || "",
+        image_url: params.imageUrl || "",
+        duration: (typeof params.duration === 'number' ? params.duration : parseInt(params.duration || "5")) as 5 | 10,
+        cfg_scale: params.cfg_scale,
+        negative_prompt: params.negative_prompt,
+        apiKey: params.apiKey,
+      });
+
+    case "seeDanceTextToVideo":
+      return await ctx.runAction(api.utils.fal.falVideoActions.seeDanceTextToVideo, {
+        prompt: params.prompt || "",
+        duration: String(params.duration || 5),
+        resolution: (params.resolution || "720p") as "1080p" | "720p" | "480p",
+        aspect_ratio: (params.aspectRatio || params.aspect_ratio || "16:9") as "16:9" | "1:1" | "9:16" | "4:3" | "3:4" | "21:9" | "9:21",
+        camera_fixed: params.camera_fixed,
+        seed: params.seed,
+        apiKey: params.apiKey,
+      });
+
+    case "seeDanceImageToVideo":
+      return await ctx.runAction(api.utils.fal.falVideoActions.seeDanceImageToVideo, {
+        prompt: params.prompt || "",
+        image_url: params.imageUrl || "",
+        duration: typeof params.duration === 'number' ? params.duration : parseInt(params.duration || "5"),
+        resolution: (params.resolution || "720p") as "720p" | "480p",
+        aspect_ratio: (params.aspectRatio || params.aspect_ratio || "16:9") as "16:9" | "1:1" | "9:16" | "4:3" | "3:4",
+        camera_fixed: params.camera_fixed,
+        seed: params.seed,
+        apiKey: params.apiKey,
+      });
+
+    case "lucyImageToVideo":
+      return await ctx.runAction(api.utils.fal.falVideoActions.lucyImageToVideo, {
+        prompt: params.prompt || "",
+        image_url: params.imageUrl || "",
+        aspect_ratio: (params.aspectRatio || params.aspect_ratio || "16:9") as "16:9" | "9:16",
+        sync_mode: params.sync_mode !== undefined ? params.sync_mode : false,
+        apiKey: params.apiKey,
+      });
+
+    default:
+      throw new Error(`Unknown model: ${modelName}`);
+  }
+}

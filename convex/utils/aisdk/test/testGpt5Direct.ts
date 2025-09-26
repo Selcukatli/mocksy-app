@@ -1,12 +1,11 @@
 "use node";
 
 import { action } from "../../../_generated/server";
-import { v } from "convex/values";
 
 // Test haiku generation directly
 export const testGpt5HaikuDirect = action({
   args: {},
-  handler: async (ctx) => {
+  handler: async () => {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("OPENROUTER_API_KEY not set");
@@ -80,7 +79,7 @@ export const testGpt5HaikuDirect = action({
 // Direct test using fetch to OpenRouter API
 export const testGpt5DirectApi = action({
   args: {},
-  handler: async (ctx) => {
+  handler: async () => {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("OPENROUTER_API_KEY not set");
@@ -152,7 +151,7 @@ export const testGpt5DirectApi = action({
 // Test using AI SDK with detailed logging
 export const testGpt5WithSdk = action({
   args: {},
-  handler: async (ctx) => {
+  handler: async () => {
     console.log("🔍 Testing GPT-5 Mini via AI SDK...");
 
     // Import inside handler to avoid module issues

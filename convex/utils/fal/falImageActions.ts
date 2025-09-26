@@ -1,7 +1,21 @@
 "use node";
 
 import { action } from "../../_generated/server";
-import { v } from "convex/values";
+import { v, Infer } from "convex/values";
+
+// Re-export model identifiers from imageModels.ts for convenience
+export { FAL_IMAGE_MODELS } from "./imageModels";
+
+export const IMAGE_PREFERENCES = {
+  QUALITY: "quality",
+  DEFAULT: "default",
+  FAST: "fast",
+} as const;
+
+export const IMAGE_TYPES = {
+  TEXT_TO_IMAGE: "text-to-image",
+  IMAGE_TO_IMAGE: "image-to-image",
+} as const;
 
 // Import model-specific clients
 import { generateFluxTextToImage } from "./clients/fluxImageClient";
@@ -424,6 +438,241 @@ export const fluxProUltraTextToImage = action({
     return await FluxProUltraClient.generateImage(args);
   },
 });
+
+// Define the return validator separately so we can export its type
+const generateImageReturns = v.object({
+  success: v.boolean(),
+  model: v.optional(v.string()),
+  preference: v.optional(v.string()),
+  operation: v.optional(v.string()),
+  mode: v.optional(v.string()),
+  estimatedCost: v.optional(v.number()),
+  images: v.optional(v.array(v.object({
+    url: v.string(),
+    width: v.optional(v.number()),
+    height: v.optional(v.number()),
+    content_type: v.optional(v.string()),
+  }))),
+  error: v.optional(v.string()),
+  errorType: v.optional(v.string()),
+  attempted: v.optional(v.array(v.string())),
+});
+
+// Export the type for use in other files
+export type ImageGenerationResult = Infer<typeof generateImageReturns>;
+
+/**
+ * Unified image generation with flexible control
+ *
+ * Control hierarchy:
+ * 1. model - Direct model selection (overrides everything)
+ * 2. preference - Quality/speed preference
+ * 3. Auto-detection - Based on image_url presence (image_url → edit, no image_url → generate)
+ *
+ * @example
+ * // Simple - auto-detects everything
+ * await generateImage({ prompt: "Beautiful landscape" })
+ *
+ * @example
+ * // With preference
+ * await generateImage({ prompt: "Professional photo", preference: "quality" })
+ *
+ * @example
+ * // Edit image (auto-detected from image_url)
+ * await generateImage({
+ *   prompt: "Make it sunset",
+ *   image_url: "https://original.jpg"
+ * })
+ *
+ * @example
+ * // Direct model control (power user)
+ * await generateImage({
+ *   prompt: "Sunset",
+ *   model: "fluxProUltraTextToImage"  // Bypasses preference
+ * })
+ */
+export const generateImage = action({
+  args: {
+    prompt: v.string(),
+    image_url: v.optional(v.string()),  // Determines operation: present → edit, absent → generate
+
+    // Control hierarchy (each level overrides the ones below)
+    model: v.optional(v.string()),  // Direct model name (overrides everything)
+    preference: v.optional(v.union( // Quality/speed preference
+      v.literal("quality"),
+      v.literal("default"),
+      v.literal("fast")
+    )),
+
+    // Additional parameters
+    aspectRatio: v.optional(v.string()),
+    numImages: v.optional(v.number()),
+  },
+  returns: generateImageReturns,
+  handler: async (ctx, args) => {
+    // Import the configuration function and model identifiers
+    const { getImageConfig, FAL_IMAGE_MODELS } = await import("./imageModels");
+
+    // Import api for action references
+    const { api } = await import("../../_generated/api");
+
+    // Model to action mapping using FAL's exact model identifiers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const modelActions: Record<string, any> = {
+      // Text-to-image models
+      [FAL_IMAGE_MODELS.FLUX_PRO_ULTRA]: api.utils.fal.falImageActions.fluxProUltraTextToImage,
+      [FAL_IMAGE_MODELS.FLUX_DEV]: api.utils.fal.falImageActions.fluxTextToImage,
+      [FAL_IMAGE_MODELS.FLUX_SCHNELL]: api.utils.fal.falImageActions.fluxTextToImage,
+      [FAL_IMAGE_MODELS.GPT_4O_TEXT_TO_IMAGE]: api.utils.fal.falImageActions.gptTextToImage,
+      [FAL_IMAGE_MODELS.IMAGEN4_PREVIEW]: api.utils.fal.falImageActions.imagenTextToImage,
+      [FAL_IMAGE_MODELS.GEMINI_FLASH_TEXT]: api.utils.fal.falImageActions.geminiFlashTextToImage,
+      [FAL_IMAGE_MODELS.NANO_BANANA_TEXT]: api.utils.fal.falImageActions.nanoBananaTextToImage,
+      [FAL_IMAGE_MODELS.QWEN_TEXT]: api.utils.fal.falImageActions.qwenTextToImage,
+
+      // Image-to-image models
+      [FAL_IMAGE_MODELS.KONTEXT_PRO]: api.utils.fal.falImageActions.kontextEditImage,
+      [FAL_IMAGE_MODELS.KONTEXT_MAX]: api.utils.fal.falImageActions.kontextEditImage,
+      [FAL_IMAGE_MODELS.GPT_4O_EDIT]: api.utils.fal.falImageActions.gptEditImage,
+      [FAL_IMAGE_MODELS.GEMINI_FLASH_EDIT]: api.utils.fal.falImageActions.geminiFlashEditImage,
+      [FAL_IMAGE_MODELS.NANO_BANANA_EDIT]: api.utils.fal.falImageActions.nanoBananaEditImage,
+      [FAL_IMAGE_MODELS.QWEN_EDIT]: api.utils.fal.falImageActions.qwenEditImage,
+
+      // Also support our old naming for backward compatibility
+      fluxProUltraTextToImage: api.utils.fal.falImageActions.fluxProUltraTextToImage,
+      fluxTextToImage: api.utils.fal.falImageActions.fluxTextToImage,
+      gptTextToImage: api.utils.fal.falImageActions.gptTextToImage,
+      imagenTextToImage: api.utils.fal.falImageActions.imagenTextToImage,
+      geminiFlashTextToImage: api.utils.fal.falImageActions.geminiFlashTextToImage,
+      nanoBananaTextToImage: api.utils.fal.falImageActions.nanoBananaTextToImage,
+      qwenTextToImage: api.utils.fal.falImageActions.qwenTextToImage,
+      kontextEditImage: api.utils.fal.falImageActions.kontextEditImage,
+      gptEditImage: api.utils.fal.falImageActions.gptEditImage,
+      geminiFlashEditImage: api.utils.fal.falImageActions.geminiFlashEditImage,
+      nanoBananaEditImage: api.utils.fal.falImageActions.nanoBananaEditImage,
+      qwenEditImage: api.utils.fal.falImageActions.qwenEditImage,
+    };
+
+    // 1. Handle direct model override
+    if (args.model) {
+      console.log(`🎨 Using specific model: ${args.model}`);
+
+      const action = modelActions[args.model];
+      if (!action) {
+        const availableModels = Object.keys(modelActions).join(', ');
+        throw new Error(`Model '${args.model}' not found. Available models: ${availableModels}`);
+      }
+
+      try {
+        const params = {
+          prompt: args.prompt,
+          ...(args.image_url && { image_url: args.image_url }),
+          ...(args.aspectRatio && { aspect_ratio: args.aspectRatio }),
+          ...(args.numImages && { num_images: args.numImages }),
+        };
+
+        const result = await ctx.runAction(action, params);
+
+        return {
+          success: true,
+          model: args.model,
+          mode: "direct",
+          ...result
+        };
+      } catch (error) {
+        console.error(`Model ${args.model} failed:`, error);
+        return {
+          success: false,
+          model: args.model,
+          error: error instanceof Error ? error.message : "Model execution failed"
+        };
+      }
+    }
+
+    // 2. Determine operation type based on image_url presence
+    const operation = args.image_url ? "imageToImage" : "textToImage";
+
+    // 3. Use preference (explicit or default)
+    const preference = args.preference || "default";
+
+    console.log(`🎨 ${operation === "imageToImage" ? "Editing" : "Generating"} image with ${preference} preference`);
+
+    // Get model configuration with fallback chain
+    const config = getImageConfig(operation, preference);
+
+    // Try primary model
+    try {
+      const primaryAction = modelActions[config.primary.model];
+      if (!primaryAction) throw new Error(`Unknown model: ${config.primary.model}`);
+
+      console.log(`Trying primary: ${config.primary.model}`);
+
+      const params = {
+        prompt: args.prompt,
+        ...(args.image_url && { image_url: args.image_url }),
+        ...(args.aspectRatio && { aspect_ratio: args.aspectRatio }),
+        ...(args.numImages && { num_images: args.numImages }),
+        ...config.primary.params
+      };
+
+      const result = await ctx.runAction(primaryAction, params);
+
+      if (result.success || result.images) {
+        console.log(`✅ Success with ${config.primary.model}`);
+        return {
+          success: true,
+          model: config.primary.model,
+          preference,
+          estimatedCost: config.estimatedCost,
+          ...result
+        };
+      }
+    } catch (error) {
+      console.error(`Primary model failed: ${error}`);
+    }
+
+    // Try fallbacks
+    for (const fallback of config.fallbacks) {
+      try {
+        const fallbackAction = modelActions[fallback.model];
+        if (!fallbackAction) continue;
+
+        console.log(`Trying fallback: ${fallback.model}`);
+
+        const params = {
+          prompt: args.prompt,
+          ...(args.image_url && { image_url: args.image_url }),
+          ...(args.aspectRatio && { aspect_ratio: args.aspectRatio }),
+          ...(args.numImages && { num_images: args.numImages }),
+          ...fallback.params
+        };
+
+        const result = await ctx.runAction(fallbackAction, params);
+
+        if (result.success || result.images) {
+          console.log(`✅ Success with fallback: ${fallback.model}`);
+          return {
+            success: true,
+            model: fallback.model,
+            preference,
+            estimatedCost: config.estimatedCost,
+            ...result
+          };
+        }
+      } catch (error) {
+        console.error(`Fallback ${fallback.model} failed: ${error}`);
+      }
+    }
+
+    return {
+      success: false,
+      error: "All models in chain failed",
+      model: config.primary.model, // Return the primary model that was attempted
+      preference,
+      attempted: [config.primary.model, ...config.fallbacks.map(f => f.model)]
+    };
+  },
+});
+
 
 
 

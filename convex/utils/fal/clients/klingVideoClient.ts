@@ -6,7 +6,6 @@ import {
   KlingImageToVideoParams,
   FalVideoResponse,
   FalVideo,
-  FalErrorResponse,
   FalResponse,
   FalContentPolicyError,
 } from "../types";

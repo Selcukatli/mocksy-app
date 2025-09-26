@@ -134,6 +134,6 @@ export function getAIConfig(useCase: keyof typeof AI_MODELS = 'medium') {
   return {
     provider: config.provider,
     fallbackProviders: config.fallbackProviders,
-    reasoningEffort: (config as any).reasoningEffort // Only present for non-vision models
+    reasoningEffort: 'reasoningEffort' in config ? config.reasoningEffort : undefined
   };
 }

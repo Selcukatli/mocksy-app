@@ -59,7 +59,7 @@ export const generateTextInternal = internalAction({
       )
     })),
     // Model selection - either use a preset or specify provider details
-    modelPreset: v.optional(v.union(v.literal("fast"), v.literal("creative"), v.literal("vision"), v.literal("outline"))),
+    modelPreset: v.optional(v.union(v.literal("tiny"), v.literal("small"), v.literal("medium"), v.literal("large"), v.literal("vision"))),
     provider: v.optional(v.object({
       name: v.union(v.literal("openai"), v.literal("anthropic"), v.literal("google"), v.literal("openrouter")),
       model: v.string()

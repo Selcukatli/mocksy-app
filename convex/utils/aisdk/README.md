@@ -10,18 +10,19 @@ The easiest way to use this SDK is with **model presets** - pre-configured model
 // Using Convex action
 await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
   messages: [{ role: "user", content: "Write a story" }],
-  modelPreset: "creative"  // That's it! Auto-selects GPT-5 with fallbacks
+  modelPreset: "large"  // That's it! Auto-selects GPT-5 with high reasoning
 });
 ```
 
 ### Available Presets
 
-| Preset | Primary Model | Best For | Fallback Chain |
-|--------|--------------|----------|----------------|
-| **`creative`** | GPT-5 | Long-form content, articles, stories | → Claude Sonnet 4 → GPT-5 Mini → Mistral Large |
-| **`fast`** | GPT-5 Nano | Quick decisions, routing, simple tasks | → GPT-5 Mini → Claude Haiku → Gemini Flash |
-| **`outline`** | GPT-5 Mini | Outlines, summaries, structured content | → Claude Haiku → Gemini Flash → GPT-5 Nano |
-| **`vision`** | Qwen 72B Vision | Image analysis, visual understanding | → Gemini 2.0 Flash → Llama 90B Vision |
+| Preset | Primary Model | Best For | Key Features |
+|--------|--------------|----------|-------------|
+| **`large`** | GPT-5 (high reasoning) | Complex tasks, creative content, deep analysis | 4000 tokens, temp 0.9, max quality |
+| **`medium`** | GPT-5 (balanced) | Professional work, general purpose | 2000 tokens, temp 0.8, balanced |
+| **`small`** | GPT-5 Mini | Quick tasks, summaries, simple content | 1000 tokens, temp 0.7, fast |
+| **`tiny`** | GPT-5 Nano | Simple decisions, classification, extraction | 500 tokens, temp 0.6, ultra-fast |
+| **`vision`** | Qwen 72B Vision | Image analysis, visual understanding | Multimodal support |
 
 Each preset includes:
 - ✅ Optimized temperature settings
@@ -127,13 +128,13 @@ We now target **AI SDK v5**, which shipped a breaking change to token accounting
 // Just specify the task type - everything else is handled!
 await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
   messages: [{ role: "user", content: "Explain quantum computing" }],
-  modelPreset: "creative"  // Auto-configures model + fallbacks
+  modelPreset: "medium"  // Auto-configures model + fallbacks
 });
 
 // Fast routing/classification
 await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
   messages: [{ role: "user", content: "Is this email spam? Yes/No" }],
-  modelPreset: "fast"  // Uses GPT-5 Nano for speed
+  modelPreset: "tiny"  // Uses GPT-5 Nano for ultra-fast responses
 });
 
 // Image analysis
@@ -178,7 +179,7 @@ await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
 // Use preset but override specific settings
 await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
   messages: [{ role: "user", content: "Write a poem" }],
-  modelPreset: "creative",  // Use creative preset
+  modelPreset: "large",  // Use large preset for max quality
   temperature: 0.9,         // But increase creativity
   maxTokens: 500           // And limit length
 });
@@ -235,7 +236,7 @@ creative: {
 
 await ctx.runAction(internal.utils.aisdk.aiSdkActions.generateTextInternal, {
   messages: [...],
-  modelPreset: 'creative', // or 'fast', 'vision'
+  modelPreset: 'medium', // or 'large', 'small', 'tiny', 'vision'
   maxOutputTokens: 1000,
 });
 ```
@@ -320,7 +321,7 @@ The SDK includes comprehensive test actions in `test/testAiSdkActions.ts`:
 
 #### Test All Model Presets
 ```bash
-# Test creative, fast, outline, and vision presets
+# Test all size-based presets: large, medium, small, tiny, and vision
 npm run test:aisdk
 # or directly:
 npx convex run utils/aisdk/test/testAiSdkActions:testAllModelPresets
@@ -365,7 +366,7 @@ npx convex run utils/aisdk/test/testAiSdkActions:testAllModelPresets
 
 # Test specific preset
 npx convex run utils/aisdk/test/testAiSdkActions:testInternalAction \
-  --modelPreset creative \
+  --modelPreset large \
   --prompt "Write a haiku"
 ```
 
@@ -408,14 +409,17 @@ The preset configurations are defined in `aiModels.ts`. Here's what each preset 
 ### Token Limits by Task
 ```typescript
 export const MAX_TOKENS = {
+  // Size-based defaults
+  large: 4000,            // Maximum tokens for complex reasoning
+  medium: 2000,           // Balanced token limit
+  small: 1000,            // Efficient token usage
+  tiny: 500,              // Minimal tokens for speed
+
+  // Task-specific limits (when needed)
   outline: 150,           // Brief 1-2 sentence outlines
-  outlineImproved: 200,   // Slightly more for improvements
-  header: 100,            // Headlines are short
   summary: 200,           // 2-3 sentence summaries
-  content: 1000,          // Main article body
   article: 3000,          // Full article generation
   imagePrompt: 3000,      // Detailed image descriptions
-  revision: 200,          // General revision tasks
 };
 ```
 
@@ -424,14 +428,24 @@ To modify preset configurations, edit `convex/utils/aisdk/aiModels.ts`:
 
 ```typescript
 export const AI_MODELS = {
-  creative: {
+  large: {
     provider: { name: "openrouter", model: "openai/gpt-5" },
+    reasoningEffort: "high",  // Maximum reasoning for complex tasks
     fallbackProviders: [
+      { name: "openrouter", model: "google/gemini-2.5-pro" },
       { name: "openrouter", model: "anthropic/claude-sonnet-4" },
       // Add more fallbacks here
     ]
   },
-  // Add custom presets here
+  medium: {
+    provider: { name: "openrouter", model: "openai/gpt-5" },
+    reasoningEffort: "medium",  // Balanced reasoning
+    fallbackProviders: [
+      { name: "openrouter", model: "google/gemini-2.5-pro" },
+      { name: "openrouter", model: "openai/gpt-5-mini" },
+    ]
+  },
+  // small, tiny, vision presets also available
 };
 ```
 

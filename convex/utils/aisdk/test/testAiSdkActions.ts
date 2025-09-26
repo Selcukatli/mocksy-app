@@ -14,9 +14,9 @@ export const testAllModelPresets = action({
     console.log("🚀 Starting AI SDK comprehensive tests (running in parallel)...\n");
 
     const results = {
-      fast: null as any,
-      creative: null as any,
-      outline: null as any,
+      tiny: null as any,
+      large: null as any,
+      small: null as any,
       vision: null as any,
       fallback: null as any,
       errors: [] as string[]
@@ -24,97 +24,97 @@ export const testAllModelPresets = action({
 
     try {
       // Run all tests in parallel for speed
-      const [fastTest, creativeTest, outlineTest, visionTest] = await Promise.all([
+      const [tinyTest, largeTest, smallTest, visionTest] = await Promise.all([
         // Test 1: Fast model for routing
         (async () => {
-          console.log("1️⃣ Testing FAST model preset (GPT-5 Nano)...");
+          console.log("1️⃣ Testing TINY model preset (GPT-5 Nano)...");
           try {
-                const fastResult = await generateTextWithAI({
+                const tinyResult = await generateTextWithAI({
               messages: [
                 { role: "system", content: "You are a concise assistant. Answer in 1-2 sentences." },
                 { role: "user", content: "What is 2+2?" }
               ],
-              ...getAIConfig("fast"),
+              ...getAIConfig("tiny"),
               temperature: 0.3,
               maxTokens: 50
             });
 
-            if (fastResult) {
-              console.log(`✅ Fast model success: ${fastResult.model}`);
-              console.log(`   Response: ${fastResult.content.substring(0, 100)}...`);
-              console.log(`   Tokens: ${fastResult.usage?.totalTokens || 'N/A'}\n`);
+            if (tinyResult) {
+              console.log(`✅ Tiny model success: ${tinyResult.model}`);
+              console.log(`   Response: ${tinyResult.content.substring(0, 100)}...`);
+              console.log(`   Tokens: ${tinyResult.usage?.totalTokens || 'N/A'}\n`);
               return {
-                content: fastResult.content,
-                model: fastResult.model,
-                usage: fastResult.usage
+                content: tinyResult.content,
+                model: tinyResult.model,
+                usage: tinyResult.usage
               };
             }
             return null;
           } catch (error) {
-            console.error(`❌ Fast model failed:`, error);
-            return { error: `Fast model: ${error}` };
+            console.error(`❌ Tiny model failed:`, error);
+            return { error: `Tiny model: ${error}` };
           }
         })(),
 
         // Test 2: Creative model for content generation
         (async () => {
-          console.log("2️⃣ Testing CREATIVE model preset (GPT-5)...");
+          console.log("2️⃣ Testing LARGE model preset (GPT-5 with high reasoning)...");
           try {
-            const creativeResult = await generateTextWithAI({
+            const largeResult = await generateTextWithAI({
           messages: [
             { role: "system", content: "You are a creative writer." },
             { role: "user", content: "Write a one-sentence story about a robot learning to paint." }
           ],
-          ...getAIConfig("creative"),
+          ...getAIConfig("large"),
           temperature: 0.8,
           maxTokens: 100
         });
 
-            if (creativeResult) {
-              console.log(`✅ Creative model success: ${creativeResult.model}`);
-              console.log(`   Response: ${creativeResult.content.substring(0, 150)}...`);
-              console.log(`   Tokens: ${creativeResult.usage?.totalTokens || 'N/A'}\n`);
+            if (largeResult) {
+              console.log(`✅ Large model success: ${largeResult.model}`);
+              console.log(`   Response: ${largeResult.content.substring(0, 150)}...`);
+              console.log(`   Tokens: ${largeResult.usage?.totalTokens || 'N/A'}\n`);
               return {
-                content: creativeResult.content,
-                model: creativeResult.model,
-                usage: creativeResult.usage
+                content: largeResult.content,
+                model: largeResult.model,
+                usage: largeResult.usage
               };
             }
             return null;
           } catch (error) {
-            console.error(`❌ Creative model failed:`, error);
-            return { error: `Creative model: ${error}` };
+            console.error(`❌ Large model failed:`, error);
+            return { error: `Large model: ${error}` };
           }
         })(),
 
         // Test 3: Outline model for quick generation
         (async () => {
-          console.log("3️⃣ Testing OUTLINE model preset (GPT-5 Mini)...");
+          console.log("3️⃣ Testing SMALL model preset (GPT-5 Mini)...");
           try {
-            const outlineResult = await generateTextWithAI({
+            const smallResult = await generateTextWithAI({
           messages: [
             { role: "system", content: "You create brief outlines." },
             { role: "user", content: "Create a 3-point outline for a blog post about AI safety." }
           ],
-          ...getAIConfig("outline"),
+          ...getAIConfig("small"),
           temperature: 0.7,
           maxTokens: 150
         });
 
-            if (outlineResult) {
-              console.log(`✅ Outline model success: ${outlineResult.model}`);
-              console.log(`   Response: ${outlineResult.content.substring(0, 200)}...`);
-              console.log(`   Tokens: ${outlineResult.usage?.totalTokens || 'N/A'}\n`);
+            if (smallResult) {
+              console.log(`✅ Small model success: ${smallResult.model}`);
+              console.log(`   Response: ${smallResult.content.substring(0, 200)}...`);
+              console.log(`   Tokens: ${smallResult.usage?.totalTokens || 'N/A'}\n`);
               return {
-                content: outlineResult.content,
-                model: outlineResult.model,
-                usage: outlineResult.usage
+                content: smallResult.content,
+                model: smallResult.model,
+                usage: smallResult.usage
               };
             }
             return null;
           } catch (error) {
-            console.error(`❌ Outline model failed:`, error);
-            return { error: `Outline model: ${error}` };
+            console.error(`❌ Small model failed:`, error);
+            return { error: `Small model: ${error}` };
           }
         })(),
 
@@ -151,14 +151,14 @@ export const testAllModelPresets = action({
       ]);
 
       // Process results from parallel execution
-      if (fastTest && !('error' in fastTest)) results.fast = fastTest;
-      else if (fastTest?.error) results.errors.push(fastTest.error);
+      if (tinyTest && !('error' in tinyTest)) results.tiny = tinyTest;
+      else if (tinyTest?.error) results.errors.push(tinyTest.error);
 
-      if (creativeTest && !('error' in creativeTest)) results.creative = creativeTest;
-      else if (creativeTest?.error) results.errors.push(creativeTest.error);
+      if (largeTest && !('error' in largeTest)) results.large = largeTest;
+      else if (largeTest?.error) results.errors.push(largeTest.error);
 
-      if (outlineTest && !('error' in outlineTest)) results.outline = outlineTest;
-      else if (outlineTest?.error) results.errors.push(outlineTest.error);
+      if (smallTest && !('error' in smallTest)) results.small = smallTest;
+      else if (smallTest?.error) results.errors.push(smallTest.error);
 
       if (visionTest && !('error' in visionTest)) results.vision = visionTest;
       else if (visionTest?.error) results.errors.push(visionTest.error);
@@ -202,7 +202,7 @@ export const testAllModelPresets = action({
     console.log("\n📊 TEST SUMMARY:");
     console.log("================");
 
-    const tests = ['fast', 'creative', 'outline', 'vision', 'fallback'];
+    const tests = ['tiny', 'large', 'small', 'vision', 'fallback'];
     const passed = tests.filter(t => results[t as keyof typeof results] !== null);
     const failed = tests.filter(t => results[t as keyof typeof results] === null);
 
@@ -387,12 +387,10 @@ export const testAllVisionModels = action({
       // Google models (Direct API)
       { provider: "google", model: "gemini-2.5-flash", name: "Gemini 2.5 Flash (Direct)" },
 
-      // Google AI Studio models via OpenRouter
-      { provider: "openrouter", model: "google/gemini-2.0-flash-001", name: "Gemini 2.0 Flash" },
+      // Google AI Studio models via OpenRouter (2.5 generation only)
       { provider: "openrouter", model: "google/gemini-2.5-pro", name: "Gemini 2.5 Pro" },
       { provider: "openrouter", model: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash (OR)" },
       { provider: "openrouter", model: "google/gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
-      { provider: "openrouter", model: "google/gemini-pro-1.5", name: "Gemini Pro 1.5" },
 
       // Other vision models
       { provider: "openrouter", model: "qwen/qwen2.5-vl-72b-instruct", name: "Qwen Vision 72B" },
@@ -676,10 +674,11 @@ export const testAllGPT5Models = action({
 export const testInternalAction = action({
   args: {
     modelPreset: v.optional(v.union(
-      v.literal("fast"),
-      v.literal("creative"),
-      v.literal("vision"),
-      v.literal("outline")
+      v.literal("tiny"),
+      v.literal("small"),
+      v.literal("medium"),
+      v.literal("large"),
+      v.literal("vision")
     )),
     prompt: v.string()
   },
@@ -689,7 +688,7 @@ export const testInternalAction = action({
     try {
       // We'll call the internal action through the client directly
       // since we can't use ctx.runAction from an action to call an internal action
-      const config = args.modelPreset ? getAIConfig(args.modelPreset) : getAIConfig("fast");
+      const config = args.modelPreset ? getAIConfig(args.modelPreset) : getAIConfig("small");
 
       const result = await generateTextWithAI({
         messages: [

@@ -9,6 +9,16 @@ export interface FalImage {
   file_size?: number;
 }
 
+export interface FalVideo {
+  url: string;
+  width?: number;
+  height?: number;
+  duration?: number; // Duration in seconds
+  content_type?: string;
+  file_name?: string;
+  file_size?: number;
+}
+
 // Generic request/response types
 export interface FalRequest<T = unknown> {
   input: T;
@@ -234,10 +244,10 @@ export class FalAPIError extends Error {
 }
 
 // Available model endpoints (cleaned up to only include what we use)
-export type FalModel = 
+export type FalModel =
   // FLUX models
   | "fal-ai/flux-1/dev"
-  | "fal-ai/flux-1/schnell" 
+  | "fal-ai/flux-1/schnell"
   | "fal-ai/flux-pro/new"
   // FLUX Kontext models
   | "fal-ai/flux-pro/kontext"
@@ -247,7 +257,15 @@ export type FalModel =
   | "fal-ai/gpt-image-1/text-to-image/byok"
   | "fal-ai/gpt-image-1/edit-image/byok"
   // Imagen4 models
-  | "fal-ai/imagen4/preview";
+  | "fal-ai/imagen4/preview"
+  // Kling Video models
+  | "fal-ai/kling-video/v2.5-turbo/pro/text-to-video"
+  | "fal-ai/kling-video/v2.5-turbo/pro/image-to-video"
+  // Lucy-14b models (fast)
+  | "decart/lucy-14b/image-to-video"
+  // SeeDance models (fast)
+  | "fal-ai/bytedance/seedance/v1/lite/image-to-video"
+  | "fal-ai/bytedance/seedance/v1/lite/text-to-video";
 
 export interface FalImageSize {
   width: number;
@@ -276,4 +294,75 @@ export interface FalTextToImageParams {
   num_images?: number;
   enable_safety_checker?: boolean;
   output_format?: FalOutputFormat;
-} 
+}
+
+// Kling Video specific types
+export type KlingVideoAspectRatio = "16:9" | "9:16" | "1:1";
+export type KlingVideoDuration = 5 | 10; // Duration in seconds
+
+export interface KlingTextToVideoParams {
+  prompt: string; // Max 2500 characters
+  duration?: KlingVideoDuration; // Default: 5 seconds
+  aspect_ratio?: KlingVideoAspectRatio; // Default: "16:9"
+  negative_prompt?: string; // Default: "blur, distort, and low quality"
+  cfg_scale?: number; // 0-1, controls how closely model follows prompt, default: 0.5
+  image_url?: string; // Optional starting image for video generation
+}
+
+export interface KlingImageToVideoParams {
+  prompt: string; // Text description guiding video generation
+  image_url: string; // Required - source image for video transformation
+  duration?: KlingVideoDuration; // Default: 5 seconds
+  negative_prompt?: string; // Default: "blur, distort, and low quality"
+  cfg_scale?: number; // 0-1, controls how closely model follows prompt, default: 0.5
+}
+
+export interface FalVideoResponse {
+  video: FalVideo;
+  seed?: number;
+  timings?: {
+    inference: number;
+  };
+  prompt?: string;
+}
+
+// Lucy-14b Video specific types
+export interface LucyImageToVideoParams {
+  prompt: string; // Max 1500 characters
+  image_url: string; // Required - source image for video
+  resolution?: "720p"; // Default: "720p"
+  aspect_ratio?: "16:9" | "9:16"; // Default: "16:9"
+  sync_mode?: boolean; // Default: true for faster response
+}
+
+// SeeDance Video specific types
+export interface SeeDanceImageToVideoParams {
+  prompt: string; // Text description
+  image_url: string; // Required - source image
+  aspect_ratio?: "16:9" | "9:16" | "4:3" | "3:4" | "1:1"; // Default: "16:9"
+  resolution?: "720p" | "480p"; // Default: "720p"
+  duration?: number; // Default: 5 seconds
+  camera_fixed?: boolean; // Default: false
+  seed?: number; // For reproducibility
+  enable_safety_checker?: boolean; // Default: true
+}
+
+export interface SeeDanceTextToVideoParams {
+  prompt: string; // Text description
+  aspect_ratio?: "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16" | "9:21"; // Default: "16:9"
+  resolution?: "480p" | "720p" | "1080p"; // Default: "720p"
+  duration?: string; // "3" to "12" seconds, default: "5"
+  camera_fixed?: boolean; // Default: false
+  seed?: number; // -1 for random
+  enable_safety_checker?: boolean; // Default: true
+}
+
+// Pricing constants for reference (in comments for documentation)
+// Kling Video Pricing:
+// - $0.35 for 5-second video
+// - $0.07 per additional second (so 10-second video = $0.35 + $0.35 = $0.70)
+// Lucy-14b Pricing:
+// - $0.08 per second of generated video
+// SeeDance Pricing:
+// - $0.18 for 720p 5-second video
+// - Token calculation: (height x width x FPS x duration) / 1024 

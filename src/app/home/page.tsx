@@ -1,5 +1,4 @@
 'use client';
-
 import {
   Plus,
   Image as ImageIcon,
@@ -9,7 +8,7 @@ import {
   Layout,
   Clock,
   Package,
-  User,
+  Check,
   X
 } from 'lucide-react';
 import Link from 'next/link';
@@ -20,6 +19,67 @@ import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import FeatureSlides, { type Slide as FeatureSlide } from '@/components/FeatureSlides';
+
+const signInBenefits = [
+  'Pick up saved screenshot sets right where you left them.',
+  'Share work with teammates across devices and locales.',
+  'Swap copy and visuals with Mocksy\'s instant AI translation.'
+];
+
+const signInSlides: FeatureSlide[] = [
+  {
+    title: 'Organize every launch',
+    description: 'Keep screenshot sets tidy by app, locale, and device.',
+    icon: Layout,
+    gradient: 'from-blue-500 to-purple-500',
+    bgGradient: 'from-blue-500/20 via-purple-500/20 to-indigo-500/20 dark:from-blue-500/10 dark:via-purple-500/10 dark:to-indigo-500/10',
+    orbs: [
+      { color: 'bg-blue-500/25 dark:bg-blue-500/10', size: 'w-80 h-80', position: '-top-16 -right-12', blur: 'blur-3xl' },
+      { color: 'bg-purple-500/25 dark:bg-purple-500/10', size: 'w-64 h-64', position: 'bottom-10 -left-10', blur: 'blur-2xl' },
+      { color: 'bg-indigo-400/20 dark:bg-indigo-400/10', size: 'w-72 h-72', position: 'top-1/2 left-1/4', blur: 'blur-3xl' }
+    ],
+    features: [
+      'Campaign timeline view',
+      'Per-set version history',
+      'Workspace visibility'
+    ]
+  },
+  {
+    title: 'Create with AI assistance',
+    description: 'Spin up new mocks fast with guided layouts and AI copy.',
+    icon: Wand2,
+    gradient: 'from-violet-500 to-pink-500',
+    bgGradient: 'from-violet-500/20 via-pink-500/20 to-rose-500/20 dark:from-violet-500/10 dark:via-pink-500/10 dark:to-rose-500/10',
+    orbs: [
+      { color: 'bg-violet-500/25 dark:bg-violet-500/10', size: 'w-72 h-72', position: 'top-0 -left-6', blur: 'blur-3xl' },
+      { color: 'bg-pink-500/20 dark:bg-pink-500/10', size: 'w-80 h-80', position: 'bottom-10 -right-12', blur: 'blur-2xl' },
+      { color: 'bg-rose-400/20 dark:bg-rose-400/10', size: 'w-64 h-64', position: 'top-1/2 right-1/3', blur: 'blur-3xl' }
+    ],
+    features: [
+      'AI layout suggestions',
+      'Drag-and-drop editing',
+      'Reusable brand presets'
+    ]
+  },
+  {
+    title: 'Translate instantly',
+    description: 'Localize screenshots for each market with smart swaps.',
+    icon: Languages,
+    gradient: 'from-emerald-500 to-teal-500',
+    bgGradient: 'from-emerald-500/20 via-teal-500/20 to-cyan-500/20 dark:from-emerald-500/10 dark:via-teal-500/10 dark:to-cyan-500/10',
+    orbs: [
+      { color: 'bg-emerald-500/25 dark:bg-emerald-500/10', size: 'w-72 h-72', position: '-top-10 right-8', blur: 'blur-3xl' },
+      { color: 'bg-teal-500/20 dark:bg-teal-500/10', size: 'w-80 h-80', position: 'bottom-12 left-4', blur: 'blur-2xl' },
+      { color: 'bg-cyan-400/20 dark:bg-cyan-400/10', size: 'w-64 h-64', position: 'top-1/2 left-1/3', blur: 'blur-3xl' }
+    ],
+    features: [
+      '30+ built-in languages',
+      'Locale-aware formatting',
+      'Automatic asset swaps'
+    ]
+  }
+];
 
 export default function Home() {
   const { user } = useUser();
@@ -442,16 +502,75 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-center py-12"
+          className="py-16"
         >
-          <User className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Sign in to get started</h2>
-          <p className="text-muted-foreground mb-6">Create and manage your app store screenshots</p>
-          <Link href="/welcome?mode=sign-in&context=create-app">
-            <button className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors">
-              Sign In / Sign Up
-            </button>
-          </Link>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="mx-auto max-w-6xl rounded-3xl border border-primary/10 bg-gradient-to-br from-white via-primary/5 to-purple-50 p-10 shadow-xl dark:border-primary/25 dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950"
+          >
+            <div className="grid items-center gap-12 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+              <div className="space-y-6 text-left">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary shadow-sm ring-1 ring-primary/10 dark:bg-slate-950/70">
+                  Sign in to start creating
+                </span>
+                <div className="space-y-4">
+                  <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+                    Build and launch screenshots without losing your place
+                  </h2>
+                  <p className="text-base text-muted-foreground md:text-lg">
+                    Access your workspace, save progress, and keep every locale aligned once you sign in.
+                  </p>
+                </div>
+                <ul className="space-y-3">
+                  {signInBenefits.map((benefit) => (
+                    <li key={benefit} className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <Check className="h-4 w-4" />
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {benefit}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <Link
+                    href="/welcome?mode=sign-in&context=create-app"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-transform transition-colors hover:scale-[1.02] hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    Sign In / Sign Up
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/templates"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-3 text-sm font-medium text-foreground transition hover:border-primary/30 hover:text-primary"
+                  >
+                    Preview templates
+                    <ImageIcon className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="pointer-events-none absolute -top-16 right-6 h-32 w-32 rounded-full bg-purple-400/25 blur-3xl dark:bg-purple-500/30" />
+                <div className="pointer-events-none absolute -bottom-20 left-0 h-40 w-40 rounded-full bg-blue-400/20 blur-3xl dark:bg-blue-500/25" />
+                <div className="relative overflow-hidden rounded-3xl border border-white/60 shadow-2xl dark:border-slate-800/60">
+                  <FeatureSlides
+                    slides={signInSlides}
+                    showNavigation={false}
+                    showDots
+                    className="rounded-3xl"
+                    maskGradient={false}
+                    autoPlay
+                    interval={6500}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       )}
 

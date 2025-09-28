@@ -3,16 +3,70 @@
 ## Overview
 BAML (Boundary ML) is a domain-specific language for building reliable, type-safe LLM functions. This guide explains how to integrate BAML with Convex for type-safe AI operations.
 
+## Prerequisites
+
+### Install VSCode Extension
+1. Open VSCode Extensions (Cmd+Shift+X on Mac, Ctrl+Shift+X on Windows/Linux)
+2. Search for "BAML" or "Baml Language"
+3. Install the extension by Boundary
+4. Reload VSCode window after installation
+
+### Version Compatibility
+**CRITICAL**: The BAML package version, generator version, and VSCode extension version must match (major and minor versions).
+
+Example: If VSCode extension is `0.208.5`:
+- npm package should be `@boundaryml/baml@0.208.5`
+- Generator version in `generators.baml` should be `0.208.5`
+
+To check VSCode extension version:
+- Look at the bottom right of VSCode when a `.baml` file is open
+- Or check Extensions panel → BAML → version number
+
+To fix version mismatches:
+```bash
+# Check current package version
+npm list @boundaryml/baml
+
+# Update to match VSCode extension (example for 0.208.5)
+npm uninstall @boundaryml/baml
+npm install @boundaryml/baml@0.208.5
+
+# Update generator version in baml_src/generators.baml
+# Change: version "0.76.2" → version "0.208.5"
+```
+
 ## Project Structure
+
+### Recommended File Organization
 ```
 project-root/
-├── baml_src/           # BAML source files (prompts, clients, types)
+├── baml_src/           # BAML source files
+│   ├── clients.baml    # ALL LLM client configurations (CENTRALIZED)
+│   ├── generators.baml # Generator settings (required)
+│   ├── helloworld.baml # Basic examples/demos (optional)
+│   ├── avatars.baml    # Domain: models, functions, tests (NO clients)
+│   ├── scene.baml      # Domain: models, functions, tests (NO clients)
+│   └── screenshots.baml # Domain: models, functions, tests (NO clients)
 ├── baml_client/        # Generated TypeScript client (auto-generated)
 ├── convex/
 │   └── actions/        # Convex actions that use BAML
 ├── package.json
 └── convex.json         # Convex configuration
 ```
+
+### File Organization Best Practices
+
+#### Client Configuration (IMPORTANT)
+- **CENTRALIZE ALL CLIENTS**: Define all LLM clients in `clients.baml` only
+- **NO LOCAL CLIENTS**: Domain files should NOT define their own clients
+- **REUSE EXISTING**: Functions should reference clients from `clients.baml`
+- **NAMING PATTERN**: Use descriptive names like `GPT5`, `Gemini25Flash`, `VisionModel`
+
+#### Domain Files
+- **Domain-based organization**: Use `domain.baml` for models, functions, and tests
+- **Keep tests co-located**: Place test cases right after their functions
+- **Single file per domain**: Unless a domain exceeds 500+ lines
+- **Naming pattern**: Use lowercase with no separators (e.g., `avatars.baml`)
 
 ## Setup Steps
 
@@ -38,16 +92,79 @@ generator target {
 }
 ```
 
-### 4. Configure OpenRouter Client
-Create `baml_src/clients.baml`:
+### 4. Configure OpenRouter Clients (CENTRALIZED)
+Create `baml_src/clients.baml` - **ALL clients should be defined here**:
+
+#### Complete Client Configuration Example
 ```baml
-// OpenRouter client configuration
-client<llm> OpenRouterClient {
+// ===========================================
+// CENTRALIZED CLIENT CONFIGURATION
+// All LLM clients should be defined in this file
+// Domain files should reference these, not define their own
+// ===========================================
+
+// Fast model - for simple tasks
+client<llm> GPT5Nano {
   provider "openai-generic"
   options {
     base_url "https://openrouter.ai/api/v1"
-    api_key env.OPENROUTER_API_KEY  // Reads from Convex environment
-    model "openai/gpt-5-nano"       // Or any OpenRouter model
+    api_key env.OPENROUTER_API_KEY
+    model "openai/gpt-5-nano"
+    headers {
+      "HTTP-Referer" "https://yourapp.com"
+      "X-Title" "Your App Name"
+    }
+  }
+}
+
+// Smart model - for complex reasoning
+client<llm> GPT5 {
+  provider "openai-generic"
+  options {
+    base_url "https://openrouter.ai/api/v1"
+    api_key env.OPENROUTER_API_KEY
+    model "openai/gpt-5"
+    headers {
+      "HTTP-Referer" "https://yourapp.com"
+      "X-Title" "Your App Name"
+    }
+  }
+}
+
+// Gemini models - various tiers
+client<llm> Gemini25Pro {
+  provider "openai-generic"
+  options {
+    base_url "https://openrouter.ai/api/v1"
+    api_key env.OPENROUTER_API_KEY
+    model "google/gemini-2.5-pro"
+    headers {
+      "HTTP-Referer" "https://yourapp.com"
+      "X-Title" "Your App Name"
+    }
+  }
+}
+
+client<llm> Gemini25Flash {
+  provider "openai-generic"
+  options {
+    base_url "https://openrouter.ai/api/v1"
+    api_key env.OPENROUTER_API_KEY
+    model "google/gemini-2.5-flash"
+    headers {
+      "HTTP-Referer" "https://yourapp.com"
+      "X-Title" "Your App Name"
+    }
+  }
+}
+
+// Vision model for image analysis
+client<llm> VisionModel {
+  provider "openai-generic"
+  options {
+    base_url "https://openrouter.ai/api/v1"
+    api_key env.OPENROUTER_API_KEY
+    model "qwen/qwen2.5-vl-72b-instruct"
     headers {
       "HTTP-Referer" "https://yourapp.com"
       "X-Title" "Your App Name"
@@ -56,10 +173,87 @@ client<llm> OpenRouterClient {
 }
 ```
 
-### 5. Define Your Prompts
-Create `baml_src/prompts.baml`:
+#### Fallback Chain Configuration
 ```baml
-// Example: Structured output with type safety
+// Primary vision model
+client<llm> VisionPrimary {
+  provider "openai-generic"
+  options {
+    base_url "https://openrouter.ai/api/v1"
+    api_key env.OPENROUTER_API_KEY
+    model "qwen/qwen2.5-vl-72b-instruct"
+    headers {
+      "HTTP-Referer" "https://yourapp.com"
+      "X-Title" "Your App"
+    }
+  }
+}
+
+// Fallback vision model
+client<llm> VisionFallback {
+  provider "openai-generic"
+  options {
+    base_url "https://openrouter.ai/api/v1"
+    api_key env.OPENROUTER_API_KEY
+    model "google/gemini-2.0-flash-exp:free"
+    headers {
+      "HTTP-Referer" "https://yourapp.com"
+      "X-Title" "Your App"
+    }
+  }
+}
+
+// Fallback chain - tries primary, then fallback
+client<llm> VisionWithFallback {
+  provider "fallback"
+  options {
+    strategy [  // Note: array syntax, not string
+      VisionPrimary,
+      VisionFallback
+    ]
+  }
+}
+```
+
+### 5. Define Your Domain Files (WITHOUT Clients)
+
+**IMPORTANT**: Domain files should ONLY contain models, functions, and tests. Use clients from `clients.baml`.
+
+#### Example Domain File Structure
+```baml
+// avatars.baml - Domain file for avatar analysis
+// NO CLIENT DEFINITIONS HERE - use clients from clients.baml
+
+// Models
+class Avatar {
+  summary string
+  face_shape string
+  // ... other fields
+}
+
+// Functions (reference clients from clients.baml)
+function AnalyzeAvatar(image: image) -> Avatar {
+  client VisionModel  // References client from clients.baml
+  prompt #"
+    {{ _.role("user") }}
+    Analyze this person's photo:
+    {{ image }}
+    {{ ctx.output_format }}
+  "#
+}
+
+// Tests
+test AvatarTest {
+  functions [AnalyzeAvatar]
+  args {
+    image "https://example.com/photo.jpg"
+  }
+}
+```
+
+#### Text-Only Functions
+```baml
+// Example: Using centralized clients
 class AnalysisResult {
   summary string @description("Brief summary of the analysis")
   score float @description("Score from 0.0 to 1.0")
@@ -67,12 +261,62 @@ class AnalysisResult {
 }
 
 function AnalyzeContent(content: string) -> AnalysisResult {
-  client OpenRouterClient
+  client GPT5Nano  // Uses client from clients.baml
   prompt #"
     Analyze the following content:
     {{ content }}
 
     Provide a summary, score its quality, and suggest relevant tags.
+
+    {{ ctx.output_format }}
+  "#
+}
+```
+
+#### Vision/Image Functions (CRITICAL SYNTAX)
+```baml
+// IMPORTANT: For vision models, you MUST include the image in the prompt!
+function AnalyzeImage(image: image) -> AnalysisResult {
+  client VisionModel  // Uses client from clients.baml
+  prompt #"
+    {{ _.role("user") }}  // Required for proper image handling
+
+    Analyze this image:
+    {{ image }}  // MUST explicitly include the image variable
+
+    Provide a detailed analysis.
+
+    {{ ctx.output_format }}
+  "#
+}
+
+// WRONG - Image won't be sent to the model:
+function WrongImageAnalysis(image: image) -> AnalysisResult {
+  client VisionModel  // Still uses centralized client
+  prompt #"
+    Analyze the image and provide details.
+    {{ ctx.output_format }}
+  "#
+  // Missing {{ image }} - model won't receive the image!
+}
+```
+
+#### Multi-Modal Functions (Text + Image)
+```baml
+function AnalyzeWithContext(
+  image: image,
+  context: string
+) -> AnalysisResult {
+  client VisionModel  // Uses client from clients.baml
+  prompt #"
+    {{ _.role("user") }}
+
+    Context: {{ context }}
+
+    Image to analyze:
+    {{ image }}
+
+    Based on the context and image, provide your analysis.
 
     {{ ctx.output_format }}
   "#
@@ -114,10 +358,12 @@ npm run baml:generate
 This creates `baml_client/` with type-safe TypeScript code.
 
 ### 9. Use BAML in Convex Actions
-Create `convex/aiActions.ts`:
+
+#### Text Analysis Action
 ```typescript
 "use node";  // REQUIRED: Enables Node.js runtime and environment access
 import { action } from "./_generated/server";
+import { v } from "convex/values";
 import { b } from "../baml_client";
 import type { AnalysisResult } from "../baml_client/types";
 
@@ -125,7 +371,7 @@ export const analyzeContent = action({
   args: {
     content: v.string(),
   },
-  handler: async ({ content }) => {
+  handler: async (ctx, { content }) => {
     // BAML automatically uses OPENROUTER_API_KEY from Convex environment
     const result: AnalysisResult = await b.AnalyzeContent(content);
 
@@ -137,6 +383,40 @@ export const analyzeContent = action({
   }
 });
 ```
+
+#### Image Analysis Action (IMPORTANT: CommonJS Import)
+```typescript
+"use node";
+import { action } from "./_generated/server";
+import { v } from "convex/values";
+import { b } from "../baml_client";
+// CRITICAL: Use CommonJS import for Image to avoid bundling errors
+import pkg from "@boundaryml/baml";
+const { Image } = pkg;
+import type { AnalysisResult } from "../baml_client/types";
+
+export const analyzeImage = action({
+  args: {
+    imageUrl: v.string(),
+  },
+  handler: async (ctx, { imageUrl }) => {
+    // Convert URL to BAML Image object
+    const image = Image.fromUrl(imageUrl);
+
+    // Call BAML function with image
+    const result = await b.AnalyzeImage(image);
+
+    return result;
+  }
+});
+```
+
+#### Why CommonJS Import for Image?
+When using the Image class from BAML in Convex:
+- ❌ WRONG: `import { Image } from "@boundaryml/baml"`
+- ✅ CORRECT: `import pkg from "@boundaryml/baml"; const { Image } = pkg;`
+
+This is because BAML is a CommonJS module and Convex's bundler requires this syntax to properly handle the native modules.
 
 ## Key Points
 
@@ -177,6 +457,183 @@ export const analyzeContent = action({
 ### Issue: Nested baml_client/baml_client structure after generation
 **Solution**: Set `output_dir ".."` in generators.baml (not `"../baml_client"`)
 
+### Issue: VSCode extension shows version mismatch warning
+**Solution**: Update all three versions to match:
+1. Check VSCode extension version (bottom right when .baml file is open)
+2. Update npm package: `npm install @boundaryml/baml@<version>`
+3. Update generator: Change `version` in `generators.baml`
+4. Regenerate: `npm run baml:generate`
+
+### Issue: Playground not showing up in VSCode
+**Solution**:
+1. Ensure VSCode extension is installed and activated
+2. Reload VSCode window (Cmd+Shift+P → "Developer: Reload Window")
+3. Open a `.baml` file (playground only appears in BAML files)
+4. Check that `baml_src` directory exists in workspace root
+
+### Issue: "Named export 'Image' not found" when importing from BAML
+**Solution**: Use CommonJS import syntax in Convex:
+```typescript
+// Wrong:
+import { Image } from "@boundaryml/baml";
+
+// Correct:
+import pkg from "@boundaryml/baml";
+const { Image } = pkg;
+```
+
+### Issue: CommonJS module import errors
+**Solution**: BAML is a CommonJS module. When using in Convex, always use default import:
+```typescript
+import pkg from "@boundaryml/baml";
+const { Image, BamlClient } = pkg;
+```
+
+## Array Parameters and Template Syntax
+
+### Working with Arrays in BAML
+
+#### Array Parameter Definition
+```baml
+function ProcessMultipleItems(
+  items: string[] @description("Array of items to process"),
+  configs: Config[] @description("Array of configuration objects")
+) -> Result {
+  client GPT5
+  prompt #"
+    Process these items...
+  "#
+}
+```
+
+#### Template Iteration Syntax
+When iterating over arrays in BAML templates, use the `{% for %}` syntax:
+
+```baml
+function ProcessArray(items: Item[]) -> Result {
+  client GPT5
+  prompt #"
+    {% for item in items %}
+    Item {{ loop.index }}: {{ item.name }}
+    - Description: {{ item.description }}
+    {% endfor %}
+  "#
+}
+```
+
+#### Important Template Limitations
+
+**BAML arrays do NOT support `.length` property:**
+```baml
+// ❌ WRONG - This will cause an error
+Number of items: {{ items.length }}
+
+// ✅ CORRECT - Use loop counting or let the LLM infer
+{% for item in items %}
+Item {{ loop.index }} of {{ items | length }}  // Note: filter syntax may vary
+{% endfor %}
+```
+
+#### Loop Variables Available
+Inside `{% for %}` loops, you have access to:
+- `loop.index` - 1-based index of current iteration
+- `loop.index0` - 0-based index of current iteration
+- `loop.first` - Boolean, true if first iteration
+- `loop.last` - Boolean, true if last iteration
+
+#### Array Testing in Playground
+When testing functions with array parameters in the BAML playground:
+
+```baml
+test ArrayTest {
+  functions [ProcessMultipleItems]
+  args {
+    // Arrays use square brackets
+    items ["item1", "item2", "item3"]
+
+    // Array of objects
+    configs [
+      { name "config1", value 10 },
+      { name "config2", value 20 }
+    ]
+  }
+}
+```
+
+## Using the BAML Playground
+
+The VSCode extension includes a playground for testing your BAML functions interactively.
+
+### Accessing the Playground
+1. Open any `.baml` file in VSCode
+2. Look for "▶ Open BAML Playground" button next to function definitions
+3. Click to open the playground panel
+4. Select your function from the dropdown
+
+### Creating Test Cases
+Test cases are predefined inputs for quickly testing your functions. Add them to any `.baml` file:
+
+```baml
+// Define test cases for your function
+test TestCaseName {
+  functions [YourFunctionName]
+  args {
+    paramName "test value"
+    anotherParam "another value"
+  }
+}
+
+// Example with multiple test cases
+test TestSkyQuestion {
+  functions [DetailedTest]
+  args {
+    query "Why is the sky blue?"
+  }
+}
+
+test TestMathQuestion {
+  functions [DetailedTest]
+  args {
+    query "What is the square root of 144?"
+  }
+}
+```
+
+#### Testing with Images
+When testing functions that accept image parameters in the BAML playground, you must use the object syntax with a `url` property:
+
+```baml
+// CORRECT - Use object with url property for images in test cases
+test ImageAnalysisTest {
+  functions [AnalyzeImage]
+  args {
+    image { url "https://example.com/photo.jpg" }
+  }
+}
+
+// WRONG - This will cause an error in the playground
+test WrongImageTest {
+  functions [AnalyzeImage]
+  args {
+    image "https://example.com/photo.jpg"  // Error: Expected type Media(Image), got String
+  }
+}
+```
+
+**Note**: This object syntax is only needed for test cases in the BAML playground. When calling from code, you'll use `Image.fromUrl()` as shown in the Convex action examples above.
+
+### Benefits of Test Cases
+- **Quick Testing**: Switch between predefined inputs via dropdown
+- **Documentation**: Serve as usage examples for your functions
+- **Regression Testing**: Verify functions still work after changes
+- **Save Time**: No need to retype common test inputs
+
+### Playground Features
+- **Live Testing**: Test functions without deploying
+- **Response Preview**: See structured outputs in real-time
+- **Multiple Clients**: Switch between different LLM providers
+- **Cost Estimation**: View token usage and estimated costs
+
 ## Benefits of BAML with Convex
 
 1. **Type Safety**: Compile-time type checking for LLM responses
@@ -184,11 +641,12 @@ export const analyzeContent = action({
 3. **Environment Security**: API keys stay in Convex environment
 4. **Better DX**: Prompts defined in .baml files with syntax highlighting
 5. **Reliability**: Built-in retry logic and error handling
+6. **Interactive Testing**: VSCode playground for rapid iteration
 
 ## Example: Complete Setup for Screenshot Generation
 
 ```baml
-// baml_src/screenshot.baml
+// baml_src/screenshot.baml - Domain file (NO client definitions)
 class ScreenshotMetadata {
   title string @description("App screen title")
   description string @description("Screen description")
@@ -200,7 +658,7 @@ function GenerateScreenshotMetadata(
   imageDescription: string,
   appContext: string
 ) -> ScreenshotMetadata {
-  client OpenRouterClient
+  client Gemini25Flash  // Uses client from clients.baml
   prompt #"
     Given this app screen: {{ imageDescription }}
     App context: {{ appContext }}
@@ -209,6 +667,14 @@ function GenerateScreenshotMetadata(
 
     {{ ctx.output_format }}
   "#
+}
+
+test ScreenshotTest {
+  functions [GenerateScreenshotMetadata]
+  args {
+    imageDescription "Login screen with email and password fields"
+    appContext "Social media app"
+  }
 }
 ```
 

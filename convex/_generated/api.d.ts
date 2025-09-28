@@ -24,7 +24,6 @@ import type * as screenshots from "../screenshots.js";
 import type * as templateScreenshots from "../templateScreenshots.js";
 import type * as templateVariants from "../templateVariants.js";
 import type * as templates from "../templates.js";
-import type * as testBaml from "../testBaml.js";
 import type * as utils_aisdk_aiModels from "../utils/aisdk/aiModels.js";
 import type * as utils_aisdk_aiSdkActions from "../utils/aisdk/aiSdkActions.js";
 import type * as utils_aisdk_aiSdkClient from "../utils/aisdk/aiSdkClient.js";
@@ -80,7 +79,6 @@ declare const fullApi: ApiFromModules<{
   templateScreenshots: typeof templateScreenshots;
   templateVariants: typeof templateVariants;
   templates: typeof templates;
-  testBaml: typeof testBaml;
   "utils/aisdk/aiModels": typeof utils_aisdk_aiModels;
   "utils/aisdk/aiSdkActions": typeof utils_aisdk_aiSdkActions;
   "utils/aisdk/aiSdkClient": typeof utils_aisdk_aiSdkClient;

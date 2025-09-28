@@ -61,6 +61,7 @@ export class FluxProUltraClient {
         aspect_ratio: input.aspect_ratio || "16:9",
         safety_tolerance: input.safety_tolerance || "2",
         enable_safety_checker: input.enable_safety_checker !== false,
+        sync_mode: input.sync_mode !== undefined ? input.sync_mode : false, // Default to false for URLs
       } as unknown as Record<string, unknown>);
 
       logInfo(`✅ Success! Got result from ${this.MODEL}`);

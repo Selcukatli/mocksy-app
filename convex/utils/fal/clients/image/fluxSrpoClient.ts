@@ -14,6 +14,10 @@ import { FAL_IMAGE_MODELS } from "./imageModels";
  * FLUX SRPO Client - 12 billion parameter flow transformer
  * Designed for high-quality image generation with exceptional aesthetic quality
  * Supports both text-to-image and image-to-image at $0.025 per megapixel
+ *
+ * Note on sync_mode:
+ * - sync_mode: false (default) - Returns URLs to generated images (polling internally handled)
+ * - sync_mode: true - Returns base64-encoded data URLs (faster response, larger payload)
  */
 export class FluxSrpoClient {
   static readonly TEXT_TO_IMAGE_MODEL = FAL_IMAGE_MODELS.FLUX_SRPO_TEXT;
@@ -36,7 +40,7 @@ export class FluxSrpoClient {
         num_images: params.num_images || 1,
         acceleration: params.acceleration || "none",
         output_format: params.output_format || "jpeg",
-        sync_mode: params.sync_mode || false,
+        sync_mode: params.sync_mode !== undefined ? params.sync_mode : false, // Default to false to get URLs instead of base64
         guidance_scale: params.guidance_scale || 4.5,
         num_inference_steps: params.num_inference_steps || 40,
         seed: params.seed,
@@ -123,7 +127,7 @@ export class FluxSrpoClient {
         num_images: params.num_images || 1,
         acceleration: params.acceleration || "none",
         output_format: params.output_format || "jpeg",
-        sync_mode: params.sync_mode || false,
+        sync_mode: params.sync_mode !== undefined ? params.sync_mode : false, // Default to false to get URLs instead of base64
         guidance_scale: params.guidance_scale || 4.5,
         num_inference_steps: params.num_inference_steps || 40,
         seed: params.seed,

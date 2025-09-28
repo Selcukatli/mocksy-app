@@ -72,6 +72,7 @@ export class QwenImageClient {
 
       const result = await callFalModel(this.TEXT_MODEL, {
         ...input,
+        sync_mode: input.sync_mode !== undefined ? input.sync_mode : false, // Default to false for URLs
         negative_prompt: input.negative_prompt || " ",
       } as unknown as Record<string, unknown>);
 
@@ -101,6 +102,7 @@ export class QwenImageClient {
 
       const result = await callFalModel(this.EDIT_MODEL, {
         ...input,
+        sync_mode: input.sync_mode !== undefined ? input.sync_mode : false, // Default to false for URLs
         image_size: input.image_size || "square_hd",
         acceleration: input.acceleration || "regular",
         guidance_scale: input.guidance_scale || 4,

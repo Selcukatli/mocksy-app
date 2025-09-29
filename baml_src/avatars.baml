@@ -2,6 +2,22 @@
 // Simplified version - Takes a person's photo and returns essential avatar attributes
 
 // ============================================
+// AVATAR-SPECIFIC CLIENT CONFIGURATION
+// ============================================
+
+// Avatar analyzer with fallback chain
+client<llm> AvatarAnalyzer {
+  provider "fallback"
+  options {
+    strategy [
+      Qwen25VL,           // Primary vision model
+      Gemini20FlashExp,   // Free fast fallback
+      Llama32Vision       // Final fallback
+    ]
+  }
+}
+
+// ============================================
 // AVATAR MODEL - SIMPLIFIED
 // ============================================
 
@@ -61,7 +77,7 @@ class Avatar {
 // ============================================
 
 function AnalyzeAvatar(image: image) -> Avatar {
-  client Gemini25Pro
+  client AvatarAnalyzer
   prompt #"
     {{ _.role("user") }}
 
@@ -78,7 +94,10 @@ function AnalyzeAvatar(image: image) -> Avatar {
     5. NEVER describe pose, gestures, or body position
     6. NEVER use emotional descriptors (warm, friendly, serious, etc.)
     7. The summary must be purely physical description
-    8. For body_build: Only fill if body is visible in photo, otherwise leave null
+    8. For body_build: Try to determine from visible portions (shoulders, neck, face fullness)
+       - If full body visible: provide accurate assessment
+       - If only upper body/face visible: make reasonable inference from visible cues
+       - Only use null if absolutely no body indicators are visible (rare)
 
     For the summary field:
     ✅ GOOD: "A person with curly black hair, brown eyes, rectangular glasses, and a goatee"
@@ -92,9 +111,13 @@ function AnalyzeAvatar(image: image) -> Avatar {
 
     For key_features, list the 5 most distinctive PERMANENT physical traits.
 
-    For body_build (if body is visible):
+    For body_build (IMPORTANT - try to always provide):
     - Use neutral, respectful terms: slim, athletic, average, stocky, muscular, curvy, plus-size
-    - If only face/shoulders visible, leave as null
+    - Even with just face/shoulders visible, make reasonable inference from:
+      * Face fullness and neck width
+      * Shoulder breadth if visible
+      * Overall proportions
+    - This helps with consistent character generation across scenes
 
     For ethnic_appearance (optional):
     - Only include if features are clearly distinctive

@@ -3,6 +3,60 @@
 // Note: Avatar class is automatically available from avatars.baml in the same directory
 
 // ============================================
+// SCENE-SPECIFIC CLIENT CONFIGURATION
+// ============================================
+
+// High Quality - Best scene generation for final/hero images
+client<llm> SceneGeneratorHigh {
+  provider "fallback"
+  options {
+    strategy [
+      Gemini25Pro,        // Premium Gemini model
+      GPT5,               // Top-tier OpenAI
+      ClaudeSonnet4,      // High-quality Anthropic
+      MistralLarge        // Premium Mistral fallback
+    ]
+  }
+}
+
+// Medium Quality - Balanced for standard use
+client<llm> SceneGeneratorMed {
+  provider "fallback"
+  options {
+    strategy [
+      Gemini25Flash,      // Good balance of speed/quality
+      GPT5Mini,           // Balanced OpenAI
+      ClaudeHaiku,        // Fast Claude
+      MistralSmall        // Efficient Mistral
+    ]
+  }
+}
+
+// Low Quality - Fast and cheap for drafts/testing
+client<llm> SceneGeneratorLow {
+  provider "fallback"
+  options {
+    strategy [
+      Gemini25FlashLite,  // Ultra-fast Gemini
+      GPT5Nano,           // Cheapest OpenAI
+      ClaudeHaiku         // Fast fallback
+    ]
+  }
+}
+
+// Default scene generator (uses medium tier)
+client<llm> SceneGenerator {
+  provider "fallback"
+  options {
+    strategy [
+      Gemini25Flash,      // Start with balanced
+      Gemini25FlashLite,  // Fallback to fast
+      Gemini25Pro         // Escalate to premium if needed
+    ]
+  }
+}
+
+// ============================================
 // SCENE MODEL
 // ============================================
 
@@ -145,7 +199,7 @@ function GenerateScene(
   art_style: string @description("Desired art style"),
   characters: Character[] @description("Array of characters with avatars and outfits (1-5 characters)")
 ) -> Scene {
-  client Gemini25Pro
+  client SceneGeneratorMed  // Change to SceneGeneratorHigh or SceneGeneratorLow as needed
   prompt #"
     {{ _.role("user") }}
 
@@ -213,16 +267,26 @@ function GenerateScene(
 
     INSTRUCTIONS FOR PROMPT GENERATION:
 
+    CRITICAL: You MUST include EVERY physical trait and outfit detail provided above in your main_prompt.
+    Do not summarize or skip any features. If it's listed above, it must appear in the prompt.
+
     1. CREATE TWO PROMPT FORMATS:
        A. main_prompt: Natural language prompt (150-250 words)
        B. structured_prompt: JSON-friendly structured format
 
     2. MAIN PROMPT STRUCTURE:
-       - Lead with art style for style-focused models
-       - Follow with clear character description
-       - Include action/pose and environment
+       - Lead with art style REPEATED 2-3 times for emphasis
+       - Character descriptions should be DETAILED (30-50 words per character):
+         * Include age, ethnicity, face shape, skin tone
+         * Complete hair description (color, length, style, texture if notable)
+         * Eye color AND shape
+         * ALL distinctive features
+         * Complete outfit with all items
+       - Include specific action/pose with body language
+       - Describe environment with at least 3 details
        - End with mood, lighting, and quality markers
-       - Format: "[style], [character], [action], [environment], [mood], [quality]"
+       - Format: "[style]x3, [detailed characters], [specific actions], [rich environment], [mood/lighting], [quality]"
+       - For non-photorealistic styles, explicitly state what it is NOT
 
     3. STRUCTURED PROMPT (for JSON-capable models like NanoBanana/Gemini):
        - Break down into clear categories
@@ -233,17 +297,37 @@ function GenerateScene(
        - Technical: Camera angle, shot type, composition
        - Quality: Detail level markers
 
-    4. CHARACTER CONSISTENCY:
-       - EXACT avatar features: face shape, skin tone, hair details, eye color
-       - Use the provided outfit details (top, bottom, footwear, accessories)
-       - Apply outfit modifications if scene requires (wet in rain, torn in battle)
-       - Natural poses that fit the scene and character expression
-       - Include distinctive features (glasses, facial hair, etc.)
-       - For multiple characters: describe positioning and relationships
+    4. CHARACTER CONSISTENCY AND DETAIL:
+       - Include ALL provided physical traits in the main prompt:
+         * Face shape AND skin tone (e.g., "round olive-skinned face")
+         * Complete hair description (color + length + style)
+         * Eye color AND shape (e.g., "dark brown almond eyes")
+         * ALL distinctive features (glasses style, facial hair type, piercings)
+       - Describe complete outfits:
+         * Every clothing item provided (top, bottom, footwear)
+         * All accessories (watches, jewelry, belts)
+         * Fabric textures if provided
+       - Add character-specific details:
+         * Body language matching their expression
+         * How clothing fits their body type
+         * Any scene-appropriate modifications (sweat, battle damage, etc.)
+       - For multiple characters:
+         * Describe relative heights/builds if different
+         * Show personality through posture and stance
+
+       IMPORTANT - ACCESSORY CONFLICT RESOLUTION:
+       - Character outfit/accessories ALWAYS override conflicting Avatar traits (Character is scene-specific, Avatar is base description)
+       - If outfit accessories include eyewear (sunglasses, goggles, etc.) AND avatar has glasses:
+         * PRIORITIZE the outfit's eyewear as the currently worn item
+         * Mention avatar glasses only if contextually appropriate (e.g., "wearing sunglasses over their prescription frames" or "sunglasses instead of their usual glasses")
+         * If outfit says "sunglasses on head", show sunglasses on head and prescription glasses on face
+       - Avoid depicting characters wearing TWO pairs of glasses on their face simultaneously unless explicitly specified
+       - For any Character vs Avatar conflicts, Character wins (outfit trumps base appearance)
 
     5. NEGATIVE PROMPT:
        - Universal: "bad anatomy, blurry, low quality, watermark, signature"
        - Style-specific: Add based on art style
+       - For non-photorealistic styles: Include "photorealistic, photograph, 3d render, ultra realistic"
        - Keep concise and focused
 
     6. MODEL ADAPTABILITY:
@@ -268,6 +352,30 @@ function GenerateScene(
     - Balance detail across all characters
     - For group shots, describe overall composition first, then individuals
 
+    REQUIRED OUTPUT FIELDS:
+    You MUST generate ALL of the following fields for the Scene object:
+    - main_description: 2-3 sentence overview of the complete scene
+    - characters: Array of CharacterInScene objects describing how each character appears
+    - character_arrangement: Overall spatial arrangement and positioning of characters
+    - camera_angle: (eye-level, low angle, high angle, profile, three-quarter)
+    - shot_type: (close-up, medium shot, full body, wide shot)
+    - setting: Location/environment description
+    - background: Background elements in order of importance
+    - time_of_day: Time and its lighting effect
+    - mood: Emotional tone of the scene
+    - color_palette: 3-4 dominant colors
+    - lighting_style: Type of lighting (dramatic, soft, golden hour, etc.)
+    - style_keywords: 5 key style descriptors as array
+    - quality_markers: Quality indicators as array (masterpiece, best quality, etc.)
+    - main_prompt: Complete 150-250 word prompt for image generation
+    - negative_prompt: Things to avoid
+    - structured_prompt: PromptStructure object with all sub-fields
+    - suggested_guidance: Float between 3.5-12
+    - complexity_score: Float between 0.0-1.0
+    - avatar_integration: Description of how avatars are integrated
+    - character_count: Integer number of characters
+    - key_elements: Array of 3-5 most important elements
+
     {{ ctx.output_format }}
   "#
 }
@@ -285,29 +393,29 @@ test FullBodyWaveTest {
     characters [{
       name "Sam"
       avatar {
-        summary "A person with short, thick dark brown hair, olive skin, a full beard, and thick-framed rectangular glasses."
+        summary "A person with short, thick, dark wavy hair, dark brown eyes, a short full beard, and rectangular glasses on a round face."
         apparent_age "25-35"
         gender_presentation "male"
         ethnic_appearance "Middle Eastern"
         face_shape "round"
         jawline "rounded"
-        body_build null
-        skin_tone "olive"
+        body_build "stocky"
+        skin_tone "medium"
         complexion_details null
         hair_color "dark brown"
         hair_length "short"
-        hair_style "short, thick wavy"
+        hair_style "thick and wavy, tousled"
         eye_color "dark brown"
         eye_shape "almond"
         eyebrows "thick with a soft arch"
-        nose_description "medium width with a rounded tip"
-        lip_description "medium fullness"
-        facial_hair "full beard"
+        nose_description "broad with a rounded tip"
+        lip_description "medium width with a fuller lower lip"
+        facial_hair "short full beard"
         glasses true
-        glasses_style "thick-framed rectangular"
+        glasses_style "dark purple rectangular frames"
         distinctive_features ["left ear piercing"]
         confidence 0.95
-        key_features ["thick-framed rectangular glasses", "full beard", "short, thick wavy hair", "round face shape", "olive skin tone"]
+        key_features ["Thick-framed rectangular glasses", "Short full beard", "Thick, dark wavy hair", "Round face shape", "Broad nose"]
       }
       outfit {
         style "casual modern"
@@ -332,7 +440,7 @@ test ActionRunningTest {
     characters [{
       name "Runner"
       avatar {
-      summary "A person with short, thick dark brown hair, olive skin, a full beard, and thick-framed rectangular glasses."
+        summary "A person with short, thick, dark wavy hair, dark brown eyes, a short full beard, and rectangular glasses on a round face."
       apparent_age "25-35"
       gender_presentation "male"
       ethnic_appearance "Middle Eastern"
@@ -370,8 +478,8 @@ test ActionRunningTest {
   }
 }
 
-// Test 3: Multiple avatars - action scene battle
-test ActionBattleTest {
+// Test 3: Multiple avatars - martial arts scene
+test MartialArtsTest {
   functions [GenerateScene]
   args {
     scene_prompt "Two characters in an epic martial arts battle stance, facing each other in a dojo with dramatic lighting, about to clash"
@@ -380,7 +488,7 @@ test ActionBattleTest {
       {
         name "Fighter 1"
         avatar {
-          summary "A person with short, thick dark brown hair, olive skin, a full beard, and thick-framed rectangular glasses."
+            summary "A person with short, thick, dark wavy hair, dark brown eyes, a short full beard, and rectangular glasses on a round face."
           apparent_age "25-35"
           gender_presentation "male"
           ethnic_appearance "Middle Eastern"
@@ -452,6 +560,256 @@ test ActionBattleTest {
         }
         expression "fierce"
         signature_colors ["white", "red", "auburn"]
+      }
+    ]
+  }
+}
+
+// Test 4: Beach hangout - Three friends relaxing
+test BeachHangoutTest {
+  functions [GenerateScene]
+  args {
+    scene_prompt "Three friends relaxing and hanging out on a beautiful beach during golden hour. They're sitting on a blanket, laughing and enjoying snacks, with the ocean waves in the background"
+    art_style "studio ghibli art style, anime style, cel-shaded, warm colors"
+    characters [
+      {
+        name "Alex"
+        avatar {
+          summary "A person with short, thick, dark wavy hair, dark brown eyes, a short full beard, and rectangular glasses on a round face."
+          apparent_age "25-35"
+          gender_presentation "male"
+          ethnic_appearance "Middle Eastern"
+          face_shape "round"
+          jawline "rounded"
+          body_build "stocky"
+          skin_tone "medium"
+          complexion_details null
+          hair_color "dark brown"
+          hair_length "short"
+          hair_style "thick and wavy, tousled"
+          eye_color "dark brown"
+          eye_shape "almond"
+          eyebrows "thick with a soft arch"
+          nose_description "broad with a rounded tip"
+          lip_description "medium width with a fuller lower lip"
+          facial_hair "short full beard"
+          glasses true
+          glasses_style "dark purple rectangular frames"
+          distinctive_features ["left ear piercing"]
+          confidence 0.95
+          key_features ["Thick-framed rectangular glasses", "Short full beard", "Thick, dark wavy hair", "Round face shape", "Broad nose"]
+        }
+        outfit {
+          style "casual beach"
+          top "light blue linen shirt, unbuttoned"
+          bottom "khaki shorts"
+          footwear "barefoot"
+          accessories ["leather bracelet", "sunglasses on head"]
+          color_scheme "light blue, khaki, tan"
+        }
+        expression "relaxed and happy"
+        signature_colors ["blue", "tan", "white"]
+      },
+      {
+        name "Emma"
+        avatar {
+          summary "A woman with long auburn hair, green eyes, and light freckles."
+          apparent_age "20-30"
+          gender_presentation "female"
+          ethnic_appearance "European"
+          face_shape "oval"
+          jawline "soft"
+          body_build "slim"
+          skin_tone "light"
+          complexion_details "light freckles"
+          hair_color "auburn"
+          hair_length "long"
+          hair_style "wavy layers with red highlights"
+          eye_color "green"
+          eye_shape "round"
+          eyebrows "medium natural arch"
+          nose_description "narrow and refined"
+          lip_description "full"
+          facial_hair null
+          glasses false
+          glasses_style null
+          distinctive_features ["Light freckles", "Dimples on both cheeks", "Earlobe piercings"]
+          confidence 0.92
+          key_features ["Long wavy auburn hair", "Bright green eyes", "Light freckles", "Dimples", "Oval face"]
+        }
+        outfit {
+          style "beach casual"
+          top "white sundress with floral patterns"
+          bottom null
+          footwear "sandals"
+          accessories ["straw sun hat", "shell necklace"]
+          color_scheme "white, light pink, natural straw"
+        }
+        expression "joyful"
+        signature_colors ["white", "pink", "coral"]
+      },
+      {
+        name "Marcus"
+        avatar {
+          summary "A tall young man with short curly black hair, warm brown eyes, and a bright smile."
+          apparent_age "22-28"
+          gender_presentation "male"
+          ethnic_appearance "African"
+          face_shape "rectangular"
+          jawline "defined"
+          body_build "athletic"
+          skin_tone "dark"
+          complexion_details null
+          hair_color "black"
+          hair_length "short"
+          hair_style "tight curls, well-groomed"
+          eye_color "brown"
+          eye_shape "round"
+          eyebrows "medium thickness, straight"
+          nose_description "medium width with straight bridge"
+          lip_description "full"
+          facial_hair null
+          glasses false
+          glasses_style null
+          distinctive_features ["small scar on right eyebrow", "diamond stud earrings"]
+          confidence 0.93
+          key_features ["Short curly hair", "Athletic build", "Bright smile", "Diamond studs", "Defined jawline"]
+        }
+        outfit {
+          style "beach casual"
+          top "red tank top"
+          bottom "navy board shorts"
+          footwear "flip flops"
+          accessories ["silver chain necklace", "sports watch"]
+          color_scheme "red, navy, silver"
+        }
+        expression "cheerful and laughing"
+        signature_colors ["red", "navy", "white"]
+      }
+    ]
+  }
+}
+
+// Test 5: Beach bonfire - Continuation of beach hangout at sunset
+test BeachBonfireTest {
+  functions [GenerateScene]
+  args {
+    scene_prompt "The same three friends now gathered around a cozy beach bonfire as the sun sets. They're roasting marshmallows, telling stories, with guitars and blankets scattered around. The fire's warm glow illuminates their faces against the purple-orange twilight sky, waves gently lapping in the background"
+    art_style "studio ghibli art style, anime style, cel-shaded, warm sunset colors, magical lighting"
+    characters [
+      {
+        name "Alex"
+        avatar {
+          summary "A person with short, thick, dark wavy hair, dark brown eyes, a short full beard, and rectangular glasses on a round face."
+          apparent_age "25-35"
+          gender_presentation "male"
+          ethnic_appearance "Middle Eastern"
+          face_shape "round"
+          jawline "rounded"
+          body_build "stocky"
+          skin_tone "medium"
+          complexion_details null
+          hair_color "dark brown"
+          hair_length "short"
+          hair_style "thick and wavy, tousled"
+          eye_color "dark brown"
+          eye_shape "almond"
+          eyebrows "thick with a soft arch"
+          nose_description "broad with a rounded tip"
+          lip_description "medium width with a fuller lower lip"
+          facial_hair "short full beard"
+          glasses true
+          glasses_style "dark purple rectangular frames"
+          distinctive_features ["left ear piercing"]
+          confidence 0.95
+          key_features ["Thick-framed rectangular glasses", "Short full beard", "Thick, dark wavy hair", "Round face shape", "Broad nose"]
+        }
+        outfit {
+          style "casual evening beach"
+          top "navy hoodie over the light blue shirt"
+          bottom "same khaki shorts"
+          footwear "barefoot"
+          accessories ["leather bracelet", "marshmallow roasting stick"]
+          color_scheme "navy, light blue, khaki"
+        }
+        expression "content, storytelling"
+        signature_colors ["navy", "blue", "tan"]
+      },
+      {
+        name "Emma"
+        avatar {
+          summary "A woman with long auburn hair, green eyes, and light freckles."
+          apparent_age "20-30"
+          gender_presentation "female"
+          ethnic_appearance "European"
+          face_shape "oval"
+          jawline "soft"
+          body_build "slim"
+          skin_tone "light"
+          complexion_details "light freckles"
+          hair_color "auburn"
+          hair_length "long"
+          hair_style "wavy layers with red highlights"
+          eye_color "green"
+          eye_shape "round"
+          eyebrows "medium natural arch"
+          nose_description "narrow and refined"
+          lip_description "full"
+          facial_hair null
+          glasses false
+          glasses_style null
+          distinctive_features ["Light freckles", "Dimples on both cheeks", "Earlobe piercings"]
+          confidence 0.92
+          key_features ["Long wavy auburn hair", "Bright green eyes", "Light freckles", "Dimples", "Oval face"]
+        }
+        outfit {
+          style "cozy beach evening"
+          top "cream knit cardigan over white sundress"
+          bottom null
+          footwear "barefoot, sandals beside her"
+          accessories ["shell necklace", "flower crown made of beach flowers"]
+          color_scheme "cream, white, natural tones"
+        }
+        expression "listening intently, soft smile"
+        signature_colors ["cream", "white", "coral"]
+      },
+      {
+        name "Marcus"
+        avatar {
+          summary "A tall young man with short curly black hair, warm brown eyes, and a bright smile."
+          apparent_age "22-28"
+          gender_presentation "male"
+          ethnic_appearance "African"
+          face_shape "rectangular"
+          jawline "defined"
+          body_build "athletic"
+          skin_tone "dark"
+          complexion_details null
+          hair_color "black"
+          hair_length "short"
+          hair_style "tight curls, well-groomed"
+          eye_color "brown"
+          eye_shape "round"
+          eyebrows "medium thickness, straight"
+          nose_description "medium width with straight bridge"
+          lip_description "full"
+          facial_hair null
+          glasses false
+          glasses_style null
+          distinctive_features ["small scar on right eyebrow", "diamond stud earrings"]
+          confidence 0.93
+          key_features ["Short curly hair", "Athletic build", "Bright smile", "Diamond studs", "Defined jawline"]
+        }
+        outfit {
+          style "relaxed beach evening"
+          top "red tank top with gray zip-up jacket"
+          bottom "navy board shorts"
+          footwear "barefoot"
+          accessories ["silver chain necklace", "acoustic guitar beside him"]
+          color_scheme "red, gray, navy"
+        }
+        expression "playing guitar, focused but happy"
+        signature_colors ["red", "gray", "navy"]
       }
     ]
   }

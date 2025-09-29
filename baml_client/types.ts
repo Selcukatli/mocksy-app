@@ -51,57 +51,25 @@ export interface Avatar {
   summary: string
   apparent_age: string
   gender_presentation: string
+  ethnic_appearance?: string | null
   face_shape: string
-  face_width: string
   jawline: string
-  cheekbones: string
-  chin_shape: string
+  body_build?: string | null
   skin_tone: string
-  skin_undertone: string
   complexion_details?: string | null
   hair_color: string
-  hair_color_variation?: string | null
   hair_length: string
   hair_style: string
-  hair_texture: string
-  hair_volume: string
-  hairline_shape: string
-  hair_parting?: string | null
   eye_color: string
   eye_shape: string
-  eye_size: string
-  eye_spacing: string
-  eyelash_visibility: string
-  eyebrow_shape: string
-  eyebrow_thickness: string
-  eyebrow_color: string
-  nose_shape: string
-  nose_bridge: string
-  nose_tip: string
-  nose_width: string
-  nostril_visibility: string
-  lip_shape: string
-  upper_lip_fullness: string
-  lower_lip_fullness: string
-  mouth_width: string
-  cupids_bow: string
-  facial_hair_type?: string | null
-  facial_hair_style?: string | null
-  facial_hair_density?: string | null
-  facial_hair_color?: string | null
+  eyebrows: string
+  nose_description: string
+  lip_description: string
+  facial_hair?: string | null
   glasses: boolean
   glasses_style?: string | null
-  glasses_frame_color?: string | null
-  glasses_lens_type?: string | null
-  freckles: boolean
-  freckle_intensity?: string | null
-  beauty_marks?: string[] | null
-  dimples?: string | null
-  ear_size: string
-  ear_prominence: string
-  piercings?: string[] | null
+  distinctive_features?: string[] | null
   confidence: number
-  avatar_style: string
   key_features: string[]
   
 }
@@ -109,6 +77,25 @@ export interface Avatar {
 export interface BasicResponse {
   answer: string
   confidence: number
+  
+}
+
+export interface Character {
+  name?: string | null
+  avatar: Avatar
+  outfit: Outfit
+  expression?: string | null
+  signature_colors?: string[] | null
+  
+}
+
+export interface CharacterInScene {
+  character_index: number
+  description: string
+  pose: string
+  placement: string
+  outfit_modifications?: string | null
+  interaction?: string | null
   
 }
 
@@ -120,10 +107,57 @@ export interface DetailedResponse {
   
 }
 
+export interface ModelTestResponse {
+  model_name: string
+  response_text: string
+  character_count: number
+  passed: boolean
+  
+}
+
+export interface Outfit {
+  top?: string | null
+  bottom?: string | null
+  footwear?: string | null
+  outerwear?: string | null
+  accessories?: string[] | null
+  style: string
+  color_scheme?: string | null
+  fabric_textures?: string[] | null
+  
+}
+
+export interface PromptStructure {
+  subjects: Subject[]
+  group_action?: string | null
+  environment: string
+  style: PromptStyle
+  technical: PromptTechnical
+  quality: string[]
+  
+}
+
+export interface PromptStyle {
+  art_style: string
+  color_palette: string
+  mood: string
+  lighting: string
+  texture: string
+  
+}
+
+export interface PromptTechnical {
+  camera_angle: string
+  shot_type: string
+  composition: string
+  depth_of_field: string
+  
+}
+
 export interface Scene {
   main_description: string
-  character_in_scene: string
-  character_placement: string
+  characters: CharacterInScene[]
+  character_arrangement: string
   camera_angle: string
   shot_type: string
   setting: string
@@ -134,12 +168,28 @@ export interface Scene {
   lighting_style: string
   style_keywords: string[]
   quality_markers: string[]
-  flux_prompt: string
+  main_prompt: string
   negative_prompt: string
-  flux_guidance_scale: number
-  flux_steps: number
+  structured_prompt: PromptStructure
+  suggested_guidance: number
   complexity_score: number
   avatar_integration: string
+  character_count: number
   key_elements: string[]
+  
+}
+
+export interface Subject {
+  description: string
+  action: string
+  position: string
+  
+}
+
+export interface VisionTestResponse {
+  model_name: string
+  can_see_image: boolean
+  description: string
+  object_count: number
   
 }

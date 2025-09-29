@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Avatar,  BasicResponse,  DetailedResponse,  Scene } from "./types"
+import type {  Avatar,  BasicResponse,  Character,  CharacterInScene,  DetailedResponse,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  Subject,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -40,62 +40,45 @@ export namespace partial_types {
       summary?: string | null
       apparent_age?: string | null
       gender_presentation?: string | null
+      ethnic_appearance?: string | null
       face_shape?: string | null
-      face_width?: string | null
       jawline?: string | null
-      cheekbones?: string | null
-      chin_shape?: string | null
+      body_build?: string | null
       skin_tone?: string | null
-      skin_undertone?: string | null
       complexion_details?: string | null
       hair_color?: string | null
-      hair_color_variation?: string | null
       hair_length?: string | null
       hair_style?: string | null
-      hair_texture?: string | null
-      hair_volume?: string | null
-      hairline_shape?: string | null
-      hair_parting?: string | null
       eye_color?: string | null
       eye_shape?: string | null
-      eye_size?: string | null
-      eye_spacing?: string | null
-      eyelash_visibility?: string | null
-      eyebrow_shape?: string | null
-      eyebrow_thickness?: string | null
-      eyebrow_color?: string | null
-      nose_shape?: string | null
-      nose_bridge?: string | null
-      nose_tip?: string | null
-      nose_width?: string | null
-      nostril_visibility?: string | null
-      lip_shape?: string | null
-      upper_lip_fullness?: string | null
-      lower_lip_fullness?: string | null
-      mouth_width?: string | null
-      cupids_bow?: string | null
-      facial_hair_type?: string | null
-      facial_hair_style?: string | null
-      facial_hair_density?: string | null
-      facial_hair_color?: string | null
+      eyebrows?: string | null
+      nose_description?: string | null
+      lip_description?: string | null
+      facial_hair?: string | null
       glasses?: boolean | null
       glasses_style?: string | null
-      glasses_frame_color?: string | null
-      glasses_lens_type?: string | null
-      freckles?: boolean | null
-      freckle_intensity?: string | null
-      beauty_marks?: string[] | null
-      dimples?: string | null
-      ear_size?: string | null
-      ear_prominence?: string | null
-      piercings?: string[] | null
+      distinctive_features?: string[] | null
       confidence?: number | null
-      avatar_style?: string | null
       key_features: string[]
     }
     export interface BasicResponse {
       answer?: string | null
       confidence?: number | null
+    }
+    export interface Character {
+      name?: string | null
+      avatar?: Avatar | null
+      outfit?: Outfit | null
+      expression?: string | null
+      signature_colors?: string[] | null
+    }
+    export interface CharacterInScene {
+      character_index?: number | null
+      description?: string | null
+      pose?: string | null
+      placement?: string | null
+      outfit_modifications?: string | null
+      interaction?: string | null
     }
     export interface DetailedResponse {
       answer?: string | null
@@ -103,10 +86,47 @@ export namespace partial_types {
       explanation?: string | null
       sources?: string[] | null
     }
+    export interface ModelTestResponse {
+      model_name?: string | null
+      response_text?: string | null
+      character_count?: number | null
+      passed?: boolean | null
+    }
+    export interface Outfit {
+      top?: string | null
+      bottom?: string | null
+      footwear?: string | null
+      outerwear?: string | null
+      accessories?: string[] | null
+      style?: string | null
+      color_scheme?: string | null
+      fabric_textures?: string[] | null
+    }
+    export interface PromptStructure {
+      subjects: Subject[]
+      group_action?: string | null
+      environment?: string | null
+      style?: PromptStyle | null
+      technical?: PromptTechnical | null
+      quality: string[]
+    }
+    export interface PromptStyle {
+      art_style?: string | null
+      color_palette?: string | null
+      mood?: string | null
+      lighting?: string | null
+      texture?: string | null
+    }
+    export interface PromptTechnical {
+      camera_angle?: string | null
+      shot_type?: string | null
+      composition?: string | null
+      depth_of_field?: string | null
+    }
     export interface Scene {
       main_description?: string | null
-      character_in_scene?: string | null
-      character_placement?: string | null
+      characters: CharacterInScene[]
+      character_arrangement?: string | null
       camera_angle?: string | null
       shot_type?: string | null
       setting?: string | null
@@ -117,12 +137,24 @@ export namespace partial_types {
       lighting_style?: string | null
       style_keywords: string[]
       quality_markers: string[]
-      flux_prompt?: string | null
+      main_prompt?: string | null
       negative_prompt?: string | null
-      flux_guidance_scale?: number | null
-      flux_steps?: number | null
+      structured_prompt?: PromptStructure | null
+      suggested_guidance?: number | null
       complexity_score?: number | null
       avatar_integration?: string | null
+      character_count?: number | null
       key_elements: string[]
+    }
+    export interface Subject {
+      description?: string | null
+      action?: string | null
+      position?: string | null
+    }
+    export interface VisionTestResponse {
+      model_name?: string | null
+      can_see_image?: boolean | null
+      description?: string | null
+      object_count?: number | null
     }
 }

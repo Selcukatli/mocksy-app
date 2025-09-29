@@ -27,20 +27,38 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
-    Avatar: ClassViewer<'Avatar', "summary" | "apparent_age" | "gender_presentation" | "face_shape" | "face_width" | "jawline" | "cheekbones" | "chin_shape" | "skin_tone" | "skin_undertone" | "complexion_details" | "hair_color" | "hair_color_variation" | "hair_length" | "hair_style" | "hair_texture" | "hair_volume" | "hairline_shape" | "hair_parting" | "eye_color" | "eye_shape" | "eye_size" | "eye_spacing" | "eyelash_visibility" | "eyebrow_shape" | "eyebrow_thickness" | "eyebrow_color" | "nose_shape" | "nose_bridge" | "nose_tip" | "nose_width" | "nostril_visibility" | "lip_shape" | "upper_lip_fullness" | "lower_lip_fullness" | "mouth_width" | "cupids_bow" | "facial_hair_type" | "facial_hair_style" | "facial_hair_density" | "facial_hair_color" | "glasses" | "glasses_style" | "glasses_frame_color" | "glasses_lens_type" | "freckles" | "freckle_intensity" | "beauty_marks" | "dimples" | "ear_size" | "ear_prominence" | "piercings" | "confidence" | "avatar_style" | "key_features">;
+    Avatar: ClassViewer<'Avatar', "summary" | "apparent_age" | "gender_presentation" | "ethnic_appearance" | "face_shape" | "jawline" | "body_build" | "skin_tone" | "complexion_details" | "hair_color" | "hair_length" | "hair_style" | "eye_color" | "eye_shape" | "eyebrows" | "nose_description" | "lip_description" | "facial_hair" | "glasses" | "glasses_style" | "distinctive_features" | "confidence" | "key_features">;
     
     BasicResponse: ClassViewer<'BasicResponse', "answer" | "confidence">;
     
+    Character: ClassViewer<'Character', "name" | "avatar" | "outfit" | "expression" | "signature_colors">;
+    
+    CharacterInScene: ClassViewer<'CharacterInScene', "character_index" | "description" | "pose" | "placement" | "outfit_modifications" | "interaction">;
+    
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
     
-    Scene: ClassViewer<'Scene', "main_description" | "character_in_scene" | "character_placement" | "camera_angle" | "shot_type" | "setting" | "background" | "time_of_day" | "mood" | "color_palette" | "lighting_style" | "style_keywords" | "quality_markers" | "flux_prompt" | "negative_prompt" | "flux_guidance_scale" | "flux_steps" | "complexity_score" | "avatar_integration" | "key_elements">;
+    ModelTestResponse: ClassViewer<'ModelTestResponse', "model_name" | "response_text" | "character_count" | "passed">;
+    
+    Outfit: ClassViewer<'Outfit', "top" | "bottom" | "footwear" | "outerwear" | "accessories" | "style" | "color_scheme" | "fabric_textures">;
+    
+    PromptStructure: ClassViewer<'PromptStructure', "subjects" | "group_action" | "environment" | "style" | "technical" | "quality">;
+    
+    PromptStyle: ClassViewer<'PromptStyle', "art_style" | "color_palette" | "mood" | "lighting" | "texture">;
+    
+    PromptTechnical: ClassViewer<'PromptTechnical', "camera_angle" | "shot_type" | "composition" | "depth_of_field">;
+    
+    Scene: ClassViewer<'Scene', "main_description" | "characters" | "character_arrangement" | "camera_angle" | "shot_type" | "setting" | "background" | "time_of_day" | "mood" | "color_palette" | "lighting_style" | "style_keywords" | "quality_markers" | "main_prompt" | "negative_prompt" | "structured_prompt" | "suggested_guidance" | "complexity_score" | "avatar_integration" | "character_count" | "key_elements">;
+    
+    Subject: ClassViewer<'Subject', "description" | "action" | "position">;
+    
+    VisionTestResponse: ClassViewer<'VisionTestResponse', "model_name" | "can_see_image" | "description" | "object_count">;
     
     
 
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Avatar","BasicResponse","DetailedResponse","Scene",
+            "Avatar","BasicResponse","Character","CharacterInScene","DetailedResponse","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","Subject","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -49,19 +67,55 @@ export default class TypeBuilder {
         });
         
         this.Avatar = this.tb.classViewer("Avatar", [
-          "summary","apparent_age","gender_presentation","face_shape","face_width","jawline","cheekbones","chin_shape","skin_tone","skin_undertone","complexion_details","hair_color","hair_color_variation","hair_length","hair_style","hair_texture","hair_volume","hairline_shape","hair_parting","eye_color","eye_shape","eye_size","eye_spacing","eyelash_visibility","eyebrow_shape","eyebrow_thickness","eyebrow_color","nose_shape","nose_bridge","nose_tip","nose_width","nostril_visibility","lip_shape","upper_lip_fullness","lower_lip_fullness","mouth_width","cupids_bow","facial_hair_type","facial_hair_style","facial_hair_density","facial_hair_color","glasses","glasses_style","glasses_frame_color","glasses_lens_type","freckles","freckle_intensity","beauty_marks","dimples","ear_size","ear_prominence","piercings","confidence","avatar_style","key_features",
+          "summary","apparent_age","gender_presentation","ethnic_appearance","face_shape","jawline","body_build","skin_tone","complexion_details","hair_color","hair_length","hair_style","eye_color","eye_shape","eyebrows","nose_description","lip_description","facial_hair","glasses","glasses_style","distinctive_features","confidence","key_features",
         ]);
         
         this.BasicResponse = this.tb.classViewer("BasicResponse", [
           "answer","confidence",
         ]);
         
+        this.Character = this.tb.classViewer("Character", [
+          "name","avatar","outfit","expression","signature_colors",
+        ]);
+        
+        this.CharacterInScene = this.tb.classViewer("CharacterInScene", [
+          "character_index","description","pose","placement","outfit_modifications","interaction",
+        ]);
+        
         this.DetailedResponse = this.tb.classViewer("DetailedResponse", [
           "answer","confidence","explanation","sources",
         ]);
         
+        this.ModelTestResponse = this.tb.classViewer("ModelTestResponse", [
+          "model_name","response_text","character_count","passed",
+        ]);
+        
+        this.Outfit = this.tb.classViewer("Outfit", [
+          "top","bottom","footwear","outerwear","accessories","style","color_scheme","fabric_textures",
+        ]);
+        
+        this.PromptStructure = this.tb.classViewer("PromptStructure", [
+          "subjects","group_action","environment","style","technical","quality",
+        ]);
+        
+        this.PromptStyle = this.tb.classViewer("PromptStyle", [
+          "art_style","color_palette","mood","lighting","texture",
+        ]);
+        
+        this.PromptTechnical = this.tb.classViewer("PromptTechnical", [
+          "camera_angle","shot_type","composition","depth_of_field",
+        ]);
+        
         this.Scene = this.tb.classViewer("Scene", [
-          "main_description","character_in_scene","character_placement","camera_angle","shot_type","setting","background","time_of_day","mood","color_palette","lighting_style","style_keywords","quality_markers","flux_prompt","negative_prompt","flux_guidance_scale","flux_steps","complexity_score","avatar_integration","key_elements",
+          "main_description","characters","character_arrangement","camera_angle","shot_type","setting","background","time_of_day","mood","color_palette","lighting_style","style_keywords","quality_markers","main_prompt","negative_prompt","structured_prompt","suggested_guidance","complexity_score","avatar_integration","character_count","key_elements",
+        ]);
+        
+        this.Subject = this.tb.classViewer("Subject", [
+          "description","action","position",
+        ]);
+        
+        this.VisionTestResponse = this.tb.classViewer("VisionTestResponse", [
+          "model_name","can_see_image","description","object_count",
         ]);
         
         

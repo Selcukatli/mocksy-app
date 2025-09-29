@@ -37,6 +37,20 @@ npm install @boundaryml/baml@0.208.5
 
 ## Project Structure
 
+### Cross-File Class Availability (IMPORTANT)
+**All classes defined in `.baml` files within the `baml_src/` directory are automatically available across all BAML files without requiring imports.**
+
+- ✅ Classes defined in `avatars.baml` are automatically available in `scene.baml`
+- ✅ Clients defined in `clients.baml` are automatically referenced in all domain files
+- ❌ DO NOT use import statements like `from "../baml_src/avatars.baml" import Avatar`
+- ❌ Import syntax will cause validation errors: "This line is invalid. It does not start with any known Baml schema keyword"
+
+This automatic availability applies to:
+- Classes (e.g., `Avatar`, `Scene`, `Character`)
+- Enums
+- Clients (e.g., `GPT5`, `VisionModel`)
+- Functions can reference any class or client from any file
+
 ### Recommended File Organization
 ```
 project-root/
@@ -218,6 +232,20 @@ client<llm> VisionWithFallback {
 ### 5. Define Your Domain Files (WITHOUT Clients)
 
 **IMPORTANT**: Domain files should ONLY contain models, functions, and tests. Use clients from `clients.baml`.
+
+#### Cross-File References Example
+```baml
+// scene.baml - Can use Avatar class without importing
+class Character {
+  avatar Avatar  // Avatar class from avatars.baml is automatically available
+  outfit Outfit
+}
+
+function GenerateScene(characters: Character[]) -> Scene {
+  client VisionModel  // Client from clients.baml is automatically available
+  prompt #"..."#
+}
+```
 
 #### Example Domain File Structure
 ```baml

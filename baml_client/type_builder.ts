@@ -37,6 +37,8 @@ export default class TypeBuilder {
     
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
     
+    Layout: ClassViewer<'Layout', "composition" | "device_size" | "device_angle">;
+    
     ModelTestResponse: ClassViewer<'ModelTestResponse', "model_name" | "response_text" | "character_count" | "passed">;
     
     Outfit: ClassViewer<'Outfit', "top" | "bottom" | "footwear" | "outerwear" | "accessories" | "style" | "color_scheme" | "fabric_textures">;
@@ -53,12 +55,14 @@ export default class TypeBuilder {
     
     VisionTestResponse: ClassViewer<'VisionTestResponse', "model_name" | "can_see_image" | "description" | "object_count">;
     
+    VisualStyle: ClassViewer<'VisualStyle', "background" | "device_frame" | "text_font" | "text_color" | "text_outline" | "text_style">;
+    
     
 
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Avatar","BasicResponse","Character","CharacterInScene","DetailedResponse","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","Subject","VisionTestResponse",
+            "Avatar","BasicResponse","Character","CharacterInScene","DetailedResponse","Layout","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","Subject","VisionTestResponse","VisualStyle",
           ]),
           enums: new Set([
             
@@ -84,6 +88,10 @@ export default class TypeBuilder {
         
         this.DetailedResponse = this.tb.classViewer("DetailedResponse", [
           "answer","confidence","explanation","sources",
+        ]);
+        
+        this.Layout = this.tb.classViewer("Layout", [
+          "composition","device_size","device_angle",
         ]);
         
         this.ModelTestResponse = this.tb.classViewer("ModelTestResponse", [
@@ -116,6 +124,10 @@ export default class TypeBuilder {
         
         this.VisionTestResponse = this.tb.classViewer("VisionTestResponse", [
           "model_name","can_see_image","description","object_count",
+        ]);
+        
+        this.VisualStyle = this.tb.classViewer("VisualStyle", [
+          "background","device_frame","text_font","text_color","text_outline","text_style",
         ]);
         
         

@@ -74,7 +74,7 @@ IMPORTANT: Before working on any feature, consult the relevant documentation bel
 
 #### Backend & Database
 - **Convex Development**: `docs/rules/convex-rules.mdc` - Convex function syntax, validators, queries, mutations, actions
-- **BAML Integration**: `docs/rules/baml-convex-setup.md` - Type-safe LLM functions with BAML and Convex
+- **BAML Integration**: `docs/rules/baml-rules.md` - Type-safe LLM functions with BAML and Convex
 
 #### AI & Image Generation
 - **FAL MCP Integration**: `docs/rules/fal-mcp-integration.md` - FAL AI models via MCP
@@ -98,7 +98,7 @@ IMPORTANT: Before working on any feature, consult the relevant documentation bel
    - Authentication routes → Check `clerk-convex-setup.mdc`
 
 2. **Keyword Triggers** (manual reading required):
-   - BAML, LLM functions, type-safe AI → Read `docs/rules/baml-convex-setup.md`
+   - BAML, LLM functions, type-safe AI, `.baml` files → Read `docs/rules/baml-rules.md`
    - Convex queries/mutations/actions → Read `docs/rules/convex-rules.mdc`
    - FAL, image generation, AI models → Read `docs/rules/fal-mcp-integration.md`
    - Authentication, Clerk, webhooks → Read `docs/rules/clerk-convex-setup.mdc`
@@ -128,7 +128,8 @@ IMPORTANT: Before working on any feature, consult the relevant documentation bel
   {"node": {"externalPackages": ["@boundaryml/baml"]}}
   ```
 - Centralize all LLM clients in `baml_src/clients.baml`
-- See full guide: `docs/rules/baml-convex-setup.md`
+- **ALWAYS** run `npm run baml:generate` after editing `.baml` files
+- See full guide: `docs/rules/baml-rules.md`
 
 #### FAL AI Integration
 - Use MCP tools: `mcp__fal__generate_image`, `mcp__fal__list_models`

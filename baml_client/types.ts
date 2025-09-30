@@ -107,6 +107,13 @@ export interface DetailedResponse {
   
 }
 
+export interface Layout {
+  composition: string
+  device_size: string
+  device_angle: string
+  
+}
+
 export interface ModelTestResponse {
   model_name: string
   response_text: string
@@ -191,5 +198,15 @@ export interface VisionTestResponse {
   can_see_image: boolean
   description: string
   object_count: number
+  
+}
+
+export interface VisualStyle {
+  background: string
+  device_frame: string
+  text_font: string
+  text_color: string
+  text_outline: string
+  text_style: string
   
 }

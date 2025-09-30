@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Avatar,  BasicResponse,  Character,  CharacterInScene,  DetailedResponse,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  Subject,  VisionTestResponse } from "./types"
+import type {  Avatar,  BasicResponse,  Character,  CharacterInScene,  DetailedResponse,  Layout,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  Subject,  VisionTestResponse,  VisualStyle } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -85,6 +85,11 @@ export namespace partial_types {
       confidence?: number | null
       explanation?: string | null
       sources?: string[] | null
+    }
+    export interface Layout {
+      composition?: string | null
+      device_size?: string | null
+      device_angle?: string | null
     }
     export interface ModelTestResponse {
       model_name?: string | null
@@ -156,5 +161,13 @@ export namespace partial_types {
       can_see_image?: boolean | null
       description?: string | null
       object_count?: number | null
+    }
+    export interface VisualStyle {
+      background?: string | null
+      device_frame?: string | null
+      text_font?: string | null
+      text_color?: string | null
+      text_outline?: string | null
+      text_style?: string | null
     }
 }

@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Avatar,  BasicResponse,  Character,  CharacterInScene,  DetailedResponse,  Layout,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  Subject,  VisionTestResponse,  VisualStyle } from "./types"
+import type {  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DetailedResponse,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotPromptStructured,  ScreenshotTreatment,  StyleConfig,  Subject,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -61,6 +61,13 @@ export namespace partial_types {
       confidence?: number | null
       key_features: string[]
     }
+    export interface Background {
+      colors: string[]
+      effects: string[]
+      placement?: string | null
+      seamless_to_bottom?: boolean | null
+      forbidden: string[]
+    }
     export interface BasicResponse {
       answer?: string | null
       confidence?: number | null
@@ -80,16 +87,41 @@ export namespace partial_types {
       outfit_modifications?: string | null
       interaction?: string | null
     }
+    export interface Composition {
+      priority?: string | null
+      rules: string[]
+    }
     export interface DetailedResponse {
       answer?: string | null
       confidence?: number | null
       explanation?: string | null
       sources?: string[] | null
     }
-    export interface Layout {
+    export interface DeviceSpec {
+      type?: string | null
+      aspect_ratio?: string | null
+      frame?: string | null
+      angle?: string | null
+      scale?: string | null
+      position?: string | null
+      screenshot?: ScreenshotTreatment | null
+    }
+    export interface FontStyle {
+      family?: string | null
+      weight?: number | null
+      color?: string | null
+      effects: string[]
+    }
+    export interface HeaderText {
+      copy?: string | null
+      placement?: string | null
+      font?: FontStyle | null
+      size?: string | null
+    }
+    export interface LayoutConfig {
       composition?: string | null
-      device_size?: string | null
-      device_angle?: string | null
+      device_orientation?: string | null
+      device_type?: string | null
     }
     export interface ModelTestResponse {
       model_name?: string | null
@@ -151,23 +183,37 @@ export namespace partial_types {
       character_count?: number | null
       key_elements: string[]
     }
+    export interface ScreenshotPromptStructured {
+      style?: string | null
+      background?: Background | null
+      device?: DeviceSpec | null
+      header_text?: HeaderText | null
+      composition?: Composition | null
+    }
+    export interface ScreenshotTreatment {
+      treatment?: string | null
+      preserve?: boolean | null
+      forbidden: string[]
+    }
+    export interface StyleConfig {
+      background_color?: string | null
+      details?: string | null
+      text_style?: string | null
+      device_style?: string | null
+    }
     export interface Subject {
       description?: string | null
       action?: string | null
       position?: string | null
+    }
+    export interface TextConfig {
+      header?: string | null
+      subheader?: string | null
     }
     export interface VisionTestResponse {
       model_name?: string | null
       can_see_image?: boolean | null
       description?: string | null
       object_count?: number | null
-    }
-    export interface VisualStyle {
-      background?: string | null
-      device_frame?: string | null
-      text_font?: string | null
-      text_color?: string | null
-      text_outline?: string | null
-      text_style?: string | null
     }
 }

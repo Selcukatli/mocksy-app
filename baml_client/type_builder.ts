@@ -29,15 +29,25 @@ export default class TypeBuilder {
     
     Avatar: ClassViewer<'Avatar', "summary" | "apparent_age" | "gender_presentation" | "ethnic_appearance" | "face_shape" | "jawline" | "body_build" | "skin_tone" | "complexion_details" | "hair_color" | "hair_length" | "hair_style" | "eye_color" | "eye_shape" | "eyebrows" | "nose_description" | "lip_description" | "facial_hair" | "glasses" | "glasses_style" | "distinctive_features" | "confidence" | "key_features">;
     
+    Background: ClassViewer<'Background', "colors" | "effects" | "placement" | "seamless_to_bottom" | "forbidden">;
+    
     BasicResponse: ClassViewer<'BasicResponse', "answer" | "confidence">;
     
     Character: ClassViewer<'Character', "name" | "avatar" | "outfit" | "expression" | "signature_colors">;
     
     CharacterInScene: ClassViewer<'CharacterInScene', "character_index" | "description" | "pose" | "placement" | "outfit_modifications" | "interaction">;
     
+    Composition: ClassViewer<'Composition', "priority" | "rules">;
+    
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
     
-    Layout: ClassViewer<'Layout', "composition" | "device_size" | "device_angle">;
+    DeviceSpec: ClassViewer<'DeviceSpec', "type" | "aspect_ratio" | "frame" | "angle" | "scale" | "position" | "screenshot">;
+    
+    FontStyle: ClassViewer<'FontStyle', "family" | "weight" | "color" | "effects">;
+    
+    HeaderText: ClassViewer<'HeaderText', "copy" | "placement" | "font" | "size">;
+    
+    LayoutConfig: ClassViewer<'LayoutConfig', "composition" | "device_orientation" | "device_type">;
     
     ModelTestResponse: ClassViewer<'ModelTestResponse', "model_name" | "response_text" | "character_count" | "passed">;
     
@@ -51,18 +61,24 @@ export default class TypeBuilder {
     
     Scene: ClassViewer<'Scene', "main_description" | "characters" | "character_arrangement" | "camera_angle" | "shot_type" | "setting" | "background" | "time_of_day" | "mood" | "color_palette" | "lighting_style" | "style_keywords" | "quality_markers" | "main_prompt" | "negative_prompt" | "structured_prompt" | "suggested_guidance" | "complexity_score" | "avatar_integration" | "character_count" | "key_elements">;
     
+    ScreenshotPromptStructured: ClassViewer<'ScreenshotPromptStructured', "style" | "background" | "device" | "header_text" | "composition">;
+    
+    ScreenshotTreatment: ClassViewer<'ScreenshotTreatment', "treatment" | "preserve" | "forbidden">;
+    
+    StyleConfig: ClassViewer<'StyleConfig', "background_color" | "details" | "text_style" | "device_style">;
+    
     Subject: ClassViewer<'Subject', "description" | "action" | "position">;
     
-    VisionTestResponse: ClassViewer<'VisionTestResponse', "model_name" | "can_see_image" | "description" | "object_count">;
+    TextConfig: ClassViewer<'TextConfig', "header" | "subheader">;
     
-    VisualStyle: ClassViewer<'VisualStyle', "background" | "device_frame" | "text_font" | "text_color" | "text_outline" | "text_style">;
+    VisionTestResponse: ClassViewer<'VisionTestResponse', "model_name" | "can_see_image" | "description" | "object_count">;
     
     
 
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Avatar","BasicResponse","Character","CharacterInScene","DetailedResponse","Layout","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","Subject","VisionTestResponse","VisualStyle",
+            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DetailedResponse","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotPromptStructured","ScreenshotTreatment","StyleConfig","Subject","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -72,6 +88,10 @@ export default class TypeBuilder {
         
         this.Avatar = this.tb.classViewer("Avatar", [
           "summary","apparent_age","gender_presentation","ethnic_appearance","face_shape","jawline","body_build","skin_tone","complexion_details","hair_color","hair_length","hair_style","eye_color","eye_shape","eyebrows","nose_description","lip_description","facial_hair","glasses","glasses_style","distinctive_features","confidence","key_features",
+        ]);
+        
+        this.Background = this.tb.classViewer("Background", [
+          "colors","effects","placement","seamless_to_bottom","forbidden",
         ]);
         
         this.BasicResponse = this.tb.classViewer("BasicResponse", [
@@ -86,12 +106,28 @@ export default class TypeBuilder {
           "character_index","description","pose","placement","outfit_modifications","interaction",
         ]);
         
+        this.Composition = this.tb.classViewer("Composition", [
+          "priority","rules",
+        ]);
+        
         this.DetailedResponse = this.tb.classViewer("DetailedResponse", [
           "answer","confidence","explanation","sources",
         ]);
         
-        this.Layout = this.tb.classViewer("Layout", [
-          "composition","device_size","device_angle",
+        this.DeviceSpec = this.tb.classViewer("DeviceSpec", [
+          "type","aspect_ratio","frame","angle","scale","position","screenshot",
+        ]);
+        
+        this.FontStyle = this.tb.classViewer("FontStyle", [
+          "family","weight","color","effects",
+        ]);
+        
+        this.HeaderText = this.tb.classViewer("HeaderText", [
+          "copy","placement","font","size",
+        ]);
+        
+        this.LayoutConfig = this.tb.classViewer("LayoutConfig", [
+          "composition","device_orientation","device_type",
         ]);
         
         this.ModelTestResponse = this.tb.classViewer("ModelTestResponse", [
@@ -118,16 +154,28 @@ export default class TypeBuilder {
           "main_description","characters","character_arrangement","camera_angle","shot_type","setting","background","time_of_day","mood","color_palette","lighting_style","style_keywords","quality_markers","main_prompt","negative_prompt","structured_prompt","suggested_guidance","complexity_score","avatar_integration","character_count","key_elements",
         ]);
         
+        this.ScreenshotPromptStructured = this.tb.classViewer("ScreenshotPromptStructured", [
+          "style","background","device","header_text","composition",
+        ]);
+        
+        this.ScreenshotTreatment = this.tb.classViewer("ScreenshotTreatment", [
+          "treatment","preserve","forbidden",
+        ]);
+        
+        this.StyleConfig = this.tb.classViewer("StyleConfig", [
+          "background_color","details","text_style","device_style",
+        ]);
+        
         this.Subject = this.tb.classViewer("Subject", [
           "description","action","position",
         ]);
         
-        this.VisionTestResponse = this.tb.classViewer("VisionTestResponse", [
-          "model_name","can_see_image","description","object_count",
+        this.TextConfig = this.tb.classViewer("TextConfig", [
+          "header","subheader",
         ]);
         
-        this.VisualStyle = this.tb.classViewer("VisualStyle", [
-          "background","device_frame","text_font","text_color","text_outline","text_style",
+        this.VisionTestResponse = this.tb.classViewer("VisionTestResponse", [
+          "model_name","can_see_image","description","object_count",
         ]);
         
         

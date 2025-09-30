@@ -74,6 +74,15 @@ export interface Avatar {
   
 }
 
+export interface Background {
+  colors: string[]
+  effects: string[]
+  placement: string
+  seamless_to_bottom: boolean
+  forbidden: string[]
+  
+}
+
 export interface BasicResponse {
   answer: string
   confidence: number
@@ -99,6 +108,12 @@ export interface CharacterInScene {
   
 }
 
+export interface Composition {
+  priority: string
+  rules: string[]
+  
+}
+
 export interface DetailedResponse {
   answer: string
   confidence: number
@@ -107,10 +122,37 @@ export interface DetailedResponse {
   
 }
 
-export interface Layout {
+export interface DeviceSpec {
+  type: string
+  aspect_ratio: string
+  frame: string
+  angle: string
+  scale: string
+  position: string
+  screenshot: ScreenshotTreatment
+  
+}
+
+export interface FontStyle {
+  family: string
+  weight: number
+  color: string
+  effects: string[]
+  
+}
+
+export interface HeaderText {
+  copy: string
+  placement: string
+  font: FontStyle
+  size: string
+  
+}
+
+export interface LayoutConfig {
   composition: string
-  device_size: string
-  device_angle: string
+  device_orientation: string
+  device_type: string
   
 }
 
@@ -186,10 +228,40 @@ export interface Scene {
   
 }
 
+export interface ScreenshotPromptStructured {
+  style: string
+  background: Background
+  device: DeviceSpec
+  header_text: HeaderText
+  composition: Composition
+  
+}
+
+export interface ScreenshotTreatment {
+  treatment: string
+  preserve: boolean
+  forbidden: string[]
+  
+}
+
+export interface StyleConfig {
+  background_color: string
+  details: string
+  text_style: string
+  device_style: string
+  
+}
+
 export interface Subject {
   description: string
   action: string
   position: string
+  
+}
+
+export interface TextConfig {
+  header: string
+  subheader?: string | null
   
 }
 
@@ -198,15 +270,5 @@ export interface VisionTestResponse {
   can_see_image: boolean
   description: string
   object_count: number
-  
-}
-
-export interface VisualStyle {
-  background: string
-  device_frame: string
-  text_font: string
-  text_color: string
-  text_outline: string
-  text_style: string
   
 }

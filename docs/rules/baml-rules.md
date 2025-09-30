@@ -588,6 +588,199 @@ test ArrayTest {
 }
 ```
 
+## BAML CLI Commands
+
+BAML provides a powerful CLI for generating code, running tests, and validating your BAML files.
+
+### Core Commands
+
+#### Generate TypeScript Client
+```bash
+# Generate from default location (./baml_src)
+npx baml-cli generate
+
+# Generate from custom location
+npx baml-cli generate --from path/to/baml_src
+
+# Skip version checking (not recommended)
+npx baml-cli generate --no-version-check
+```
+
+**What it does:**
+- Reads all `.baml` files from `baml_src/`
+- Generates TypeScript client code in `baml_client/`
+- Creates type-safe functions for all BAML functions
+- Validates schema and reports errors
+
+**When to run:**
+- After modifying any `.baml` files
+- After adding new functions or classes
+- Before deploying to ensure types are up-to-date
+
+#### Run Tests
+```bash
+# Run all tests
+npx baml-cli test
+
+# Run specific test by name
+npx baml-cli test -i "FunctionName::TestName"
+
+# Run all tests for a specific function
+npx baml-cli test -i "FunctionName::"
+
+# Run tests matching a pattern
+npx baml-cli test -i "Generate*"
+
+# Run multiple specific tests
+npx baml-cli test -i "Foo::" -i "Bar::"
+
+# Exclude specific tests
+npx baml-cli test -x "SlowTest::"
+
+# List tests without running them
+npx baml-cli test --list
+
+# Run tests from custom location
+npx baml-cli test --from path/to/baml_src
+
+# Control parallelism (default: 10)
+npx baml-cli test --parallel 5
+```
+
+**Test Pattern Syntax:**
+- `FunctionName::TestName` - Run specific test
+- `FunctionName::` - All tests for a function
+- `::TestName` - Test with that name in any function
+- `wild_card*` - Wildcard matching
+- `Get*::*Bar` - Function starts with "Get" AND test ends with "Bar"
+
+**Example test output:**
+```
+INFO: Test results:
+---------------------------------------------------------
+function GenerateScreenshotEditPrompt
+1 tests (1 ✅)
+  4.57s PASSED       GenerateScreenshotEditPrompt::SnapStyleScreenshot
+     ./baml_src/screenshots.baml:539
+---------------------------------------------------------
+INFO: Test run completed, 1 tests (1 ✅)
+```
+
+#### Validate BAML Files
+```bash
+# Check for errors and warnings
+npx baml-cli check
+
+# Check from custom location
+npx baml-cli check --from path/to/baml_src
+```
+
+**What it checks:**
+- Syntax errors in `.baml` files
+- Type mismatches
+- Invalid client configurations
+- Missing required fields
+- Unused variables in prompts
+
+### Development Workflow
+
+#### Recommended npm Scripts
+Add these to your `package.json`:
+
+```json
+{
+  "scripts": {
+    "baml:generate": "baml-cli generate",
+    "baml:test": "baml-cli test",
+    "baml:test:watch": "baml-cli test -i",
+    "baml:check": "baml-cli check"
+  }
+}
+```
+
+#### Typical Development Flow
+
+1. **Edit BAML files** - Make changes to `.baml` files
+2. **Validate** - `npm run baml:check`
+3. **Generate** - `npm run baml:generate`
+4. **Test** - `npm run baml:test`
+5. **Deploy** - Deploy to Convex with updated types
+
+#### Testing During Development
+
+```bash
+# Quick iteration: test specific function while developing
+npx baml-cli test -i "MyFunction::"
+
+# Test with specific inputs from test cases
+npx baml-cli test -i "MyFunction::SpecificTestCase"
+
+# Run tests in parallel for faster feedback
+npx baml-cli test --parallel 20
+```
+
+### Advanced Features
+
+#### Environment Variables
+```bash
+# Use custom .env file for testing
+npx baml-cli test --dotenv --dotenv-path .env.test
+
+# Tests will use OPENROUTER_API_KEY from .env.test
+```
+
+#### Beta Features
+```bash
+# Enable beta features and suppress experimental warnings
+npx baml-cli generate --features beta
+npx baml-cli test --features beta
+
+# Show all warnings during CLI operations
+npx baml-cli check --features display_all_warnings
+```
+
+### Common Workflows
+
+#### After Cloning Repository
+```bash
+# Install dependencies
+npm install
+
+# Generate TypeScript client
+npm run baml:generate
+
+# Verify everything works
+npm run baml:test
+```
+
+#### Before Committing Changes
+```bash
+# Validate all BAML files
+npm run baml:check
+
+# Regenerate client
+npm run baml:generate
+
+# Run all tests
+npm run baml:test
+
+# Commit if all pass
+git add .
+git commit -m "Update BAML functions"
+```
+
+#### Debugging Test Failures
+```bash
+# Run failing test in isolation
+npx baml-cli test -i "FailingFunction::FailingTest"
+
+# Check for validation errors first
+npx baml-cli check
+
+# Verify client is up-to-date
+npx baml-cli generate
+```
+
 ## Using the BAML Playground
 
 The VSCode extension includes a playground for testing your BAML functions interactively.

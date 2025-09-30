@@ -136,3 +136,4 @@ IMPORTANT: Before working on any feature, consult the relevant documentation bel
 - Cost awareness: Always calculate costs before generation
 - Model selection: Use `get_model_recommendations` for optimal choice
 - See full guide: `docs/rules/fal-mcp-integration.md`
+- when testing baml files like this output the result as is so i can use it

@@ -23,7 +23,7 @@ import { toBamlError, BamlStream, BamlAbortError, Collector } from "@boundaryml/
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {Avatar, BasicResponse, Character, CharacterInScene, DetailedResponse, Layout, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, Subject, VisionTestResponse, VisualStyle} from "./types"
+import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotPromptStructured, ScreenshotTreatment, StyleConfig, Subject, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 import { AsyncHttpRequest, AsyncHttpStreamRequest } from "./async_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -271,10 +271,10 @@ export class BamlAsyncClient {
     }
   }
   
-  async GenerateScreenshotEditPrompt(
-      header: string,layout: types.Layout,style: types.VisualStyle,
+  async GenerateScreenshotPrompt(
+      text: types.TextConfig,layout: types.LayoutConfig,style: types.StyleConfig,
       __baml_options__?: BamlCallOptions
-  ): Promise<string> {
+  ): Promise<types.ScreenshotPromptStructured> {
     try {
       const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
       const signal = options.signal;
@@ -285,8 +285,8 @@ export class BamlAsyncClient {
       
       // Check if onTick is provided - route through streaming if so
       if (options.onTick) {
-        const stream = this.stream.GenerateScreenshotEditPrompt(
-          header,layout,style,
+        const stream = this.stream.GenerateScreenshotPrompt(
+          text,layout,style,
           __baml_options__
         );
         
@@ -299,9 +299,9 @@ export class BamlAsyncClient {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       const raw = await this.runtime.callFunction(
-        "GenerateScreenshotEditPrompt",
+        "GenerateScreenshotPrompt",
         {
-          "header": header,"layout": layout,"style": style
+          "text": text,"layout": layout,"style": style
         },
         this.ctxManager.cloneContext(),
         options.tb?.__tb(),
@@ -310,7 +310,7 @@ export class BamlAsyncClient {
         env,
         signal,
       )
-      return raw.parsed(false) as string
+      return raw.parsed(false) as types.ScreenshotPromptStructured
     } catch (error) {
       throw toBamlError(error);
     }
@@ -1437,10 +1437,10 @@ class BamlStreamClient {
     }
   }
   
-  GenerateScreenshotEditPrompt(
-      header: string,layout: types.Layout,style: types.VisualStyle,
+  GenerateScreenshotPrompt(
+      text: types.TextConfig,layout: types.LayoutConfig,style: types.StyleConfig,
       __baml_options__?: BamlCallOptions
-  ): BamlStream<string, string> {
+  ): BamlStream<partial_types.ScreenshotPromptStructured, types.ScreenshotPromptStructured> {
     try {
       const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
       const signal = options.signal;
@@ -1464,7 +1464,7 @@ class BamlStreamClient {
             try {
               options.onTick!("Unknown", log);
             } catch (error) {
-              console.error("Error in onTick callback for GenerateScreenshotEditPrompt", error);
+              console.error("Error in onTick callback for GenerateScreenshotPrompt", error);
             }
           }
         };
@@ -1475,9 +1475,9 @@ class BamlStreamClient {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       const raw = this.runtime.streamFunction(
-        "GenerateScreenshotEditPrompt",
+        "GenerateScreenshotPrompt",
         {
-          "header": header,"layout": layout,"style": style
+          "text": text,"layout": layout,"style": style
         },
         undefined,
         this.ctxManager.cloneContext(),
@@ -1488,10 +1488,10 @@ class BamlStreamClient {
         signal,
         onTickWrapper,
       )
-      return new BamlStream<string, string>(
+      return new BamlStream<partial_types.ScreenshotPromptStructured, types.ScreenshotPromptStructured>(
         raw,
-        (a): string => a,
-        (a): string => a,
+        (a): partial_types.ScreenshotPromptStructured => a,
+        (a): types.ScreenshotPromptStructured => a,
         this.ctxManager.cloneContext(),
         options.signal,
       )

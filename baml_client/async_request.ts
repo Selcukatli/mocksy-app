@@ -22,7 +22,7 @@ import type { BamlRuntime, BamlCtxManager, ClientRegistry, Image, Audio, Pdf, Vi
 import { toBamlError, HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {Avatar, BasicResponse, Character, CharacterInScene, DetailedResponse, Layout, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, Subject, VisionTestResponse, VisualStyle} from "./types"
+import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotPromptStructured, ScreenshotTreatment, StyleConfig, Subject, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 
 type TickReason = "Unknown";
@@ -138,8 +138,8 @@ export class AsyncHttpRequest {
     }
   }
   
-  async GenerateScreenshotEditPrompt(
-      header: string,layout: types.Layout,style: types.VisualStyle,
+  async GenerateScreenshotPrompt(
+      text: types.TextConfig,layout: types.LayoutConfig,style: types.StyleConfig,
       __baml_options__?: BamlCallOptions
   ): Promise<HTTPRequest> {
     try {
@@ -148,9 +148,9 @@ export class AsyncHttpRequest {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return await this.runtime.buildRequest(
-        "GenerateScreenshotEditPrompt",
+        "GenerateScreenshotPrompt",
         {
-          "header": header,"layout": layout,"style": style
+          "text": text,"layout": layout,"style": style
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -744,8 +744,8 @@ export class AsyncHttpStreamRequest {
     }
   }
   
-  async GenerateScreenshotEditPrompt(
-      header: string,layout: types.Layout,style: types.VisualStyle,
+  async GenerateScreenshotPrompt(
+      text: types.TextConfig,layout: types.LayoutConfig,style: types.StyleConfig,
       __baml_options__?: BamlCallOptions
   ): Promise<HTTPRequest> {
     try {
@@ -754,9 +754,9 @@ export class AsyncHttpStreamRequest {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return await this.runtime.buildRequest(
-        "GenerateScreenshotEditPrompt",
+        "GenerateScreenshotPrompt",
         {
-          "header": header,"layout": layout,"style": style
+          "text": text,"layout": layout,"style": style
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),

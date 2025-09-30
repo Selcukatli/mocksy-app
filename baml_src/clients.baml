@@ -131,6 +131,20 @@ client<llm> Gemini25FlashLite {
 // ANTHROPIC MODELS (via OpenRouter)
 // ===========================================
 
+// Claude Sonnet 4.5 - Highest quality reasoning
+client<llm> ClaudeSonnet45 {
+  provider "openai-generic"
+  options {
+    base_url "https://openrouter.ai/api/v1"
+    api_key env.OPENROUTER_API_KEY
+    model "anthropic/claude-sonnet-4.5"
+    headers {
+      "HTTP-Referer" "https://mocksy.app"
+      "X-Title" "Mocksy BAML"
+    }
+  }
+}
+
 // Claude Sonnet 4 - High-quality reasoning
 client<llm> ClaudeSonnet4 {
   provider "openai-generic"

@@ -1,21 +1,21 @@
-// Test for complete screenshot generation
-test VaporwaveCompleteScreenshot {
-  functions [GenerateCompleteScreenshotPrompt]
+// Test for complete screenshot generation with retro vaporwave aesthetic
+test RetroVaporwaveScreenshot {
+  functions [GenerateScreenshotPrompt]
   args {
-    header "Chill Vibes Only"
+    text {
+      header "Chill Vibes Only"
+      subheader null
+    }
     layout {
-      composition "Device centered vertically, filling 85-90% of canvas height. Text positioned at bottom below device. Nostalgic 80s-90s aesthetic with balanced symmetry."
-      device_size "large"
-      device_angle "straight-on"
-      device_description "iPhone 16 Pro with revolutionary under-display camera technology. The screen is a PERFECT RECTANGLE with rounded corners and NO notch, NO dynamic island, NO camera cutouts of any kind. Slim uniform bezels all around (approximately 2-3mm). The screen is completely uninterrupted from edge to edge - think of it as a pure rectangular display with nothing cutting into it. The camera and sensors are hidden beneath the display using advanced technology. NO status bar visible, NO home indicator bar."
+      composition "Device centered vertically filling 95% of canvas, header positioned at bottom below device with tight 1-2% gap, minimal spacing throughout"
+      device_orientation "straight-on frontal view with no tilt"
+      device_type "iPhone 16 Pro with under-display camera, 19.5:9 aspect ratio, pure rectangular display with slim 2-3mm uniform bezels, no notch or Dynamic Island, tall narrow form factor"
     }
     style {
-      background "Classic vaporwave gradient from pink (#FF71CE) at top through purple (#B967FF) in middle to cyan (#05FFA1) at bottom. Retro grid floor perspective at bottom fading into distance. Palm tree silhouettes (60-80px) in dark purple at sides. Geometric shapes: triangles and rectangles with pink and cyan borders floating around. Sun/grid sphere in top corner. Scan lines effect subtly overlaid. 80s/90s retro-futuristic aesthetic with dreamy nostalgic feel."
-      device_frame "Glossy white with subtle rainbow iridescent sheen. Retro-modern fusion appearance."
-      text_font "Impact"
-      text_color "white"
-      text_outline "thick-purple-outline with-pink-shadow"
-      text_style "extra-bold black-weight"
+      background_color "Classic vaporwave gradient from pink #FF71CE at top through purple #B967FF in middle to cyan #05FFA1 at bottom"
+      details "Retro 80s-90s vaporwave aesthetic with retro grid floor perspective at bottom edge fading into distance, palm tree silhouettes (60-80px dark purple, 2-3 at sides), geometric triangles and rectangles with pink/cyan borders (40-60px, 5-7 floating), sun/grid sphere (80-100px, 1 in top corner), subtle scan lines effect overlay. ALL decorative elements at outer 10-15% edge border only, center 70% clear. Dreamy nostalgic retro-futuristic vibe."
+      text_style "Impact font at 130-150px, extra bold 900 weight, white color with thick 5-7px purple outline stroke, pink drop shadow for retro effect"
+      device_style "Glossy white frame with subtle rainbow iridescent sheen, retro-modern fusion appearance, slim uniform bezels"
     }
   }
 }

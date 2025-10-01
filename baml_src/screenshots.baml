@@ -163,26 +163,34 @@ function GenerateScreenshotPrompt(
        - Type: {{ layout.device_type }}
        - Orientation: {{ layout.device_orientation }}
        - Frame style: {{ style.device_style }}
-       - SIZE: ABSOLUTELY CRITICAL - device must be ENORMOUS
-         * Device height should be 90-95% of REMAINING canvas height after text
-         * Width should be proportional to maintain realistic phone aspect ratio (19.5:9 - tall and narrow)
-         * The device should feel almost too large - like it's bursting out of frame
-       - Position: Positioned to maximize space with minimal gap from text header
+       - SIZE: ABSOLUTELY CRITICAL - device must be ENORMOUS and fill the canvas
+         * THE DEVICE MUST BE SO LARGE IT NEARLY TOUCHES ALL EDGES
+         * Device height MINIMUM 85-90% of TOTAL canvas height (not remaining after text)
+         * Device width should nearly touch left and right canvas edges with only 2-3% margins
+         * Width proportional to maintain 19.5:9 aspect ratio (tall and narrow)
+         * The device should feel almost too large - like it's bursting out of the canvas
+         * Think "maximalist" sizing - if it feels too big, it's probably right
+       - Position: Centered on canvas with text overlapping or very tightly positioned
        - The screen content inside device must remain pixel-perfect and unmodified
 
     4. SPACING & LAYOUT:
-       - Gap between text and device: Ultra-tight, approximately 1-2% of canvas height
-       - Side margins around device: Minimal, just enough to show background (3-5% total width)
-       - Bottom margin: Minimal, device nearly touches bottom edge (2-3% of height)
-       - Goal: Maximum space utilization - text 10-12%, gap 1-2%, device 85-87%
+       - Gap between text and device: Ultra-tight, approximately 1-2% of canvas height (text can even overlap device slightly)
+       - Side margins around device: Minimal, ONLY 1-2% on each side (2-4% total width)
+       - Top/bottom margins: Device should nearly touch top and bottom edges
+       - Goal: AGGRESSIVE space utilization - device 85-90% of TOTAL canvas height
+       - The device should look "too big" - cramped spacing is GOOD
 
     CRITICAL SUCCESS FACTORS:
-    - Device must be the HERO - absolutely massive and commanding, 90-95% of remaining space
-    - Text must be BOLD and prominent but compact in height
+    - Device must be ENORMOUS - 85-90% of TOTAL canvas height, not just remaining space
+    - Device should look almost comically oversized - that's the goal
+    - Minimal margins on ALL sides - device nearly bursting from canvas
+    - Text must be BOLD and prominent but compact in height (10-12% max)
+    - Text can overlap device edges slightly if needed for tight spacing
     - Background completely fills canvas with no empty areas
     - Decorative elements are subtle accents at edges, not competing for attention
     - Screen inside device stays perfect
     - Phone must remain TALL AND NARROW (19.5:9 aspect ratio) - NO iPad-like wide shapes
+    - When in doubt, make the device BIGGER
 
     WRITING STYLE:
     - Keep ALL descriptions SHORT and PUNCHY

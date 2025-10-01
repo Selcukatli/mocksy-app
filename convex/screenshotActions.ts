@@ -205,8 +205,22 @@ export const generateScreenshot = internalAction({
 
     console.log("BAML generated structured prompt:", bamlResult);
 
-    // Convert BAML result to JSON string for Gemini
-    const promptJson = JSON.stringify(bamlResult, null, 2);
+    // Add static composition rules for consistency
+    const promptWithRules = {
+      ...bamlResult,
+      rules: [
+        "Device must be ENORMOUS at 85-90% total canvas height",
+        "Ultra-tight spacing with 1-2% margins everywhere",
+        "Text can overlap device slightly for aggressive layout",
+        "Background fills edge-to-edge completely",
+        "Decorative elements sparse and strategic, not dense",
+        "Device stays tall and narrow, never wide or iPad-like",
+        "When unsure, make device BIGGER"
+      ]
+    };
+
+    // Convert to JSON string for Gemini
+    const promptJson = JSON.stringify(promptWithRules, null, 2);
 
     // ============================================
     // 6. GENERATE SCREENSHOTS WITH GEMINI FLASH EDIT

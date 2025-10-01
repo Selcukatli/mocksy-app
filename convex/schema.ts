@@ -192,6 +192,39 @@ export default defineSchema({
     .index("by_template", ["templateId"])
     .index("by_app", ["appId"]),
 
+  screenshotSizes: defineTable({
+    // Identity
+    name: v.string(), // e.g., "iPhone 16 Pro Max", "Google Play Phone Portrait"
+    slug: v.string(), // URL-friendly identifier (e.g., "iphone-6-9", "android-phone-portrait")
+    platform: v.union(v.literal("ios"), v.literal("android")), // Platform
+    deviceCategory: v.string(), // "phone", "tablet", "watch"
+
+    // Dimensions
+    width: v.number(), // Width in pixels
+    height: v.number(), // Height in pixels
+    aspectRatio: v.string(), // e.g., "9:16", "16:9"
+
+    // Canvas template
+    canvasStorageId: v.optional(v.id("_storage")), // Blank canvas image at exact dimensions
+
+    // Metadata
+    displaySize: v.optional(v.string()), // e.g., "6.9 inch", "10 inch tablet"
+    isRequired: v.boolean(), // Whether this size is required by the store
+    isPrimary: v.boolean(), // Whether this is a primary/recommended size
+    minScreenshots: v.optional(v.number()), // Min required screenshots for this size
+    maxScreenshots: v.optional(v.number()), // Max allowed screenshots
+
+    // Store requirements
+    notes: v.optional(v.string()), // Special requirements or notes
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_platform", ["platform"])
+    .index("by_platform_and_primary", ["platform", "isPrimary"])
+    .index("by_slug", ["slug"])
+    .index("by_aspect_ratio", ["aspectRatio"]),
+
   screenshotStyles: defineTable({
     // Identity
     name: v.string(), // e.g., "Snap Style", "Spooky Halloween", "Watercolor Zen"

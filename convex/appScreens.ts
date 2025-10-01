@@ -118,6 +118,28 @@ export const getAppScreens = query({
   },
 });
 
+// Get app screen by ID (internal - no auth required)
+export const getAppScreenById = query({
+  args: { screenId: v.id("appScreens") },
+  returns: v.union(
+    v.object({
+      _id: v.id("appScreens"),
+      storageId: v.id("_storage"),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, { screenId }) => {
+    const screen = await ctx.db.get(screenId);
+    if (!screen) {
+      return null;
+    }
+    return {
+      _id: screen._id,
+      storageId: screen.storageId,
+    };
+  },
+});
+
 // Get a single app screen
 export const getAppScreen = query({
   args: { screenId: v.id("appScreens") },

@@ -164,6 +164,35 @@ export const getSystemStyles = query({
 });
 
 /**
+ * Get style by ID (internal - used by screenshotActions)
+ */
+export const getStyleById = query({
+  args: { styleId: v.id("screenshotStyles") },
+  returns: v.union(
+    v.object({
+      _id: v.id("screenshotStyles"),
+      backgroundColor: v.string(),
+      details: v.string(),
+      textStyle: v.string(),
+      deviceStyle: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const style = await ctx.db.get(args.styleId);
+    if (!style) return null;
+
+    return {
+      _id: style._id,
+      backgroundColor: style.backgroundColor,
+      details: style.details,
+      textStyle: style.textStyle,
+      deviceStyle: style.deviceStyle,
+    };
+  },
+});
+
+/**
  * Get style by slug
  */
 export const getStyleBySlug = query({

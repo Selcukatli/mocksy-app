@@ -252,6 +252,13 @@ export interface StyleConfig {
   
 }
 
+export interface StyleGenerationOutput {
+  style_config: StyleConfig
+  device_reference_prompt: string
+  preview_image_prompt: string
+  
+}
+
 export interface Subject {
   description: string
   action: string

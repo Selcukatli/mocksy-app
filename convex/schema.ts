@@ -245,6 +245,7 @@ export default defineSchema({
     // Preview & metadata
     referenceImageStorageId: v.optional(v.id("_storage")), // Reference/inspiration image
     previewImageStorageId: v.optional(v.id("_storage")), // Example screenshot
+    deviceReferenceImageStorageId: v.optional(v.id("_storage")), // Device frame reference image for consistent styling
     tags: v.optional(v.array(v.string())), // Categorization (e.g., ["playful", "pop-art", "bright"])
     category: v.optional(v.string()), // Style category (e.g., "Pop Art", "Minimalist", "Seasonal")
 

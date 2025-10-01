@@ -31,6 +31,7 @@ import { generateImagenTextToImage } from "./clients/image/imagenImageClient";
 import { GeminiImageClient } from "./clients/image/geminiImageClient";
 import { QwenImageClient } from "./clients/image/qwenImageClient";
 import { FluxProUltraClient } from "./clients/image/fluxProUltraClient";
+import { SeedDream4Client } from "./clients/image/seedDream4Client";
 
 // Convex validators for GPT Image enums
 const gptQualityValidator = v.union(
@@ -473,6 +474,37 @@ export const fluxSrpoImageToImage = internalAction({
   handler: async (ctx, args) => {
     const { FluxSrpoClient } = await import("./clients/image/fluxSrpoClient");
     return await FluxSrpoClient.generateImageToImage(args);
+  },
+});
+
+/**
+ * Generate image using Seed Dream 4 - Custom dimensions support
+ * Perfect for app store screenshots with exact dimension requirements
+ * Supports custom width and height for precise control
+ */
+export const seedDream4TextToImage = internalAction({
+  args: {
+    prompt: v.string(),
+    image_size: v.optional(
+      v.union(
+        v.object({ width: v.number(), height: v.number() }),
+        v.literal("square_hd"),
+        v.literal("square"),
+        v.literal("portrait_4_3"),
+        v.literal("portrait_16_9"),
+        v.literal("landscape_4_3"),
+        v.literal("landscape_16_9"),
+      ),
+    ),
+    num_images: v.optional(v.number()),
+    max_images: v.optional(v.number()),
+    seed: v.optional(v.number()),
+    sync_mode: v.optional(v.boolean()),
+    enable_safety_checker: v.optional(v.boolean()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await SeedDream4Client.generateImage(args);
   },
 });
 

@@ -24,6 +24,7 @@ export const FAL_IMAGE_MODELS = {
   IMAGEN4_PREVIEW: "fal-ai/imagen4/preview/text-to-image",
   GEMINI_FLASH: "fal-ai/gemini-flash/text-to-image",
   QWEN_TEXT: "fal-ai/qwen/text-to-image",
+  SEED_DREAM_4: "fal-ai/bytedance/seedream/v4/text-to-image",
 
   // Image-to-Image Models (Editing)
   FLUX_SRPO_IMAGE: "fal-ai/flux/srpo/image-to-image", // SRPO image transformation
@@ -298,6 +299,7 @@ export const FAL_IMAGE_COSTS: Record<string, number> = {
   [FAL_IMAGE_MODELS.GEMINI_FLASH_EDIT]: 0.01,
   [FAL_IMAGE_MODELS.QWEN_TEXT]: 0.015,
   [FAL_IMAGE_MODELS.QWEN_EDIT]: 0.015,
+  [FAL_IMAGE_MODELS.SEED_DREAM_4]: 0.02, // Custom dimensions support
 };
 
 export function getImageConfig(

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
 
 /**
@@ -18,6 +18,7 @@ export const createStyle = mutation({
     deviceStyle: v.string(),
     referenceImageStorageId: v.optional(v.id("_storage")),
     previewImageStorageId: v.optional(v.id("_storage")),
+    deviceReferenceImageStorageId: v.optional(v.id("_storage")),
     tags: v.optional(v.array(v.string())),
     category: v.optional(v.string()),
     isFeatured: v.optional(v.boolean()),
@@ -43,6 +44,62 @@ export const createStyle = mutation({
       deviceStyle: args.deviceStyle,
       referenceImageStorageId: args.referenceImageStorageId,
       previewImageStorageId: args.previewImageStorageId,
+      deviceReferenceImageStorageId: args.deviceReferenceImageStorageId,
+      tags: args.tags,
+      category: args.category,
+      usageCount: 0,
+      isFeatured: args.isFeatured ?? false,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return styleId;
+  },
+});
+
+/**
+ * Create a new screenshot style (internal version for actions)
+ */
+export const createStyleInternal = internalMutation({
+  args: {
+    name: v.string(),
+    slug: v.string(),
+    description: v.optional(v.string()),
+    isPublic: v.boolean(),
+    isSystemStyle: v.boolean(),
+    backgroundColor: v.string(),
+    details: v.string(),
+    textStyle: v.string(),
+    deviceStyle: v.string(),
+    referenceImageStorageId: v.optional(v.id("_storage")),
+    previewImageStorageId: v.optional(v.id("_storage")),
+    deviceReferenceImageStorageId: v.optional(v.id("_storage")),
+    tags: v.optional(v.array(v.string())),
+    category: v.optional(v.string()),
+    isFeatured: v.optional(v.boolean()),
+  },
+  returns: v.id("screenshotStyles"),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    // For system styles, createdBy is null
+    // For user styles, get current profile (would need auth context)
+    const createdBy = args.isSystemStyle ? undefined : undefined; // TODO: Get from auth
+
+    const styleId = await ctx.db.insert("screenshotStyles", {
+      name: args.name,
+      slug: args.slug,
+      description: args.description,
+      createdBy,
+      isPublic: args.isPublic,
+      isSystemStyle: args.isSystemStyle,
+      backgroundColor: args.backgroundColor,
+      details: args.details,
+      textStyle: args.textStyle,
+      deviceStyle: args.deviceStyle,
+      referenceImageStorageId: args.referenceImageStorageId,
+      previewImageStorageId: args.previewImageStorageId,
+      deviceReferenceImageStorageId: args.deviceReferenceImageStorageId,
       tags: args.tags,
       category: args.category,
       usageCount: 0,
@@ -73,6 +130,7 @@ export const getPublicStyles = query({
       deviceStyle: v.string(),
       referenceImageStorageId: v.optional(v.id("_storage")),
       previewImageStorageId: v.optional(v.id("_storage")),
+      deviceReferenceImageStorageId: v.optional(v.id("_storage")),
       tags: v.optional(v.array(v.string())),
       category: v.optional(v.string()),
       isFeatured: v.optional(v.boolean()),
@@ -99,6 +157,7 @@ export const getPublicStyles = query({
       deviceStyle: style.deviceStyle,
       referenceImageStorageId: style.referenceImageStorageId,
       previewImageStorageId: style.previewImageStorageId,
+      deviceReferenceImageStorageId: style.deviceReferenceImageStorageId,
       tags: style.tags,
       category: style.category,
       isFeatured: style.isFeatured,
@@ -127,6 +186,7 @@ export const getSystemStyles = query({
       deviceStyle: v.string(),
       referenceImageStorageId: v.optional(v.id("_storage")),
       previewImageStorageId: v.optional(v.id("_storage")),
+      deviceReferenceImageStorageId: v.optional(v.id("_storage")),
       tags: v.optional(v.array(v.string())),
       category: v.optional(v.string()),
       isFeatured: v.optional(v.boolean()),
@@ -153,6 +213,7 @@ export const getSystemStyles = query({
       deviceStyle: style.deviceStyle,
       referenceImageStorageId: style.referenceImageStorageId,
       previewImageStorageId: style.previewImageStorageId,
+      deviceReferenceImageStorageId: style.deviceReferenceImageStorageId,
       tags: style.tags,
       category: style.category,
       isFeatured: style.isFeatured,
@@ -210,6 +271,7 @@ export const getStyleBySlug = query({
       deviceStyle: v.string(),
       referenceImageStorageId: v.optional(v.id("_storage")),
       previewImageStorageId: v.optional(v.id("_storage")),
+      deviceReferenceImageStorageId: v.optional(v.id("_storage")),
       tags: v.optional(v.array(v.string())),
       category: v.optional(v.string()),
       isFeatured: v.optional(v.boolean()),
@@ -239,6 +301,7 @@ export const getStyleBySlug = query({
       deviceStyle: style.deviceStyle,
       referenceImageStorageId: style.referenceImageStorageId,
       previewImageStorageId: style.previewImageStorageId,
+      deviceReferenceImageStorageId: style.deviceReferenceImageStorageId,
       tags: style.tags,
       category: style.category,
       isFeatured: style.isFeatured,

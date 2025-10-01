@@ -67,6 +67,8 @@ export default class TypeBuilder {
     
     StyleConfig: ClassViewer<'StyleConfig', "background_color" | "details" | "text_style" | "device_style">;
     
+    StyleGenerationOutput: ClassViewer<'StyleGenerationOutput', "style_config" | "device_reference_prompt" | "preview_image_prompt">;
+    
     Subject: ClassViewer<'Subject', "description" | "action" | "position">;
     
     TextConfig: ClassViewer<'TextConfig', "header" | "subheader">;
@@ -78,7 +80,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DetailedResponse","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotPromptStructured","ScreenshotTreatment","StyleConfig","Subject","TextConfig","VisionTestResponse",
+            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DetailedResponse","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotPromptStructured","ScreenshotTreatment","StyleConfig","StyleGenerationOutput","Subject","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -164,6 +166,10 @@ export default class TypeBuilder {
         
         this.StyleConfig = this.tb.classViewer("StyleConfig", [
           "background_color","details","text_style","device_style",
+        ]);
+        
+        this.StyleGenerationOutput = this.tb.classViewer("StyleGenerationOutput", [
+          "style_config","device_reference_prompt","preview_image_prompt",
         ]);
         
         this.Subject = this.tb.classViewer("Subject", [

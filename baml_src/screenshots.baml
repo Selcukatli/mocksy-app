@@ -158,6 +158,9 @@ function GenerateScreenshotPrompt(
        - Style: {{ style.text_style }}
        - Size: Large, bold, eye-catching - takes approximately 10-12% of total canvas height
        - CRITICAL: Text must be BOLD, PROMINENT, and immediately grab attention
+       - CRITICAL: Text appears ONCE ONLY at the specified position
+       - CRITICAL: DO NOT duplicate, repeat, or echo this text anywhere else on the canvas
+       - CRITICAL: NO text at bottom, sides, corners, or any other location besides the specified position
 
     3. DEVICE (LAYER 3 - DOMINANT ELEMENT):
        - Type: {{ layout.device_type }}
@@ -180,17 +183,35 @@ function GenerateScreenshotPrompt(
        - Goal: AGGRESSIVE space utilization - device 85-90% of TOTAL canvas height
        - The device should look "too big" - cramped spacing is GOOD
 
+    COMPOSITION PRIORITY:
+    - Device + header text dominate vertical space
+    - Phone must remain tall and narrow (no iPad-like shapes)
+    - Background adapts to keep header readable
+    - No placeholder boxes or bands at bottom or top
+    - CRITICAL: Minimize empty space - device and text scaled up to fill canvas as much as possible
+    - Tight spacing between text and device - minimal gaps
+    - Maximize canvas usage with minimal gaps between elements
+
     CRITICAL SUCCESS FACTORS:
-    - Device must be ENORMOUS - 85-90% of TOTAL canvas height, not just remaining space
-    - Device should look almost comically oversized - that's the goal
-    - Minimal margins on ALL sides - device nearly bursting from canvas
-    - Text must be BOLD and prominent but compact in height (10-12% max)
-    - Text can overlap device edges slightly if needed for tight spacing
-    - Background completely fills canvas with no empty areas
-    - Decorative elements are subtle accents at edges, not competing for attention
-    - Screen inside device stays perfect
-    - Phone must remain TALL AND NARROW (19.5:9 aspect ratio) - NO iPad-like wide shapes
-    - When in doubt, make the device BIGGER
+    - Device: ENORMOUS 85-95% of TOTAL canvas height, maximizing canvas usage, minimizing margins
+    - Device dominates frame, nearly bursting from canvas
+    - Minimal 1-2% margins on ALL sides
+    - Text: BOLD and prominent, filling available space (can be top OR bottom based on layout)
+    - Text appears ONCE ONLY - absolutely NO duplicate text anywhere
+    - Text can overlap device edges slightly for tight spacing
+    - Background fills edge-to-edge with no empty areas
+    - Decorative elements: sparse, specific counts, scattered at edges only
+    - Screen inside device stays pixel-perfect
+    - Phone: TALL AND NARROW 19.5:9 aspect ratio - NO wide shapes
+    - When unsure, make device BIGGER
+
+    FORBIDDEN ELEMENTS (must NOT appear):
+    - Duplicate or repeated text at bottom, sides, or corners
+    - Text appearing in multiple locations
+    - Wide or tablet-like device proportions
+    - Dense decorative borders blocking device or text
+    - Empty white space or gaps at canvas edges
+    - Text placeholders or bands
 
     WRITING STYLE:
     - Keep ALL descriptions SHORT and PUNCHY

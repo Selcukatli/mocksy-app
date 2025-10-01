@@ -12,6 +12,7 @@ export const createStyle = mutation({
     description: v.optional(v.string()),
     isPublic: v.boolean(),
     isSystemStyle: v.boolean(),
+    status: v.union(v.literal("draft"), v.literal("published")),
     backgroundColor: v.string(),
     details: v.string(),
     textStyle: v.string(),
@@ -23,7 +24,7 @@ export const createStyle = mutation({
     category: v.optional(v.string()),
     isFeatured: v.optional(v.boolean()),
   },
-  returns: v.id("screenshotStyles"),
+  returns: v.id("styles"),
   handler: async (ctx, args) => {
     const now = Date.now();
 
@@ -31,13 +32,14 @@ export const createStyle = mutation({
     // For user styles, get current profile (would need auth context)
     const createdBy = args.isSystemStyle ? undefined : undefined; // TODO: Get from auth
 
-    const styleId = await ctx.db.insert("screenshotStyles", {
+    const styleId = await ctx.db.insert("styles", {
       name: args.name,
       slug: args.slug,
       description: args.description,
       createdBy,
       isPublic: args.isPublic,
       isSystemStyle: args.isSystemStyle,
+      status: args.status,
       backgroundColor: args.backgroundColor,
       details: args.details,
       textStyle: args.textStyle,
@@ -67,6 +69,7 @@ export const createStyleInternal = internalMutation({
     description: v.optional(v.string()),
     isPublic: v.boolean(),
     isSystemStyle: v.boolean(),
+    status: v.union(v.literal("draft"), v.literal("published")),
     backgroundColor: v.string(),
     details: v.string(),
     textStyle: v.string(),
@@ -78,7 +81,7 @@ export const createStyleInternal = internalMutation({
     category: v.optional(v.string()),
     isFeatured: v.optional(v.boolean()),
   },
-  returns: v.id("screenshotStyles"),
+  returns: v.id("styles"),
   handler: async (ctx, args) => {
     const now = Date.now();
 
@@ -86,13 +89,14 @@ export const createStyleInternal = internalMutation({
     // For user styles, get current profile (would need auth context)
     const createdBy = args.isSystemStyle ? undefined : undefined; // TODO: Get from auth
 
-    const styleId = await ctx.db.insert("screenshotStyles", {
+    const styleId = await ctx.db.insert("styles", {
       name: args.name,
       slug: args.slug,
       description: args.description,
       createdBy,
       isPublic: args.isPublic,
       isSystemStyle: args.isSystemStyle,
+      status: args.status,
       backgroundColor: args.backgroundColor,
       details: args.details,
       textStyle: args.textStyle,
@@ -113,13 +117,13 @@ export const createStyleInternal = internalMutation({
 });
 
 /**
- * Get all public styles
+ * Get all published public styles
  */
 export const getPublicStyles = query({
   args: {},
   returns: v.array(
     v.object({
-      _id: v.id("screenshotStyles"),
+      _id: v.id("styles"),
       _creationTime: v.number(),
       name: v.string(),
       slug: v.string(),
@@ -141,8 +145,10 @@ export const getPublicStyles = query({
   ),
   handler: async (ctx) => {
     const styles = await ctx.db
-      .query("screenshotStyles")
-      .withIndex("by_public", (q) => q.eq("isPublic", true))
+      .query("styles")
+      .withIndex("by_public_and_status", (q) =>
+        q.eq("isPublic", true).eq("status", "published")
+      )
       .collect();
 
     return styles.map((style) => ({
@@ -175,7 +181,7 @@ export const getSystemStyles = query({
   args: {},
   returns: v.array(
     v.object({
-      _id: v.id("screenshotStyles"),
+      _id: v.id("styles"),
       _creationTime: v.number(),
       name: v.string(),
       slug: v.string(),
@@ -197,7 +203,7 @@ export const getSystemStyles = query({
   ),
   handler: async (ctx) => {
     const styles = await ctx.db
-      .query("screenshotStyles")
+      .query("styles")
       .withIndex("by_system", (q) => q.eq("isSystemStyle", true))
       .collect();
 
@@ -228,10 +234,10 @@ export const getSystemStyles = query({
  * Get style by ID (internal - used by screenshotActions)
  */
 export const getStyleById = query({
-  args: { styleId: v.id("screenshotStyles") },
+  args: { styleId: v.id("styles") },
   returns: v.union(
     v.object({
-      _id: v.id("screenshotStyles"),
+      _id: v.id("styles"),
       backgroundColor: v.string(),
       details: v.string(),
       textStyle: v.string(),
@@ -260,7 +266,7 @@ export const getStyleBySlug = query({
   args: { slug: v.string() },
   returns: v.union(
     v.object({
-      _id: v.id("screenshotStyles"),
+      _id: v.id("styles"),
       _creationTime: v.number(),
       name: v.string(),
       slug: v.string(),
@@ -283,7 +289,7 @@ export const getStyleBySlug = query({
   ),
   handler: async (ctx, args) => {
     const style = await ctx.db
-      .query("screenshotStyles")
+      .query("styles")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .unique();
 
@@ -316,7 +322,7 @@ export const getStyleBySlug = query({
  * Increment usage count for a style
  */
 export const incrementUsage = mutation({
-  args: { styleId: v.id("screenshotStyles") },
+  args: { styleId: v.id("styles") },
   returns: v.null(),
   handler: async (ctx, args) => {
     const style = await ctx.db.get(args.styleId);
@@ -326,6 +332,64 @@ export const incrementUsage = mutation({
 
     await ctx.db.patch(args.styleId, {
       usageCount: (style.usageCount ?? 0) + 1,
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Publish a draft style (make it visible)
+ */
+export const publishStyle = mutation({
+  args: { styleId: v.id("styles") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const style = await ctx.db.get(args.styleId);
+    if (!style) {
+      throw new Error("Style not found");
+    }
+
+    // TODO: Add auth check - only creator can publish their style
+
+    if (style.status === "published") {
+      throw new Error("Style is already published");
+    }
+
+    await ctx.db.patch(args.styleId, {
+      status: "published",
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Unpublish a style (make it draft again)
+ */
+export const unpublishStyle = mutation({
+  args: { styleId: v.id("styles") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const style = await ctx.db.get(args.styleId);
+    if (!style) {
+      throw new Error("Style not found");
+    }
+
+    // TODO: Add auth check - only creator can unpublish their style
+
+    if (style.isSystemStyle) {
+      throw new Error("Cannot unpublish system styles");
+    }
+
+    if (style.status === "draft") {
+      throw new Error("Style is already a draft");
+    }
+
+    await ctx.db.patch(args.styleId, {
+      status: "draft",
       updatedAt: Date.now(),
     });
 

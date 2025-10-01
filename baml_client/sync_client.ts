@@ -22,7 +22,7 @@ import type { BamlRuntime, FunctionResult, BamlCtxManager, Image, Audio, Pdf, Vi
 import { toBamlError, BamlAbortError, type HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type * as types from "./types"
-import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotPromptStructured, ScreenshotTreatment, StyleConfig, StyleGenerationOutput, Subject, TextConfig, VisionTestResponse} from "./types"
+import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotPromptStructured, ScreenshotTreatment, StyleConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 import { HttpRequest, HttpStreamRequest } from "./sync_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -294,7 +294,7 @@ export class BamlSyncClient {
   }
   
   GenerateStyleFromDescription(
-      description: string,reference_image?: Image | null,
+      description: string,style_name?: string | null,reference_image?: Image | null,
       __baml_options__?: BamlCallOptions
   ): types.StyleGenerationOutput {
     try {
@@ -318,7 +318,7 @@ export class BamlSyncClient {
       const raw = this.runtime.callFunctionSync(
         "GenerateStyleFromDescription",
         {
-          "description": description,"reference_image": reference_image?? null
+          "description": description,"style_name": style_name?? null,"reference_image": reference_image?? null
         },
         this.ctxManager.cloneContext(),
         options.tb?.__tb(),
@@ -408,6 +408,46 @@ export class BamlSyncClient {
         signal,
       )
       return raw.parsed(false) as string[]
+    } catch (error: any) {
+      throw toBamlError(error);
+    }
+  }
+  
+  ReviseStyle(
+      current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
+      __baml_options__?: BamlCallOptions
+  ): types.StyleRevisionOutput {
+    try {
+      const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+      const signal = options.signal;
+      
+      if (signal?.aborted) {
+        throw new BamlAbortError('Operation was aborted', signal.reason);
+      }
+      
+      // Check if onTick is provided and reject for sync operations
+      if (options.onTick) {
+        throw new Error("onTick is not supported for synchronous functions. Please use the async client instead.");
+      }
+      
+      const collector = options.collector ? (Array.isArray(options.collector) ? options.collector : [options.collector]) : [];
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      const raw = this.runtime.callFunctionSync(
+        "ReviseStyle",
+        {
+          "current_style": current_style,"revision_prompt": revision_prompt,"new_style_name": new_style_name?? null,"reference_image": reference_image?? null
+        },
+        this.ctxManager.cloneContext(),
+        options.tb?.__tb(),
+        options.clientRegistry,
+        collector,
+        env,
+        signal,
+      )
+      return raw.parsed(false) as types.StyleRevisionOutput
     } catch (error: any) {
       throw toBamlError(error);
     }

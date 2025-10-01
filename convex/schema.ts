@@ -225,7 +225,7 @@ export default defineSchema({
     .index("by_slug", ["slug"])
     .index("by_aspect_ratio", ["aspectRatio"]),
 
-  screenshotStyles: defineTable({
+  styles: defineTable({
     // Identity
     name: v.string(), // e.g., "Snap Style", "Spooky Halloween", "Watercolor Zen"
     slug: v.string(), // URL-friendly identifier (e.g., "snap-style", "spooky-halloween")
@@ -235,6 +235,7 @@ export default defineSchema({
     createdBy: v.optional(v.id("profiles")), // Creator (null for system styles)
     isPublic: v.boolean(), // Whether style is publicly available
     isSystemStyle: v.boolean(), // Built-in styles vs user-created
+    status: v.union(v.literal("draft"), v.literal("published")), // Publishing status (system styles always "published")
 
     // BAML StyleConfig - Only visual styling, no content or layout
     backgroundColor: v.string(), // Background color description (e.g., "bright yellow solid color")
@@ -262,5 +263,7 @@ export default defineSchema({
     .index("by_system", ["isSystemStyle"])
     .index("by_slug", ["slug"])
     .index("by_category", ["category"])
-    .index("by_featured", ["isFeatured"]),
+    .index("by_featured", ["isFeatured"])
+    .index("by_status", ["status"])
+    .index("by_public_and_status", ["isPublic", "status"]),
 });

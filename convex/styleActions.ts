@@ -18,15 +18,16 @@ export const generateStyleFromDescription = internalAction({
     description: v.string(),
     referenceImageUrl: v.optional(v.string()),
   },
-  returns: v.id("screenshotStyles"),
-  handler: async (ctx, args): Promise<Id<"screenshotStyles">> => {
+  returns: v.id("styles"),
+  handler: async (ctx, args): Promise<Id<"styles">> => {
     console.log("🎨 Starting style generation from description:", args.description);
 
     // Step 1: Call BAML to analyze description and generate style specification
     console.log("📝 Calling BAML GenerateStyleFromDescription...");
     const styleOutput = await b.GenerateStyleFromDescription(
       args.description,
-      args.referenceImageUrl ? Image.fromUrl(args.referenceImageUrl) : undefined
+      null, // style_name - let AI generate it
+      args.referenceImageUrl ? Image.fromUrl(args.referenceImageUrl) : null
     );
 
     console.log("✅ BAML analysis complete:");
@@ -98,23 +99,24 @@ export const generateStyleFromDescription = internalAction({
       // Continue without preview image
     }
 
-    // Step 4: Generate name and slug from description
-    const name = generateName(args.description);
-    const slug = generateSlug(args.description);
+    // Step 4: Use AI-generated name and create slug
+    const name = styleOutput.style_name;
+    const slug = generateSlug(name);
 
     console.log("💾 Saving style to database...");
     console.log("  Name:", name);
     console.log("  Slug:", slug);
 
     // Step 5: Save to database
-    const styleId: Id<"screenshotStyles"> = await ctx.runMutation(
-      internal.screenshotStyles.createStyleInternal,
+    const styleId: Id<"styles"> = await ctx.runMutation(
+      internal.styles.createStyleInternal,
       {
       name,
       slug,
       description: args.description,
       isPublic: true,
       isSystemStyle: false,
+      status: "published", // Auto-publish generated styles
       backgroundColor: styleOutput.style_config.background_color,
       details: styleOutput.style_config.details,
       textStyle: styleOutput.style_config.text_style,
@@ -155,21 +157,7 @@ async function uploadImageToStorage(
 }
 
 /**
- * Helper: Generate user-friendly name from description
- */
-function generateName(description: string): string {
-  const words = description
-    .split(" ")
-    .filter((w) => w.length > 2) // Filter out short words
-    .slice(0, 4); // Take first 4 meaningful words
-
-  return words
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-}
-
-/**
- * Helper: Generate URL-friendly slug from description
+ * Helper: Generate URL-friendly slug from name
  */
 function generateSlug(description: string): string {
   return description

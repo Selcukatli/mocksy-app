@@ -253,9 +253,16 @@ export interface StyleConfig {
 }
 
 export interface StyleGenerationOutput {
+  style_name: string
   style_config: StyleConfig
   device_reference_prompt: string
   preview_image_prompt: string
+  
+}
+
+export interface StyleRevisionOutput {
+  revised_style: StyleGenerationOutput
+  revision_summary: string
   
 }
 

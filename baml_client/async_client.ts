@@ -23,7 +23,7 @@ import { toBamlError, BamlStream, BamlAbortError, Collector } from "@boundaryml/
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotPromptStructured, ScreenshotTreatment, StyleConfig, StyleGenerationOutput, Subject, TextConfig, VisionTestResponse} from "./types"
+import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotPromptStructured, ScreenshotTreatment, StyleConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 import { AsyncHttpRequest, AsyncHttpStreamRequest } from "./async_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -317,7 +317,7 @@ export class BamlAsyncClient {
   }
   
   async GenerateStyleFromDescription(
-      description: string,reference_image?: Image | null,
+      description: string,style_name?: string | null,reference_image?: Image | null,
       __baml_options__?: BamlCallOptions
   ): Promise<types.StyleGenerationOutput> {
     try {
@@ -331,7 +331,7 @@ export class BamlAsyncClient {
       // Check if onTick is provided - route through streaming if so
       if (options.onTick) {
         const stream = this.stream.GenerateStyleFromDescription(
-          description,reference_image,
+          description,style_name,reference_image,
           __baml_options__
         );
         
@@ -346,7 +346,7 @@ export class BamlAsyncClient {
       const raw = await this.runtime.callFunction(
         "GenerateStyleFromDescription",
         {
-          "description": description,"reference_image": reference_image?? null
+          "description": description,"style_name": style_name?? null,"reference_image": reference_image?? null
         },
         this.ctxManager.cloneContext(),
         options.tb?.__tb(),
@@ -446,6 +446,51 @@ export class BamlAsyncClient {
         signal,
       )
       return raw.parsed(false) as string[]
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  async ReviseStyle(
+      current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
+      __baml_options__?: BamlCallOptions
+  ): Promise<types.StyleRevisionOutput> {
+    try {
+      const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+      const signal = options.signal;
+      
+      if (signal?.aborted) {
+        throw new BamlAbortError('Operation was aborted', signal.reason);
+      }
+      
+      // Check if onTick is provided - route through streaming if so
+      if (options.onTick) {
+        const stream = this.stream.ReviseStyle(
+          current_style,revision_prompt,new_style_name,reference_image,
+          __baml_options__
+        );
+        
+        return await stream.getFinalResponse();
+      }
+      
+      const collector = options.collector ? (Array.isArray(options.collector) ? options.collector : [options.collector]) : [];
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      const raw = await this.runtime.callFunction(
+        "ReviseStyle",
+        {
+          "current_style": current_style,"revision_prompt": revision_prompt,"new_style_name": new_style_name?? null,"reference_image": reference_image?? null
+        },
+        this.ctxManager.cloneContext(),
+        options.tb?.__tb(),
+        options.clientRegistry,
+        collector,
+        env,
+        signal,
+      )
+      return raw.parsed(false) as types.StyleRevisionOutput
     } catch (error) {
       throw toBamlError(error);
     }
@@ -1546,7 +1591,7 @@ class BamlStreamClient {
   }
   
   GenerateStyleFromDescription(
-      description: string,reference_image?: Image | null,
+      description: string,style_name?: string | null,reference_image?: Image | null,
       __baml_options__?: BamlCallOptions
   ): BamlStream<partial_types.StyleGenerationOutput, types.StyleGenerationOutput> {
     try {
@@ -1585,7 +1630,7 @@ class BamlStreamClient {
       const raw = this.runtime.streamFunction(
         "GenerateStyleFromDescription",
         {
-          "description": description,"reference_image": reference_image ?? null
+          "description": description,"style_name": style_name ?? null,"reference_image": reference_image ?? null
         },
         undefined,
         this.ctxManager.cloneContext(),
@@ -1726,6 +1771,69 @@ class BamlStreamClient {
         raw,
         (a): string[] => a,
         (a): string[] => a,
+        this.ctxManager.cloneContext(),
+        options.signal,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  ReviseStyle(
+      current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
+      __baml_options__?: BamlCallOptions
+  ): BamlStream<partial_types.StyleRevisionOutput, types.StyleRevisionOutput> {
+    try {
+      const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+      const signal = options.signal;
+      
+      if (signal?.aborted) {
+        throw new BamlAbortError('Operation was aborted', signal.reason);
+      }
+      
+      let collector = options.collector ? (Array.isArray(options.collector) ? options.collector : [options.collector]) : [];
+      
+      let onTickWrapper: (() => void) | undefined;
+      
+      // Create collector and wrap onTick if provided
+      if (options.onTick) {
+        const tickCollector = new Collector("on-tick-collector");
+        collector = [...collector, tickCollector];
+        
+        onTickWrapper = () => {
+          const log = tickCollector.last;
+          if (log) {
+            try {
+              options.onTick!("Unknown", log);
+            } catch (error) {
+              console.error("Error in onTick callback for ReviseStyle", error);
+            }
+          }
+        };
+      }
+
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      const raw = this.runtime.streamFunction(
+        "ReviseStyle",
+        {
+          "current_style": current_style,"revision_prompt": revision_prompt,"new_style_name": new_style_name ?? null,"reference_image": reference_image ?? null
+        },
+        undefined,
+        this.ctxManager.cloneContext(),
+        options.tb?.__tb(),
+        options.clientRegistry,
+        collector,
+        env,
+        signal,
+        onTickWrapper,
+      )
+      return new BamlStream<partial_types.StyleRevisionOutput, types.StyleRevisionOutput>(
+        raw,
+        (a): partial_types.StyleRevisionOutput => a,
+        (a): types.StyleRevisionOutput => a,
         this.ctxManager.cloneContext(),
         options.signal,
       )

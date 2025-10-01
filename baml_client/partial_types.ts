@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DetailedResponse,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotPromptStructured,  ScreenshotTreatment,  StyleConfig,  StyleGenerationOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
+import type {  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DetailedResponse,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotPromptStructured,  ScreenshotTreatment,  StyleConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -202,9 +202,14 @@ export namespace partial_types {
       device_style?: string | null
     }
     export interface StyleGenerationOutput {
+      style_name?: string | null
       style_config?: StyleConfig | null
       device_reference_prompt?: string | null
       preview_image_prompt?: string | null
+    }
+    export interface StyleRevisionOutput {
+      revised_style?: StyleGenerationOutput | null
+      revision_summary?: string | null
     }
     export interface Subject {
       description?: string | null

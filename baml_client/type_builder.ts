@@ -67,7 +67,9 @@ export default class TypeBuilder {
     
     StyleConfig: ClassViewer<'StyleConfig', "background_color" | "details" | "text_style" | "device_style">;
     
-    StyleGenerationOutput: ClassViewer<'StyleGenerationOutput', "style_config" | "device_reference_prompt" | "preview_image_prompt">;
+    StyleGenerationOutput: ClassViewer<'StyleGenerationOutput', "style_name" | "style_config" | "device_reference_prompt" | "preview_image_prompt">;
+    
+    StyleRevisionOutput: ClassViewer<'StyleRevisionOutput', "revised_style" | "revision_summary">;
     
     Subject: ClassViewer<'Subject', "description" | "action" | "position">;
     
@@ -80,7 +82,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DetailedResponse","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotPromptStructured","ScreenshotTreatment","StyleConfig","StyleGenerationOutput","Subject","TextConfig","VisionTestResponse",
+            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DetailedResponse","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotPromptStructured","ScreenshotTreatment","StyleConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -169,7 +171,11 @@ export default class TypeBuilder {
         ]);
         
         this.StyleGenerationOutput = this.tb.classViewer("StyleGenerationOutput", [
-          "style_config","device_reference_prompt","preview_image_prompt",
+          "style_name","style_config","device_reference_prompt","preview_image_prompt",
+        ]);
+        
+        this.StyleRevisionOutput = this.tb.classViewer("StyleRevisionOutput", [
+          "revised_style","revision_summary",
         ]);
         
         this.Subject = this.tb.classViewer("Subject", [

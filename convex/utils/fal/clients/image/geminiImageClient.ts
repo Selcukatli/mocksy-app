@@ -14,7 +14,7 @@ export interface GeminiFlashImageInput {
 }
 
 export interface GeminiFlashEditInput extends GeminiFlashImageInput {
-  image_url: string;
+  image_url?: string;
   image_urls?: string[];
 }
 

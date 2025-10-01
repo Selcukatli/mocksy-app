@@ -303,11 +303,13 @@ export const geminiFlashTextToImage = internalAction({
 /**
  * Edit image using Gemini 2.5 Flash Edit
  * Fast image editing with natural language instructions
+ * Supports editing single image (image_url) or multiple images (image_urls)
  */
 export const geminiFlashEditImage = internalAction({
   args: {
     prompt: v.string(),
-    image_url: v.string(),
+    image_url: v.optional(v.string()),
+    image_urls: v.optional(v.array(v.string())),
     num_images: v.optional(v.number()),
     output_format: v.optional(v.union(v.literal("jpeg"), v.literal("png"))),
     sync_mode: v.optional(v.boolean()),

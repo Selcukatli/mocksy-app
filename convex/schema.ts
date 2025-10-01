@@ -191,4 +191,42 @@ export default defineSchema({
     .index("by_template_variant", ["templateVariantId"])
     .index("by_template", ["templateId"])
     .index("by_app", ["appId"]),
+
+  screenshotStyles: defineTable({
+    // Identity
+    name: v.string(), // e.g., "Snap Style", "Spooky Halloween", "Watercolor Zen"
+    slug: v.string(), // URL-friendly identifier (e.g., "snap-style", "spooky-halloween")
+    description: v.optional(v.string()), // Brief description of the style
+
+    // Ownership & visibility
+    createdBy: v.optional(v.id("profiles")), // Creator (null for system styles)
+    isPublic: v.boolean(), // Whether style is publicly available
+    isSystemStyle: v.boolean(), // Built-in styles vs user-created
+
+    // BAML StyleConfig - Only visual styling, no content or layout
+    backgroundColor: v.string(), // Background color description (e.g., "bright yellow solid color")
+    details: v.string(), // Decorative elements description (emojis, shapes, placement)
+    textStyle: v.string(), // Text styling only (font, weight, color, effects)
+    deviceStyle: v.string(), // Device frame styling (colors, materials, effects)
+
+    // Preview & metadata
+    referenceImageStorageId: v.optional(v.id("_storage")), // Reference/inspiration image
+    previewImageStorageId: v.optional(v.id("_storage")), // Example screenshot
+    tags: v.optional(v.array(v.string())), // Categorization (e.g., ["playful", "pop-art", "bright"])
+    category: v.optional(v.string()), // Style category (e.g., "Pop Art", "Minimalist", "Seasonal")
+
+    // Usage tracking
+    usageCount: v.optional(v.number()), // How many times used
+    isFeatured: v.optional(v.boolean()), // Highlight in UI
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_creator", ["createdBy"])
+    .index("by_public", ["isPublic"])
+    .index("by_system", ["isSystemStyle"])
+    .index("by_slug", ["slug"])
+    .index("by_category", ["category"])
+    .index("by_featured", ["isFeatured"]),
 });

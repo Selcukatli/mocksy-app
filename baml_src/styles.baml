@@ -38,6 +38,13 @@ function GenerateStyleFromDescription(
     {% if reference_image %}
     REFERENCE IMAGE FOR INSPIRATION:
     {{ reference_image }}
+    REFERENCE IMAGE INTERPRETATION RULES:
+    - Carefully extract the color palette, lighting, background treatment, and decorative motifs
+    - Capture typography character: font families, letter shapes, weight, outline, glow, and color styling
+    - Mirror overall mood (e.g., neon arcade, cozy pastel, tech minimal)
+    - Completely ignore layout/composition of elements and any header/body copy wording
+    - If a device appears in the image, ignore the UI content on the screen—focus only on frame styling and outer glow effects
+    - Incorporate these visual cues into style_config, device_reference_prompt, and preview_image_prompt details
     {% endif %}
 
     TASK: Generate a complete style specification.
@@ -141,6 +148,7 @@ function GenerateStyleFromDescription(
     - Specify quantities (3-4 emojis, 6-8 stars, etc.)
     - Describe visual style and mood clearly
     - Each field: 50-150 words max
+    - When a reference image is provided, ensure every stylistic field clearly reflects the extracted palette, typography, and background energy from that image
 
     ## OUTPUT FORMAT (STRICT)
     respond with a single JSON object that matches this exact structure. Do not include markdown fences or commentary:

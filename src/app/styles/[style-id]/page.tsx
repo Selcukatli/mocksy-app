@@ -1,10 +1,10 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
-import { useState, type MouseEvent, useEffect, useMemo } from 'react';
+import { useState, type MouseEvent, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -17,7 +17,9 @@ import {
   Grid3x3,
   ChevronDown,
   Heart,
-  Wand2
+  Wand2,
+  MoreVertical,
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -38,6 +40,19 @@ export default function StyleDetailPage() {
     y: 0
   });
   const [expandedDetail, setExpandedDetail] = useState<string | null>(null);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [deletingStyle, setDeletingStyle] = useState(false);
+  const [justPublished, setJustPublished] = useState(false);
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+  const previousStatusRef = useRef<'draft' | 'published' | undefined>(undefined);
+
+  const style = useQuery(api.styles.getStyleById, { styleId });
+  const currentProfile = useQuery(api.profiles.getCurrentProfile);
+  const publishStyle = useMutation(api.styles.publishStyle);
+  const unpublishStyle = useMutation(api.styles.unpublishStyle);
+  const deleteStyle = useMutation(api.styles.deleteStyle);
 
   const positionHoverPreview = (
     event: MouseEvent<HTMLDivElement, globalThis.MouseEvent>,
@@ -66,17 +81,59 @@ export default function StyleDetailPage() {
     setHoverPreviewPosition({ x: nextX, y: nextY });
   };
 
-  const handleTagClick = (tag: string) => {
-    router.push(`/styles?tag=${encodeURIComponent(tag)}`);
-  };
+  const handleTagClick = useCallback(
+    (tag: string) => {
+      router.push(`/styles?tag=${encodeURIComponent(tag)}`);
+    },
+    [router]
+  );
 
   const handleStartWithStyle = () => {
     router.push(`/templates?style=${styleId}`);
   };
 
-  // Fetch style data
-  const style = useQuery(api.styles.getStyleById, { styleId });
-  const isLoading = style === undefined;
+  const canEdit = useMemo(() => {
+    if (!style) return false;
+    if (!style.createdBy) return true;
+    if (currentProfile === undefined) return false;
+    if (currentProfile === null) return false;
+    return style.createdBy === currentProfile._id;
+  }, [style, currentProfile]);
+
+  const isPublished = style?.status === 'published';
+
+  const handleTogglePublish = useCallback(async () => {
+    if (!style) return;
+    if (!canEdit) return;
+    setUpdatingStatus(true);
+    try {
+      if (style.status === 'published') {
+        await unpublishStyle({ styleId });
+      } else {
+        await publishStyle({ styleId });
+      }
+    } catch (error) {
+      console.error('Failed to toggle publish state:', error);
+    } finally {
+      setUpdatingStatus(false);
+      setShowActionsMenu(false);
+    }
+  }, [style, canEdit, publishStyle, unpublishStyle, styleId]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!style) return;
+    if (!canEdit) return;
+    setDeletingStyle(true);
+    try {
+      await deleteStyle({ styleId });
+      setShowDeleteConfirm(false);
+      router.push('/styles');
+    } catch (error) {
+      console.error('Failed to delete style:', error);
+    } finally {
+      setDeletingStyle(false);
+    }
+  }, [style, canEdit, deleteStyle, styleId, router]);
 
   const designDetails = useMemo(
     () =>
@@ -123,6 +180,31 @@ export default function StyleDetailPage() {
       setExpandedDetail(fallback);
     }
   }, [style, designDetails, expandedDetail]);
+
+  useEffect(() => {
+    if (!showActionsMenu) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
+        setShowActionsMenu(false);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => window.removeEventListener('pointerdown', handlePointerDown);
+  }, [showActionsMenu]);
+
+  useEffect(() => {
+    if (!style?.status) {
+      previousStatusRef.current = undefined;
+      return;
+    }
+    if (previousStatusRef.current === 'draft' && style.status === 'published') {
+      setJustPublished(true);
+      const timeout = window.setTimeout(() => setJustPublished(false), 900);
+      return () => window.clearTimeout(timeout);
+    }
+    previousStatusRef.current = style.status;
+  }, [style?.status]);
 
   const createdLabel = useMemo(() => {
     if (!style?.createdAt) {
@@ -230,6 +312,32 @@ export default function StyleDetailPage() {
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {style?.status && (
+              <span
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                  isPublished
+                    ? 'border-emerald-300/60 bg-emerald-500/10 text-emerald-500'
+                    : 'border-amber-300/60 bg-amber-500/10 text-amber-500'
+                }`}
+              >
+                <span className="h-2 w-2 rounded-full bg-current" aria-hidden />
+                {isPublished ? 'Published' : 'Draft'}
+              </span>
+            )}
+            <AnimatePresence>
+              {justPublished && isPublished && (
+                <motion.span
+                  key="just-published"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.18 }}
+                  className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-500"
+                >
+                  Style published
+                </motion.span>
+              )}
+            </AnimatePresence>
             <button
               type="button"
               className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
@@ -252,6 +360,70 @@ export default function StyleDetailPage() {
               <Sparkles className="h-4 w-4" />
               Use this Style
             </button>
+            <div ref={actionMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setShowActionsMenu((prev) => !prev)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                aria-haspopup="menu"
+                aria-expanded={showActionsMenu}
+                aria-label="Open style actions"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+              <AnimatePresence>
+                {showActionsMenu && (
+                  <motion.div
+                    key="style-actions-menu"
+                    initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    className="absolute right-0 z-50 mt-2 w-60 rounded-xl border border-border/70 bg-popover shadow-xl backdrop-blur-sm"
+                    role="menu"
+                  >
+                    <div className="px-3 pt-3 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground/70">
+                      Manage style
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTogglePublish}
+                      disabled={!canEdit || updatingStatus}
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${
+                        !canEdit || updatingStatus
+                          ? 'cursor-not-allowed text-muted-foreground/60'
+                          : 'hover:bg-muted/50'
+                      }`}
+                      role="menuitem"
+                    >
+                      {isPublished ? 'Unpublish style' : 'Publish style'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDeleteConfirm(true);
+                        setShowActionsMenu(false);
+                      }}
+                      disabled={!canEdit || deletingStyle}
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${
+                        !canEdit || deletingStyle
+                          ? 'cursor-not-allowed text-muted-foreground/60'
+                          : 'text-destructive hover:bg-destructive/10'
+                      }`}
+                      role="menuitem"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete style
+                    </button>
+                    {!canEdit && (
+                      <div className="px-3 pb-3 text-xs text-muted-foreground/80">
+                        Only the creator can manage this style.
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -487,7 +659,67 @@ export default function StyleDetailPage() {
         </motion.div>
       </div>
 
-      {/* Device Reference Hover Preview */}
+      {/* Delete confirmation */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            key="delete-style-dialog"
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="absolute inset-0 bg-background/70 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.96 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="relative z-10 w-full max-w-sm rounded-xl border border-border/70 bg-card p-6 shadow-2xl"
+            >
+              <div className="flex items-center gap-3 text-destructive">
+                <Trash2 className="h-5 w-5" />
+                <h3 className="text-lg font-semibold">Delete style?</h3>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                This will remove <span className="font-medium text-foreground">{style?.name}</span> and any generated sets that depend on it. You
+                can’t undo this action.
+              </p>
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="inline-flex items-center gap-2 rounded-full border border-border/70 px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  disabled={deletingStyle}
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40 ${
+                    deletingStyle
+                      ? 'cursor-wait bg-destructive/60 text-destructive-foreground/80'
+                      : 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                  }`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deletingStyle ? 'Deleting…' : 'Delete style'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Device reference hover preview */}
       <AnimatePresence>
         {hoverPreview && (
           <motion.div

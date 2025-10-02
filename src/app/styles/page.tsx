@@ -10,8 +10,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
-import { useQuery, useAction } from 'convex/react';
+import { useQuery, useAction, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import type { Id } from '../../../convex/_generated/dataModel';
 import { Suspense, useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -40,6 +41,7 @@ function StylesPageContent() {
   // Fetch styles
   const publicStyles = useQuery(api.styles.getPublicStyles) || [];
   const generateStyleFromDescription = useAction(api.styleActions.generateStyleFromDescription);
+  const generateUploadUrl = useMutation(api.fileStorage.files.generateUploadUrl);
 
   // Apply search filter
   const filteredStyles = publicStyles.filter(style =>
@@ -52,20 +54,31 @@ function StylesPageContent() {
 
     setGenerating(true);
     try {
-      // TODO: Upload reference image if provided and get URL
-      let referenceImageUrl: string | undefined;
-      if (referenceImage) {
-        // For now, skip image upload - will implement later
-        referenceImageUrl = undefined;
-      }
-
       const descriptionForGeneration = styleDescription.trim()
         ? styleDescription.trim()
         : 'Generate a polished mobile app screenshot style inspired by the uploaded reference image.';
 
+      let referenceImageStorageId: Id<'_storage'> | undefined;
+
+      if (referenceImage) {
+        const uploadUrl = await generateUploadUrl();
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': referenceImage.type || 'application/octet-stream' },
+          body: referenceImage,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Failed to upload reference image: ${uploadResponse.statusText}`);
+        }
+
+        const uploadJson = await uploadResponse.json();
+        referenceImageStorageId = uploadJson.storageId as Id<'_storage'>;
+      }
+
       await generateStyleFromDescription({
         description: descriptionForGeneration,
-        referenceImageUrl,
+        referenceImageStorageId,
       });
 
       setShowCreateDialog(false);

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
+import { getCurrentUser } from "./profiles";
 
 /**
  * Create a new screenshot style
@@ -216,6 +217,9 @@ export const getStyleById = query({
       name: v.string(),
       slug: v.string(),
       description: v.optional(v.string()),
+      createdBy: v.optional(v.id("profiles")),
+      isPublic: v.boolean(),
+      status: v.union(v.literal("draft"), v.literal("published")),
       backgroundColor: v.string(),
       details: v.string(),
       textStyle: v.string(),
@@ -257,6 +261,9 @@ export const getStyleById = query({
       name: style.name,
       slug: style.slug,
       description: style.description,
+      createdBy: style.createdBy,
+      isPublic: style.isPublic,
+      status: style.status,
       backgroundColor: style.backgroundColor,
       details: style.details,
       textStyle: style.textStyle,
@@ -405,6 +412,25 @@ export const unpublishStyle = mutation({
       updatedAt: Date.now(),
     });
 
+    return null;
+  },
+});
+
+export const deleteStyle = mutation({
+  args: { styleId: v.id("styles") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const style = await ctx.db.get(args.styleId);
+    if (!style) {
+      throw new Error("Style not found");
+    }
+
+    const profile = await getCurrentUser(ctx);
+    if (style.createdBy && (!profile || style.createdBy !== profile._id)) {
+      throw new Error("Access denied");
+    }
+
+    await ctx.db.delete(args.styleId);
     return null;
   },
 });

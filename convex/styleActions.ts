@@ -18,8 +18,11 @@ export const generateStyleFromDescription = action({
     description: v.string(),
     referenceImageStorageId: v.optional(v.id("_storage")),
   },
-  returns: v.id("styles"),
-  handler: async (ctx, args): Promise<Id<"styles">> => {
+  returns: v.object({
+    jobId: v.id("jobs"),
+    styleId: v.optional(v.id("styles")),
+  }),
+  handler: async (ctx, args): Promise<{ jobId: Id<"jobs">; styleId?: Id<"styles"> }> => {
     console.log("🎨 Starting style generation from description:", args.description);
 
     // Get current user profile (actions can't query directly, need mutation helper)
@@ -32,6 +35,24 @@ export const generateStyleFromDescription = action({
     const result = await ctx.runMutation(api.profiles.ensureCurrentUserProfile, {});
     const profileId = result.profileId;
 
+    const generationPayload = args.referenceImageStorageId
+      ? {
+          description: args.description,
+          referenceImageStorageId: args.referenceImageStorageId,
+        }
+      : {
+          description: args.description,
+        };
+
+    const jobId = await ctx.runMutation(internal.jobs.createJob, {
+      profileId,
+      type: "style",
+      status: "running",
+      message: "Starting style generation",
+      progress: 0.05,
+      payload: generationPayload,
+    });
+
     // Step 1: Call BAML to analyze description and generate style specification
     console.log("📝 Calling BAML GenerateStyleFromDescription...");
     let referenceImageUrl: string | null = null;
@@ -43,115 +64,171 @@ export const generateStyleFromDescription = action({
       });
     }
 
-    const styleOutput = await b.GenerateStyleFromDescription(
-      args.description,
-      null, // style_name - let AI generate it
-      referenceImageUrl ? Image.fromUrl(referenceImageUrl) : null
-    );
-
-    console.log("✅ BAML analysis complete:");
-    console.log("  - Style config:", styleOutput.style_config);
-    console.log("  - Device prompt length:", styleOutput.device_reference_prompt.length);
-    console.log("  - Preview prompt length:", styleOutput.preview_image_prompt.length);
-
-    // Step 2: Generate device reference image (Seed Dream 4)
-    let deviceReferenceImageStorageId: Id<"_storage"> | undefined;
     try {
-      console.log("📱 Generating device reference image (Seed Dream 4)...");
-      const deviceResult = await ctx.runAction(
-        internal.utils.fal.falImageActions.seedDream4TextToImage,
+      await ctx.runMutation(internal.jobs.updateJob, {
+        jobId,
+        message: "Analyzing description with AI",
+        progress: 0.15,
+      });
+
+      const styleOutput = await b.GenerateStyleFromDescription(
+        args.description,
+        null, // style_name - let AI generate it
+        referenceImageUrl ? Image.fromUrl(referenceImageUrl) : null
+      );
+
+      console.log("✅ BAML analysis complete:");
+      console.log("  - Style config:", styleOutput.style_config);
+      console.log("  - Device prompt length:", styleOutput.device_reference_prompt.length);
+      console.log("  - Preview prompt length:", styleOutput.preview_image_prompt.length);
+
+      // Step 2: Generate device reference image (Seed Dream 4)
+      await ctx.runMutation(internal.jobs.updateJob, {
+        jobId,
+        message: "Generating device reference mock",
+        progress: 0.45,
+      });
+
+      let deviceReferenceImageStorageId: Id<"_storage"> | undefined;
+      try {
+        console.log("📱 Generating device reference image (Seed Dream 4)...");
+        const deviceResult = await ctx.runAction(
+          internal.utils.fal.falImageActions.seedDream4TextToImage,
+          {
+            prompt: styleOutput.device_reference_prompt,
+            image_size: {
+              width: 1290,
+              height: 2796,
+            },
+            num_images: 1,
+            enable_safety_checker: false,
+          }
+        );
+
+        if (deviceResult.images && deviceResult.images.length > 0) {
+          const deviceImageUrl = deviceResult.images[0].url;
+          console.log("  Device image generated:", deviceImageUrl);
+
+          // Upload to Convex storage
+          deviceReferenceImageStorageId = await uploadImageToStorage(
+            ctx,
+            deviceImageUrl,
+            `device-ref-${Date.now()}.png`
+          );
+          console.log("✅ Device image uploaded to storage:", deviceReferenceImageStorageId);
+        }
+      } catch (error) {
+        console.error("❌ Device image generation failed:", error);
+        // Continue without device image
+        await ctx.runMutation(internal.jobs.updateJob, {
+          jobId,
+          message: "Device reference generation failed, continuing",
+          progress: 0.6,
+        });
+      }
+
+      // Step 3: Generate preview style card (Gemini Flash)
+      let previewImageStorageId: Id<"_storage"> | undefined;
+      try {
+        await ctx.runMutation(internal.jobs.updateJob, {
+          jobId,
+          message: "Generating preview card",
+          progress: 0.7,
+        });
+
+        console.log("🖼️  Generating preview style card (Gemini Flash)...");
+        const previewResult = await ctx.runAction(
+          internal.utils.fal.falImageActions.geminiFlashTextToImage,
+          {
+            prompt: styleOutput.preview_image_prompt,
+            num_images: 1,
+            output_format: "png",
+          }
+        );
+
+        if (previewResult.images && previewResult.images.length > 0) {
+          const previewImageUrl = previewResult.images[0].url;
+          console.log("  Preview card generated:", previewImageUrl);
+
+          // Upload to Convex storage
+          previewImageStorageId = await uploadImageToStorage(
+            ctx,
+            previewImageUrl,
+            `preview-${Date.now()}.png`
+          );
+          console.log("✅ Preview card uploaded to storage:", previewImageStorageId);
+        }
+      } catch (error) {
+        console.error("❌ Preview image generation failed:", error);
+        // Continue without preview image
+        await ctx.runMutation(internal.jobs.updateJob, {
+          jobId,
+          message: "Preview generation failed, saving style",
+          progress: 0.82,
+        });
+      }
+
+      // Step 4: Use AI-generated name and create slug
+      const name = styleOutput.style_name;
+      const slug = generateSlug(name);
+
+      console.log("💾 Saving style to database...");
+      console.log("  Name:", name);
+      console.log("  Slug:", slug);
+
+      await ctx.runMutation(internal.jobs.updateJob, {
+        jobId,
+        message: "Saving style",
+        progress: 0.9,
+      });
+
+      // Step 5: Save to database
+      const styleId: Id<"styles"> = await ctx.runMutation(
+        internal.styles.createStyleInternal,
         {
-          prompt: styleOutput.device_reference_prompt,
-          image_size: {
-            width: 1290,
-            height: 2796,
-          },
-          num_images: 1,
-          enable_safety_checker: false,
+          name,
+          slug,
+          description: args.description,
+          createdBy: profileId,
+          isPublic: true,
+          status: "published", // Auto-publish generated styles
+          backgroundColor: styleOutput.style_config.background_color,
+          details: styleOutput.style_config.details,
+          textStyle: styleOutput.style_config.text_style,
+          deviceStyle: styleOutput.style_config.device_style,
+          deviceReferenceImageStorageId,
+          previewImageStorageId,
+          referenceImageStorageId: args.referenceImageStorageId,
+          tags: extractTags(args.description),
+          category: categorizeStyle(args.description),
+          isFeatured: false,
         }
       );
 
-      if (deviceResult.images && deviceResult.images.length > 0) {
-        const deviceImageUrl = deviceResult.images[0].url;
-        console.log("  Device image generated:", deviceImageUrl);
+      console.log("✅ Style created successfully! ID:", styleId);
+      await ctx.runMutation(internal.jobs.updateJob, {
+        jobId,
+        status: "succeeded",
+        message: "Style ready",
+        progress: 1,
+        result: {
+          table: "styles",
+          id: styleId,
+        },
+      });
 
-        // Upload to Convex storage
-        deviceReferenceImageStorageId = await uploadImageToStorage(
-          ctx,
-          deviceImageUrl,
-          `device-ref-${Date.now()}.png`
-        );
-        console.log("✅ Device image uploaded to storage:", deviceReferenceImageStorageId);
-      }
+      return { jobId, styleId };
     } catch (error) {
-      console.error("❌ Device image generation failed:", error);
-      // Continue without device image
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      await ctx.runMutation(internal.jobs.updateJob, {
+        jobId,
+        status: "failed",
+        message: "Generation failed",
+        error: errorMessage,
+      });
+
+      throw error;
     }
-
-    // Step 3: Generate preview style card (Gemini Flash)
-    let previewImageStorageId: Id<"_storage"> | undefined;
-    try {
-      console.log("🖼️  Generating preview style card (Gemini Flash)...");
-      const previewResult = await ctx.runAction(
-        internal.utils.fal.falImageActions.geminiFlashTextToImage,
-        {
-          prompt: styleOutput.preview_image_prompt,
-          num_images: 1,
-          output_format: "png",
-        }
-      );
-
-      if (previewResult.images && previewResult.images.length > 0) {
-        const previewImageUrl = previewResult.images[0].url;
-        console.log("  Preview card generated:", previewImageUrl);
-
-        // Upload to Convex storage
-        previewImageStorageId = await uploadImageToStorage(
-          ctx,
-          previewImageUrl,
-          `preview-${Date.now()}.png`
-        );
-        console.log("✅ Preview card uploaded to storage:", previewImageStorageId);
-      }
-    } catch (error) {
-      console.error("❌ Preview image generation failed:", error);
-      // Continue without preview image
-    }
-
-    // Step 4: Use AI-generated name and create slug
-    const name = styleOutput.style_name;
-    const slug = generateSlug(name);
-
-    console.log("💾 Saving style to database...");
-    console.log("  Name:", name);
-    console.log("  Slug:", slug);
-
-    // Step 5: Save to database
-    const styleId: Id<"styles"> = await ctx.runMutation(
-      internal.styles.createStyleInternal,
-      {
-        name,
-        slug,
-        description: args.description,
-        createdBy: profileId,
-        isPublic: true,
-        status: "published", // Auto-publish generated styles
-        backgroundColor: styleOutput.style_config.background_color,
-        details: styleOutput.style_config.details,
-        textStyle: styleOutput.style_config.text_style,
-        deviceStyle: styleOutput.style_config.device_style,
-        deviceReferenceImageStorageId,
-        previewImageStorageId,
-        referenceImageStorageId: args.referenceImageStorageId,
-        tags: extractTags(args.description),
-        category: categorizeStyle(args.description),
-        isFeatured: false,
-      }
-    );
-
-    console.log("✅ Style created successfully! ID:", styleId);
-
-    return styleId;
   },
 });
 

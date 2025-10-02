@@ -1,4 +1,5 @@
 import { internalMutation } from "../_generated/server";
+import type { Doc } from "../_generated/dataModel";
 
 /**
  * Migration: Remove isSystemStyle field from all styles
@@ -14,7 +15,10 @@ export const removeIsSystemStyleField = internalMutation({
       // Check if the old field exists
       if ("isSystemStyle" in style) {
         // Replace the entire document without the isSystemStyle field
-        const { isSystemStyle, ...cleanStyle } = style as any;
+        const { isSystemStyle: removedFlag, ...cleanStyle } = style as Doc<"styles"> & {
+          isSystemStyle?: unknown;
+        };
+        void removedFlag;
 
         await ctx.db.replace(style._id, cleanStyle);
         updatedCount++;

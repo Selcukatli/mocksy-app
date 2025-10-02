@@ -225,6 +225,43 @@ export default defineSchema({
     .index("by_slug", ["slug"])
     .index("by_aspect_ratio", ["aspectRatio"]),
 
+  jobs: defineTable({
+    profileId: v.id("profiles"), // Owner initiating the generation
+    type: v.union(
+      v.literal("style"),
+      v.literal("screenshot"),
+      v.literal("template")
+    ),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("running"),
+      v.literal("succeeded"),
+      v.literal("failed")
+    ),
+    message: v.optional(v.string()), // Human-readable status update
+    progress: v.optional(v.number()), // 0-1 progress indicator
+    result: v.optional(
+      v.union(
+        v.object({
+          table: v.literal("styles"),
+          id: v.id("styles"),
+        })
+      )
+    ),
+    error: v.optional(v.string()), // Failure reason snapshot
+    payload: v.optional(
+      v.object({
+        description: v.optional(v.string()),
+        referenceImageStorageId: v.optional(v.id("_storage"))
+      })
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number()
+  })
+    .index("by_profile", ["profileId"])
+    .index("by_type", ["type"])
+    .index("by_status", ["status"]),
+
   styles: defineTable({
     // Identity
     name: v.string(), // e.g., "Snap Style", "Spooky Halloween", "Watercolor Zen"

@@ -42,12 +42,17 @@ function StylesPageContent() {
   const publicStyles = useQuery(api.styles.getPublicStyles) || [];
   const generateStyleFromDescription = useAction(api.styleActions.generateStyleFromDescription);
   const generateUploadUrl = useMutation(api.fileStorage.files.generateUploadUrl);
+  const activeJobs = useQuery(api.jobs.getActiveJobs) || [];
 
   // Apply search filter
   const filteredStyles = publicStyles.filter(style =>
     style.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     style.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const styleJob = generating
+    ? activeJobs.find((job) => job.type === 'style')
+    : undefined;
 
   const handleGenerateStyle = async () => {
     if (!styleDescription.trim() && !referenceImage) return;
@@ -516,6 +521,44 @@ function StylesPageContent() {
                     </div>
                   </div>
                 </div>
+
+                {styleJob && (
+                  <div className="mt-6 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm">
+                    <p className="font-medium text-primary/80 flex items-center gap-2">
+                      <SparkleIndicator />
+                      {styleJob.message ?? 'Doing the magic...'}
+                    </p>
+                    {typeof styleJob.progress === 'number' ? (
+                      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-primary/10">
+                        <motion.div
+                          className="relative h-full rounded-full bg-primary"
+                          animate={{ width: `${Math.max(styleJob.progress * 100, 6)}%` }}
+                          transition={{ duration: 0.35, ease: 'easeOut' }}
+                        >
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 opacity-70"
+                            animate={{ x: ['-100%', '100%'] }}
+                            transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                          />
+                        </motion.div>
+                      </div>
+                    ) : (
+                      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-primary/10">
+                        <motion.div
+                          className="relative h-full w-1/3 rounded-full bg-primary/60"
+                          animate={{ x: ['-20%', '80%'] }}
+                          transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 opacity-70"
+                            animate={{ x: ['-100%', '100%'] }}
+                            transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+                          />
+                        </motion.div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Dialog Footer */}
@@ -557,12 +600,133 @@ function StylesPageContent() {
   );
 }
 
+function SparkleIndicator() {
+  const particles = [
+    { angle: 0, delay: 0 },
+    { angle: 120, delay: 0.2 },
+    { angle: 240, delay: 0.4 }
+  ];
+  const radius = 6;
+
+  return (
+    <span className="relative inline-flex h-5 w-5 items-center justify-center text-primary">
+      <motion.span
+        className="h-2 w-2 rounded-full bg-primary"
+        animate={{ scale: [0.8, 1.15, 0.8], opacity: [0.6, 1, 0.6] }}
+        transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      {particles.map(({ angle, delay }) => {
+        const radians = (angle * Math.PI) / 180;
+        const x = Math.cos(radians) * radius;
+        const y = Math.sin(radians) * radius;
+
+        return (
+          <motion.span
+            key={angle}
+            className="absolute h-1.5 w-1.5 rounded-full bg-primary/90 shadow-[0_0_6px_rgba(147,107,247,0.35)]"
+            animate={{
+              x: [0, x, 0],
+              y: [0, y, 0],
+              scale: [0.3, 1, 0.3],
+              opacity: [0, 1, 0]
+            }}
+            transition={{ duration: 1.3, repeat: Infinity, delay, ease: 'easeInOut' }}
+          />
+        );
+      })}
+      <motion.span
+        className="absolute h-4 w-4 rounded-full bg-primary/15"
+        animate={{ scale: [0.9, 1.3, 0.9], opacity: [0.4, 0.1, 0.4] }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+      />
+    </span>
+  );
+}
+
 function StylesPageFallback() {
+  const placeholderCards = Array.from({ length: 8 });
+
   return (
     <div className="flex-1 p-8">
-      <div className="space-y-4">
-        <div className="h-8 w-48 rounded-lg bg-muted animate-pulse" />
-        <div className="h-10 w-full rounded-lg bg-muted animate-pulse" />
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-6">
+        <div className="space-y-3">
+          <div className="h-9 w-56 rounded-lg bg-muted/80 animate-pulse" />
+          <div className="h-4 w-80 rounded-lg bg-muted/60 animate-pulse" />
+          <div className="h-4 w-64 rounded-lg bg-muted/50 animate-pulse" />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="h-8 w-32 rounded-full bg-muted/40 animate-pulse" />
+          <div className="h-9 w-40 rounded-full bg-muted/50 animate-pulse" />
+        </div>
+      </div>
+
+      <div className="mb-10 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[220px] max-w-2xl">
+          <div className="h-10 w-full rounded-lg bg-muted/50 animate-pulse" />
+          <div className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-muted-foreground/30" />
+          <div className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-muted-foreground/20" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {placeholderCards.map((_, index) => {
+          if (index === 0) {
+            return (
+              <div key="create" className="group relative h-full">
+                <div className="flex h-full w-full flex-col items-center justify-center gap-5 rounded-xl border-2 border-dashed border-muted-foreground/20 bg-card/80 p-6">
+                  <div className="relative">
+                    <div className="h-14 w-14 rounded-full bg-muted/40 animate-pulse" />
+                    <motion.div
+                      className="absolute inset-0 rounded-full border border-muted-foreground/30"
+                      animate={{ opacity: [0.4, 1, 0.4], scale: [0.95, 1.05, 0.95] }}
+                      transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                  </div>
+                  <div className="space-y-2 text-center">
+                    <div className="h-4 w-28 rounded bg-muted/60 animate-pulse" />
+                    <div className="h-3 w-36 rounded bg-muted/40 animate-pulse" />
+                  </div>
+                  <div className="h-8 w-32 rounded-full bg-muted/30 animate-pulse" />
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div key={index} className="relative h-full">
+              <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card">
+                <div className="relative aspect-[4/3] bg-muted/30">
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-muted/60 to-transparent"
+                    animate={{ x: ['-50%', '110%'] }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
+                  />
+                </div>
+                <div className="flex flex-1 flex-col gap-4 p-4">
+                  <div className="space-y-2">
+                    <div className="h-4 w-2/3 rounded bg-muted/70 animate-pulse" />
+                    <div className="h-3 w-full rounded bg-muted/50 animate-pulse" />
+                    <div className="h-3 w-4/5 rounded bg-muted/50 animate-pulse" />
+                  </div>
+                  <div className="mt-auto space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="h-3 w-20 rounded bg-muted/50 animate-pulse" />
+                      <div className="h-3 w-14 rounded bg-muted/40 animate-pulse" />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from({ length: 3 }).map((__, tagIndex) => (
+                        <div
+                          key={tagIndex}
+                          className="h-5 w-16 rounded-full bg-muted/40 animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -12,11 +12,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useQuery, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { useState, useCallback, useEffect } from 'react';
+import { Suspense, useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function StylesPage() {
+  return (
+    <Suspense fallback={<StylesPageFallback />}>
+      <StylesPageContent />
+    </Suspense>
+  );
+}
+
+function StylesPageContent() {
   const { user } = useUser();
   const isSignedIn = !!user;
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -24,7 +33,9 @@ export default function StylesPage() {
   const [referenceImage, setReferenceImage] = useState<File | null>(null);
   const [referenceImagePreview, setReferenceImagePreview] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('tag') ?? '');
 
   // Fetch styles
   const publicStyles = useQuery(api.styles.getPublicStyles) || [];
@@ -79,6 +90,33 @@ export default function StylesPage() {
       handleSetReferenceImage(file);
     }
   };
+
+  const updateTagFilter = useCallback(
+    (value: string) => {
+      if (typeof window === 'undefined') return;
+
+      const params = new URLSearchParams(window.location.search);
+      if (value) {
+        params.set('tag', value);
+      } else {
+        params.delete('tag');
+      }
+
+      const search = params.toString();
+      router.replace(`/styles${search ? `?${search}` : ''}`);
+    },
+    [router]
+  );
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    updateTagFilter(value.trim());
+  };
+
+  useEffect(() => {
+    const tagParam = searchParams.get('tag') ?? '';
+    setSearchQuery((current) => (current === tagParam ? current : tagParam));
+  }, [searchParams]);
 
   useEffect(() => {
     if (!showCreateDialog) {
@@ -145,10 +183,27 @@ export default function StylesPage() {
             type="text"
             placeholder="Search styles..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           />
         </div>
+
+        {searchQuery && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <span>Filtering by</span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-primary">
+              {searchQuery}
+              <button
+                type="button"
+                onClick={() => handleSearchChange('')}
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary transition hover:bg-primary/30"
+                aria-label="Clear style filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          </div>
+        )}
       </motion.div>
 
       {/* Sign in prompt */}
@@ -447,6 +502,17 @@ export default function StylesPage() {
           </div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function StylesPageFallback() {
+  return (
+    <div className="flex-1 p-8">
+      <div className="space-y-4">
+        <div className="h-8 w-48 rounded-lg bg-muted animate-pulse" />
+        <div className="h-10 w-full rounded-lg bg-muted animate-pulse" />
+      </div>
     </div>
   );
 }

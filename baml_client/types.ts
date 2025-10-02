@@ -228,12 +228,24 @@ export interface Scene {
   
 }
 
+export interface ScreenshotConfig {
+  text: TextConfig
+  layout: LayoutConfig
+  
+}
+
 export interface ScreenshotPromptStructured {
   style: string
   background: Background
   device: DeviceSpec
   header_text: HeaderText
   composition: Composition
+  
+}
+
+export interface ScreenshotSetInput {
+  app_description: string
+  screenshot_count: number
   
 }
 

@@ -24,7 +24,7 @@ import { toBamlError, BamlStream, BamlAbortError, Collector } from "@boundaryml/
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotPromptStructured, ScreenshotTreatment, StyleConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TextConfig, VisionTestResponse} from "./types"
+import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 import { AsyncHttpRequest, AsyncHttpStreamRequest } from "./async_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -324,6 +324,53 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             signal,
             )
             return raw.parsed(false) as types.ScreenshotPromptStructured
+            } catch (error) {
+            throw toBamlError(error);
+            }
+            }
+            
+        async GenerateScreenshotSet(
+        input: types.ScreenshotSetInput,
+        __baml_options__?: BamlCallOptions
+        ): Promise<types.ScreenshotConfig[]> {
+          try {
+          const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+          const signal = options.signal;
+
+          if (signal?.aborted) {
+          throw new BamlAbortError('Operation was aborted', signal.reason);
+          }
+
+          // Check if onTick is provided - route through streaming if so
+          if (options.onTick) {
+          const stream = this.stream.GenerateScreenshotSet(
+          input,
+          __baml_options__
+          );
+
+          return await stream.getFinalResponse();
+          }
+
+          const collector = options.collector ? (Array.isArray(options.collector) ? options.collector :
+          [options.collector]) : [];
+          const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+          const env: Record<string, string> = Object.fromEntries(
+            Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+            );
+            const raw = await this.runtime.callFunction(
+            "GenerateScreenshotSet",
+            {
+            "input": input
+            },
+            this.ctxManager.cloneContext(),
+            options.tb?.__tb(),
+            options.clientRegistry,
+            collector,
+            options.tags || {},
+            env,
+            signal,
+            )
+            return raw.parsed(false) as types.ScreenshotConfig[]
             } catch (error) {
             throw toBamlError(error);
             }
@@ -1652,6 +1699,72 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   raw,
                   (a): partial_types.ScreenshotPromptStructured => a,
                   (a): types.ScreenshotPromptStructured => a,
+                  this.ctxManager.cloneContext(),
+                  options.signal,
+                  )
+                  } catch (error) {
+                  throw toBamlError(error);
+                  }
+                  }
+                  
+            GenerateScreenshotSet(
+            input: types.ScreenshotSetInput,
+            __baml_options__?: BamlCallOptions
+            ): BamlStream<partial_types.ScreenshotConfig[], types.ScreenshotConfig[]>
+              {
+              try {
+              const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+              const signal = options.signal;
+
+              if (signal?.aborted) {
+              throw new BamlAbortError('Operation was aborted', signal.reason);
+              }
+
+              let collector = options.collector ? (Array.isArray(options.collector) ? options.collector :
+              [options.collector]) : [];
+
+              let onTickWrapper: (() => void) | undefined;
+
+              // Create collector and wrap onTick if provided
+              if (options.onTick) {
+              const tickCollector = new Collector("on-tick-collector");
+              collector = [...collector, tickCollector];
+
+              onTickWrapper = () => {
+              const log = tickCollector.last;
+              if (log) {
+              try {
+              options.onTick!("Unknown", log);
+              } catch (error) {
+              console.error("Error in onTick callback for GenerateScreenshotSet", error);
+              }
+              }
+              };
+              }
+
+              const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+              const env: Record<string, string> = Object.fromEntries(
+                Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+                );
+                const raw = this.runtime.streamFunction(
+                "GenerateScreenshotSet",
+                {
+                "input": input
+                },
+                undefined,
+                this.ctxManager.cloneContext(),
+                options.tb?.__tb(),
+                options.clientRegistry,
+                collector,
+                options.tags || {},
+                env,
+                signal,
+                onTickWrapper,
+                )
+                return new BamlStream<partial_types.ScreenshotConfig[], types.ScreenshotConfig[]>(
+                  raw,
+                  (a): partial_types.ScreenshotConfig[] => a,
+                  (a): types.ScreenshotConfig[] => a,
                   this.ctxManager.cloneContext(),
                   options.signal,
                   )

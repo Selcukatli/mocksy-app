@@ -46,5 +46,8 @@ convex/_generated/
 # temporary AI-generated images
 .temp-images/
 
+# baml test results
+.temp-baml-results/
+
 # playwright captures
 .playwright-mcp/

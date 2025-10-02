@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DetailedResponse,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotPromptStructured,  ScreenshotTreatment,  StyleConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
+import type {  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DetailedResponse,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -183,12 +183,20 @@ export namespace partial_types {
       character_count?: number | null
       key_elements: string[]
     }
+    export interface ScreenshotConfig {
+      text?: TextConfig | null
+      layout?: LayoutConfig | null
+    }
     export interface ScreenshotPromptStructured {
       style?: string | null
       background?: Background | null
       device?: DeviceSpec | null
       header_text?: HeaderText | null
       composition?: Composition | null
+    }
+    export interface ScreenshotSetInput {
+      app_description?: string | null
+      screenshot_count?: number | null
     }
     export interface ScreenshotTreatment {
       treatment?: string | null

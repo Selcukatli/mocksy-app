@@ -61,7 +61,11 @@ export default class TypeBuilder {
     
     Scene: ClassViewer<'Scene', "main_description" | "characters" | "character_arrangement" | "camera_angle" | "shot_type" | "setting" | "background" | "time_of_day" | "mood" | "color_palette" | "lighting_style" | "style_keywords" | "quality_markers" | "main_prompt" | "negative_prompt" | "structured_prompt" | "suggested_guidance" | "complexity_score" | "avatar_integration" | "character_count" | "key_elements">;
     
+    ScreenshotConfig: ClassViewer<'ScreenshotConfig', "text" | "layout">;
+    
     ScreenshotPromptStructured: ClassViewer<'ScreenshotPromptStructured', "style" | "background" | "device" | "header_text" | "composition">;
+    
+    ScreenshotSetInput: ClassViewer<'ScreenshotSetInput', "app_description" | "screenshot_count">;
     
     ScreenshotTreatment: ClassViewer<'ScreenshotTreatment', "treatment" | "preserve" | "forbidden">;
     
@@ -82,7 +86,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DetailedResponse","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotPromptStructured","ScreenshotTreatment","StyleConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
+            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DetailedResponse","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -158,8 +162,16 @@ export default class TypeBuilder {
           "main_description","characters","character_arrangement","camera_angle","shot_type","setting","background","time_of_day","mood","color_palette","lighting_style","style_keywords","quality_markers","main_prompt","negative_prompt","structured_prompt","suggested_guidance","complexity_score","avatar_integration","character_count","key_elements",
         ]);
         
+        this.ScreenshotConfig = this.tb.classViewer("ScreenshotConfig", [
+          "text","layout",
+        ]);
+        
         this.ScreenshotPromptStructured = this.tb.classViewer("ScreenshotPromptStructured", [
           "style","background","device","header_text","composition",
+        ]);
+        
+        this.ScreenshotSetInput = this.tb.classViewer("ScreenshotSetInput", [
+          "app_description","screenshot_count",
         ]);
         
         this.ScreenshotTreatment = this.tb.classViewer("ScreenshotTreatment", [

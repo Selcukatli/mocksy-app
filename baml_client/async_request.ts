@@ -23,7 +23,7 @@ import type { BamlRuntime, BamlCtxManager, ClientRegistry, Image, Audio, Pdf, Vi
 import { toBamlError, HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotPromptStructured, ScreenshotTreatment, StyleConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TextConfig, VisionTestResponse} from "./types"
+import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 
 type TickReason = "Unknown";
@@ -152,6 +152,31 @@ env?: Record<string, string | undefined>
       "GenerateScreenshotPrompt",
       {
       "text": text,"layout": layout,"style": style
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __baml_options__?.clientRegistry,
+      false,
+      env
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async GenerateScreenshotSet(
+  input: types.ScreenshotSetInput,
+  __baml_options__?: BamlCallOptions
+  ): Promise<HTTPRequest> {
+    try {
+    const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const env: Record<string, string> = Object.fromEntries(
+      Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return await this.runtime.buildRequest(
+      "GenerateScreenshotSet",
+      {
+      "input": input
       },
       this.ctxManager.cloneContext(),
       __baml_options__?.tb?.__tb(),
@@ -808,6 +833,31 @@ env?: Record<string, string | undefined>
           "GenerateScreenshotPrompt",
           {
           "text": text,"layout": layout,"style": style
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __baml_options__?.clientRegistry,
+          true,
+          env
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async GenerateScreenshotSet(
+      input: types.ScreenshotSetInput,
+      __baml_options__?: BamlCallOptions
+      ): Promise<HTTPRequest> {
+        try {
+        const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const env: Record<string, string> = Object.fromEntries(
+          Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+          return await this.runtime.buildRequest(
+          "GenerateScreenshotSet",
+          {
+          "input": input
           },
           this.ctxManager.cloneContext(),
           __baml_options__?.tb?.__tb(),

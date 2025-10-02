@@ -4,6 +4,7 @@ import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import type { FalTextToImageResponse } from "./utils/fal/types";
+import { b } from "../baml_client";
 
 /**
  * Generate app store screenshots using code-assembled prompts (no BAML)
@@ -317,6 +318,172 @@ export const generateScreenshotSet = internalAction({
       totalScreenshots: args.screenshots.length,
       successCount,
       results,
+    };
+  },
+});
+
+/**
+ * Helper: Parse layout composition string to extract header position
+ */
+function parseHeaderPosition(composition: string): string {
+  const lower = composition.toLowerCase();
+
+  if (lower.includes("header at top") || lower.includes("header at the top")) {
+    return "top";
+  }
+  if (lower.includes("header at bottom") || lower.includes("header at the bottom")) {
+    return "bottom";
+  }
+  if (lower.includes("device in upper") || lower.includes("device positioned in upper")) {
+    return "bottom"; // Device in upper means header at bottom
+  }
+
+  // Default to top if unclear
+  return "top";
+}
+
+/**
+ * Generate a complete set of app store screenshots from app description
+ *
+ * This is the full pipeline:
+ * 1. Use BAML to generate screenshot configs (header text, layout, app UI prompts)
+ * 2. Generate app UI screens in parallel using Seedream4
+ * 3. Composite final screenshots in parallel using existing action
+ */
+export const generateScreenshotSetFromDescription = internalAction({
+  args: {
+    appDescription: v.string(),
+    screenshotCount: v.number(),
+    styleId: v.id("styles"),
+    screenshotSizeId: v.id("screenshotSizes"),
+    numImagesPerScreenshot: v.optional(v.number()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    console.log(`🎬 Starting screenshot set generation: ${args.screenshotCount} screenshots`);
+    console.log(`📝 App description: ${args.appDescription.substring(0, 100)}...`);
+
+    // ============================================
+    // 1. GENERATE SCREENSHOT CONFIGS VIA BAML
+    // ============================================
+
+    console.log("🤖 Generating screenshot configs with BAML...");
+
+    const configs = await b.GenerateScreenshotSet({
+      app_description: args.appDescription,
+      screenshot_count: args.screenshotCount,
+    });
+
+    console.log(`✅ Generated ${configs.length} screenshot configs`);
+    configs.forEach((config, i) => {
+      console.log(`  [${i + 1}] "${config.text.header}" - ${config.layout.device_orientation}`);
+    });
+
+    // ============================================
+    // 2. FETCH BLANK CANVAS URL
+    // ============================================
+
+    const size = await ctx.runQuery(
+      api.screenshotSizes.getSizeById,
+      { sizeId: args.screenshotSizeId }
+    );
+
+    if (!size) {
+      throw new Error(`Screenshot size not found: ${args.screenshotSizeId}`);
+    }
+
+    if (!size.canvasStorageId) {
+      throw new Error(
+        `Screenshot size ${args.screenshotSizeId} has no canvas image`
+      );
+    }
+
+    const blankCanvasUrl = await ctx.runQuery(api.fileStorage.files.getFileUrl, {
+      storageId: size.canvasStorageId,
+    });
+    if (!blankCanvasUrl) {
+      throw new Error(`Could not get URL for blank canvas: ${args.screenshotSizeId}`);
+    }
+
+    console.log(`📐 Using blank canvas for all app screens`);
+
+    // ============================================
+    // 3. GENERATE SCREENSHOTS IN PARALLEL
+    // ============================================
+
+    console.log("\n📸 Generating screenshots in parallel...");
+
+    type FinalScreenshotResult =
+      | {
+          index: number;
+          success: true;
+          headerCopy: string;
+          headerPosition: string;
+          deviceOrientation: string;
+          appScreenUrl: string;
+          images: FalTextToImageResponse["images"];
+        }
+      | {
+          index: number;
+          success: false;
+          headerCopy: string;
+          error: string;
+        };
+
+    const finalScreenshotPromises = configs.map(async (config, index): Promise<FinalScreenshotResult | null> => {
+      const headerPosition = parseHeaderPosition(config.layout.composition);
+
+      console.log(`  [${index + 1}/${configs.length}] Generating "${config.text.header}" at ${headerPosition}`);
+
+      try {
+        const result: FalTextToImageResponse = await ctx.runAction(
+          internal.screenshotActions.generateScreenshot,
+          {
+            styleId: args.styleId,
+            screenshotSizeId: args.screenshotSizeId,
+            appScreenUrl: blankCanvasUrl,
+            headerPosition,
+            deviceOrientation: config.layout.device_orientation,
+            headerCopy: config.text.header,
+            subheaderCopy: config.text.subheader ?? undefined,
+            numImages: args.numImagesPerScreenshot ?? 1,
+          }
+        );
+
+        console.log(`  ✅ [${index + 1}] Screenshot complete - ${result.images.length} variation(s)`);
+
+        return {
+          index,
+          success: true as const,
+          headerCopy: config.text.header,
+          headerPosition,
+          deviceOrientation: config.layout.device_orientation,
+          appScreenUrl: blankCanvasUrl,
+          images: result.images,
+        };
+      } catch (error) {
+        console.error(`  ❌ [${index + 1}] Screenshot generation failed:`, error);
+        return {
+          index,
+          success: false as const,
+          headerCopy: config.text.header,
+          error: String(error),
+        };
+      }
+    });
+
+    const finalResults = (await Promise.all(finalScreenshotPromises)).filter(
+      (r): r is FinalScreenshotResult => r !== null
+    );
+
+    const finalSuccessCount = finalResults.filter((r) => r.success).length;
+
+    console.log(`\n🎉 Screenshot set complete: ${finalSuccessCount}/${configs.length} successful`);
+
+    return {
+      totalScreenshots: configs.length,
+      successfulScreenshots: finalSuccessCount,
+      results: finalResults,
     };
   },
 });

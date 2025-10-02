@@ -142,6 +142,24 @@ function GenerateStyleFromDescription(
     - Describe visual style and mood clearly
     - Each field: 50-150 words max
 
+    ## OUTPUT FORMAT (STRICT)
+    respond with a single JSON object that matches this exact structure. Do not include markdown fences or commentary:
+    {
+      "style_name": "...",
+      "style_config": {
+        "background_color": "...",
+        "details": "...",
+        "text_style": "...",
+        "device_style": "..."
+      },
+      "device_reference_prompt": "...",
+      "preview_image_prompt": "..."
+    }
+    - All fields are REQUIRED and must be non-empty strings.
+    - Do NOT add extra fields.
+    - Do NOT wrap the JSON in backticks.
+    - Ensure any quotes inside strings are escaped.
+
     {{ ctx.output_format }}
   "#
 }

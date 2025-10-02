@@ -290,7 +290,8 @@ export default function StyleDetailPage() {
                       src={style.previewImageUrl}
                       alt={style.name}
                       fill
-                      className="object-cover"
+                      className="object-cover rounded-[inherit]"
+                      style={{ borderRadius: 'inherit' }}
                       sizes="128px"
                       priority
                     />

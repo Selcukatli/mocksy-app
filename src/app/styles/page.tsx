@@ -48,7 +48,7 @@ function StylesPageContent() {
   );
 
   const handleGenerateStyle = async () => {
-    if (!styleDescription.trim()) return;
+    if (!styleDescription.trim() && !referenceImage) return;
 
     setGenerating(true);
     try {
@@ -59,8 +59,12 @@ function StylesPageContent() {
         referenceImageUrl = undefined;
       }
 
+      const descriptionForGeneration = styleDescription.trim()
+        ? styleDescription.trim()
+        : 'Generate a polished mobile app screenshot style inspired by the uploaded reference image.';
+
       await generateStyleFromDescription({
-        description: styleDescription.trim(),
+        description: descriptionForGeneration,
         referenceImageUrl,
       });
 
@@ -252,20 +256,18 @@ function StylesPageContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="group relative"
+            className="group relative h-full"
           >
             <button
               onClick={() => setShowCreateDialog(true)}
-              className="w-full h-full rounded-xl border-2 border-dashed border-primary/30 bg-card hover:bg-primary/5 hover:border-primary/50 transition-all duration-200 overflow-hidden cursor-pointer"
+              className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-primary/30 bg-card hover:bg-primary/5 hover:border-primary/50 transition-all duration-200 overflow-hidden cursor-pointer"
             >
-              <div className="aspect-[4/3] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                    <Sparkles className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-sm">Create New Style</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Generate with AI</p>
-                </div>
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <Sparkles className="w-7 h-7 text-primary" />
+              </div>
+              <div className="text-center">
+                <h3 className="font-semibold text-sm">Create New Style</h3>
+                <p className="text-xs text-muted-foreground mt-1">Generate with AI</p>
               </div>
             </button>
           </motion.div>
@@ -277,10 +279,10 @@ function StylesPageContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="group relative"
+              className="group relative h-full"
             >
-              <Link href={`/styles/${style._id}`} className="block">
-                <div className="rounded-xl border bg-card hover:shadow-lg hover:scale-[1.02] transition-all duration-200 overflow-hidden cursor-pointer">
+              <Link href={`/styles/${style._id}`} className="block h-full">
+                <div className="flex h-full flex-col rounded-xl border bg-card hover:shadow-lg hover:scale-[1.02] transition-all duration-200 overflow-hidden cursor-pointer">
                   {/* Style Preview Area */}
                   <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/10 to-primary/5 overflow-hidden">
                     {style.previewImageUrl ? (
@@ -308,40 +310,44 @@ function StylesPageContent() {
                   </div>
 
                   {/* Style Info */}
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-1 truncate">{style.name}</h3>
-                    {style.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {style.description}
-                      </p>
-                    )}
-
-                    {/* Style Stats */}
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" />
-                        <span>{style.usageCount || 0} uses</span>
-                      </div>
-                      {style.isFeatured && (
-                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                          Featured
-                        </span>
+                  <div className="flex flex-1 flex-col p-4">
+                    <div>
+                      <h3 className="font-semibold mb-1 truncate">{style.name}</h3>
+                      {style.description && (
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                          {style.description}
+                        </p>
                       )}
                     </div>
 
-                    {/* Tags */}
-                    {style.tags && style.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {style.tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 bg-muted rounded-full text-xs"
-                          >
-                            {tag}
+                    <div className="mt-auto space-y-3">
+                      {/* Style Stats */}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3" />
+                          <span>{style.usageCount || 0} uses</span>
+                        </div>
+                        {style.isFeatured && (
+                          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                            Featured
                           </span>
-                        ))}
+                        )}
                       </div>
-                    )}
+
+                      {/* Tags */}
+                      {style.tags && style.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {style.tags.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag}
+                              className="px-2 py-0.5 bg-muted rounded-full text-xs"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -401,13 +407,16 @@ function StylesPageContent() {
                       <textarea
                         id="style-description"
                         value={styleDescription}
+                        disabled={generating}
+                        aria-disabled={generating}
                         onChange={(e) => setStyleDescription(e.target.value)}
                         placeholder="e.g., Cyberpunk neon with dark purple gradient, futuristic typography..."
-                        className="w-full px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[120px] resize-none"
+                        className="w-full px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[120px] resize-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
                         autoFocus
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         Describe colors, mood, theme, and visual style
+                        {referenceImage ? ' — optional when using a reference image' : ''}
                       </p>
                     </div>
                   </div>
@@ -428,34 +437,62 @@ function StylesPageContent() {
                         />
                         <label
                           htmlFor="reference-image"
-                          className={`flex min-h-[216px] items-center justify-center gap-2 w-full px-3 ${referenceImagePreview ? 'py-4' : 'py-8'} rounded-lg border-2 border-dashed bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors`}
+                          className={`flex flex-col min-h-[216px] items-center justify-center gap-3 text-center w-full px-3 ${referenceImagePreview ? 'py-4' : 'py-8'} rounded-lg border-2 border-dashed bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors`}
                         >
                           {referenceImagePreview ? (
-                            <div className="relative">
+                            <motion.div
+                              className="relative"
+                              animate={
+                                generating
+                                  ? {
+                                      scale: [1, 1.01, 0.995, 1],
+                                    }
+                                  : { scale: 1 }
+                              }
+                              transition={{ duration: 1.6, repeat: generating ? Infinity : 0, ease: 'easeInOut' }}
+                            >
                               <Image
                                 src={referenceImagePreview}
                                 alt="Reference preview"
                                 width={256}
                                 height={256}
                                 unoptimized
-                                className="max-h-48 w-auto rounded-lg object-contain"
+                                className={`max-h-48 w-auto rounded-lg object-contain ${generating ? 'brightness-[1.07]' : ''}`}
                               />
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setReferenceImage(null);
-                                  setReferenceImagePreview(null);
-                                }}
-                                className="absolute -top-2 -right-2 p-1 bg-background border rounded-full"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
+                              {generating && (
+                                <>
+                                  <motion.div
+                                    className="pointer-events-none absolute -inset-3 rounded-2xl border border-primary/40"
+                                    animate={{ opacity: [0.35, 0.9, 0.35] }}
+                                    transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                                  />
+                                  <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
+                                    <motion.div
+                                      className="absolute inset-x-[-30%] h-1/2 bg-gradient-to-b from-primary/0 via-primary/25 to-primary/0 blur-lg"
+                                      animate={{ y: ['-120%', '110%'] }}
+                                      transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                                    />
+                                  </div>
+                                </>
+                              )}
+                              {!generating && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setReferenceImage(null);
+                                    setReferenceImagePreview(null);
+                                  }}
+                                  className="absolute -top-2 -right-2 p-1 bg-background border rounded-full"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
+                            </motion.div>
                           ) : (
                             <>
-                              <Upload className="w-5 h-5 text-muted-foreground" />
+                              <Upload className="w-6 h-6 text-muted-foreground" />
                               <span className="text-sm text-muted-foreground">
                                 Paste or upload inspiration image
                               </span>
@@ -483,7 +520,7 @@ function StylesPageContent() {
                 </button>
                 <button
                   onClick={handleGenerateStyle}
-                  disabled={!styleDescription.trim() || generating}
+                  disabled={(generating || (!styleDescription.trim() && !referenceImage))}
                   className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
                 >
                   {generating && (

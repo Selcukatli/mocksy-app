@@ -154,7 +154,7 @@ async function main() {
       const uploadResponse = await fetch(uploadUrl, {
         method: "POST",
         headers: { "Content-Type": "image/png" },
-        body: canvasBuffer,
+        body: new Blob([new Uint8Array(canvasBuffer)], { type: "image/png" }),
       });
 
       if (!uploadResponse.ok) {

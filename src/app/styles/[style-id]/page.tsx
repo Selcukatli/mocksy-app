@@ -169,98 +169,91 @@ export default function StyleDetailPage() {
 
   return (
     <div className="flex-1 p-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
-        {/* Back Button */}
+      <div className="sticky top-4 z-20 mb-8 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border/60 bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <Link
           href="/styles"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Styles</span>
         </Link>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          >
+            <Wand2 className="h-4 w-4" />
+            Remix Style
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          >
+            <Heart className="h-4 w-4" />
+            Favorite Style
+          </button>
+          <button
+            type="button"
+            onClick={handleStartWithStyle}
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Sparkles className="h-4 w-4" />
+            Use this Style
+          </button>
+        </div>
+      </div>
 
-        {/* Style Header */}
-        <div className="bg-card rounded-xl border overflow-hidden">
-          <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8">
-            {/* Style Preview Image */}
-            <div
-              className="relative h-32 w-32 flex-shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 cursor-zoom-in"
-              onMouseEnter={(event) => {
-                if (!style.previewImageUrl) return;
-                positionHoverPreview(event, 280, 280);
-                setHoverPreview({
-                  imageUrl: style.previewImageUrl,
-                  width: 280,
-                  height: 280,
-                  alt: `${style.name} preview`
-                });
-              }}
-              onMouseLeave={() => setHoverPreview(null)}
-              onMouseMove={(event) => {
-                if (!style.previewImageUrl) return;
-                positionHoverPreview(event, 280, 280);
-              }}
-            >
-              {style.previewImageUrl ? (
-                <Image
-                  src={style.previewImageUrl}
-                  alt={style.name}
-                  fill
-                  className="object-cover"
-                  sizes="128px"
-                  priority
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Sparkles className="h-9 w-9 text-primary/60" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Style Details */}
+        <div className="lg:col-span-1 space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: 0.05 }}
+            className="bg-card rounded-xl border p-6 space-y-5"
+          >
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                <div
+                  className="relative h-32 w-32 flex-shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 cursor-zoom-in"
+                  onMouseEnter={(event) => {
+                    if (!style.previewImageUrl) return;
+                    positionHoverPreview(event, 280, 280);
+                    setHoverPreview({
+                      imageUrl: style.previewImageUrl,
+                      width: 280,
+                      height: 280,
+                      alt: `${style.name} preview`
+                    });
+                  }}
+                  onMouseLeave={() => setHoverPreview(null)}
+                  onMouseMove={(event) => {
+                    if (!style.previewImageUrl) return;
+                    positionHoverPreview(event, 280, 280);
+                  }}
+                >
+                  {style.previewImageUrl ? (
+                    <Image
+                      src={style.previewImageUrl}
+                      alt={style.name}
+                      fill
+                      className="object-cover"
+                      sizes="128px"
+                      priority
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Sparkles className="h-9 w-9 text-primary/60" />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0 space-y-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-2">
-                  <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{style.name}</h1>
+                <div className="space-y-3">
+                  <h1 className="text-3xl font-semibold tracking-tight">{style.name}</h1>
                   {style.description && (
-                    <p className="text-muted-foreground text-base sm:text-lg">
+                    <p className="text-muted-foreground text-sm leading-relaxed">
                       {style.description}
                     </p>
                   )}
-                </div>
-                <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                  >
-                    <Wand2 className="h-4 w-4" />
-                    Remix Style
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                  >
-                    <Heart className="h-4 w-4" />
-                    Favorite Style
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleStartWithStyle}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Use this Style
-                  </button>
-                </div>
-              </div>
-
-              {(style.tags?.length ?? 0) > 0 || style.category ? (
-                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                   {style.tags && style.tags.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2">
                       {style.tags.map((tag) => (
@@ -275,51 +268,28 @@ export default function StyleDetailPage() {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
 
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4" />
-                      <span className="font-medium">{style.usageCount ?? 0} uses</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>Created {createdLabel}</span>
-                    </div>
-                    {style.category && (
-                      <div className="flex items-center gap-2">
-                        <Palette className="h-4 w-4" />
-                        <span className="capitalize">{style.category}</span>
-                      </div>
-                    )}
-                  </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="font-medium">{style.usageCount ?? 0} uses</span>
                 </div>
-              ) : (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    <span className="font-medium">{style.usageCount ?? 0} uses</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>Created {createdLabel}</span>
-                  </div>
-                  {style.category && (
-                    <div className="flex items-center gap-2">
-                      <Palette className="h-4 w-4" />
-                      <span className="capitalize">{style.category}</span>
-                    </div>
-                  )}
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  <span>Created {createdLabel}</span>
                 </div>
-              )}
+                {style.category && (
+                  <div className="flex items-center gap-2">
+                    <Palette className="h-4 w-4" />
+                    <span className="capitalize">{style.category}</span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      </motion.div>
+          </motion.div>
 
-      {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Style Details */}
-        <div className="lg:col-span-1 space-y-6">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

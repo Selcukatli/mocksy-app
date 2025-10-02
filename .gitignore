@@ -45,3 +45,6 @@ convex/_generated/
 
 # temporary AI-generated images
 .temp-images/
+
+# playwright captures
+.playwright-mcp/

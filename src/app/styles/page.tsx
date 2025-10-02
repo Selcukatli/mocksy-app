@@ -6,7 +6,9 @@ import {
   X,
   TrendingUp,
   Upload,
-  Wand2
+  Wand2,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
@@ -34,6 +36,7 @@ function StylesPageContent() {
   const [referenceImage, setReferenceImage] = useState<File | null>(null);
   const [referenceImagePreview, setReferenceImagePreview] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const searchParams = useSearchParams();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('tag') ?? '');
@@ -53,6 +56,186 @@ function StylesPageContent() {
   const styleJob = generating
     ? activeJobs.find((job) => job.type === 'style')
     : undefined;
+
+  type StyleItem = (typeof filteredStyles)[number];
+
+  const CreateStyleCard = ({ onClick }: { onClick: () => void }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="group relative h-full"
+    >
+      <button
+        onClick={onClick}
+        className="flex h-full w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+      >
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+          <Sparkles className="h-8 w-8 text-primary" />
+        </div>
+        <div className="text-center">
+          <h3 className="font-semibold text-sm">Create New Style</h3>
+          <p className="text-xs text-muted-foreground">Generate with AI</p>
+        </div>
+      </button>
+    </motion.div>
+  );
+
+  const StyleGridCard = ({ style, index = 0 }: { style: StyleItem; index?: number }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+      className="group relative h-full"
+    >
+      <Link href={`/styles/${style._id}`} className="block h-full">
+        <div className="flex h-full flex-col rounded-xl border bg-card hover:shadow-lg hover:scale-[1.02] transition-all duration-200 overflow-hidden cursor-pointer">
+          <StylePreview style={style} />
+          <StyleInfo style={style} />
+        </div>
+      </Link>
+    </motion.div>
+  );
+
+  const CreateStyleRow = ({ onClick }: { onClick: () => void }) => (
+    <motion.button
+      type="button"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-4 rounded-xl border-2 border-dashed border-primary/30 bg-card px-4 py-3 text-left hover:bg-primary/5 hover:border-primary/50 transition"
+    >
+      <div className="flex items-center gap-4">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
+          <Sparkles className="h-6 w-6 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold">Create New Style</h3>
+          <p className="text-xs text-muted-foreground">Generate with AI</p>
+        </div>
+      </div>
+      <Wand2 className="h-4 w-4 text-primary" />
+    </motion.button>
+  );
+
+  const StyleListRow = ({ style, index = 0 }: { style: StyleItem; index?: number }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay: index * 0.04 }}
+      className="rounded-xl border bg-card hover:shadow-md transition"
+    >
+      <Link href={`/styles/${style._id}`} className="flex items-stretch gap-4 p-4">
+        <StylePreview style={style} variant="list" />
+        <div className="flex flex-1 flex-col justify-between">
+          <div>
+            <h3 className="text-base font-semibold">{style.name}</h3>
+            {style.description && (
+              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                {style.description}
+              </p>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <TrendingUp className="h-3.5 w-3.5" />
+              {style.usageCount ?? 0} uses
+            </span>
+            {style.category && <span className="capitalize">{style.category}</span>}
+            {style.tags && style.tags.length > 0 && (
+              <span className="inline-flex flex-wrap gap-1">
+                {style.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="rounded-full bg-muted px-2 py-0.5">
+                    {tag}
+                  </span>
+                ))}
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+
+  const StylePreview = ({
+    style,
+    variant = 'grid',
+  }: {
+    style: StyleItem;
+    variant?: 'grid' | 'list';
+  }) => {
+    const wrapperClasses =
+      variant === 'grid'
+        ? 'relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5'
+        : 'relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 to-primary/5';
+
+    const imageClasses =
+      variant === 'grid'
+        ? 'object-cover object-center scale-[1.15]'
+        : 'object-cover object-center';
+
+    return (
+      <div className={wrapperClasses}>
+        {style.previewImageUrl ? (
+          <Image
+            src={style.previewImageUrl}
+            alt={style.name}
+            fill
+            className={imageClasses}
+            sizes={variant === 'grid' ? '(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw' : '112px'}
+          />
+        ) : (
+          <>
+            <div className="absolute inset-0 opacity-30">
+              <div className="absolute top-4 left-4 h-12 w-12 rounded-full bg-primary/10 blur-2xl" />
+              <div className="absolute bottom-4 right-4 h-10 w-10 rounded-full bg-primary/10 blur-xl" />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Sparkles className="h-10 w-10 text-primary/60" />
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const StyleInfo = ({ style }: { style: StyleItem }) => (
+    <div className="flex flex-1 flex-col p-4">
+      <div>
+        <h3 className="font-semibold mb-1 truncate">{style.name}</h3>
+        {style.description && (
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+            {style.description}
+          </p>
+        )}
+      </div>
+
+      <div className="mt-auto space-y-3">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" />
+            <span>{style.usageCount || 0} uses</span>
+          </div>
+          {style.isFeatured && (
+            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
+              Featured
+            </span>
+          )}
+        </div>
+
+        {style.tags && style.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {style.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="px-2 py-0.5 bg-muted rounded-full text-xs">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   const handleGenerateStyle = async () => {
     if (!styleDescription.trim() && !referenceImage) return;
@@ -183,13 +366,48 @@ function StylesPageContent() {
         className="mb-6 border-b border-border/60 pb-4"
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight">Screenshot Styles</h1>
-            <p className="text-sm text-muted-foreground">
-              Browse community looks or spin up your own with AI-powered style generation.
-            </p>
-          </div>
+          <h1 className="text-3xl font-semibold tracking-tight">Screenshot Styles</h1>
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <div className="relative flex-1 min-w-[220px] max-w-xs">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search styles..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full rounded-full border border-border/80 bg-muted pl-10 pr-11 py-2 text-xs transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => handleSearchChange('')}
+                  className="absolute right-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  aria-label="Clear search"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            <div className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 transition ${
+                  viewMode === 'grid' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-primary'
+                }`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" /> Grid
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 transition ${
+                  viewMode === 'list' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-primary'
+                }`}
+              >
+                <List className="h-3.5 w-3.5" /> List
+              </button>
+            </div>
             <span className="inline-flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               {filteredStyles.length} styles available
@@ -205,29 +423,6 @@ function StylesPageContent() {
           </div>
         </div>
       </motion.div>
-
-      <div className="mb-8 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px] max-w-2xl">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search styles..."
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full rounded-lg border border-border/80 bg-muted pl-10 pr-11 py-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => handleSearchChange('')}
-              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-              aria-label="Clear search"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* Sign in prompt */}
       {!isSignedIn && (
@@ -267,109 +462,18 @@ function StylesPageContent() {
             </button>
           )}
         </motion.div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {/* Create New Style Ghost Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="group relative h-full"
-          >
-            <button
-              onClick={() => setShowCreateDialog(true)}
-              className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-primary/30 bg-card hover:bg-primary/5 hover:border-primary/50 transition-all duration-200 overflow-hidden cursor-pointer"
-            >
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                <Sparkles className="w-7 h-7 text-primary" />
-              </div>
-              <div className="text-center">
-                <h3 className="font-semibold text-sm">Create New Style</h3>
-                <p className="text-xs text-muted-foreground mt-1">Generate with AI</p>
-              </div>
-            </button>
-          </motion.div>
-
-          {/* Existing Styles */}
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <CreateStyleCard onClick={() => setShowCreateDialog(true)} />
           {filteredStyles.map((style, index) => (
-            <motion.div
-              key={style._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="group relative h-full"
-            >
-              <Link href={`/styles/${style._id}`} className="block h-full">
-                <div className="flex h-full flex-col rounded-xl border bg-card hover:shadow-lg hover:scale-[1.02] transition-all duration-200 overflow-hidden cursor-pointer">
-                  {/* Style Preview Area */}
-                  <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/10 to-primary/5 overflow-hidden">
-                    {style.previewImageUrl ? (
-                      <Image
-                        src={style.previewImageUrl}
-                        alt={style.name}
-                        fill
-                        className="object-cover object-center scale-[1.15]"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      />
-                    ) : (
-                      <>
-                        {/* Decorative elements */}
-                        <div className="absolute inset-0 opacity-30">
-                          <div className="absolute top-4 left-4 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
-                          <div className="absolute bottom-4 right-4 w-16 h-16 bg-primary/10 rounded-full blur-xl" />
-                        </div>
-
-                        {/* Style Icon */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Sparkles className="w-12 h-12 text-primary/60" />
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Style Info */}
-                  <div className="flex flex-1 flex-col p-4">
-                    <div>
-                      <h3 className="font-semibold mb-1 truncate">{style.name}</h3>
-                      {style.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                          {style.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="mt-auto space-y-3">
-                      {/* Style Stats */}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3" />
-                          <span>{style.usageCount || 0} uses</span>
-                        </div>
-                        {style.isFeatured && (
-                          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                            Featured
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Tags */}
-                      {style.tags && style.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {style.tags.slice(0, 3).map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-0.5 bg-muted rounded-full text-xs"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
+            <StyleGridCard key={style._id} style={style} index={index} />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <CreateStyleRow onClick={() => setShowCreateDialog(true)} />
+          {filteredStyles.map((style, index) => (
+            <StyleListRow key={style._id} style={style} index={index} />
           ))}
         </div>
       )}

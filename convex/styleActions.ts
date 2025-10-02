@@ -1,8 +1,8 @@
 "use node";
 
-import { internalAction } from "./_generated/server";
+import { action } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { b } from "../baml_client";
 import * as BAML from "@boundaryml/baml";
 const Image = BAML.Image;
@@ -13,7 +13,7 @@ import type { Id } from "./_generated/dataModel";
  * Uses BAML to analyze description and generate style config + image prompts
  * Then generates device reference + preview card images via FAL
  */
-export const generateStyleFromDescription = internalAction({
+export const generateStyleFromDescription = action({
   args: {
     description: v.string(),
     referenceImageUrl: v.optional(v.string()),
@@ -21,6 +21,16 @@ export const generateStyleFromDescription = internalAction({
   returns: v.id("styles"),
   handler: async (ctx, args): Promise<Id<"styles">> => {
     console.log("🎨 Starting style generation from description:", args.description);
+
+    // Get current user profile (actions can't query directly, need mutation helper)
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get or ensure profile exists via the profiles mutation
+    const result = await ctx.runMutation(api.profiles.ensureCurrentUserProfile, {});
+    const profileId = result.profileId;
 
     // Step 1: Call BAML to analyze description and generate style specification
     console.log("📝 Calling BAML GenerateStyleFromDescription...");
@@ -114,8 +124,8 @@ export const generateStyleFromDescription = internalAction({
       name,
       slug,
       description: args.description,
+      createdBy: profileId,
       isPublic: true,
-      isSystemStyle: false,
       status: "published", // Auto-publish generated styles
       backgroundColor: styleOutput.style_config.background_color,
       details: styleOutput.style_config.details,
@@ -238,3 +248,71 @@ function categorizeStyle(description: string): string | undefined {
 
   return undefined; // No category match
 }
+
+/**
+ * Regenerate preview image for an existing style with updated prompt
+ * Uses Gemini Flash to create a new preview card image
+ */
+export const regenerateStylePreviewImage = action({
+  args: {
+    styleId: v.id("styles"),
+    editPrompt: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    console.log("🔄 Regenerating preview image for style:", args.styleId);
+
+    // Get the style
+    const style = await ctx.runQuery(api.styles.getStyleById, { styleId: args.styleId });
+    if (!style) {
+      throw new Error("Style not found");
+    }
+
+    // Build the preview image prompt with edge-to-edge instructions
+    const basePrompt = `Square style showcase card. Background fills entire canvas edge-to-edge with no padding or margins. ${style.backgroundColor}. ${style.details}. Style name prominently displayed using: ${style.textStyle}. Full bleed, no white space around edges.`;
+
+    const finalPrompt = args.editPrompt
+      ? `${basePrompt}\n\nADDITIONAL INSTRUCTIONS: ${args.editPrompt}`
+      : basePrompt;
+
+    console.log("📝 Generated prompt:", finalPrompt);
+
+    try {
+      console.log("🖼️  Generating new preview image (Gemini Flash)...");
+      const previewResult = await ctx.runAction(
+        internal.utils.fal.falImageActions.geminiFlashTextToImage,
+        {
+          prompt: finalPrompt,
+          num_images: 1,
+          output_format: "png",
+        }
+      );
+
+      if (previewResult.images && previewResult.images.length > 0) {
+        const previewImageUrl = previewResult.images[0].url;
+        console.log("  Preview image generated:", previewImageUrl);
+
+        // Upload to Convex storage
+        const previewImageStorageId = await uploadImageToStorage(
+          ctx,
+          previewImageUrl,
+          `preview-${args.styleId}-${Date.now()}.png`
+        );
+        console.log("✅ Preview image uploaded to storage:", previewImageStorageId);
+
+        // Update the style with new preview image
+        await ctx.runMutation(internal.styles.updateStylePreviewImage, {
+          styleId: args.styleId,
+          previewImageStorageId,
+        });
+
+        console.log("✅ Style preview image updated successfully!");
+      }
+    } catch (error) {
+      console.error("❌ Preview image generation failed:", error);
+      throw error;
+    }
+
+    return null;
+  },
+});

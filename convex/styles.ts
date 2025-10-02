@@ -11,7 +11,6 @@ export const createStyle = mutation({
     slug: v.string(),
     description: v.optional(v.string()),
     isPublic: v.boolean(),
-    isSystemStyle: v.boolean(),
     status: v.union(v.literal("draft"), v.literal("published")),
     backgroundColor: v.string(),
     details: v.string(),
@@ -28,17 +27,27 @@ export const createStyle = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    // For system styles, createdBy is null
-    // For user styles, get current profile (would need auth context)
-    const createdBy = args.isSystemStyle ? undefined : undefined; // TODO: Get from auth
+    // TODO: Get current user profile from auth context
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
+      .unique();
+
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
 
     const styleId = await ctx.db.insert("styles", {
       name: args.name,
       slug: args.slug,
       description: args.description,
-      createdBy,
+      createdBy: profile._id,
       isPublic: args.isPublic,
-      isSystemStyle: args.isSystemStyle,
       status: args.status,
       backgroundColor: args.backgroundColor,
       details: args.details,
@@ -67,8 +76,8 @@ export const createStyleInternal = internalMutation({
     name: v.string(),
     slug: v.string(),
     description: v.optional(v.string()),
+    createdBy: v.optional(v.id("profiles")),
     isPublic: v.boolean(),
-    isSystemStyle: v.boolean(),
     status: v.union(v.literal("draft"), v.literal("published")),
     backgroundColor: v.string(),
     details: v.string(),
@@ -85,17 +94,12 @@ export const createStyleInternal = internalMutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    // For system styles, createdBy is null
-    // For user styles, get current profile (would need auth context)
-    const createdBy = args.isSystemStyle ? undefined : undefined; // TODO: Get from auth
-
     const styleId = await ctx.db.insert("styles", {
       name: args.name,
       slug: args.slug,
       description: args.description,
-      createdBy,
+      createdBy: args.createdBy,
       isPublic: args.isPublic,
-      isSystemStyle: args.isSystemStyle,
       status: args.status,
       backgroundColor: args.backgroundColor,
       details: args.details,
@@ -128,6 +132,7 @@ export const getPublicStyles = query({
       name: v.string(),
       slug: v.string(),
       description: v.optional(v.string()),
+      createdBy: v.optional(v.id("profiles")),
       backgroundColor: v.string(),
       details: v.string(),
       textStyle: v.string(),
@@ -135,6 +140,9 @@ export const getPublicStyles = query({
       referenceImageStorageId: v.optional(v.id("_storage")),
       previewImageStorageId: v.optional(v.id("_storage")),
       deviceReferenceImageStorageId: v.optional(v.id("_storage")),
+      previewImageUrl: v.union(v.string(), v.null()),
+      referenceImageUrl: v.union(v.string(), v.null()),
+      deviceReferenceImageUrl: v.union(v.string(), v.null()),
       tags: v.optional(v.array(v.string())),
       category: v.optional(v.string()),
       isFeatured: v.optional(v.boolean()),
@@ -151,35 +159,57 @@ export const getPublicStyles = query({
       )
       .collect();
 
-    return styles.map((style) => ({
-      _id: style._id,
-      _creationTime: style._creationTime,
-      name: style.name,
-      slug: style.slug,
-      description: style.description,
-      backgroundColor: style.backgroundColor,
-      details: style.details,
-      textStyle: style.textStyle,
-      deviceStyle: style.deviceStyle,
-      referenceImageStorageId: style.referenceImageStorageId,
-      previewImageStorageId: style.previewImageStorageId,
-      deviceReferenceImageStorageId: style.deviceReferenceImageStorageId,
-      tags: style.tags,
-      category: style.category,
-      isFeatured: style.isFeatured,
-      usageCount: style.usageCount,
-      createdAt: style.createdAt,
-      updatedAt: style.updatedAt,
-    }));
+    return Promise.all(
+      styles.map(async (style) => {
+        // Get image URLs from storage IDs
+        let previewImageUrl = null;
+        if (style.previewImageStorageId) {
+          previewImageUrl = await ctx.storage.getUrl(style.previewImageStorageId);
+        }
+        let referenceImageUrl = null;
+        if (style.referenceImageStorageId) {
+          referenceImageUrl = await ctx.storage.getUrl(style.referenceImageStorageId);
+        }
+        let deviceReferenceImageUrl = null;
+        if (style.deviceReferenceImageStorageId) {
+          deviceReferenceImageUrl = await ctx.storage.getUrl(style.deviceReferenceImageStorageId);
+        }
+
+        return {
+          _id: style._id,
+          _creationTime: style._creationTime,
+          name: style.name,
+          slug: style.slug,
+          description: style.description,
+          createdBy: style.createdBy,
+          backgroundColor: style.backgroundColor,
+          details: style.details,
+          textStyle: style.textStyle,
+          deviceStyle: style.deviceStyle,
+          referenceImageStorageId: style.referenceImageStorageId,
+          previewImageStorageId: style.previewImageStorageId,
+          deviceReferenceImageStorageId: style.deviceReferenceImageStorageId,
+          previewImageUrl,
+          referenceImageUrl,
+          deviceReferenceImageUrl,
+          tags: style.tags,
+          category: style.category,
+          isFeatured: style.isFeatured,
+          usageCount: style.usageCount,
+          createdAt: style.createdAt,
+          updatedAt: style.updatedAt,
+        };
+      })
+    );
   },
 });
 
 /**
- * Get all system styles
+ * Get style by ID (internal - used by screenshotActions and detail page)
  */
-export const getSystemStyles = query({
-  args: {},
-  returns: v.array(
+export const getStyleById = query({
+  args: { styleId: v.id("styles") },
+  returns: v.union(
     v.object({
       _id: v.id("styles"),
       _creationTime: v.number(),
@@ -190,24 +220,38 @@ export const getSystemStyles = query({
       details: v.string(),
       textStyle: v.string(),
       deviceStyle: v.string(),
-      referenceImageStorageId: v.optional(v.id("_storage")),
       previewImageStorageId: v.optional(v.id("_storage")),
-      deviceReferenceImageStorageId: v.optional(v.id("_storage")),
+      previewImageUrl: v.union(v.string(), v.null()),
+      referenceImageUrl: v.union(v.string(), v.null()),
+      deviceReferenceImageUrl: v.union(v.string(), v.null()),
       tags: v.optional(v.array(v.string())),
       category: v.optional(v.string()),
-      isFeatured: v.optional(v.boolean()),
       usageCount: v.optional(v.number()),
+      isFeatured: v.optional(v.boolean()),
       createdAt: v.number(),
       updatedAt: v.number(),
-    })
+    }),
+    v.null()
   ),
-  handler: async (ctx) => {
-    const styles = await ctx.db
-      .query("styles")
-      .withIndex("by_system", (q) => q.eq("isSystemStyle", true))
-      .collect();
+  handler: async (ctx, args) => {
+    const style = await ctx.db.get(args.styleId);
+    if (!style) return null;
 
-    return styles.map((style) => ({
+    // Resolve image URLs
+    let previewImageUrl = null;
+    if (style.previewImageStorageId) {
+      previewImageUrl = await ctx.storage.getUrl(style.previewImageStorageId);
+    }
+    let referenceImageUrl = null;
+    if (style.referenceImageStorageId) {
+      referenceImageUrl = await ctx.storage.getUrl(style.referenceImageStorageId);
+    }
+    let deviceReferenceImageUrl = null;
+    if (style.deviceReferenceImageStorageId) {
+      deviceReferenceImageUrl = await ctx.storage.getUrl(style.deviceReferenceImageStorageId);
+    }
+
+    return {
       _id: style._id,
       _creationTime: style._creationTime,
       name: style.name,
@@ -217,44 +261,16 @@ export const getSystemStyles = query({
       details: style.details,
       textStyle: style.textStyle,
       deviceStyle: style.deviceStyle,
-      referenceImageStorageId: style.referenceImageStorageId,
       previewImageStorageId: style.previewImageStorageId,
-      deviceReferenceImageStorageId: style.deviceReferenceImageStorageId,
+      previewImageUrl,
+      referenceImageUrl,
+      deviceReferenceImageUrl,
       tags: style.tags,
       category: style.category,
-      isFeatured: style.isFeatured,
       usageCount: style.usageCount,
+      isFeatured: style.isFeatured,
       createdAt: style.createdAt,
       updatedAt: style.updatedAt,
-    }));
-  },
-});
-
-/**
- * Get style by ID (internal - used by screenshotActions)
- */
-export const getStyleById = query({
-  args: { styleId: v.id("styles") },
-  returns: v.union(
-    v.object({
-      _id: v.id("styles"),
-      backgroundColor: v.string(),
-      details: v.string(),
-      textStyle: v.string(),
-      deviceStyle: v.string(),
-    }),
-    v.null()
-  ),
-  handler: async (ctx, args) => {
-    const style = await ctx.db.get(args.styleId);
-    if (!style) return null;
-
-    return {
-      _id: style._id,
-      backgroundColor: style.backgroundColor,
-      details: style.details,
-      textStyle: style.textStyle,
-      deviceStyle: style.deviceStyle,
     };
   },
 });
@@ -380,16 +396,31 @@ export const unpublishStyle = mutation({
 
     // TODO: Add auth check - only creator can unpublish their style
 
-    if (style.isSystemStyle) {
-      throw new Error("Cannot unpublish system styles");
-    }
-
     if (style.status === "draft") {
       throw new Error("Style is already a draft");
     }
 
     await ctx.db.patch(args.styleId, {
       status: "draft",
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Update style preview image (internal - used by styleActions)
+ */
+export const updateStylePreviewImage = internalMutation({
+  args: {
+    styleId: v.id("styles"),
+    previewImageStorageId: v.id("_storage"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.styleId, {
+      previewImageStorageId: args.previewImageStorageId,
       updatedAt: Date.now(),
     });
 

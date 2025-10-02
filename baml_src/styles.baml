@@ -130,8 +130,9 @@ function GenerateStyleFromDescription(
     - Should work with Gemini 2.5 Flash model
     - Length: 50-150 words
     - IMPORTANT: NO phone, NO device - pure style showcase with background, decorative elements, and style name text
+    - CRITICAL: Background and elements must fill ENTIRE canvas edge-to-edge with NO white padding, NO margins, NO borders around the image
 
-    Example: "Square style showcase card portraying cyberpunk neon aesthetic. Neon pink and cyan radial gradient background flowing from dark navy center to bright magenta edges. Holographic circuit patterns and geometric hexagons scattered around (cyan, 60-80px, 4-5 pieces). Glowing pink grid squares (40-60px, 6-8 scattered). Center displays style name 'CYBERPUNK NEON' in futuristic bold font with white color, cyan outline and neon glow matching the text_style. High-tech, energetic atmosphere. Pure style preview, no device."
+    Example: "Square style showcase card portraying cyberpunk neon aesthetic. Background fills entire canvas edge-to-edge with no padding or margins. Neon pink and cyan radial gradient background flowing from dark navy center to bright magenta edges, extending to all four edges. Holographic circuit patterns and geometric hexagons scattered around (cyan, 60-80px, 4-5 pieces). Glowing pink grid squares (40-60px, 6-8 scattered). Center displays style name 'CYBERPUNK NEON' in futuristic bold font with white color, cyan outline and neon glow matching the text_style. High-tech, energetic atmosphere. Pure style preview, no device. Full bleed, no white space around edges."
 
     ## WRITING GUIDELINES:
     - Be specific and descriptive but concise
@@ -256,6 +257,7 @@ function ReviseStyle(
     - Should work with Gemini 2.5 Flash model
     - Length: 50-150 words
     - IMPORTANT: NO phone, NO device - pure style showcase with background, decorative elements, and style name text
+    - CRITICAL: Background and elements must fill ENTIRE canvas edge-to-edge with NO white padding, NO margins, NO borders around the image
     - Incorporate all revisions into the preview
 
     ## WRITING GUIDELINES:

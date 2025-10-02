@@ -232,10 +232,9 @@ export default defineSchema({
     description: v.optional(v.string()), // Brief description of the style
 
     // Ownership & visibility
-    createdBy: v.optional(v.id("profiles")), // Creator (null for system styles)
+    createdBy: v.optional(v.id("profiles")), // Creator (optional for backward compatibility)
     isPublic: v.boolean(), // Whether style is publicly available
-    isSystemStyle: v.boolean(), // Built-in styles vs user-created
-    status: v.union(v.literal("draft"), v.literal("published")), // Publishing status (system styles always "published")
+    status: v.union(v.literal("draft"), v.literal("published")), // Publishing status
 
     // BAML StyleConfig - Only visual styling, no content or layout
     backgroundColor: v.string(), // Background color description (e.g., "bright yellow solid color")
@@ -260,7 +259,6 @@ export default defineSchema({
   })
     .index("by_creator", ["createdBy"])
     .index("by_public", ["isPublic"])
-    .index("by_system", ["isSystemStyle"])
     .index("by_slug", ["slug"])
     .index("by_category", ["category"])
     .index("by_featured", ["isFeatured"])

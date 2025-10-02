@@ -257,7 +257,7 @@ export default function Home() {
             </motion.div>
           </Link>
 
-          <Link href="/templates" className="group">
+          <Link href="/styles" className="group">
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -269,12 +269,12 @@ export default function Home() {
                   <ImageIcon className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="text-xl font-bold mb-1 text-white">Browse Templates</h3>
+                  <h3 className="text-xl font-bold mb-1 text-white">Browse Styles</h3>
                   <p className="text-white/90 mb-3 text-sm">
-                    Explore professional screenshot designs
+                    Explore professional screenshot styles
                   </p>
                   <div className="flex items-center gap-2 text-white font-medium text-sm">
-                    <span>View Templates</span>
+                    <span>View Styles</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -545,10 +545,10 @@ export default function Home() {
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
-                    href="/templates"
+                    href="/styles"
                     className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-3 text-sm font-medium text-foreground transition hover:border-primary/30 hover:text-primary"
                   >
-                    Preview templates
+                    Preview styles
                     <ImageIcon className="h-4 w-4" />
                   </Link>
                 </div>

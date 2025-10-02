@@ -5,8 +5,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
 import { useState, type MouseEvent, useEffect, useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft,
   Sparkles,
@@ -77,6 +76,7 @@ export default function StyleDetailPage() {
 
   // Fetch style data
   const style = useQuery(api.styles.getStyleById, { styleId });
+  const isLoading = style === undefined;
 
   const designDetails = useMemo(
     () =>
@@ -158,10 +158,50 @@ export default function StyleDetailPage() {
 
   if (!style) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <Sparkles className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading style...</p>
+      <div className="flex-1 p-8">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="h-9 w-36 animate-pulse rounded-full bg-muted" />
+          <div className="flex gap-2">
+            <div className="h-10 w-28 animate-pulse rounded-full bg-muted" />
+            <div className="h-10 w-28 animate-pulse rounded-full bg-muted" />
+            <div className="h-10 w-32 animate-pulse rounded-full bg-primary/60" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-1">
+            <div className="space-y-4 rounded-xl border bg-card p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-32 w-32 rounded-xl bg-muted animate-pulse" />
+                <div className="flex-1 space-y-3">
+                  <div className="h-7 w-48 rounded bg-muted animate-pulse" />
+                  <div className="h-4 w-56 rounded bg-muted animate-pulse" />
+                  <div className="flex gap-2">
+                    <div className="h-6 w-16 rounded-full bg-muted animate-pulse" />
+                    <div className="h-6 w-16 rounded-full bg-muted animate-pulse" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+                <div className="h-4 w-20 rounded bg-muted animate-pulse" />
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-xl border bg-card p-6">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="space-y-2 rounded-lg border border-dashed border-border/60 p-4">
+                  <div className="h-5 w-32 rounded bg-muted animate-pulse" />
+                  <div className="h-4 w-full rounded bg-muted animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-card p-6 lg:col-span-2">
+            <div className="h-6 w-40 rounded bg-muted animate-pulse mb-6" />
+            <div className="h-64 rounded-xl border border-dashed bg-muted/60 animate-pulse" />
+          </div>
         </div>
       </div>
     );
@@ -328,49 +368,60 @@ export default function StyleDetailPage() {
                         }`}
                       />
                     </button>
-                    {isExpanded && (
-                      <div className="space-y-4 px-4 pb-4 text-sm text-muted-foreground">
-                        <p>{description || 'Add guidance in the style editor.'}</p>
-                        {key === 'deviceStyle' && style.deviceReferenceImageUrl && (
-                          <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 text-xs text-muted-foreground/90">
-                            <p className="mb-3 font-medium text-primary/80">
-                              Reference mock
-                            </p>
-                            <div className="flex items-center gap-4">
-                              <div
-                                className="flex-shrink-0 cursor-zoom-in"
-                                onMouseEnter={(event) => {
-                                  positionHoverPreview(event, 240, 380);
-                                  setHoverPreview({
-                                    imageUrl: style.deviceReferenceImageUrl as string,
-                                    width: 240,
-                                    height: 380,
-                                    alt: 'Device reference preview'
-                                  });
-                                }}
-                                onMouseLeave={() => setHoverPreview(null)}
-                                onMouseMove={(event) => {
-                                  positionHoverPreview(event, 240, 380);
-                                }}
-                              >
-                                <Image
-                                  src={style.deviceReferenceImageUrl}
-                                  alt="Device reference"
-                                  width={80}
-                                  height={120}
-                                  className="rounded-md border border-primary/30 shadow-sm"
-                                  sizes="80px"
-                                />
+                    <AnimatePresence initial={false}>
+                      {isExpanded && (
+                        <motion.div
+                          key={`${key}-content`}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: 'easeInOut' }}
+                          className="overflow-hidden"
+                        >
+                          <div className="space-y-4 px-4 pb-4 pt-2 text-sm text-muted-foreground">
+                            <p>{description || 'Add guidance in the style editor.'}</p>
+                            {key === 'deviceStyle' && style.deviceReferenceImageUrl && (
+                              <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 text-xs text-muted-foreground/90">
+                                <p className="mb-3 font-medium text-primary/80">
+                                  Reference mock
+                                </p>
+                                <div className="flex items-center gap-4">
+                                  <div
+                                    className="flex-shrink-0 cursor-zoom-in"
+                                    onMouseEnter={(event) => {
+                                      positionHoverPreview(event, 240, 380);
+                                      setHoverPreview({
+                                        imageUrl: style.deviceReferenceImageUrl as string,
+                                        width: 240,
+                                        height: 380,
+                                        alt: 'Device reference preview'
+                                      });
+                                    }}
+                                    onMouseLeave={() => setHoverPreview(null)}
+                                    onMouseMove={(event) => {
+                                      positionHoverPreview(event, 240, 380);
+                                    }}
+                                  >
+                                    <Image
+                                      src={style.deviceReferenceImageUrl}
+                                      alt="Device reference"
+                                      width={80}
+                                      height={120}
+                                      className="rounded-md border border-primary/30 shadow-sm"
+                                      sizes="80px"
+                                    />
+                                  </div>
+                                  <p className="leading-relaxed">
+                                    Hover to inspect the full-resolution frame. Use it as a visual reference when
+                                    generating new screenshots or refining this style.
+                                  </p>
+                                </div>
                               </div>
-                              <p className="leading-relaxed">
-                                Hover to inspect the full-resolution frame. Use it as a visual reference when
-                                generating new screenshots or refining this style.
-                              </p>
-                            </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 );
               })}

@@ -16,7 +16,7 @@ import type { Id } from "./_generated/dataModel";
 export const generateStyleFromDescription = action({
   args: {
     description: v.string(),
-    referenceImageUrl: v.optional(v.string()),
+    referenceImageStorageId: v.optional(v.id("_storage")),
   },
   returns: v.id("styles"),
   handler: async (ctx, args): Promise<Id<"styles">> => {
@@ -34,10 +34,19 @@ export const generateStyleFromDescription = action({
 
     // Step 1: Call BAML to analyze description and generate style specification
     console.log("📝 Calling BAML GenerateStyleFromDescription...");
+    let referenceImageUrl: string | null = null;
+    if (args.referenceImageStorageId) {
+      referenceImageUrl = await ctx.storage.getUrl(args.referenceImageStorageId);
+      console.log("📎 Reference image detected:", {
+        storageId: args.referenceImageStorageId,
+        resolvedUrl: referenceImageUrl,
+      });
+    }
+
     const styleOutput = await b.GenerateStyleFromDescription(
       args.description,
       null, // style_name - let AI generate it
-      args.referenceImageUrl ? Image.fromUrl(args.referenceImageUrl) : null
+      referenceImageUrl ? Image.fromUrl(referenceImageUrl) : null
     );
 
     console.log("✅ BAML analysis complete:");
@@ -121,19 +130,20 @@ export const generateStyleFromDescription = action({
     const styleId: Id<"styles"> = await ctx.runMutation(
       internal.styles.createStyleInternal,
       {
-      name,
-      slug,
-      description: args.description,
-      createdBy: profileId,
-      isPublic: true,
-      status: "published", // Auto-publish generated styles
-      backgroundColor: styleOutput.style_config.background_color,
-      details: styleOutput.style_config.details,
-      textStyle: styleOutput.style_config.text_style,
-      deviceStyle: styleOutput.style_config.device_style,
-      deviceReferenceImageStorageId,
-      previewImageStorageId,
-      tags: extractTags(args.description),
+        name,
+        slug,
+        description: args.description,
+        createdBy: profileId,
+        isPublic: true,
+        status: "published", // Auto-publish generated styles
+        backgroundColor: styleOutput.style_config.background_color,
+        details: styleOutput.style_config.details,
+        textStyle: styleOutput.style_config.text_style,
+        deviceStyle: styleOutput.style_config.device_style,
+        deviceReferenceImageStorageId,
+        previewImageStorageId,
+        referenceImageStorageId: args.referenceImageStorageId,
+        tags: extractTags(args.description),
         category: categorizeStyle(args.description),
         isFeatured: false,
       }

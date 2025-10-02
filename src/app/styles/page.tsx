@@ -153,56 +153,59 @@ function StylesPageContent() {
 
   return (
     <div className="flex-1 p-8">
-      {/* Sticky header */}
+      {/* Page header */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.05 }}
-        className="sticky top-4 z-20 mb-8 rounded-xl border border-border/60 bg-card/95 px-5 py-4 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80"
+        transition={{ duration: 0.25 }}
+        className="mb-6 border-b border-border/60 pb-4"
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight">Screenshot Styles</h1>
             <p className="text-sm text-muted-foreground">
               Browse community looks or spin up your own with AI-powered style generation.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowCreateDialog(true)}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-auto"
-          >
-            <Wand2 className="h-4 w-4" />
-            Generate Style
-          </button>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              {filteredStyles.length} styles available
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowCreateDialog(true)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-auto"
+            >
+              <Wand2 className="h-4 w-4" />
+              Generate Style
+            </button>
+          </div>
         </div>
-        <div className="relative mt-3">
+      </motion.div>
+
+      <div className="mb-8 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[220px] max-w-2xl">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search styles..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background pl-10 pr-4 py-2 text-sm shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="w-full rounded-lg border border-border/80 bg-muted pl-10 pr-11 py-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => handleSearchChange('')}
+              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
-        {searchQuery && (
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-            <span>Filtering by</span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-primary">
-              {searchQuery}
-              <button
-                type="button"
-                onClick={() => handleSearchChange('')}
-                className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary transition hover:bg-primary/30"
-                aria-label="Clear style filter"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          </div>
-        )}
-      </motion.div>
+      </div>
 
       {/* Sign in prompt */}
       {!isSignedIn && (

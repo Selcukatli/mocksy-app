@@ -209,39 +209,52 @@ export default function StyleDetailPage() {
 
   return (
     <div className="flex-1 p-8">
-      <div className="sticky top-4 z-20 mb-8 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border/60 bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <Link
-          href="/styles"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Styles</span>
-        </Link>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          >
-            <Wand2 className="h-4 w-4" />
-            Remix Style
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          >
-            <Heart className="h-4 w-4" />
-            Favorite Style
-          </button>
-          <button
-            type="button"
-            onClick={handleStartWithStyle}
-            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            <Sparkles className="h-4 w-4" />
-            Use this Style
-          </button>
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="mb-6 border-b border-border/60 pb-4"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-4">
+            <Link
+              href="/styles"
+              className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Styles</span>
+            </Link>
+            <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <TrendingUp className="h-4 w-4" />
+              {style?.usageCount ?? 0} uses
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <Wand2 className="h-4 w-4" />
+              Remix Style
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <Heart className="h-4 w-4" />
+              Favorite Style
+            </button>
+            <button
+              type="button"
+              onClick={handleStartWithStyle}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <Sparkles className="h-4 w-4" />
+              Use this Style
+            </button>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Style Details */}

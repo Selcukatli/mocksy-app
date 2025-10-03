@@ -106,7 +106,7 @@ export function CreateStyleDialog({
     },
     {
       key: "decorative",
-      label: "Decorative elements",
+      label: "Decorations",
       icon: Shapes,
       active: decorativeFieldActive,
       onAdd: () => onDecorativeFieldToggle(true),
@@ -151,36 +151,162 @@ export function CreateStyleDialog({
               </button>
             </div>
 
-            {styleJob && (
-              <div className="flex items-center gap-3 border-b border-primary/30 bg-primary/5 px-6 py-3 text-sm text-primary">
-                <SparkleIndicator />
-                <div>
-                  <p className="font-medium">{styleJob.message ?? "Doing the magic..."}</p>
-                  {typeof styleJob.progress === "number" && (
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-primary/10">
+            <AnimatePresence mode="wait">
+              {generating ? (
+                <motion.div
+                  key="generating"
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                  transition={{
+                    duration: 0.5,
+                    ease: [0.16, 1, 0.3, 1] // Custom easing for smooth feel
+                  }}
+                  className="relative flex min-h-[500px] flex-col items-center justify-center overflow-hidden px-6 py-12"
+                >
+                  {/* Floating detail cards in background */}
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    {styleDescription && (
                       <motion.div
-                        className="relative h-full rounded-full bg-primary"
-                        animate={{ width: `${Math.max(styleJob.progress * 100, 6)}%` }}
-                        transition={{ duration: 0.35, ease: "easeOut" }}
+                        initial={{ opacity: 0, x: -40, rotate: -8 }}
+                        animate={{ opacity: 0.7, x: -80, rotate: -4 }}
+                        transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+                        className="absolute left-12 top-32 max-w-[13rem] rounded-lg border-2 border-primary/40 bg-primary/10 px-4 py-3 shadow-xl backdrop-blur-md"
                       >
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 opacity-70"
-                          animate={{ x: ["-100%", "100%"] }}
-                          transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                        <p className="text-xs font-semibold text-primary">Description</p>
+                        <p className="mt-1 line-clamp-2 text-sm">{styleDescription}</p>
+                      </motion.div>
+                    )}
+
+                    {backgroundFieldActive && backgroundStyle && (
+                      <motion.div
+                        initial={{ opacity: 0, x: 40, rotate: 8 }}
+                        animate={{ opacity: 0.7, x: 80, rotate: 4 }}
+                        transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
+                        className="absolute right-12 top-28 max-w-[13rem] rounded-lg border-2 border-primary/40 bg-primary/10 px-4 py-3 shadow-xl backdrop-blur-md"
+                      >
+                        <p className="text-xs font-semibold text-primary">Background</p>
+                        <p className="mt-1 line-clamp-2 text-sm">{backgroundStyle}</p>
+                      </motion.div>
+                    )}
+
+                    {textFieldActive && textStyle && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 40, rotate: 4 }}
+                        animate={{ opacity: 0.7, y: 80, rotate: 2 }}
+                        transition={{ delay: 0.35, duration: 0.6, ease: "easeOut" }}
+                        className="absolute bottom-36 left-20 max-w-[13rem] rounded-lg border-2 border-primary/40 bg-primary/10 px-4 py-3 shadow-xl backdrop-blur-md"
+                      >
+                        <p className="text-xs font-semibold text-primary">Text Style</p>
+                        <p className="mt-1 line-clamp-2 text-sm">{textStyle}</p>
+                      </motion.div>
+                    )}
+
+                    {deviceFieldActive && deviceStyle && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 40, rotate: -4 }}
+                        animate={{ opacity: 0.7, y: 80, rotate: -2 }}
+                        transition={{ delay: 0.4, duration: 0.6, ease: "easeOut" }}
+                        className="absolute bottom-36 right-20 max-w-[13rem] rounded-lg border-2 border-primary/40 bg-primary/10 px-4 py-3 shadow-xl backdrop-blur-md"
+                      >
+                        <p className="text-xs font-semibold text-primary">Device Frame</p>
+                        <p className="mt-1 line-clamp-2 text-sm">{deviceStyle}</p>
+                      </motion.div>
+                    )}
+
+                    {decorativeFieldActive && decorativeElements && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.85, rotate: 6 }}
+                        animate={{ opacity: 0.7, scale: 1, rotate: 3 }}
+                        transition={{ delay: 0.45, duration: 0.6, ease: "easeOut" }}
+                        className="absolute left-32 bottom-52 max-w-[13rem] rounded-lg border-2 border-primary/40 bg-primary/10 px-4 py-3 shadow-xl backdrop-blur-md"
+                      >
+                        <p className="text-xs font-semibold text-primary">Decorations</p>
+                        <p className="mt-1 line-clamp-2 text-sm">{decorativeElements}</p>
+                      </motion.div>
+                    )}
+
+                    {referenceImagePreview && (
+                      <motion.div
+                        initial={{ opacity: 0, x: 0, y: 20, rotate: -10 }}
+                        animate={{ opacity: 0.85, x: 140, y: -40, rotate: -6 }}
+                        transition={{ delay: 0.45, duration: 0.6, ease: "easeOut" }}
+                        className="absolute top-1/3 right-10 md:right-24 rounded-2xl border-2 border-primary/40 bg-card/90 p-2 shadow-xl shadow-primary/20 backdrop-blur"
+                      >
+                        <Image
+                          src={referenceImagePreview}
+                          alt="Reference preview"
+                          width={110}
+                          height={110}
+                          unoptimized
+                          className="h-[110px] w-auto rounded-xl object-cover"
                         />
                       </motion.div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+                    )}
+                  </div>
 
-            <div className="max-h-[calc(100vh-220px)] overflow-y-auto px-6 py-5">
-              <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
-                <div className="order-2 flex flex-1 flex-col md:order-2">
-                  <label htmlFor="style-description" className="mb-1.5 block text-sm font-medium">
-                    Describe your style
-                  </label>
+                  {/* Main loading UI - centered and above cards */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.15, duration: 0.4 }}
+                    className="relative z-10"
+                  >
+                    <SparkleIndicator large />
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25, duration: 0.4 }}
+                    className="relative z-10 mt-8 text-center"
+                  >
+                    <p className="text-xl font-semibold">
+                      {styleJob?.message ?? "Generating your style..."}
+                    </p>
+                    {typeof styleJob?.progress === "number" && (
+                      <div className="mt-6 w-80">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-primary/10">
+                          <motion.div
+                            className="relative h-full rounded-full bg-primary"
+                            animate={{ width: `${Math.max(styleJob.progress * 100, 6)}%` }}
+                            transition={{ duration: 0.35, ease: "easeOut" }}
+                          >
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 opacity-70"
+                              animate={{ x: ["-100%", "100%"] }}
+                              transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                          </motion.div>
+                        </div>
+                        <p className="mt-3 text-sm text-muted-foreground">
+                          {Math.round(styleJob.progress * 100)}% complete
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="form"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="max-h-[calc(100vh-220px)] overflow-y-auto px-6 py-5"
+                >
+              <div className="grid gap-5 md:grid-cols-[minmax(0,165px)_minmax(0,1fr)] md:items-stretch md:gap-4">
+                <div className="order-1 flex flex-col md:order-2">
+                  <div className="mb-1.5 flex items-center justify-between text-sm font-medium">
+                    <label htmlFor="style-description" className="flex items-center gap-1.5">
+                      <Wand2 className="h-3.5 w-3.5" />
+                      Describe your style
+                    </label>
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {descriptionLength}
+                      {maxSuggestedLength ? ` / ${maxSuggestedLength}` : ""}
+                    </span>
+                  </div>
                   <textarea
                     id="style-description"
                     value={styleDescription}
@@ -188,47 +314,20 @@ export function CreateStyleDialog({
                     aria-disabled={generating}
                     onChange={(event) => onStyleDescriptionChange(event.target.value)}
                     placeholder="e.g., Cyberpunk neon with dark purple gradient, futuristic typography..."
-                    className="flex-1 resize-none rounded-lg border bg-background px-3 py-2 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+                    className="min-h-[130px] resize-none rounded-lg border bg-background px-3 py-3 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
                     autoFocus
                   />
-                  <div className="mt-2 flex justify-end text-xs text-muted-foreground">
-                    <span>
-                      {descriptionLength}
-                      {maxSuggestedLength ? ` / ${maxSuggestedLength}` : ""}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 space-y-2 text-muted-foreground/80">
-                    <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]">
-                      <PlusCircle className="h-3.5 w-3.5" />
-                      Add more detail
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {inactiveDetailSections.length > 0 ? (
-                        inactiveDetailSections.map((section) => (
-                          <button
-                            key={section.key}
-                            type="button"
-                            onClick={section.onAdd}
-                            disabled={generating}
-                            className="inline-flex items-center gap-2 rounded-full bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground/90 transition hover:bg-muted/40 hover:text-primary disabled:opacity-50"
-                          >
-                            <section.icon className="h-3.5 w-3.5" />
-                            {section.label}
-                          </button>
-                        ))
-                      ) : (
-                        <span className="text-xs">All optional details added</span>
-                      )}
-                    </div>
-                  </div>
                 </div>
 
-                <div className="order-1 w-full md:order-1 md:w-[220px] md:flex-shrink-0">
-                  <label className="mb-1.5 block text-sm font-medium">
-                    Reference image <span className="text-muted-foreground">(optional)</span>
-                  </label>
-                  <div className="relative">
+                <div className="order-2 flex w-full flex-col md:order-1 md:w-[200px] md:max-w-[200px]">
+                  <div className="mb-1.5 flex items-center justify-between text-sm font-medium">
+                    <span className="flex items-center gap-1.5">
+                      <Upload className="h-3.5 w-3.5" />
+                      Reference image
+                    </span>
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">Optional</span>
+                  </div>
+                  <div className="relative flex-1">
                     <input
                       type="file"
                       id="reference-image"
@@ -238,8 +337,8 @@ export function CreateStyleDialog({
                     />
                     <label
                       htmlFor="reference-image"
-                      className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed bg-muted/30 px-3 transition-colors hover:bg-muted/50 ${
-                        referenceImagePreview ? "py-4" : "py-6"
+                      className={`flex h-full w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed bg-muted/30 px-3 transition-colors hover:bg-muted/50 ${
+                        referenceImagePreview ? "py-2" : "py-2.5"
                       }`}
                     >
                       {referenceImagePreview ? (
@@ -258,10 +357,10 @@ export function CreateStyleDialog({
                             <Image
                               src={referenceImagePreview}
                               alt="Reference preview"
-                              width={200}
-                              height={200}
+                              width={140}
+                              height={140}
                               unoptimized
-                              className={`max-h-44 w-auto rounded-lg object-contain ${generating ? "brightness-[1.07]" : ""}`}
+                              className={`max-h-[120px] w-auto rounded-lg object-contain ${generating ? "brightness-[1.07]" : ""}`}
                             />
                           </div>
                           {generating && (
@@ -300,12 +399,34 @@ export function CreateStyleDialog({
                           <span className="text-sm text-muted-foreground text-center">
                             Paste or upload inspiration image
                           </span>
-                          <span className="text-xs text-muted-foreground/80">
-                            PNG, JPG, or WebP — square images work best
-                          </span>
                         </>
                       )}
                     </label>
+                  </div>
+                </div>
+
+                <div className="order-3 space-y-2 text-muted-foreground/80 md:order-3 md:col-span-2 md:pt-1">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em]">
+                    <PlusCircle className="h-3 w-3" />
+                    Add more detail
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {inactiveDetailSections.length > 0 ? (
+                      inactiveDetailSections.map((section) => (
+                        <button
+                          key={section.key}
+                          type="button"
+                          onClick={section.onAdd}
+                          disabled={generating}
+                          className="inline-flex items-center gap-2 rounded-full bg-muted/30 px-3.5 py-2 text-sm font-medium text-muted-foreground/90 transition hover:bg-muted/40 hover:text-primary disabled:opacity-50"
+                        >
+                          <section.icon className="h-4 w-4" />
+                          {section.label}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="text-xs">All optional details added</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -424,7 +545,7 @@ export function CreateStyleDialog({
                         <div className="flex items-center justify-between">
                           <span className="flex items-center gap-2 text-sm font-medium">
                             <Sparkles className="h-4 w-4 text-primary" />
-                            Decorative Elements
+                            Decorations
                           </span>
                           <button
                             type="button"
@@ -446,7 +567,9 @@ export function CreateStyleDialog({
                   </AnimatePresence>
                 </div>
               )}
-            </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="flex gap-2 border-t bg-card/95 px-6 py-4">
               <button
@@ -482,18 +605,20 @@ export function CreateStyleDialog({
   );
 }
 
-function SparkleIndicator() {
+function SparkleIndicator({ large = false }: { large?: boolean }) {
   const particles = [
     { angle: 0, delay: 0 },
     { angle: 120, delay: 0.2 },
     { angle: 240, delay: 0.4 },
   ];
-  const radius = 6;
+  const radius = large ? 20 : 6;
 
   return (
-    <span className="relative inline-flex h-5 w-5 items-center justify-center text-primary">
+    <span
+      className={`relative inline-flex items-center justify-center text-primary ${large ? "h-16 w-16" : "h-5 w-5"}`}
+    >
       <motion.span
-        className="h-2 w-2 rounded-full bg-primary"
+        className={`rounded-full bg-primary ${large ? "h-6 w-6" : "h-2 w-2"}`}
         animate={{ scale: [0.8, 1.15, 0.8], opacity: [0.6, 1, 0.6] }}
         transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -505,7 +630,7 @@ function SparkleIndicator() {
         return (
           <motion.span
             key={angle}
-            className="absolute h-1.5 w-1.5 rounded-full bg-primary/90 shadow-[0_0_6px_rgba(147,107,247,0.35)]"
+            className={`absolute rounded-full bg-primary/90 shadow-[0_0_6px_rgba(147,107,247,0.35)] ${large ? "h-4 w-4" : "h-1.5 w-1.5"}`}
             animate={{
               x: [0, x, 0],
               y: [0, y, 0],
@@ -517,7 +642,7 @@ function SparkleIndicator() {
         );
       })}
       <motion.span
-        className="absolute h-4 w-4 rounded-full bg-primary/15"
+        className={`absolute rounded-full bg-primary/15 ${large ? "h-12 w-12" : "h-4 w-4"}`}
         animate={{ scale: [0.9, 1.3, 0.9], opacity: [0.4, 0.1, 0.4] }}
         transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
       />

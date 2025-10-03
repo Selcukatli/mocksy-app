@@ -30,7 +30,7 @@ function GenerateStyleFromDescription(
   device_style: string? @description("Optional specific device frame styling instructions"),
   decorative_elements: string? @description("Optional specific decorative elements instructions")
 ) -> StyleGenerationOutput {
-  client ScreenshotGeneratorHigh
+  client ScreenshotGeneratorMed
   prompt #"
     {{ _.role("user") }}
 
@@ -109,6 +109,7 @@ function GenerateStyleFromDescription(
     - Font family and style (Impact, sans-serif, futuristic, elegant)
     - Weight (bold, extra bold, medium)
     - Color with effects (white with black outline, cyan with glow)
+    - CRITICAL: Ensure text is highly readable against the background - use sufficient contrast or add outlines/shadows/glows as needed
     - Example: "Impact font, extra bold 900 weight, white with thick 6px black outline and drop shadow"
 
     **device_style**: Describe how the device frame should look
@@ -119,40 +120,68 @@ function GenerateStyleFromDescription(
 
     ## 3. DEVICE REFERENCE PROMPT
 
-    Generate a COMPLETE prompt for creating an iPhone 16 Pro device frame.
+    Generate a COMPLETE prompt for creating an iPhone 16 Pro device with a stylish case.
 
-    YOU MUST START YOUR PROMPT WITH THESE EXACT CRITICAL CONSTRAINTS (copy verbatim, emphasize angle constraints):
+    YOU MUST FORMAT YOUR PROMPT AS: [Creative description first] THEN [Critical constraints at the end]
 
-    "CRITICAL LAYOUT RULES - MUST FOLLOW:
-    - VERTICAL tall phone orientation
-    - Facing DIRECTLY forward like a flat icon or emoji
-    - Looking STRAIGHT at the screen, NOT from the side
-    - You see ONLY the front - NO side edges visible, NO volume buttons visible
-    - Complete phone showing - top to bottom, all 4 corners visible
-    - Canvas: 1290x2796 vertical
-    - Phone size: Very large, fills 96-97% of height
-    - Phone screen: Solid flat [pick one color] fill - plain flat color, no patterns
-    - Background: Solid [contrasting color] behind the phone
-    - Style: Simple flat vector graphic like a design template, NOT a photo"
+    FIRST PART - Creative description:
+    "iPhone 16 Pro in a stylish protective case, flat mockup template. [Describe the case design matching the device_style - colors, materials, patterns, textures, glows, special effects. The case should wrap around the device edges and reflect the overall style aesthetic]. Flat 2D graphic template, NOT photograph, NOT 3D render."
 
-    THEN add your creative description:
-    "iPhone 16 Pro flat mockup template. [Describe frame styling - colors, materials, glows, textures on frame edges only]. Dynamic Island at top. Flat 2D graphic template, NOT photograph, NOT 3D render."
+    SECOND PART - YOU MUST APPEND THESE EXACT WORDS VERBATIM TO YOUR device_reference_prompt OUTPUT (copy exactly as written, do not modify):
 
-    Length: 120-180 words total
+    "FLAT GEOMETRIC iPhone 16 Pro mockup - TECHNICAL DRAWING STYLE
 
-    Example: "CRITICAL LAYOUT RULES - MUST FOLLOW:
-    - VERTICAL tall phone orientation
-    - Facing DIRECTLY forward like a flat icon or emoji
-    - Looking STRAIGHT at the screen, NOT from the side
-    - You see ONLY the front - NO side edges visible, NO volume buttons visible
-    - Complete phone showing - top to bottom, all 4 corners visible
-    - Canvas: 1290x2796 vertical
-    - Phone size: Very large, fills 96-97% of height
-    - Phone screen: Solid flat deep purple (#1A0B2E) fill - plain flat color, no patterns
-    - Background: Solid bright cyan (#00F0FF) behind the phone
-    - Style: Simple flat vector graphic like a design template, NOT a photo
+    ABSOLUTE REQUIREMENTS:
+    - 2D VECTOR-STYLE ILLUSTRATION, not realistic render
+    - PURE FRONTAL ELEVATION VIEW like architectural blueprint
+    - PERFECT RECTANGLE - all four corners at 90-degree angles
+    - NO PERSPECTIVE - left/right edges perfectly parallel vertical lines
+    - NO DEPTH CUES - top/bottom edges perfectly parallel horizontal lines
+    - Think: smartphone emoji 📱, app icon, or Figma mockup frame
+    - SYMMETRICAL - left side mirrors right side exactly
 
-    iPhone 16 Pro flat mockup template. Glossy black metallic frame with vibrant electric cyan (#00F0FF) neon glow on left edge and hot pink (#FF006E) neon glow on right edge. Holographic iridescent shimmer coating on frame with subtle circuit pattern etching. All decorative elements on frame edges only. Dynamic Island at top center. Flat 2D graphic template."
+    TECHNICAL SPECS:
+    - Canvas background: solid black (#000000)
+    - Screen area: solid black (#000000)
+    - VERTICAL rectangle (1290x2796 aspect ratio)
+    - Device fills 80-90% of canvas, perfectly centered
+    - NO text, NO logos, NO notch, NO camera cutouts, NO buttons
+    - Flat 2D graphic design - NOT photograph
+
+    FORBIDDEN:
+    - Any angled view or perspective distortion
+    - Visible side edges, thickness, or depth
+    - Shadows suggesting dimension
+    - Any asymmetry between left/right sides"
+
+    Length: 120-250 words total
+
+    Example: "iPhone 16 Pro in a stylish protective case, flat mockup template. Glossy translucent case with vibrant electric cyan (#00F0FF) to hot pink (#FF006E) gradient flowing from top to bottom. Holographic iridescent shimmer coating with subtle circuit pattern texture across the case surface. Raised protective edges around screen. Case wraps smoothly around device with rounded corners matching the phone's curves. Flat 2D graphic template, NOT photograph, NOT 3D render.
+
+    FLAT GEOMETRIC iPhone 16 Pro mockup - TECHNICAL DRAWING STYLE
+
+    ABSOLUTE REQUIREMENTS:
+    - 2D VECTOR-STYLE ILLUSTRATION, not realistic render
+    - PURE FRONTAL ELEVATION VIEW like architectural blueprint
+    - PERFECT RECTANGLE - all four corners at 90-degree angles
+    - NO PERSPECTIVE - left/right edges perfectly parallel vertical lines
+    - NO DEPTH CUES - top/bottom edges perfectly parallel horizontal lines
+    - Think: smartphone emoji 📱, app icon, or Figma mockup frame
+    - SYMMETRICAL - left side mirrors right side exactly
+
+    TECHNICAL SPECS:
+    - Canvas background: solid black (#000000)
+    - Screen area: solid black (#000000)
+    - VERTICAL rectangle (1290x2796 aspect ratio)
+    - Device fills 80-90% of canvas, perfectly centered
+    - NO text, NO logos, NO notch, NO camera cutouts, NO buttons
+    - Flat 2D graphic design - NOT photograph
+
+    FORBIDDEN:
+    - Any angled view or perspective distortion
+    - Visible side edges, thickness, or depth
+    - Shadows suggesting dimension
+    - Any asymmetry between left/right sides"
 
     ## 4. PREVIEW IMAGE PROMPT
 
@@ -267,6 +296,7 @@ function ReviseStyle(
     - Font family and style (Impact, sans-serif, futuristic, elegant)
     - Weight (bold, extra bold, medium)
     - Color with effects (white with black outline, cyan with glow)
+    - CRITICAL: Ensure text is highly readable against the background - use sufficient contrast or add outlines/shadows/glows as needed
     - Example: "Impact font, extra bold 900 weight, white with thick 6px black outline and drop shadow"
     - Update text styling if revision requests it
 
@@ -279,26 +309,41 @@ function ReviseStyle(
 
     ## 3. DEVICE REFERENCE PROMPT
 
-    Generate a COMPLETE prompt for creating an iPhone 16 Pro device frame.
+    Generate a COMPLETE prompt for creating an iPhone 16 Pro device with a stylish case.
 
-    YOU MUST START YOUR PROMPT WITH THESE EXACT CRITICAL CONSTRAINTS (copy verbatim, emphasize angle constraints):
+    YOU MUST FORMAT YOUR PROMPT AS: [Creative description first] THEN [Critical constraints at the end]
 
-    "CRITICAL LAYOUT RULES - MUST FOLLOW:
-    - VERTICAL tall phone orientation
-    - Facing DIRECTLY forward like a flat icon or emoji
-    - Looking STRAIGHT at the screen, NOT from the side
-    - You see ONLY the front - NO side edges visible, NO volume buttons visible
-    - Complete phone showing - top to bottom, all 4 corners visible
-    - Canvas: 1290x2796 vertical
-    - Phone size: Very large, fills 96-97% of height
-    - Phone screen: Solid flat [pick one color] fill - plain flat color, no patterns
-    - Background: Solid [contrasting color] behind the phone
-    - Style: Simple flat vector graphic like a design template, NOT a photo"
+    FIRST PART - Creative description incorporating the revised device styling:
+    "iPhone 16 Pro in a stylish protective case, flat mockup template. [Describe the case design matching the revised device_style - colors, materials, patterns, textures, glows, special effects. The case should wrap around the device edges and reflect the overall style aesthetic]. Flat 2D graphic template, NOT photograph, NOT 3D render."
 
-    THEN add your creative description incorporating the revised device styling:
-    "iPhone 16 Pro flat mockup template. [Describe frame styling - colors, materials, glows, textures on frame edges only]. Dynamic Island at top. Flat 2D graphic template, NOT photograph, NOT 3D render."
+    SECOND PART - YOU MUST APPEND THESE EXACT WORDS VERBATIM TO YOUR device_reference_prompt OUTPUT (copy exactly as written, do not modify):
 
-    Length: 120-180 words total
+    "FLAT GEOMETRIC iPhone 16 Pro mockup - TECHNICAL DRAWING STYLE
+
+    ABSOLUTE REQUIREMENTS:
+    - 2D VECTOR-STYLE ILLUSTRATION, not realistic render
+    - PURE FRONTAL ELEVATION VIEW like architectural blueprint
+    - PERFECT RECTANGLE - all four corners at 90-degree angles
+    - NO PERSPECTIVE - left/right edges perfectly parallel vertical lines
+    - NO DEPTH CUES - top/bottom edges perfectly parallel horizontal lines
+    - Think: smartphone emoji 📱, app icon, or Figma mockup frame
+    - SYMMETRICAL - left side mirrors right side exactly
+
+    TECHNICAL SPECS:
+    - Canvas background: solid black (#000000)
+    - Screen area: solid black (#000000)
+    - VERTICAL rectangle (1290x2796 aspect ratio)
+    - Device fills 80-90% of canvas, perfectly centered
+    - NO text, NO logos, NO notch, NO camera cutouts, NO buttons
+    - Flat 2D graphic design - NOT photograph
+
+    FORBIDDEN:
+    - Any angled view or perspective distortion
+    - Visible side edges, thickness, or depth
+    - Shadows suggesting dimension
+    - Any asymmetry between left/right sides"
+
+    Length: 120-250 words total
 
     ## 4. PREVIEW IMAGE PROMPT
 

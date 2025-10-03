@@ -23,7 +23,7 @@ import type { BamlRuntime, BamlCtxManager, ClientRegistry, Image, Audio, Pdf, Vi
 import { toBamlError, HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TextConfig, VisionTestResponse} from "./types"
+import type {Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 
 type TickReason = "Unknown";
@@ -277,6 +277,31 @@ env?: Record<string, string | undefined>
       "ReviseStyle",
       {
       "current_style": current_style,"revision_prompt": revision_prompt,"new_style_name": new_style_name?? null,"reference_image": reference_image?? null
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __baml_options__?.clientRegistry,
+      false,
+      env
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async ScoreDeviceReferenceImage(
+  device_image: Image,expected_frame_style: string,
+  __baml_options__?: BamlCallOptions
+  ): Promise<HTTPRequest> {
+    try {
+    const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const env: Record<string, string> = Object.fromEntries(
+      Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return await this.runtime.buildRequest(
+      "ScoreDeviceReferenceImage",
+      {
+      "device_image": device_image,"expected_frame_style": expected_frame_style
       },
       this.ctxManager.cloneContext(),
       __baml_options__?.tb?.__tb(),
@@ -958,6 +983,31 @@ env?: Record<string, string | undefined>
           "ReviseStyle",
           {
           "current_style": current_style,"revision_prompt": revision_prompt,"new_style_name": new_style_name?? null,"reference_image": reference_image?? null
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __baml_options__?.clientRegistry,
+          true,
+          env
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async ScoreDeviceReferenceImage(
+      device_image: Image,expected_frame_style: string,
+      __baml_options__?: BamlCallOptions
+      ): Promise<HTTPRequest> {
+        try {
+        const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const env: Record<string, string> = Object.fromEntries(
+          Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+          return await this.runtime.buildRequest(
+          "ScoreDeviceReferenceImage",
+          {
+          "device_image": device_image,"expected_frame_style": expected_frame_style
           },
           this.ctxManager.cloneContext(),
           __baml_options__?.tb?.__tb(),

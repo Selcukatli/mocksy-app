@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DetailedResponse,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
+import type {  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -96,6 +96,20 @@ export namespace partial_types {
       confidence?: number | null
       explanation?: string | null
       sources?: string[] | null
+    }
+    export interface DeviceImageScore {
+      overall_score?: number | null
+      is_front_facing?: boolean | null
+      has_black_screen?: boolean | null
+      has_black_background?: boolean | null
+      no_notch_or_island?: boolean | null
+      proper_size?: boolean | null
+      all_corners_visible?: boolean | null
+      is_vertical?: boolean | null
+      no_text_or_labels?: boolean | null
+      frame_matches_style?: boolean | null
+      issues: string[]
+      reasoning?: string | null
     }
     export interface DeviceSpec {
       type?: string | null

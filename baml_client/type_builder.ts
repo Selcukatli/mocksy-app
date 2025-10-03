@@ -41,6 +41,8 @@ export default class TypeBuilder {
     
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
     
+    DeviceImageScore: ClassViewer<'DeviceImageScore', "overall_score" | "is_front_facing" | "has_black_screen" | "has_black_background" | "no_notch_or_island" | "proper_size" | "all_corners_visible" | "is_vertical" | "no_text_or_labels" | "frame_matches_style" | "issues" | "reasoning">;
+    
     DeviceSpec: ClassViewer<'DeviceSpec', "type" | "aspect_ratio" | "frame" | "angle" | "scale" | "position" | "screenshot">;
     
     FontStyle: ClassViewer<'FontStyle', "family" | "weight" | "color" | "effects">;
@@ -86,7 +88,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DetailedResponse","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
+            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -120,6 +122,10 @@ export default class TypeBuilder {
         
         this.DetailedResponse = this.tb.classViewer("DetailedResponse", [
           "answer","confidence","explanation","sources",
+        ]);
+        
+        this.DeviceImageScore = this.tb.classViewer("DeviceImageScore", [
+          "overall_score","is_front_facing","has_black_screen","has_black_background","no_notch_or_island","proper_size","all_corners_visible","is_vertical","no_text_or_labels","frame_matches_style","issues","reasoning",
         ]);
         
         this.DeviceSpec = this.tb.classViewer("DeviceSpec", [

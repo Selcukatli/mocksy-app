@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -138,7 +138,10 @@ export default function ManageScreenshotPanel({
   const [showDeviceFrame, setShowDeviceFrame] = useState(true);
   const [frameThickness, setFrameThickness] = useState(30); // Default thickness in px
   const [frameColor, setFrameColor] = useState('#000000'); // Default black frame
-  const [showDynamicIsland, setShowDynamicIsland] = useState(true); // Show Dynamic Island by default
+  const [showDynamicIsland, setShowDynamicIsland] = useState(false); // Dynamic Island hidden by default
+  const DEVICE_ASPECT_RATIO = 1290 / 2796;
+  const DEVICE_MAX_WIDTH = 280;
+  const DEVICE_MAX_HEIGHT = DEVICE_MAX_WIDTH / DEVICE_ASPECT_RATIO;
   const {
     isSourceImagePanelOpen,
     isThemePanelOpen,
@@ -572,6 +575,7 @@ export default function ManageScreenshotPanel({
                         setShowDeviceFrame(newValue);
                         if (newValue) {
                           setShowMoreOptions(true); // Auto-expand when enabling
+                          setShowDynamicIsland(false);
                         } else {
                           setShowMoreOptions(false); // Close when disabling
                         }
@@ -719,12 +723,22 @@ export default function ManageScreenshotPanel({
           </div>
 
           {/* Right Side - Preview */}
-          <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-muted/5 via-muted/10 to-muted/5">
-            <div className="w-full max-w-[280px]">
-              {/* App Store Screenshot Preview */}
-              <div className="relative">
-                {/* Screenshot Container - App Store dimensions 1290x2796 (6.7" display) */}
-                <div className="aspect-[1290/2796] bg-gradient-to-br from-slate-900 to-slate-800 rounded-[30px] overflow-hidden shadow-2xl relative">
+          <div className="flex-1 flex flex-col p-6 bg-gradient-to-br from-muted/5 via-muted/10 to-muted/5">
+            <div className="flex-1 flex items-center justify-center">
+              <div
+                className="h-full w-full flex items-center justify-center"
+                style={{ maxWidth: DEVICE_MAX_WIDTH }}
+              >
+                {/* App Store Screenshot Preview */}
+                <div
+                  className="aspect-[1290/2796] bg-gradient-to-br from-slate-900 to-slate-800 rounded-[30px] overflow-hidden shadow-2xl relative"
+                  style={{
+                    height: '100%',
+                    width: 'auto',
+                    maxWidth: DEVICE_MAX_WIDTH,
+                    maxHeight: DEVICE_MAX_HEIGHT,
+                  }}
+                >
                   <div className={`w-full h-full flex ${selectedLayout.position === 'bottom' ? 'flex-col-reverse' : 'flex-col'}`}>
                     {/* Header Section - Dynamic position and alignment */}
                     <div className={`px-6 ${
@@ -908,16 +922,16 @@ export default function ManageScreenshotPanel({
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Preview Info */}
-              <div className="mt-6 text-center space-y-1">
-                <p className="text-xs text-muted-foreground">
-                  App Store Preview • 1290 × 2796px
-                </p>
-                <p className="text-xs text-muted-foreground/60">
-                  iPhone 15 Pro Max (6.7&quot;)
-                </p>
-              </div>
+            {/* Preview Info */}
+            <div className="mt-6 text-center space-y-1">
+              <p className="text-xs text-muted-foreground">
+                App Store Preview • 1290 × 2796px
+              </p>
+              <p className="text-xs text-muted-foreground/60">
+                iPhone 15 Pro Max (6.7&quot;)
+              </p>
             </div>
           </div>
         </div>

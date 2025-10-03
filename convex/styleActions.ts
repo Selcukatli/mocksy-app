@@ -4,8 +4,8 @@ import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { b } from "../baml_client";
-import * as BAML from "@boundaryml/baml";
-const Image = BAML.Image;
+import BAML from "@boundaryml/baml";
+const { Image } = BAML;
 import type { Id } from "./_generated/dataModel";
 
 /**
@@ -92,95 +92,163 @@ export const generateStyleFromDescription = action({
       console.log("  - Device prompt length:", styleOutput.device_reference_prompt.length);
       console.log("  - Preview prompt length:", styleOutput.preview_image_prompt.length);
 
-      // Step 2: Generate device reference image (Seed Dream 4)
-      await ctx.runMutation(internal.jobs.updateJob, {
-        jobId,
-        message: "Generating device reference mock",
-        progress: 0.45,
-      });
+      // Steps 2-4: Run in parallel for faster execution
+      // Track progress with weighted completion (device: 50%, preview: 30%, slug: 5%)
+      const taskProgress = {
+        device: { weight: 50, completed: false },
+        preview: { weight: 30, completed: false },
+        slug: { weight: 5, completed: false },
+      };
 
-      let deviceReferenceImageStorageId: Id<"_storage"> | undefined;
-      try {
-        console.log("📱 Generating device reference image (Seed Dream 4)...");
-        const deviceResult = await ctx.runAction(
-          internal.utils.fal.falImageActions.seedDream4TextToImage,
-          {
-            prompt: styleOutput.device_reference_prompt,
-            image_size: {
-              width: 1290,
-              height: 2796,
-            },
-            num_images: 1,
-            enable_safety_checker: false,
+      const baseProgress = 0.15; // Already at 15% from BAML
+      const parallelProgressRange = 0.75; // Can gain 75% from parallel tasks (15% + 75% = 90%)
+
+      const updateParallelProgress = async (message: string) => {
+        const totalWeight = 85; // Sum of all task weights
+        const completedWeight = Object.values(taskProgress)
+          .filter(task => task.completed)
+          .reduce((sum, task) => sum + task.weight, 0);
+        const progress = baseProgress + (completedWeight / totalWeight) * parallelProgressRange;
+
+        await ctx.runMutation(internal.jobs.updateJob, {
+          jobId,
+          message,
+          progress,
+        });
+      };
+
+      const [deviceReferenceImageStorageId, previewImageStorageId, slug] = await Promise.all([
+        // Task 1: Generate device reference images (4 candidates + scoring)
+        (async () => {
+          let storageId: Id<"_storage"> | undefined;
+          try {
+            console.log("📱 Generating 4 device reference image candidates (Seed Dream 4)...");
+            const deviceResult = await ctx.runAction(
+              internal.utils.fal.falImageActions.seedDream4TextToImage,
+              {
+                prompt: styleOutput.device_reference_prompt,
+                image_size: {
+                  width: 1290,
+                  height: 2796,
+                },
+                num_images: 4, // Generate 4 candidates
+                enable_safety_checker: false,
+              }
+            );
+
+            if (deviceResult.images && deviceResult.images.length > 0) {
+              console.log(`  Generated ${deviceResult.images.length} device image candidates`);
+
+              // Log all candidate URLs for reference
+              deviceResult.images.forEach((img: { url: string }, idx: number) => {
+                console.log(`  Candidate ${idx + 1} URL: ${img.url}`);
+              });
+
+              // Score all candidates in parallel
+              console.log("🔍 Scoring device image candidates...");
+              const scoringPromises = deviceResult.images.map(async (image: { url: string }, index: number) => {
+                try {
+                  const score = await b.ScoreDeviceReferenceImage(
+                    Image.fromUrl(image.url),
+                    styleOutput.style_config.device_style
+                  );
+                  console.log(`  Candidate ${index + 1}: Score ${score.overall_score}/100`);
+                  console.log(`    Reasoning: ${score.reasoning}`);
+                  if (score.issues.length > 0) {
+                    console.log(`    Issues: ${score.issues.join(", ")}`);
+                  }
+                  return {
+                    url: image.url,
+                    index,
+                    score: score.overall_score,
+                    details: score,
+                  };
+                } catch (error) {
+                  console.error(`  ❌ Failed to score candidate ${index + 1}:`, error);
+                  return {
+                    url: image.url,
+                    index,
+                    score: 0,
+                    details: null,
+                  };
+                }
+              });
+
+              const scoredImages = await Promise.all(scoringPromises);
+
+              // Find the best scoring image
+              const bestImage = scoredImages.reduce((best, current) =>
+                current.score > best.score ? current : best
+              );
+
+              console.log(`✅ Selected best candidate: #${bestImage.index + 1} with score ${bestImage.score}/100`);
+
+              if (bestImage.score < 60) {
+                console.warn(`⚠️  Warning: Best image score (${bestImage.score}) is below threshold (60)`);
+              }
+
+              // Upload the best image to Convex storage
+              storageId = await uploadImageToStorage(
+                ctx,
+                bestImage.url,
+                `device-ref-${Date.now()}.png`
+              );
+              console.log("✅ Best device image uploaded to storage:", storageId);
+            }
+          } catch (error) {
+            console.error("❌ Device image generation failed:", error);
           }
-        );
 
-        if (deviceResult.images && deviceResult.images.length > 0) {
-          const deviceImageUrl = deviceResult.images[0].url;
-          console.log("  Device image generated:", deviceImageUrl);
+          taskProgress.device.completed = true;
+          await updateParallelProgress("Device images ready");
+          return storageId;
+        })(),
 
-          // Upload to Convex storage
-          deviceReferenceImageStorageId = await uploadImageToStorage(
-            ctx,
-            deviceImageUrl,
-            `device-ref-${Date.now()}.png`
-          );
-          console.log("✅ Device image uploaded to storage:", deviceReferenceImageStorageId);
-        }
-      } catch (error) {
-        console.error("❌ Device image generation failed:", error);
-        // Continue without device image
-        await ctx.runMutation(internal.jobs.updateJob, {
-          jobId,
-          message: "Device reference generation failed, continuing",
-          progress: 0.6,
-        });
-      }
+        // Task 2: Generate preview style card (Gemini Flash)
+        (async () => {
+          let storageId: Id<"_storage"> | undefined;
+          try {
+            console.log("🖼️  Generating preview style card (Gemini Flash)...");
+            const previewResult = await ctx.runAction(
+              internal.utils.fal.falImageActions.geminiFlashTextToImage,
+              {
+                prompt: styleOutput.preview_image_prompt,
+                num_images: 1,
+                output_format: "png",
+              }
+            );
 
-      // Step 3: Generate preview style card (Gemini Flash)
-      let previewImageStorageId: Id<"_storage"> | undefined;
-      try {
-        await ctx.runMutation(internal.jobs.updateJob, {
-          jobId,
-          message: "Generating preview card",
-          progress: 0.7,
-        });
+            if (previewResult.images && previewResult.images.length > 0) {
+              const previewImageUrl = previewResult.images[0].url;
+              console.log("  Preview card generated:", previewImageUrl);
 
-        console.log("🖼️  Generating preview style card (Gemini Flash)...");
-        const previewResult = await ctx.runAction(
-          internal.utils.fal.falImageActions.geminiFlashTextToImage,
-          {
-            prompt: styleOutput.preview_image_prompt,
-            num_images: 1,
-            output_format: "png",
+              // Upload to Convex storage
+              storageId = await uploadImageToStorage(
+                ctx,
+                previewImageUrl,
+                `preview-${Date.now()}.png`
+              );
+              console.log("✅ Preview card uploaded to storage:", storageId);
+            }
+          } catch (error) {
+            console.error("❌ Preview image generation failed:", error);
           }
-        );
 
-        if (previewResult.images && previewResult.images.length > 0) {
-          const previewImageUrl = previewResult.images[0].url;
-          console.log("  Preview card generated:", previewImageUrl);
+          taskProgress.preview.completed = true;
+          await updateParallelProgress("Preview card ready");
+          return storageId;
+        })(),
 
-          // Upload to Convex storage
-          previewImageStorageId = await uploadImageToStorage(
-            ctx,
-            previewImageUrl,
-            `preview-${Date.now()}.png`
-          );
-          console.log("✅ Preview card uploaded to storage:", previewImageStorageId);
-        }
-      } catch (error) {
-        console.error("❌ Preview image generation failed:", error);
-        // Continue without preview image
-        await ctx.runMutation(internal.jobs.updateJob, {
-          jobId,
-          message: "Preview generation failed, saving style",
-          progress: 0.82,
-        });
-      }
+        // Task 3: Generate slug from style name
+        (async () => {
+          const generatedSlug = generateSlug(styleOutput.style_name);
+          taskProgress.slug.completed = true;
+          await updateParallelProgress("Processing metadata");
+          return generatedSlug;
+        })(),
+      ]);
 
-      // Step 4: Use AI-generated name and create slug
       const name = styleOutput.style_name;
-      const slug = generateSlug(name);
 
       console.log("💾 Saving style to database...");
       console.log("  Name:", name);

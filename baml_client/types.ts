@@ -122,6 +122,22 @@ export interface DetailedResponse {
   
 }
 
+export interface DeviceImageScore {
+  overall_score: number
+  is_front_facing: boolean
+  has_black_screen: boolean
+  has_black_background: boolean
+  no_notch_or_island: boolean
+  proper_size: boolean
+  all_corners_visible: boolean
+  is_vertical: boolean
+  no_text_or_labels: boolean
+  frame_matches_style: boolean
+  issues: string[]
+  reasoning: string
+  
+}
+
 export interface DeviceSpec {
   type: string
   aspect_ratio: string

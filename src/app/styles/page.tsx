@@ -167,7 +167,7 @@ function StylesPageContent() {
 
   const CreateStyleCard = ({ onClick }: { onClick: () => void }) => (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className="group relative h-full"
@@ -189,7 +189,7 @@ function StylesPageContent() {
 
   const StyleGridCard = ({ style, index = 0 }: { style: StyleItem; index?: number }) => (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
       className="group relative h-full"
@@ -206,7 +206,7 @@ function StylesPageContent() {
   const CreateStyleRow = ({ onClick }: { onClick: () => void }) => (
     <motion.button
       type="button"
-      initial={{ opacity: 0, y: 10 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
       onClick={onClick}
@@ -227,7 +227,7 @@ function StylesPageContent() {
 
   const StyleListRow = ({ style, index = 0 }: { style: StyleItem; index?: number }) => (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay: index * 0.04 }}
       className="rounded-xl border bg-card hover:shadow-md transition"

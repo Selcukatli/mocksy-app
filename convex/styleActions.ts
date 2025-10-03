@@ -17,6 +17,11 @@ export const generateStyleFromDescription = action({
   args: {
     description: v.string(),
     referenceImageStorageId: v.optional(v.id("_storage")),
+    // Optional style overrides for advanced controls
+    backgroundStyle: v.optional(v.string()),
+    textStyle: v.optional(v.string()),
+    deviceStyle: v.optional(v.string()),
+    decorativeElements: v.optional(v.string()),
   },
   returns: v.object({
     jobId: v.id("jobs"),
@@ -74,7 +79,12 @@ export const generateStyleFromDescription = action({
       const styleOutput = await b.GenerateStyleFromDescription(
         args.description,
         null, // style_name - let AI generate it
-        referenceImageUrl ? Image.fromUrl(referenceImageUrl) : null
+        referenceImageUrl ? Image.fromUrl(referenceImageUrl) : null,
+        // Pass optional style overrides
+        args.backgroundStyle ?? null,
+        args.textStyle ?? null,
+        args.deviceStyle ?? null,
+        args.decorativeElements ?? null
       );
 
       console.log("✅ BAML analysis complete:");

@@ -23,7 +23,12 @@ class StyleRevisionOutput {
 function GenerateStyleFromDescription(
   description: string @description("User's text description of desired style"),
   style_name: string? @description("Optional user-provided style name. If not provided, AI will generate one."),
-  reference_image: image? @description("Optional reference/inspiration image")
+  reference_image: image? @description("Optional reference/inspiration image"),
+  // Optional specific style controls - these OVERRIDE general description when provided
+  background_style: string? @description("Optional specific background color/gradient instructions"),
+  text_style: string? @description("Optional specific typography styling instructions"),
+  device_style: string? @description("Optional specific device frame styling instructions"),
+  decorative_elements: string? @description("Optional specific decorative elements instructions")
 ) -> StyleGenerationOutput {
   client ScreenshotGeneratorHigh
   prompt #"
@@ -45,6 +50,29 @@ function GenerateStyleFromDescription(
     - Completely ignore layout/composition of elements and any header/body copy wording
     - If a device appears in the image, ignore the UI content on the screen—focus only on frame styling and outer glow effects
     - Incorporate these visual cues into style_config, device_reference_prompt, and preview_image_prompt details
+    {% endif %}
+
+    {% if background_style or text_style or device_style or decorative_elements %}
+    ## USER-SPECIFIED STYLE OVERRIDES
+
+    The user has provided specific styling requirements. These OVERRIDE and take precedence over
+    the general description. Use these exact specifications:
+
+    {% if background_style %}
+    **REQUIRED background_color**: {{ background_style }}
+    {% endif %}
+
+    {% if text_style %}
+    **REQUIRED text_style**: {{ text_style }}
+    {% endif %}
+
+    {% if device_style %}
+    **REQUIRED device_style**: {{ device_style }}
+    {% endif %}
+
+    {% if decorative_elements %}
+    **REQUIRED details**: {{ decorative_elements }}
+    {% endif %}
     {% endif %}
 
     TASK: Generate a complete style specification.

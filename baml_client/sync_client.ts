@@ -341,7 +341,7 @@ export class BamlSyncClient {
   }
   
   GenerateStyleFromDescription(
-      description: string,style_name?: string | null,reference_image?: Image | null,
+      description: string,style_name?: string | null,reference_image?: Image | null,background_style?: string | null,text_style?: string | null,device_style?: string | null,decorative_elements?: string | null,
       __baml_options__?: BamlCallOptions
   ): types.StyleGenerationOutput {
     try {
@@ -365,7 +365,7 @@ export class BamlSyncClient {
       const raw = this.runtime.callFunctionSync(
         "GenerateStyleFromDescription",
         {
-          "description": description,"style_name": style_name?? null,"reference_image": reference_image?? null
+          "description": description,"style_name": style_name?? null,"reference_image": reference_image?? null,"background_style": background_style?? null,"text_style": text_style?? null,"device_style": device_style?? null,"decorative_elements": decorative_elements?? null
         },
         this.ctxManager.cloneContext(),
         options.tb?.__tb(),

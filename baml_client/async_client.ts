@@ -377,7 +377,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             
         async GenerateStyleFromDescription(
-        description: string,style_name?: string | null,reference_image?: Image | null,
+        description: string,style_name?: string | null,reference_image?: Image | null,background_style?: string | null,text_style?: string | null,device_style?: string | null,decorative_elements?: string | null,
         __baml_options__?: BamlCallOptions
         ): Promise<types.StyleGenerationOutput> {
           try {
@@ -391,7 +391,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
           // Check if onTick is provided - route through streaming if so
           if (options.onTick) {
           const stream = this.stream.GenerateStyleFromDescription(
-          description,style_name,reference_image,
+          description,style_name,reference_image,background_style,text_style,device_style,decorative_elements,
           __baml_options__
           );
 
@@ -407,7 +407,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             const raw = await this.runtime.callFunction(
             "GenerateStyleFromDescription",
             {
-            "description": description,"style_name": style_name?? null,"reference_image": reference_image?? null
+            "description": description,"style_name": style_name?? null,"reference_image": reference_image?? null,"background_style": background_style?? null,"text_style": text_style?? null,"device_style": device_style?? null,"decorative_elements": decorative_elements?? null
             },
             this.ctxManager.cloneContext(),
             options.tb?.__tb(),
@@ -1774,7 +1774,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   }
                   
             GenerateStyleFromDescription(
-            description: string,style_name?: string | null,reference_image?: Image | null,
+            description: string,style_name?: string | null,reference_image?: Image | null,background_style?: string | null,text_style?: string | null,device_style?: string | null,decorative_elements?: string | null,
             __baml_options__?: BamlCallOptions
             ): BamlStream<partial_types.StyleGenerationOutput, types.StyleGenerationOutput>
               {
@@ -1815,7 +1815,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                 const raw = this.runtime.streamFunction(
                 "GenerateStyleFromDescription",
                 {
-                "description": description,"style_name": style_name ?? null,"reference_image": reference_image ?? null
+                "description": description,"style_name": style_name ?? null,"reference_image": reference_image ?? null,"background_style": background_style ?? null,"text_style": text_style ?? null,"device_style": device_style ?? null,"decorative_elements": decorative_elements ?? null
                 },
                 undefined,
                 this.ctxManager.cloneContext(),

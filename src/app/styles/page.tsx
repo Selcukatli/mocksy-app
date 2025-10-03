@@ -5,20 +5,20 @@ import {
   Search,
   X,
   TrendingUp,
-  Upload,
   Wand2,
   LayoutGrid,
   List
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useQuery, useAction, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
-import { Suspense, useState, useCallback, useEffect } from 'react';
+import { Suspense, useState, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { CreateStyleDialog } from './components/CreateStyleDialog';
 
 export default function StylesPage() {
   return (
@@ -41,21 +41,127 @@ function StylesPageContent() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('tag') ?? '');
 
+  // Advanced style control states
+  const [backgroundStyle, setBackgroundStyle] = useState('');
+  const [textStyleInput, setTextStyleInput] = useState('');
+  const [deviceStyleInput, setDeviceStyleInput] = useState('');
+  const [decorativeElements, setDecorativeElements] = useState('');
+  const [backgroundFieldActive, setBackgroundFieldActive] = useState(false);
+  const [textFieldActive, setTextFieldActive] = useState(false);
+  const [deviceFieldActive, setDeviceFieldActive] = useState(false);
+  const [decorativeFieldActive, setDecorativeFieldActive] = useState(false);
+
   // Fetch styles
-  const publicStyles = useQuery(api.styles.getPublicStyles) || [];
+  const publicStyles = useQuery(api.styles.getPublicStyles);
   const generateStyleFromDescription = useAction(api.styleActions.generateStyleFromDescription);
   const generateUploadUrl = useMutation(api.fileStorage.files.generateUploadUrl);
   const activeJobs = useQuery(api.jobs.getActiveJobs) || [];
 
   // Apply search filter
-  const filteredStyles = publicStyles.filter(style =>
-    style.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    style.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredStyles = useMemo(
+    () => {
+      const list = publicStyles ?? [];
+      return list.filter((style) =>
+        style.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        style.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    },
+    [publicStyles, searchQuery]
   );
 
   const styleJob = generating
     ? activeJobs.find((job) => job.type === 'style')
     : undefined;
+
+  const hasReferenceImage = Boolean(referenceImage);
+
+  const handleCloseCreateDialog = useCallback(() => {
+    setShowCreateDialog(false);
+    setStyleDescription('');
+    setReferenceImage(null);
+    setReferenceImagePreview(null);
+    setBackgroundStyle('');
+    setTextStyleInput('');
+    setDeviceStyleInput('');
+    setDecorativeElements('');
+    setBackgroundFieldActive(false);
+    setTextFieldActive(false);
+    setDeviceFieldActive(false);
+    setDecorativeFieldActive(false);
+  }, []);
+
+  const handleRemoveReferenceImage = useCallback(() => {
+    setReferenceImage(null);
+    setReferenceImagePreview(null);
+  }, [setReferenceImage, setReferenceImagePreview]);
+
+  const handleBackgroundFieldToggle = useCallback((active: boolean) => {
+    setBackgroundFieldActive(active);
+    if (!active) {
+      setBackgroundStyle('');
+    }
+  }, []);
+
+  const handleTextFieldToggle = useCallback((active: boolean) => {
+    setTextFieldActive(active);
+    if (!active) {
+      setTextStyleInput('');
+    }
+  }, []);
+
+  const handleDeviceFieldToggle = useCallback((active: boolean) => {
+    setDeviceFieldActive(active);
+    if (!active) {
+      setDeviceStyleInput('');
+    }
+  }, []);
+
+  const handleDecorativeFieldToggle = useCallback((active: boolean) => {
+    setDecorativeFieldActive(active);
+    if (!active) {
+      setDecorativeElements('');
+    }
+  }, []);
+
+  const handleBackgroundStyleChange = useCallback(
+    (value: string) => {
+      setBackgroundStyle(value);
+      if (!backgroundFieldActive && value.trim()) {
+        setBackgroundFieldActive(true);
+      }
+    },
+    [backgroundFieldActive]
+  );
+
+  const handleTextStyleChange = useCallback(
+    (value: string) => {
+      setTextStyleInput(value);
+      if (!textFieldActive && value.trim()) {
+        setTextFieldActive(true);
+      }
+    },
+    [textFieldActive]
+  );
+
+  const handleDeviceStyleChange = useCallback(
+    (value: string) => {
+      setDeviceStyleInput(value);
+      if (!deviceFieldActive && value.trim()) {
+        setDeviceFieldActive(true);
+      }
+    },
+    [deviceFieldActive]
+  );
+
+  const handleDecorativeElementsChange = useCallback(
+    (value: string) => {
+      setDecorativeElements(value);
+      if (!decorativeFieldActive && value.trim()) {
+        setDecorativeFieldActive(true);
+      }
+    },
+    [decorativeFieldActive]
+  );
 
   type StyleItem = (typeof filteredStyles)[number];
 
@@ -267,12 +373,14 @@ function StylesPageContent() {
       await generateStyleFromDescription({
         description: descriptionForGeneration,
         referenceImageStorageId,
+        // Add optional fields if provided
+        backgroundStyle: backgroundStyle.trim() || undefined,
+        textStyle: textStyleInput.trim() || undefined,
+        deviceStyle: deviceStyleInput.trim() || undefined,
+        decorativeElements: decorativeElements.trim() || undefined,
       });
 
-      setShowCreateDialog(false);
-      setStyleDescription('');
-      setReferenceImage(null);
-      setReferenceImagePreview(null);
+      handleCloseCreateDialog();
     } catch (error) {
       console.error('Failed to generate style:', error);
     } finally {
@@ -280,14 +388,17 @@ function StylesPageContent() {
     }
   };
 
-  const handleSetReferenceImage = useCallback((file: File) => {
-    setReferenceImage(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setReferenceImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }, []);
+  const handleSetReferenceImage = useCallback(
+    (file: File) => {
+      setReferenceImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReferenceImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    },
+    [setReferenceImage, setReferenceImagePreview]
+  );
 
   const handleReferenceImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -355,6 +466,38 @@ function StylesPageContent() {
       window.removeEventListener('paste', handlePaste);
     };
   }, [showCreateDialog, handleSetReferenceImage]);
+
+  useEffect(() => {
+    if (!showCreateDialog) {
+      return;
+    }
+
+    if (backgroundStyle.trim() && !backgroundFieldActive) {
+      setBackgroundFieldActive(true);
+    }
+
+    if (textStyleInput.trim() && !textFieldActive) {
+      setTextFieldActive(true);
+    }
+
+    if (deviceStyleInput.trim() && !deviceFieldActive) {
+      setDeviceFieldActive(true);
+    }
+
+    if (decorativeElements.trim() && !decorativeFieldActive) {
+      setDecorativeFieldActive(true);
+    }
+  }, [
+    showCreateDialog,
+    backgroundStyle,
+    textStyleInput,
+    deviceStyleInput,
+    decorativeElements,
+    backgroundFieldActive,
+    textFieldActive,
+    deviceFieldActive,
+    decorativeFieldActive,
+  ]);
 
   return (
     <div className="flex-1 p-8">
@@ -478,272 +621,36 @@ function StylesPageContent() {
         </div>
       )}
 
-      {/* Generate Style Dialog */}
-      <AnimatePresence>
-        {showCreateDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => {
-                setShowCreateDialog(false);
-                setStyleDescription('');
-                setReferenceImage(null);
-                setReferenceImagePreview(null);
-              }}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="relative bg-card rounded-xl border shadow-xl w-full max-w-md md:max-w-2xl mx-4"
-            >
-              {/* Dialog Header */}
-              <div className="border-b px-6 py-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Generate Custom Style</h2>
-                <button
-                  onClick={() => {
-                    setShowCreateDialog(false);
-                    setStyleDescription('');
-                    setReferenceImage(null);
-                    setReferenceImagePreview(null);
-                  }}
-                  className="p-1 rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Dialog Content */}
-              <div className="p-6">
-                <div className="flex flex-col gap-4 md:grid md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:gap-6">
-                  <div className="space-y-4">
-                    {/* Style Description */}
-                    <div>
-                      <label htmlFor="style-description" className="text-sm font-medium mb-1.5 block">
-                        Describe your style
-                      </label>
-                      <textarea
-                        id="style-description"
-                        value={styleDescription}
-                        disabled={generating}
-                        aria-disabled={generating}
-                        onChange={(e) => setStyleDescription(e.target.value)}
-                        placeholder="e.g., Cyberpunk neon with dark purple gradient, futuristic typography..."
-                        className="w-full px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[120px] resize-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
-                        autoFocus
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Describe colors, mood, theme, and visual style
-                        {referenceImage ? ' — optional when using a reference image' : ''}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* Reference Image Upload */}
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">
-                        Reference image <span className="text-muted-foreground">(optional)</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="file"
-                          id="reference-image"
-                          accept="image/*"
-                          onChange={handleReferenceImageChange}
-                          className="hidden"
-                        />
-                        <label
-                          htmlFor="reference-image"
-                          className={`flex flex-col min-h-[216px] items-center justify-center gap-3 text-center w-full px-3 ${referenceImagePreview ? 'py-4' : 'py-8'} rounded-lg border-2 border-dashed bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors`}
-                        >
-                          {referenceImagePreview ? (
-                            <motion.div
-                              className="relative"
-                              animate={
-                                generating
-                                  ? {
-                                      scale: [1, 1.01, 0.995, 1],
-                                    }
-                                  : { scale: 1 }
-                              }
-                              transition={{ duration: 1.6, repeat: generating ? Infinity : 0, ease: 'easeInOut' }}
-                            >
-                              <Image
-                                src={referenceImagePreview}
-                                alt="Reference preview"
-                                width={256}
-                                height={256}
-                                unoptimized
-                                className={`max-h-48 w-auto rounded-lg object-contain ${generating ? 'brightness-[1.07]' : ''}`}
-                              />
-                              {generating && (
-                                <>
-                                  <motion.div
-                                    className="pointer-events-none absolute -inset-3 rounded-2xl border border-primary/40"
-                                    animate={{ opacity: [0.35, 0.9, 0.35] }}
-                                    transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                                  />
-                                  <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
-                                    <motion.div
-                                      className="absolute inset-x-[-30%] h-1/2 bg-gradient-to-b from-primary/0 via-primary/25 to-primary/0 blur-lg"
-                                      animate={{ y: ['-120%', '110%'] }}
-                                      transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                                    />
-                                  </div>
-                                </>
-                              )}
-                              {!generating && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setReferenceImage(null);
-                                    setReferenceImagePreview(null);
-                                  }}
-                                  className="absolute -top-2 -right-2 p-1 bg-background border rounded-full"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              )}
-                            </motion.div>
-                          ) : (
-                            <>
-                              <Upload className="w-6 h-6 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">
-                                Paste or upload inspiration image
-                              </span>
-                            </>
-                          )}
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {styleJob && (
-                  <div className="mt-6 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm">
-                    <p className="font-medium text-primary/80 flex items-center gap-2">
-                      <SparkleIndicator />
-                      {styleJob.message ?? 'Doing the magic...'}
-                    </p>
-                    {typeof styleJob.progress === 'number' ? (
-                      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-primary/10">
-                        <motion.div
-                          className="relative h-full rounded-full bg-primary"
-                          animate={{ width: `${Math.max(styleJob.progress * 100, 6)}%` }}
-                          transition={{ duration: 0.35, ease: 'easeOut' }}
-                        >
-                          <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 opacity-70"
-                            animate={{ x: ['-100%', '100%'] }}
-                            transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                          />
-                        </motion.div>
-                      </div>
-                    ) : (
-                      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-primary/10">
-                        <motion.div
-                          className="relative h-full w-1/3 rounded-full bg-primary/60"
-                          animate={{ x: ['-20%', '80%'] }}
-                          transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
-                        >
-                          <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 opacity-70"
-                            animate={{ x: ['-100%', '100%'] }}
-                            transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
-                          />
-                        </motion.div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Dialog Footer */}
-              <div className="border-t px-6 py-4 flex gap-2">
-                <button
-                  onClick={() => {
-                    setShowCreateDialog(false);
-                    setStyleDescription('');
-                    setReferenceImage(null);
-                    setReferenceImagePreview(null);
-                  }}
-                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleGenerateStyle}
-                  disabled={(generating || (!styleDescription.trim() && !referenceImage))}
-                  className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
-                >
-                  {generating && (
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                      animate={{ x: [-200, 200] }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    />
-                  )}
-                  <span className="relative flex items-center justify-center gap-2">
-                    <Wand2 className="w-4 h-4" />
-                    {generating ? 'Generating...' : 'Generate Style'}
-                  </span>
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <CreateStyleDialog
+        open={showCreateDialog}
+        styleDescription={styleDescription}
+        onStyleDescriptionChange={(value) => setStyleDescription(value)}
+        hasReferenceImage={hasReferenceImage}
+        referenceImagePreview={referenceImagePreview}
+        onReferenceImageChange={handleReferenceImageChange}
+        onRemoveReferenceImage={handleRemoveReferenceImage}
+        generating={generating}
+        onSubmit={handleGenerateStyle}
+        onClose={handleCloseCreateDialog}
+        backgroundStyle={backgroundStyle}
+        onBackgroundStyleChange={handleBackgroundStyleChange}
+        backgroundFieldActive={backgroundFieldActive}
+        onBackgroundFieldToggle={handleBackgroundFieldToggle}
+        textStyle={textStyleInput}
+        onTextStyleChange={handleTextStyleChange}
+        textFieldActive={textFieldActive}
+        onTextFieldToggle={handleTextFieldToggle}
+        deviceStyle={deviceStyleInput}
+        onDeviceStyleChange={handleDeviceStyleChange}
+        deviceFieldActive={deviceFieldActive}
+        onDeviceFieldToggle={handleDeviceFieldToggle}
+        decorativeElements={decorativeElements}
+        onDecorativeElementsChange={handleDecorativeElementsChange}
+        decorativeFieldActive={decorativeFieldActive}
+        onDecorativeFieldToggle={handleDecorativeFieldToggle}
+        styleJob={styleJob}
+      />
     </div>
-  );
-}
-
-function SparkleIndicator() {
-  const particles = [
-    { angle: 0, delay: 0 },
-    { angle: 120, delay: 0.2 },
-    { angle: 240, delay: 0.4 }
-  ];
-  const radius = 6;
-
-  return (
-    <span className="relative inline-flex h-5 w-5 items-center justify-center text-primary">
-      <motion.span
-        className="h-2 w-2 rounded-full bg-primary"
-        animate={{ scale: [0.8, 1.15, 0.8], opacity: [0.6, 1, 0.6] }}
-        transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      {particles.map(({ angle, delay }) => {
-        const radians = (angle * Math.PI) / 180;
-        const x = Math.cos(radians) * radius;
-        const y = Math.sin(radians) * radius;
-
-        return (
-          <motion.span
-            key={angle}
-            className="absolute h-1.5 w-1.5 rounded-full bg-primary/90 shadow-[0_0_6px_rgba(147,107,247,0.35)]"
-            animate={{
-              x: [0, x, 0],
-              y: [0, y, 0],
-              scale: [0.3, 1, 0.3],
-              opacity: [0, 1, 0]
-            }}
-            transition={{ duration: 1.3, repeat: Infinity, delay, ease: 'easeInOut' }}
-          />
-        );
-      })}
-      <motion.span
-        className="absolute h-4 w-4 rounded-full bg-primary/15"
-        animate={{ scale: [0.9, 1.3, 0.9], opacity: [0.4, 0.1, 0.4] }}
-        transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-      />
-    </span>
   );
 }
 

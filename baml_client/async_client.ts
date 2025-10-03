@@ -236,7 +236,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             
         async GenerateDemoAppFromStyle(
-        style_config: types.StyleConfig,style_name: string,
+        style_config?: types.StyleConfig | null,style_name?: string | null,app_description_input?: string | null,
         __baml_options__?: BamlCallOptions
         ): Promise<types.DemoAppOutput> {
           try {
@@ -250,7 +250,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
           // Check if onTick is provided - route through streaming if so
           if (options.onTick) {
           const stream = this.stream.GenerateDemoAppFromStyle(
-          style_config,style_name,
+          style_config,style_name,app_description_input,
           __baml_options__
           );
 
@@ -266,7 +266,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             const raw = await this.runtime.callFunction(
             "GenerateDemoAppFromStyle",
             {
-            "style_config": style_config,"style_name": style_name
+            "style_config": style_config?? null,"style_name": style_name?? null,"app_description_input": app_description_input?? null
             },
             this.ctxManager.cloneContext(),
             options.tb?.__tb(),
@@ -1717,7 +1717,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   }
                   
             GenerateDemoAppFromStyle(
-            style_config: types.StyleConfig,style_name: string,
+            style_config?: types.StyleConfig | null,style_name?: string | null,app_description_input?: string | null,
             __baml_options__?: BamlCallOptions
             ): BamlStream<partial_types.DemoAppOutput, types.DemoAppOutput>
               {
@@ -1758,7 +1758,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                 const raw = this.runtime.streamFunction(
                 "GenerateDemoAppFromStyle",
                 {
-                "style_config": style_config,"style_name": style_name
+                "style_config": style_config ?? null,"style_name": style_name ?? null,"app_description_input": app_description_input ?? null
                 },
                 undefined,
                 this.ctxManager.cloneContext(),

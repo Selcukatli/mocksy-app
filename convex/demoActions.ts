@@ -6,28 +6,70 @@ import { internal, api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
 /**
- * Generate a complete demo app (icon + app record)
+ * Generate a demo app from a style OR description using BAML
  *
- * Takes app concept and icon prompt, generates the icon image,
- * uploads to storage, and creates the app record.
+ * Accepts either a styleId OR a user-provided description.
+ * Uses BAML to generate app concept and icon prompt,
+ * generates the icon, and creates the complete demo app.
  */
 export const generateDemoApp = internalAction({
   args: {
+    styleId: v.optional(v.id("styles")),
     profileId: v.id("profiles"),
-    appConcept: v.string(),
-    appDescription: v.optional(v.string()),
-    iconPrompt: v.string(),
-    styleName: v.string(),
+    appDescriptionInput: v.optional(v.string()),
   },
   returns: v.id("apps"),
   handler: async (ctx, args): Promise<Id<"apps">> => {
-    console.log("🎨 Generating demo app icon...");
+    if (!args.styleId && !args.appDescriptionInput) {
+      throw new Error("Either styleId or appDescriptionInput must be provided");
+    }
 
-    // 1. Generate app icon image
+    console.log("🎬 Generating demo app...");
+
+    let styleName = "Custom Style";
+    let styleConfig = null;
+
+    // 1. If styleId provided, fetch the style
+    if (args.styleId) {
+      console.log("  From style:", args.styleId);
+      const style = await ctx.runQuery(api.styles.getStyleById, {
+        styleId: args.styleId,
+      });
+
+      if (!style) {
+        throw new Error(`Style not found: ${args.styleId}`);
+      }
+
+      styleName = style.name;
+      styleConfig = {
+        background_color: style.backgroundColor,
+        details: style.details,
+        text_style: style.textStyle,
+        device_style: style.deviceStyle,
+      };
+    } else {
+      console.log("  From description:", args.appDescriptionInput?.substring(0, 60) + "...");
+    }
+
+    // 2. Use BAML to generate app concept and icon prompt
+    console.log("🤖 Calling BAML to generate app concept...");
+    const { b } = await import("../baml_client");
+    const demoApp = await b.GenerateDemoAppFromStyle(
+      styleConfig,
+      styleName,
+      args.appDescriptionInput
+    );
+
+    console.log(`  ✓ App name: ${demoApp.app_name}`);
+    console.log(`  ✓ App description: ${demoApp.app_description.substring(0, 60)}...`);
+    console.log(`  ✓ Icon prompt generated (${demoApp.app_icon_prompt.length} chars)`);
+
+    // 3. Generate app icon image
+    console.log("🎨 Generating demo app icon...");
     const iconResult = await ctx.runAction(
       internal.utils.fal.falImageActions.geminiFlashTextToImage,
       {
-        prompt: args.iconPrompt,
+        prompt: demoApp.app_icon_prompt,
         num_images: 1,
         output_format: "png",
       }
@@ -40,7 +82,7 @@ export const generateDemoApp = internalAction({
     const iconUrl = iconResult.images[0].url;
     console.log(`  ✓ Icon generated: ${iconUrl.substring(0, 60)}...`);
 
-    // 2. Upload icon to Convex storage
+    // 4. Upload icon to Convex storage
     console.log("📤 Uploading icon to storage...");
     const iconResponse = await fetch(iconUrl);
     if (!iconResponse.ok) {
@@ -51,70 +93,16 @@ export const generateDemoApp = internalAction({
     const iconStorageId = await ctx.storage.store(iconBlob);
     console.log(`  ✓ Icon uploaded: ${iconStorageId}`);
 
-    // 3. Create demo app with icon
+    // 5. Create demo app with icon
     console.log("💾 Creating demo app record...");
     const appId = await ctx.runMutation(internal.apps.createDemoApp, {
       profileId: args.profileId,
-      name: args.appConcept,
-      description: args.appDescription || `Demo app showcasing ${args.styleName} style`,
+      name: demoApp.app_name,
+      description: demoApp.app_description,
       iconStorageId,
     });
 
     console.log(`✅ Demo app created: ${appId}`);
-    return appId;
-  },
-});
-
-/**
- * Generate a demo app from a style using BAML
- *
- * Fetches the style, uses BAML to generate app concept and icon prompt,
- * then generates the complete demo app.
- */
-export const generateDemoAppFromStyle = internalAction({
-  args: {
-    styleId: v.id("styles"),
-    profileId: v.id("profiles"),
-  },
-  returns: v.id("apps"),
-  handler: async (ctx, args): Promise<Id<"apps">> => {
-    console.log("🎬 Generating demo app from style:", args.styleId);
-
-    // 1. Fetch the style
-    const style = await ctx.runQuery(api.styles.getStyleById, {
-      styleId: args.styleId,
-    });
-
-    if (!style) {
-      throw new Error(`Style not found: ${args.styleId}`);
-    }
-
-    // 2. Use BAML to generate app concept and icon prompt
-    console.log("🤖 Calling BAML to generate app concept...");
-    const { b } = await import("../baml_client");
-    const demoApp = await b.GenerateDemoAppFromStyle(
-      {
-        background_color: style.backgroundColor,
-        details: style.details,
-        text_style: style.textStyle,
-        device_style: style.deviceStyle,
-      },
-      style.name
-    );
-
-    console.log(`  ✓ App name: ${demoApp.app_name}`);
-    console.log(`  ✓ App description: ${demoApp.app_description.substring(0, 60)}...`);
-    console.log(`  ✓ Icon prompt generated (${demoApp.app_icon_prompt.length} chars)`);
-
-    // 3. Generate the demo app (icon + record)
-    const appId = await ctx.runAction(internal.demoActions.generateDemoApp, {
-      profileId: args.profileId,
-      appConcept: demoApp.app_name,
-      appDescription: demoApp.app_description,
-      iconPrompt: demoApp.app_icon_prompt,
-      styleName: style.name,
-    });
-
     return appId;
   },
 });

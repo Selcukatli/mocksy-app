@@ -111,7 +111,7 @@ export class HttpRequest {
   }
   
   GenerateDemoAppFromStyle(
-      style_config: types.StyleConfig,style_name: string,
+      style_config?: types.StyleConfig | null,style_name?: string | null,app_description_input?: string | null,
       __baml_options__?: BamlCallOptions
   ): HTTPRequest {
     try {
@@ -122,7 +122,7 @@ export class HttpRequest {
       return this.runtime.buildRequestSync(
         "GenerateDemoAppFromStyle",
         {
-          "style_config": style_config,"style_name": style_name
+          "style_config": style_config?? null,"style_name": style_name?? null,"app_description_input": app_description_input?? null
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -867,7 +867,7 @@ export class HttpStreamRequest {
   }
   
   GenerateDemoAppFromStyle(
-      style_config: types.StyleConfig,style_name: string,
+      style_config?: types.StyleConfig | null,style_name?: string | null,app_description_input?: string | null,
       __baml_options__?: BamlCallOptions
   ): HTTPRequest {
     try {
@@ -878,7 +878,7 @@ export class HttpStreamRequest {
       return this.runtime.buildRequestSync(
         "GenerateDemoAppFromStyle",
         {
-          "style_config": style_config,"style_name": style_name
+          "style_config": style_config?? null,"style_name": style_name?? null,"app_description_input": app_description_input?? null
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),

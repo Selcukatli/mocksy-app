@@ -21,17 +21,24 @@ class DemoAppOutput {
 // DEMO APP GENERATION
 // ============================================
 
-// Generate a demo app concept and icon from a style
+// Generate a demo app concept and icon from either a style OR a description
 function GenerateDemoAppFromStyle(
-  style_config: StyleConfig @description("The style configuration to base the app on"),
-  style_name: string @description("Name of the style for context")
+  style_config: StyleConfig? @description("Optional style configuration to base the app on"),
+  style_name: string? @description("Optional name of the style for context"),
+  app_description_input: string? @description("Optional user-provided app description/concept to generate from")
 ) -> DemoAppOutput {
   client ScreenshotGeneratorMed
   prompt #"
     {{ _.role("user") }}
 
-    You are generating a demo app concept to showcase a visual style.
+    You are generating a demo app concept with name, description, and icon prompt.
 
+    {% if app_description_input %}
+    USER'S APP CONCEPT:
+    {{ app_description_input }}
+
+    TASK: Create a fictional app based on this user's description. Generate a short catchy name, professional App Store description, and icon prompt that matches the concept.
+    {% else %}
     STYLE TO SHOWCASE:
     - Name: {{ style_name }}
     - Background: {{ style_config.background_color }}
@@ -40,6 +47,7 @@ function GenerateDemoAppFromStyle(
     - Device Style: {{ style_config.device_style }}
 
     TASK: Create a fictional app with name, description, and icon prompt that would look great in this style.
+    {% endif %}
 
     ## 1. APP NAME
 
@@ -124,5 +132,12 @@ test PlayfulPopArtDemoApp {
       device_style "Colorful gradient frame with cyan-to-green fade on left edge transitioning to orange-to-pink fade on bottom right, glossy finish"
     }
     style_name "Snap Style"
+  }
+}
+
+test DemoFromDescription {
+  functions [GenerateDemoAppFromStyle]
+  args {
+    app_description_input "A meditation and mindfulness app for busy professionals. Helps users find calm moments throughout their day with 5-minute guided sessions, breathing exercises, and ambient soundscapes."
   }
 }

@@ -115,7 +115,7 @@ env?: Record<string, string | undefined>
       }
       
   async GenerateDemoAppFromStyle(
-  style_config: types.StyleConfig,style_name: string,
+  style_config?: types.StyleConfig | null,style_name?: string | null,app_description_input?: string | null,
   __baml_options__?: BamlCallOptions
   ): Promise<HTTPRequest> {
     try {
@@ -126,7 +126,7 @@ env?: Record<string, string | undefined>
       return await this.runtime.buildRequest(
       "GenerateDemoAppFromStyle",
       {
-      "style_config": style_config,"style_name": style_name
+      "style_config": style_config?? null,"style_name": style_name?? null,"app_description_input": app_description_input?? null
       },
       this.ctxManager.cloneContext(),
       __baml_options__?.tb?.__tb(),
@@ -871,7 +871,7 @@ env?: Record<string, string | undefined>
           }
           
       async GenerateDemoAppFromStyle(
-      style_config: types.StyleConfig,style_name: string,
+      style_config?: types.StyleConfig | null,style_name?: string | null,app_description_input?: string | null,
       __baml_options__?: BamlCallOptions
       ): Promise<HTTPRequest> {
         try {
@@ -882,7 +882,7 @@ env?: Record<string, string | undefined>
           return await this.runtime.buildRequest(
           "GenerateDemoAppFromStyle",
           {
-          "style_config": style_config,"style_name": style_name
+          "style_config": style_config?? null,"style_name": style_name?? null,"app_description_input": app_description_input?? null
           },
           this.ctxManager.cloneContext(),
           __baml_options__?.tb?.__tb(),

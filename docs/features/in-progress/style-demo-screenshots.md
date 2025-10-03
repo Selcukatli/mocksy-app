@@ -314,15 +314,19 @@ When creating or viewing a style, users can:
 
 ### Phase 2: Demo App Generation ✅
 1. ✅ Created `baml_src/demo-apps.baml` file
-2. ✅ Defined `DemoAppOutput` class (app_concept, app_icon_prompt)
+2. ✅ Defined `DemoAppOutput` class (app_name, app_description, app_icon_prompt)
 3. ✅ Implemented `GenerateDemoAppFromStyle` BAML function
-4. ✅ Added 3 test cases (Cyberpunk, Zen Minimalist, Pop Art)
+4. ✅ Added test cases (Cyberpunk, Zen Minimalist, Pop Art, Description-based)
 5. ✅ Created `convex/demoActions.ts` for demo-specific actions
 6. ✅ Implemented `generateDemoApp` action (icon generation + app creation)
 7. ✅ Implemented `generateDemoAppFromStyle` action (BAML → demo app)
-8. ✅ All TypeScript checks pass
+8. ✅ Extended to support EITHER style OR description input
+9. ✅ All TypeScript checks pass
 
-**Key Decision:** Demo apps are reusable - no `demoForStyleId` field. Users can select any app (theirs or demo) when creating style previews.
+**Key Decisions:**
+- Demo apps are reusable - no `demoForStyleId` field. Users can select any app (theirs or demo) when creating style previews.
+- Flexible input: Users can generate demo apps from a style OR provide their own app description
+- BAML function uses conditional logic to handle both input types
 
 ### Phase 3: Screenshot Generation Actions (Next)
 1. ⏳ Implement `generateDemoAppScreens` action

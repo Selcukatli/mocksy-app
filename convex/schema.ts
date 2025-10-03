@@ -40,11 +40,14 @@ export default defineSchema({
     bundleId: v.optional(v.string()),
     keywords: v.optional(v.array(v.string())),
     ageRating: v.optional(v.string()),
+    // Demo app flag
+    isDemo: v.optional(v.boolean()), // true for AI-generated demo apps
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_profile", ["profileId"])
-    .index("by_profile_and_created", ["profileId", "createdAt"]),
+    .index("by_profile_and_created", ["profileId", "createdAt"])
+    .index("by_is_demo", ["isDemo"]),
 
   appScreens: defineTable({
     appId: v.id("apps"), // Which app this screen belongs to
@@ -285,6 +288,10 @@ export default defineSchema({
     deviceReferenceImageStorageId: v.optional(v.id("_storage")), // Device frame reference image for consistent styling
     tags: v.optional(v.array(v.string())), // Categorization (e.g., ["playful", "pop-art", "bright"])
     category: v.optional(v.string()), // Style category (e.g., "Pop Art", "Minimalist", "Seasonal")
+
+    // Demo links
+    demoAppId: v.optional(v.id("apps")), // Demo app showcasing this style
+    demoSetId: v.optional(v.id("screenshotSets")), // Demo screenshot set
 
     // Usage tracking
     usageCount: v.optional(v.number()), // How many times used

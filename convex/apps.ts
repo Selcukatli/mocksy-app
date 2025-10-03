@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 // Query to get all apps for the current user
@@ -27,6 +27,7 @@ export const getApps = query({
       bundleId: v.optional(v.string()),
       keywords: v.optional(v.array(v.string())),
       ageRating: v.optional(v.string()),
+      isDemo: v.optional(v.boolean()),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -100,6 +101,7 @@ export const getApp = query({
       bundleId: v.optional(v.string()),
       keywords: v.optional(v.array(v.string())),
       ageRating: v.optional(v.string()),
+      isDemo: v.optional(v.boolean()),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -289,5 +291,31 @@ export const deleteApp = mutation({
     await ctx.db.delete(args.appId);
 
     return null;
+  },
+});
+
+// Internal mutation to create a demo app (used by demoActions)
+export const createDemoApp = internalMutation({
+  args: {
+    profileId: v.id("profiles"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    iconStorageId: v.optional(v.id("_storage")),
+  },
+  returns: v.id("apps"),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    const appId = await ctx.db.insert("apps", {
+      profileId: args.profileId,
+      name: args.name,
+      description: args.description,
+      iconStorageId: args.iconStorageId,
+      isDemo: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return appId;
   },
 });

@@ -177,9 +177,9 @@ export const generateStyleFromDescription = action({
               const scoredImages = await Promise.all(scoringPromises);
 
               // Find the best scoring image
-              const bestImage = scoredImages.reduce((best, current) =>
-                current.score > best.score ? current : best
-              );
+              const bestImage = scoredImages.reduce((best, current) => {
+                return current.score > best.score ? current : best;
+              });
 
               console.log(`✅ Selected best candidate: #${bestImage.index + 1} with score ${bestImage.score}/100`);
 

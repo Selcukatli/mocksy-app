@@ -453,3 +453,24 @@ export const updateStylePreviewImage = internalMutation({
     return null;
   },
 });
+
+/**
+ * Set demo app and screenshot set for a style (internal - used by demo generation)
+ */
+export const setStyleDemo = internalMutation({
+  args: {
+    styleId: v.id("styles"),
+    demoAppId: v.id("apps"),
+    demoSetId: v.id("screenshotSets"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.styleId, {
+      demoAppId: args.demoAppId,
+      demoSetId: args.demoSetId,
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
+});

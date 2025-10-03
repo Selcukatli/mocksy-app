@@ -114,6 +114,13 @@ export interface Composition {
   
 }
 
+export interface DemoAppOutput {
+  app_name: string
+  app_description: string
+  app_icon_prompt: string
+  
+}
+
 export interface DetailedResponse {
   answer: string
   confidence: number
@@ -277,6 +284,23 @@ export interface StyleConfig {
   details: string
   text_style: string
   device_style: string
+  
+}
+
+export interface StyleDemoOutput {
+  app_concept: string
+  app_icon_prompt: string
+  screenshots: StyleDemoScreenshotConfig[]
+  
+}
+
+export interface StyleDemoScreenshotConfig {
+  header_copy: string
+  subheader_copy?: string | null
+  header_position: string
+  device_orientation: string
+  device_position: string
+  app_screen_prompt: string
   
 }
 

@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
+import type {  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -90,6 +90,11 @@ export namespace partial_types {
     export interface Composition {
       priority?: string | null
       rules: string[]
+    }
+    export interface DemoAppOutput {
+      app_name?: string | null
+      app_description?: string | null
+      app_icon_prompt?: string | null
     }
     export interface DetailedResponse {
       answer?: string | null
@@ -222,6 +227,19 @@ export namespace partial_types {
       details?: string | null
       text_style?: string | null
       device_style?: string | null
+    }
+    export interface StyleDemoOutput {
+      app_concept?: string | null
+      app_icon_prompt?: string | null
+      screenshots: StyleDemoScreenshotConfig[]
+    }
+    export interface StyleDemoScreenshotConfig {
+      header_copy?: string | null
+      subheader_copy?: string | null
+      header_position?: string | null
+      device_orientation?: string | null
+      device_position?: string | null
+      app_screen_prompt?: string | null
     }
     export interface StyleGenerationOutput {
       style_name?: string | null

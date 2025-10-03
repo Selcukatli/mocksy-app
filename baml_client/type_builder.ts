@@ -39,6 +39,8 @@ export default class TypeBuilder {
     
     Composition: ClassViewer<'Composition', "priority" | "rules">;
     
+    DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_description" | "app_icon_prompt">;
+    
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
     
     DeviceImageScore: ClassViewer<'DeviceImageScore', "overall_score" | "is_front_facing" | "has_black_screen" | "has_black_background" | "no_notch_or_island" | "proper_size" | "all_corners_visible" | "is_vertical" | "no_text_or_labels" | "frame_matches_style" | "issues" | "reasoning">;
@@ -73,6 +75,10 @@ export default class TypeBuilder {
     
     StyleConfig: ClassViewer<'StyleConfig', "background_color" | "details" | "text_style" | "device_style">;
     
+    StyleDemoOutput: ClassViewer<'StyleDemoOutput', "app_concept" | "app_icon_prompt" | "screenshots">;
+    
+    StyleDemoScreenshotConfig: ClassViewer<'StyleDemoScreenshotConfig', "header_copy" | "subheader_copy" | "header_position" | "device_orientation" | "device_position" | "app_screen_prompt">;
+    
     StyleGenerationOutput: ClassViewer<'StyleGenerationOutput', "style_name" | "style_config" | "device_reference_prompt" | "preview_image_prompt">;
     
     StyleRevisionOutput: ClassViewer<'StyleRevisionOutput', "revised_style" | "revision_summary">;
@@ -88,7 +94,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
+            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -118,6 +124,10 @@ export default class TypeBuilder {
         
         this.Composition = this.tb.classViewer("Composition", [
           "priority","rules",
+        ]);
+        
+        this.DemoAppOutput = this.tb.classViewer("DemoAppOutput", [
+          "app_name","app_description","app_icon_prompt",
         ]);
         
         this.DetailedResponse = this.tb.classViewer("DetailedResponse", [
@@ -186,6 +196,14 @@ export default class TypeBuilder {
         
         this.StyleConfig = this.tb.classViewer("StyleConfig", [
           "background_color","details","text_style","device_style",
+        ]);
+        
+        this.StyleDemoOutput = this.tb.classViewer("StyleDemoOutput", [
+          "app_concept","app_icon_prompt","screenshots",
+        ]);
+        
+        this.StyleDemoScreenshotConfig = this.tb.classViewer("StyleDemoScreenshotConfig", [
+          "header_copy","subheader_copy","header_position","device_orientation","device_position","app_screen_prompt",
         ]);
         
         this.StyleGenerationOutput = this.tb.classViewer("StyleGenerationOutput", [

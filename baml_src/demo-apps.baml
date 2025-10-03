@@ -38,7 +38,7 @@ function GenerateDemoAppFromStyle(
     {{ app_description_input }}
 
     TASK: Create a fictional app based on this user's description. Generate a short catchy name, professional App Store description, and icon prompt that matches the concept.
-    {% else %}
+    {% elif style_config %}
     STYLE TO SHOWCASE:
     - Name: {{ style_name }}
     - Background: {{ style_config.background_color }}

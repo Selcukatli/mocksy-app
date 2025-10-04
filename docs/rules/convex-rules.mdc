@@ -297,6 +297,76 @@ const messages = await ctx.db
                     });
                     ```
 
+### Internal/Public Action Pattern
+- Use internal actions with optional `profileId` for maximum reusability
+- Create public action wrappers that handle authentication and call internal actions
+- This pattern enables calling from both authenticated clients and other Convex functions (jobs, webhooks, crons)
+
+**Example Pattern:**
+```typescript
+// Internal action - reusable, no auth, optional profileId
+export const processDataInternal = internalAction({
+  args: {
+    profileId: v.optional(v.id("profiles")),
+    data: v.string(),
+  },
+  returns: v.id("results"),
+  handler: async (ctx, args) => {
+    // Business logic here
+    if (!args.profileId) {
+      throw new Error("profileId required");
+    }
+
+    // Process data and create result
+    const resultId = await ctx.runMutation(internal.results.create, {
+      profileId: args.profileId,
+      data: args.data,
+    });
+
+    return resultId;
+  },
+});
+
+// Public action - handles auth, calls internal action
+export const processData = action({
+  args: {
+    data: v.string(),
+  },
+  returns: v.id("results"),
+  handler: async (ctx, args) => {
+    // Get authenticated user
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get user's profile
+    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    // Call internal action with profileId
+    return await ctx.runAction(internal.myModule.processDataInternal, {
+      profileId: profile._id,
+      data: args.data,
+    });
+  },
+});
+```
+
+**Benefits:**
+- **Separation of concerns**: Auth logic separated from business logic
+- **Reusability**: Internal action can be called from crons, jobs, webhooks, or other actions
+- **Testability**: Business logic can be tested without auth mocking
+- **Flexibility**: Optional profileId allows both authenticated and system-initiated calls
+
+**Use cases:**
+- Background job processes data for a user (pass profileId from job queue)
+- Cron task generates reports for all users (iterate and call internal action)
+- Webhook receives data and needs to process it for a specific user
+- Client action needs same processing with auth validation
+
 ## Scheduling guidelines
 ### Cron guidelines
 - Only use the `crons.interval` or `crons.cron` methods to schedule cron jobs. Do NOT use the `crons.hourly`, `crons.daily`, or `crons.weekly` helpers.

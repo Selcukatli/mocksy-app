@@ -9,6 +9,7 @@ const logError = (...args: unknown[]) => logger.error(...args);
 export interface GeminiFlashImageInput {
   prompt: string;
   num_images?: number;
+  aspect_ratio?: "21:9" | "1:1" | "4:3" | "3:2" | "2:3" | "5:4" | "4:5" | "3:4" | "16:9" | "9:16";
   output_format?: "jpeg" | "png";
   sync_mode?: boolean;
 }
@@ -44,6 +45,7 @@ export class GeminiImageClient {
     logInfo(`Generating image with Gemini 2.5 Flash model`);
     logInfo(`Gemini Flash Parameters:`, {
       num_images: input.num_images || 1,
+      aspect_ratio: input.aspect_ratio || "1:1",
       output_format: input.output_format || "jpeg",
       sync_mode: input.sync_mode || false,
     });
@@ -71,6 +73,7 @@ export class GeminiImageClient {
     logInfo(`Editing image with Gemini 2.5 Flash Edit model`);
     logInfo(`Gemini Flash Edit Parameters:`, {
       num_images: input.num_images || 1,
+      aspect_ratio: input.aspect_ratio || null,
       output_format: input.output_format || "jpeg",
       sync_mode: input.sync_mode || false,
       has_image_url: !!input.image_url,
@@ -78,12 +81,22 @@ export class GeminiImageClient {
     });
 
     try {
+      // Convert image_url to image_urls array if needed
+      const apiInput = {
+        prompt: input.prompt,
+        image_urls: input.image_urls || (input.image_url ? [input.image_url] : undefined),
+        num_images: input.num_images,
+        aspect_ratio: input.aspect_ratio,
+        output_format: input.output_format,
+        sync_mode: input.sync_mode,
+      };
+
       logInfo(`Calling fal.ai model: ${this.FLASH_EDIT_MODEL}`);
-      logInfo(`Input:`, input);
+      logInfo(`API Input:`, apiInput);
 
       const result = await callFalModel(
         this.FLASH_EDIT_MODEL,
-        input as unknown as Record<string, unknown>,
+        apiInput as unknown as Record<string, unknown>,
       );
 
       logInfo(`✅ Success! Got result from ${this.FLASH_EDIT_MODEL}`);

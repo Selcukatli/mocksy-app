@@ -27,6 +27,8 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
+    AppScreenPromptsOutput: ClassViewer<'AppScreenPromptsOutput', "app_screen_prompts">;
+    
     Avatar: ClassViewer<'Avatar', "summary" | "apparent_age" | "gender_presentation" | "ethnic_appearance" | "face_shape" | "jawline" | "body_build" | "skin_tone" | "complexion_details" | "hair_color" | "hair_length" | "hair_style" | "eye_color" | "eye_shape" | "eyebrows" | "nose_description" | "lip_description" | "facial_hair" | "glasses" | "glasses_style" | "distinctive_features" | "confidence" | "key_features">;
     
     Background: ClassViewer<'Background', "colors" | "effects" | "placement" | "seamless_to_bottom" | "forbidden">;
@@ -39,7 +41,7 @@ export default class TypeBuilder {
     
     Composition: ClassViewer<'Composition', "priority" | "rules">;
     
-    DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_description" | "app_icon_prompt">;
+    DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_description" | "app_icon_prompt" | "color_theme">;
     
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
     
@@ -94,13 +96,17 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
+            "AppScreenPromptsOutput","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
           ]),
           runtime: DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME
         });
+        
+        this.AppScreenPromptsOutput = this.tb.classViewer("AppScreenPromptsOutput", [
+          "app_screen_prompts",
+        ]);
         
         this.Avatar = this.tb.classViewer("Avatar", [
           "summary","apparent_age","gender_presentation","ethnic_appearance","face_shape","jawline","body_build","skin_tone","complexion_details","hair_color","hair_length","hair_style","eye_color","eye_shape","eyebrows","nose_description","lip_description","facial_hair","glasses","glasses_style","distinctive_features","confidence","key_features",
@@ -127,7 +133,7 @@ export default class TypeBuilder {
         ]);
         
         this.DemoAppOutput = this.tb.classViewer("DemoAppOutput", [
-          "app_name","app_description","app_icon_prompt",
+          "app_name","app_description","app_icon_prompt","color_theme",
         ]);
         
         this.DetailedResponse = this.tb.classViewer("DetailedResponse", [

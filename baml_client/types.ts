@@ -47,6 +47,11 @@ export function all_succeeded<CheckName extends string>(checks: Record<CheckName
 export function get_checks<CheckName extends string>(checks: Record<CheckName, Check>): Check[] {
     return Object.values(checks)
 }
+export interface AppScreenPromptsOutput {
+  app_screen_prompts: string[]
+  
+}
+
 export interface Avatar {
   summary: string
   apparent_age: string
@@ -118,6 +123,7 @@ export interface DemoAppOutput {
   app_name: string
   app_description: string
   app_icon_prompt: string
+  color_theme: string
   
 }
 

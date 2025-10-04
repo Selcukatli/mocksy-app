@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
+import type {  AppScreenPromptsOutput,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -36,6 +36,9 @@ export interface StreamState<T> {
 }
 
 export namespace partial_types {
+    export interface AppScreenPromptsOutput {
+      app_screen_prompts: string[]
+    }
     export interface Avatar {
       summary?: string | null
       apparent_age?: string | null
@@ -95,6 +98,7 @@ export namespace partial_types {
       app_name?: string | null
       app_description?: string | null
       app_icon_prompt?: string | null
+      color_theme?: string | null
     }
     export interface DetailedResponse {
       answer?: string | null

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 
 // Upload an app screen
 export const uploadAppScreen = mutation({
@@ -264,5 +264,37 @@ export const deleteAppScreen = mutation({
 
     // Delete the screen record
     await ctx.db.delete(screenId);
+  },
+});
+
+// Internal mutation to create a demo app screen (used by demoActions)
+export const createDemoAppScreen = internalMutation({
+  args: {
+    appId: v.id("apps"),
+    profileId: v.id("profiles"),
+    name: v.string(),
+    storageId: v.id("_storage"),
+    dimensions: v.object({
+      width: v.number(),
+      height: v.number(),
+    }),
+    size: v.number(),
+  },
+  returns: v.id("appScreens"),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    const screenId = await ctx.db.insert("appScreens", {
+      appId: args.appId,
+      profileId: args.profileId,
+      name: args.name,
+      storageId: args.storageId,
+      dimensions: args.dimensions,
+      size: args.size,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return screenId;
   },
 });

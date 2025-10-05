@@ -159,6 +159,10 @@ export default function Home() {
     return `${months} month${months > 1 ? 's' : ''} ago`;
   };
 
+  const MAX_HOME_APPS = 7;
+  const visibleApps = apps.slice(0, MAX_HOME_APPS);
+  const remainingAppCount = Math.max(0, apps.length - visibleApps.length);
+
   return (
     <div className="flex-1 p-8">
       {/* Hero Section */}
@@ -294,17 +298,48 @@ export default function Home() {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Your Apps</h2>
-            <Link href="/new-app" className="text-primary hover:underline text-sm">
-              Create New App →
-            </Link>
+            <div className="flex items-center gap-3">
+              {remainingAppCount > 0 && (
+                <span className="hidden sm:inline text-xs text-muted-foreground">
+                  {remainingAppCount} more {remainingAppCount === 1 ? 'app' : 'apps'}
+                </span>
+              )}
+              <Link
+                href="/my-apps"
+                className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+              >
+                See All Apps
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {apps.slice(0, 3).map((app) => (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            <Link href="/new-app">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                className="h-full rounded-xl border-2 border-dashed bg-card/60 p-4 hover:bg-card hover:shadow-md transition-all duration-200"
+              >
+                <div className="flex items-start gap-3 text-left">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border bg-card">
+                    <Plus className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Create an App</p>
+                    <p className="text-xs text-muted-foreground">
+                      Head to the builder to generate with AI or set up an existing app.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </Link>
+
+            {visibleApps.map((app) => (
               <Link key={app._id} href={`/app/${app._id}`}>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  className="p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200"
+                  className="h-full rounded-xl border bg-card p-4 hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -326,33 +361,6 @@ export default function Home() {
                 </motion.div>
               </Link>
             ))}
-
-            {/* Add App Card */}
-            {apps.length < 4 && (
-              <Link href="/new-app">
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  className="p-4 rounded-xl border-2 border-dashed bg-card/50 hover:bg-card hover:shadow-md transition-all duration-200 h-full flex items-center justify-center min-h-[88px]"
-                >
-                  <div className="text-center">
-                    <Plus className="w-8 h-8 text-muted-foreground/50 mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Create New App</p>
-                  </div>
-                </motion.div>
-              </Link>
-            )}
-
-            {/* Ghost cards to fill the row */}
-            {apps.length === 1 && (
-              <>
-                <div className="hidden md:block opacity-0 pointer-events-none" />
-                <div className="hidden lg:block opacity-0 pointer-events-none" />
-              </>
-            )}
-            {apps.length === 2 && (
-              <div className="hidden lg:block opacity-0 pointer-events-none" />
-            )}
           </div>
         </motion.div>
       )}

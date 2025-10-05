@@ -1,83 +1,41 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import {
-  Upload,
-  Sparkles
-} from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
-import { useMutation, useAction } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import FeatureSlides from '@/components/FeatureSlides';
+import { motion } from 'framer-motion';
+import { Sparkles, PenSquare, ArrowRight, Wand2, Layers } from 'lucide-react';
 
-export default function NewAppPage() {
-  const [appName, setAppName] = useState('');
-  const [appDescription, setAppDescription] = useState('');
-  const [iconPreview, setIconPreview] = useState<string | null>(null);
-  const [category, setCategory] = useState('Productivity');
-  const [platforms, setPlatforms] = useState({
-    ios: true,
-    android: true,
-  });
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
-  const router = useRouter();
+const options = [
+  {
+    title: 'Generate with AI',
+    description: 'Share a few details and let Mocksy draft the app profile, visuals, and copy for you.',
+    href: '/new-app/generate',
+    icon: Wand2,
+    accent: 'from-purple-500/80 via-purple-500/50 to-indigo-500/80',
+    pill: 'Fastest',
+  },
+  {
+    title: 'Set Up Existing App',
+    description: 'Already have the details? Capture your existing app metadata manually at your own pace.',
+    href: '/new-app/manual',
+    icon: PenSquare,
+    accent: 'from-primary/70 via-primary/40 to-primary/70',
+    pill: 'Most control',
+  },
+];
+
+export default function NewAppEntryPage() {
   const { isLoaded, isSignedIn } = useUser();
-  const createAppMutation = useMutation(api.apps.createApp);
-  const storeFromBase64 = useAction(api.fileStorage.base64Files.storeBase64File);
+  const router = useRouter();
 
-  // Redirect to welcome page if not signed in
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push('/welcome?mode=sign-in&context=new-app');
     }
   }, [isLoaded, isSignedIn, router]);
 
-  const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setIconPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      // Upload icon if exists
-      let iconStorageId;
-      if (iconPreview) {
-        iconStorageId = await storeFromBase64({
-          base64Data: iconPreview,
-          contentType: 'image/png',
-        });
-      }
-
-      // Create the app in Convex
-      const appId = await createAppMutation({
-        name: appName,
-        description: appDescription || undefined,
-        iconStorageId,
-        category,
-        platforms,
-        languages: selectedLanguages,
-      });
-
-
-      // Navigate to the newly created app page
-      router.push(`/app/${appId}`);
-    } catch {
-      // TODO: Show error toast
-    }
-  };
-
-  // Show loading state while checking authentication
   if (!isLoaded || (isLoaded && !isSignedIn)) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center">
@@ -91,246 +49,91 @@ export default function NewAppPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
-      <div className="h-screen flex flex-col">
-        {/* Header */}
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-12 md:px-12">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="p-8 pb-0"
+          transition={{ duration: 0.35 }}
+          className="max-w-3xl"
         >
-          <h1 className="text-4xl font-bold">Create New App</h1>
+          <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
+            <Layers className="h-3.5 w-3.5" />
+            App workspace setup
+          </span>
+          <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+            How would you like to create your app?
+          </h1>
+          <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+            You can let Mocksy generate the basics from a short brief, or build every detail yourself. Pick the workflow that matches how you work.
+          </p>
         </motion.div>
 
-        {/* Main Content */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 p-8 pt-6 overflow-hidden">
-          {/* Left Column - Form */}
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: 0.05 }}
-            className="flex flex-col h-full overflow-y-auto"
-          >
-            <div className="flex-1 space-y-6 pr-4">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* App Details */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: 0.1 }}
-                  className="bg-card rounded-xl border p-6 space-y-4"
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          {options.map((option, index) => {
+            const Icon = option.icon;
+            return (
+              <motion.div
+                key={option.href}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.1 * index }}
+                className="group h-full"
+              >
+                <Link
+                  href={option.href}
+                  className="relative flex h-full flex-col rounded-2xl border bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
                 >
-                  {/* App Icon and Name */}
-                  <div className="flex gap-4">
-                    {/* Icon Upload */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">App Icon</label>
-                      <div className="relative">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleIconUpload}
-                          className="hidden"
-                          id="icon-upload"
-                        />
-                        <label
-                          htmlFor="icon-upload"
-                          className="w-[60px] h-[60px] rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/30 transition-all duration-200 overflow-hidden"
-                        >
-                          {iconPreview ? (
-                            <>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={iconPreview} alt="App icon" className="w-full h-full object-cover" />
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-4 h-4 text-muted-foreground mb-0.5" />
-                              <span className="text-[10px] text-muted-foreground">Upload</span>
-                            </>
-                          )}
-                        </label>
+                  <div className={`absolute inset-0 -z-10 rounded-2xl opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-75 bg-gradient-to-br ${option.accent}`} />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold">{option.title}</h2>
+                        <p className="text-xs uppercase text-muted-foreground tracking-wide">{option.pill}</p>
                       </div>
                     </div>
-                    {/* App Name Input */}
-                    <div className="flex-1">
-                      <label htmlFor="appName" className="block text-sm font-medium mb-2">
-                        App Name
-                      </label>
-                      <input
-                        type="text"
-                        id="appName"
-                        value={appName}
-                        onChange={(e) => setAppName(e.target.value)}
-                        className="w-full h-[60px] px-4 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background transition-colors text-base placeholder:text-muted-foreground/70"
-                        placeholder="Enter your app name"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="appDescription" className="block text-sm font-medium mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      id="appDescription"
-                      value={appDescription}
-                      onChange={(e) => setAppDescription(e.target.value)}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background transition-colors resize-none placeholder:text-muted-foreground/70"
-                      placeholder="Describe your app's key features and purpose"
-                      rows={4}
-                    />
-                  </div>
-
-                  {/* Category */}
-                  <div>
-                    <label htmlFor="category" className="block text-sm font-medium mb-2">
-                      Category
-                    </label>
-                    <select
-                      id="category"
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                    <motion.div
+                      whileHover={{ x: 4 }}
+                      className="h-9 w-9 rounded-full border bg-background/80 flex items-center justify-center"
                     >
-                      <option>Productivity</option>
-                      <option>Social</option>
-                      <option>Entertainment</option>
-                      <option>Education</option>
-                      <option>Lifestyle</option>
-                      <option>Health & Fitness</option>
-                      <option>Business</option>
-                      <option>Games</option>
-                    </select>
+                      <ArrowRight className="h-4 w-4" />
+                    </motion.div>
                   </div>
-                </motion.div>
-
-                {/* Platform Settings */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: 0.15 }}
-                  className="bg-card rounded-xl border p-6"
-                >
-                  <label className="block text-sm font-medium mb-4">
-                    Target Platforms
-                  </label>
-                  <div className="space-y-3">
-                    <label className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5M13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
-                          </svg>
-                        </div>
-                        <span className="font-medium">iOS</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={platforms.ios}
-                        onChange={(e) => setPlatforms({ ...platforms, ios: e.target.checked })}
-                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.523 2.102a1.24 1.24 0 0 0-.238-.108 1.426 1.426 0 0 0-.236-.074c-.154-.04-.313-.04-.468-.002-.114.016-.227.049-.332.098l-.006.002L5.9 6.3c-.696.258-1.168.928-1.168 1.705v7.99c0 .777.472 1.447 1.168 1.705l10.343 4.282a1.397 1.397 0 0 0 1.057 0L17.524 22a1.81 1.81 0 0 0 1.168-1.705v-7.99a1.81 1.81 0 0 0-1.168-1.705L7.18 6.318v-.013l10.343-4.282s.002 0 .002-.002l-.002.08z"/>
-                          </svg>
-                        </div>
-                        <span className="font-medium">Android</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={platforms.android}
-                        onChange={(e) => setPlatforms({ ...platforms, android: e.target.checked })}
-                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      />
-                    </label>
-
-                  </div>
-                </motion.div>
-
-                {/* Languages */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: 0.2 }}
-                  className="bg-card rounded-xl border p-6"
-                >
-                  <label className="block text-sm font-medium mb-4">
-                    Supported Languages
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {['English', 'Spanish', 'French', 'German', 'Japanese', 'Korean', 'Chinese'].map((lang) => (
-                      <button
-                        key={lang}
-                        type="button"
-                        onClick={() => {
-                          if (selectedLanguages.includes(lang)) {
-                            setSelectedLanguages(selectedLanguages.filter(l => l !== lang));
-                          } else {
-                            setSelectedLanguages([...selectedLanguages, lang]);
-                          }
-                        }}
-                        className={`px-3 py-1.5 border rounded-lg transition-colors text-sm ${
-                          selectedLanguages.includes(lang)
-                            ? 'bg-foreground text-background border-foreground'
-                            : 'hover:bg-muted/50'
-                        }`}
-                      >
-                        {lang}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              </form>
-            </div>
-
-            {/* Sticky Create Button - at bottom of left column */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: 0.2 }}
-              className="sticky bottom-0 flex gap-4 mt-6 pt-4 pb-2"
-            >
-              <Button
-                onClick={handleSubmit}
-                variant="default"
-                size="lg"
-                className="flex-1"
-                disabled={!appName}
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Create App
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={() => router.push('/home')}
-              >
-                Cancel
-              </Button>
-            </motion.div>
-          </motion.div>
-
-          {/* Right Column - Feature Slides */}
-          <motion.div
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="hidden lg:flex flex-col h-full rounded-xl overflow-hidden border"
-          >
-            <FeatureSlides
-              className="flex-1"
-              maskGradient={false}
-              interval={6000}
-            />
-          </motion.div>
+                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+                    {option.description}
+                  </p>
+                  {index === 0 && (
+                    <div className="mt-6 rounded-lg border border-dashed bg-background/60 p-4 text-sm text-muted-foreground">
+                      <Sparkles className="mr-2 inline h-4 w-4 text-primary" />
+                      We&apos;ll suggest a name, description, and language defaults you can tweak before publishing.
+                    </div>
+                  )}
+                </Link>
+              </motion.div>
+            );
+          })}
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.25 }}
+          className="mt-12 flex flex-col gap-3 rounded-2xl border bg-card p-6 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between"
+        >
+          <div>
+            <p className="font-medium text-foreground">Need to migrate an existing catalog?</p>
+            <p>Import spreadsheets or existing metadata later from the app settings panel.</p>
+          </div>
+          <Link
+            href="/home"
+            className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted/70"
+          >
+            Back to dashboard
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </motion.div>
       </div>
     </div>
   );

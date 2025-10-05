@@ -157,15 +157,39 @@ function GenerateScreensForApp(
     Each prompt MUST follow this exact pattern:
     "iPhone screenshot of [screen name]. Raw screen capture filling the entire canvas - status bar touching top edge, app background extending to all edges (left, right, bottom). [Detailed UI description: specific elements like headers, buttons, cards, lists, images, text content, interactive components]. Bottom navigation tabs/buttons with safe area spacing (NO home indicator visible). NO device frame, NO rounded corners, NO padding around edges - just the screen pixels. {{ color_theme }}."
 
-    **EXAMPLE PROMPT:**
-    "iPhone screenshot of Home Dashboard. Raw screen capture filling the entire canvas - status bar touching top edge, app background extending to all edges. Dark purple gradient background with subtle neural network pattern. Central 'New Mind Map' button with glowing effect. Recently created mind maps displayed in scrollable carousel below with thumbnail previews and project titles. Bottom navigation tabs (Home, Projects, Ideas, Settings) with safe area spacing. NO device frame, NO rounded corners, NO padding - just screen pixels. Dark purple and electric cyan colors."
+    **UI COLOR CONSISTENCY RULES (CRITICAL - MUST FOLLOW EXACTLY):**
+
+    First, analyze the color theme "{{ color_theme }}" and identify:
+    - PRIMARY_BG: The main background color (lightest or darkest base color)
+    - ACCENT_COLOR: The brightest/most vibrant color for active states, primary buttons, and highlights
+    - MUTED_COLOR: A softer, desaturated version for inactive states and secondary elements
+    - TEXT_COLOR: High contrast color for readable text
+
+    **MANDATORY: All screens must use these EXACT color assignments:**
+    - Background: PRIMARY_BG (same across all screens)
+    - Active tab/button/selected state: ACCENT_COLOR (same across all screens)
+    - Inactive tab/unselected state: MUTED_COLOR (same across all screens)
+    - Primary action buttons: ACCENT_COLOR (same across all screens)
+    - Text: TEXT_COLOR (same across all screens)
+
+    **BOTTOM NAVIGATION CONSISTENCY (CRITICAL):**
+    - ALL screens must show the EXACT SAME navigation tabs in the SAME ORDER
+    - Choose 4-5 relevant tab names for this app (e.g., "Home", "Journal", "Moods", "Insights", "Profile")
+    - Specify which tab is ACTIVE on each screen (highlighted in ACCENT_COLOR)
+    - All other tabs must be INACTIVE (shown in MUTED_COLOR)
+    - Tab icon style must be identical across screens (same line weight, same icon design approach)
+
+    **EXAMPLE PROMPTS WITH CONSISTENT COLORS:**
+
+    Screen 1: "iPhone screenshot of Home Dashboard. Raw screen capture filling the entire canvas - status bar touching top edge, app background extending to all edges. Soft sage green background. Header 'Today' in earthy white. Central mood card with warm cream border. Bottom navigation: Home tab ACTIVE (highlighted in muted gold icon and text), Journal tab inactive (earthy white), Moods tab inactive (earthy white), Profile tab inactive (earthy white). NO device frame, NO rounded corners, NO padding. Soft sage green, warm cream, muted gold, earthy white."
+
+    Screen 2: "iPhone screenshot of Journal Entry. Raw screen capture filling the entire canvas - status bar touching top edge, app background extending to all edges. Soft sage green background. Text input area with warm cream border. Save button in muted gold. Bottom navigation: Home tab inactive (earthy white), Journal tab ACTIVE (highlighted in muted gold icon and text), Moods tab inactive (earthy white), Profile tab inactive (earthy white). NO device frame, NO rounded corners, NO padding. Soft sage green, warm cream, muted gold, earthy white."
 
     **DESIGN CONSISTENCY:**
-    - All screens MUST use the same color theme: {{ color_theme }}
-    - Use consistent typography and UI patterns across all screens
-    - Maintain the same visual style and mood throughout
-    - Each screen should feel like part of the same cohesive app
-    - Bottom navigation should be consistent (same tabs/icons) if applicable
+    - All screens MUST use the color theme EXACTLY as specified above
+    - UI components of the same type MUST use the SAME color across all screens
+    - Typography and font weights must be consistent across screens
+    - Only the ACTIVE tab should change between screens - everything else stays the same
 
     {{ ctx.output_format }}
   "#

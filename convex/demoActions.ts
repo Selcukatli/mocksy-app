@@ -17,6 +17,7 @@ export const generateDemoAppInternal = internalAction({
     styleId: v.optional(v.id("styles")),
     profileId: v.optional(v.id("profiles")),
     appDescriptionInput: v.optional(v.string()),
+    screenshotSizeId: v.optional(v.id("screenshotSizes")), // Default: iPhone 16 Pro Max
   },
   returns: v.id("apps"),
   handler: async (ctx, args): Promise<Id<"apps">> => {
@@ -78,7 +79,34 @@ export const generateDemoAppInternal = internalAction({
 
     console.log(`  ✓ Screen prompts generated (${screenPrompts.app_screen_prompts.length} screens)`);
 
-    // 3. Generate app icon image
+    // 3. Fetch canvas for screen generation
+    const IPHONE_16_PRO_MAX_SIZE_ID = "kh74jsbefpsc7wn9pjqfqfa0sd7rn4ct" as Id<"screenshotSizes">;
+    const sizeId = args.screenshotSizeId || IPHONE_16_PRO_MAX_SIZE_ID;
+
+    console.log(`📐 Fetching canvas for screenshot size: ${sizeId}`);
+    const size = await ctx.runQuery(api.screenshotSizes.getSizeById, {
+      sizeId,
+    });
+
+    if (!size) {
+      throw new Error(`Screenshot size not found: ${sizeId}`);
+    }
+
+    if (!size.canvasStorageId) {
+      throw new Error(`Screenshot size ${sizeId} has no canvas image`);
+    }
+
+    const canvasUrl = await ctx.runQuery(api.fileStorage.files.getFileUrl, {
+      storageId: size.canvasStorageId,
+    });
+
+    if (!canvasUrl) {
+      throw new Error(`Could not get canvas URL for size: ${sizeId}`);
+    }
+
+    console.log(`  ✓ Canvas URL retrieved`);
+
+    // 4. Generate app icon image
     console.log("🎨 Generating demo app icon...");
     const iconResult = await ctx.runAction(
       internal.utils.fal.falImageActions.geminiFlashTextToImage,
@@ -123,39 +151,141 @@ export const generateDemoAppInternal = internalAction({
 
     console.log(`✅ Demo app created: ${appId}`);
 
-    // 6. Generate app screens in parallel
-    console.log(`🖼️  Generating ${screenPrompts.app_screen_prompts.length} app screens...`);
+    // 6. Generate first screen (reference screen for consistency)
+    console.log(`🖼️  Generating screen 1 as reference...`);
 
-    const screenResults = await Promise.all(
-      screenPrompts.app_screen_prompts.map(async (screenPrompt, index) => {
+    const firstScreenPrompt = screenPrompts.app_screen_prompts[0];
+    const firstScreenName = firstScreenPrompt.split('.')[0].replace('iPhone screenshot of ', '').trim();
+
+    const firstScreenFinalPrompt = `CANVAS EDITING TASK: You are provided with a BLANK CANVAS image. Your job is to edit this exact canvas by painting app UI directly onto it.
+
+MANDATORY: You MUST use the provided canvas image as your base. DO NOT create a new image or change dimensions. Edit the existing canvas only.
+
+TASK: Paint the following app UI directly onto the provided canvas from edge to edge:
+
+${firstScreenPrompt}
+
+CRITICAL RULES - MUST FOLLOW EXACTLY:
+1. USE THE PROVIDED CANVAS - do not create new dimensions or aspect ratio
+2. NO device frame, NO phone bezel, NO notch, NO rounded corners, NO drop shadow, NO padding, NO inset
+3. This is a RAW SCREEN CAPTURE - just app UI pixels painted directly onto the canvas
+4. Fill ENTIRE canvas edge-to-edge:
+   - Status bar pixels touch the TOP edge (no gap)
+   - App content/background extends to BOTTOM edge (no gap)
+   - UI extends to LEFT and RIGHT edges (no side gaps)
+5. Background color must fill ALL 4 edges completely - zero white space, zero gaps
+6. Bottom of canvas: Content or background color must reach the very last pixel row
+7. FORBIDDEN: No rounded corners on the canvas itself, no white gaps at edges, no padding around the UI, no 1:1 square aspect ratio
+
+Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must touch the canvas boundary."`;
+
+    const firstScreenResult = await ctx.runAction(
+      internal.utils.fal.falImageActions.geminiFlashEditImage,
+      {
+        prompt: firstScreenFinalPrompt,
+        image_urls: [canvasUrl],
+        num_images: 1,
+        output_format: "png",
+      }
+    );
+
+    if (!firstScreenResult.images || firstScreenResult.images.length === 0) {
+      throw new Error("Failed to generate first reference screen");
+    }
+
+    const firstScreenUrl = firstScreenResult.images[0].url;
+    const firstScreenWidth = firstScreenResult.images[0].width || 1290;
+    const firstScreenHeight = firstScreenResult.images[0].height || 2796;
+
+    // Download and upload first screen to storage
+    const firstScreenResponse = await fetch(firstScreenUrl);
+    if (!firstScreenResponse.ok) {
+      throw new Error("Failed to download first screen");
+    }
+
+    const firstScreenBlob = await firstScreenResponse.blob();
+    const firstScreenStorageId = await ctx.storage.store(firstScreenBlob);
+
+    // Create first screen record
+    const firstScreenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
+      appId,
+      profileId: args.profileId!,
+      name: firstScreenName,
+      storageId: firstScreenStorageId,
+      dimensions: {
+        width: firstScreenWidth,
+        height: firstScreenHeight,
+      },
+      size: firstScreenBlob.size,
+    });
+
+    console.log(`  ✓ Screen 1 created: ${firstScreenId} (will be used as reference)`);
+
+    // 7. Generate remaining screens in parallel using first screen as reference
+    console.log(`🖼️  Generating remaining ${screenPrompts.app_screen_prompts.length - 1} screens with visual reference...`);
+
+    const remainingScreenResults = await Promise.all(
+      screenPrompts.app_screen_prompts.slice(1).map(async (screenPrompt, index) => {
         const screenName = screenPrompt.split('.')[0].replace('iPhone screenshot of ', '').trim();
-        console.log(`  → Generating screen ${index + 1}: ${screenName}`);
+        const screenNumber = index + 2; // +2 because we're skipping screen 1
+        console.log(`  → Generating screen ${screenNumber}: ${screenName}`);
 
         try {
-          // Generate screen image with Gemini Flash
+          // Wrap BAML prompt with canvas editing instructions + reference screen guidance
+          const finalPrompt = `CANVAS EDITING TASK: You are provided with a BLANK CANVAS and a REFERENCE SCREEN. Your job is to edit the canvas by painting app UI that matches the visual style of the reference.
+
+MANDATORY: You MUST use the provided canvas image as your base. DO NOT create a new image or change dimensions. Edit the existing canvas only.
+
+REFERENCE SCREEN USAGE: The second image shows an existing screen from this app. Match its exact visual design:
+- Use the SAME colors, fonts, and UI component styles
+- Match the status bar style, navigation bar style, and button designs
+- Keep typography, spacing, and visual hierarchy consistent
+- CRITICAL FOR NAVIGATION: The reference shows one tab as active - use its ACTIVE styling (color/appearance) for the active tab in YOUR screen, and its INACTIVE styling for inactive tabs. The WHICH tab is active will be different - that's correct, just match the styling approach.
+- This ensures all screens look like they belong to the same app
+
+TASK: Paint the following app UI directly onto the provided canvas from edge to edge:
+
+${screenPrompt}
+
+CRITICAL RULES - MUST FOLLOW EXACTLY:
+1. USE THE PROVIDED CANVAS - do not create new dimensions or aspect ratio
+2. MATCH THE REFERENCE SCREEN'S visual style (colors, fonts, components, spacing)
+3. NO device frame, NO phone bezel, NO notch, NO rounded corners, NO drop shadow, NO padding, NO inset
+4. This is a RAW SCREEN CAPTURE - just app UI pixels painted directly onto the canvas
+5. Fill ENTIRE canvas edge-to-edge:
+   - Status bar pixels touch the TOP edge (no gap)
+   - App content/background extends to BOTTOM edge (no gap)
+   - UI extends to LEFT and RIGHT edges (no side gaps)
+6. Background color must fill ALL 4 edges completely - zero white space, zero gaps
+7. Bottom of canvas: Content or background color must reach the very last pixel row
+8. FORBIDDEN: No rounded corners on the canvas itself, no white gaps at edges, no padding around the UI, no 1:1 square aspect ratio
+
+Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must touch the canvas boundary. Match the reference screen's visual design exactly."`;
+
+          // Generate screen image with Gemini Flash Edit (canvas + reference screen)
           const screenResult = await ctx.runAction(
-            internal.utils.fal.falImageActions.geminiFlashTextToImage,
+            internal.utils.fal.falImageActions.geminiFlashEditImage,
             {
-              prompt: screenPrompt,
+              prompt: finalPrompt,
+              image_urls: [canvasUrl, firstScreenUrl], // Canvas + reference screen
               num_images: 1,
-              aspect_ratio: "9:16",
               output_format: "png",
             }
           );
 
           if (!screenResult.images || screenResult.images.length === 0) {
-            console.log(`  ❌ Failed to generate screen ${index + 1}: No images returned`);
+            console.log(`  ❌ Failed to generate screen ${screenNumber}: No images returned`);
             return null;
           }
 
           const screenUrl = screenResult.images[0].url;
-          const screenWidth = screenResult.images[0].width || 1080; // Default 9:16 aspect ratio
-          const screenHeight = screenResult.images[0].height || 1920;
+          const screenWidth = screenResult.images[0].width || 1290;
+          const screenHeight = screenResult.images[0].height || 2796;
 
           // Download and upload to storage
           const screenResponse = await fetch(screenUrl);
           if (!screenResponse.ok) {
-            console.log(`  ❌ Failed to download screen ${index + 1}`);
+            console.log(`  ❌ Failed to download screen ${screenNumber}`);
             return null;
           }
 
@@ -175,17 +305,18 @@ export const generateDemoAppInternal = internalAction({
             size: screenBlob.size,
           });
 
-          console.log(`  ✓ Screen ${index + 1} created: ${screenId}`);
+          console.log(`  ✓ Screen ${screenNumber} created: ${screenId}`);
           return screenId;
         } catch (error) {
-          console.log(`  ❌ Error generating screen ${index + 1}:`, error);
+          console.log(`  ❌ Error generating screen ${screenNumber}:`, error);
           return null;
         }
       })
     );
 
-    const successfulScreens = screenResults.filter(id => id !== null);
-    console.log(`✅ Generated ${successfulScreens.length}/${screenPrompts.app_screen_prompts.length} app screens`);
+    const successfulRemainingScreens = remainingScreenResults.filter(id => id !== null);
+    const totalSuccessful = 1 + successfulRemainingScreens.length; // +1 for first screen
+    console.log(`✅ Generated ${totalSuccessful}/${screenPrompts.app_screen_prompts.length} app screens (1 reference + ${successfulRemainingScreens.length} matching)`);
 
     return appId;
   },
@@ -204,6 +335,7 @@ export const generateScreensForExistingApp = internalAction({
     screenInstructions: v.optional(v.string()),
     numScreens: v.optional(v.number()),
     colorTheme: v.optional(v.string()),
+    screenshotSizeId: v.optional(v.id("screenshotSizes")), // Default: iPhone 16 Pro Max
   },
   returns: v.array(v.id("appScreens")),
   handler: async (ctx, args): Promise<Id<"appScreens">[]> => {
@@ -236,20 +368,70 @@ export const generateScreensForExistingApp = internalAction({
 
     console.log(`  ✓ Generated ${result.app_screen_prompts.length} screen prompts`);
 
-    // 4. Generate screens in parallel
+    // 4. Fetch canvas for screen generation
+    const IPHONE_16_PRO_MAX_SIZE_ID = "kh74jsbefpsc7wn9pjqfqfa0sd7rn4ct" as Id<"screenshotSizes">;
+    const sizeId = args.screenshotSizeId || IPHONE_16_PRO_MAX_SIZE_ID;
+
+    console.log(`📐 Fetching canvas for screenshot size: ${sizeId}`);
+    const size = await ctx.runQuery(api.screenshotSizes.getSizeById, {
+      sizeId,
+    });
+
+    if (!size) {
+      throw new Error(`Screenshot size not found: ${sizeId}`);
+    }
+
+    if (!size.canvasStorageId) {
+      throw new Error(`Screenshot size ${sizeId} has no canvas image`);
+    }
+
+    const canvasUrl = await ctx.runQuery(api.fileStorage.files.getFileUrl, {
+      storageId: size.canvasStorageId,
+    });
+
+    if (!canvasUrl) {
+      throw new Error(`Could not get canvas URL for size: ${sizeId}`);
+    }
+
+    console.log(`  ✓ Canvas URL retrieved`);
+
+    // 5. Generate screens in parallel
     const screenResults = await Promise.all(
       result.app_screen_prompts.map(async (screenPrompt, index) => {
         const screenName = screenPrompt.split('.')[0].replace('iPhone screenshot of ', '').trim();
         console.log(`  → Generating screen ${index + 1}: ${screenName}`);
 
         try {
-          // Generate screen image with Gemini Flash
+          // Wrap BAML prompt with canvas editing instructions
+          const finalPrompt = `CANVAS EDITING TASK: You are provided with a BLANK CANVAS image. Your job is to edit this exact canvas by painting app UI directly onto it.
+
+MANDATORY: You MUST use the provided canvas image as your base. DO NOT create a new image or change dimensions. Edit the existing canvas only.
+
+TASK: Paint the following app UI directly onto the provided canvas from edge to edge:
+
+${screenPrompt}
+
+CRITICAL RULES - MUST FOLLOW EXACTLY:
+1. USE THE PROVIDED CANVAS - do not create new dimensions or aspect ratio
+2. NO device frame, NO phone bezel, NO notch, NO rounded corners, NO drop shadow, NO padding, NO inset
+3. This is a RAW SCREEN CAPTURE - just app UI pixels painted directly onto the canvas
+4. Fill ENTIRE canvas edge-to-edge:
+   - Status bar pixels touch the TOP edge (no gap)
+   - App content/background extends to BOTTOM edge (no gap)
+   - UI extends to LEFT and RIGHT edges (no side gaps)
+5. Background color must fill ALL 4 edges completely - zero white space, zero gaps
+6. Bottom of canvas: Content or background color must reach the very last pixel row
+7. FORBIDDEN: No rounded corners on the canvas itself, no white gaps at edges, no padding around the UI, no 1:1 square aspect ratio
+
+Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must touch the canvas boundary."`;
+
+          // Generate screen image with Gemini Flash Edit (canvas-based)
           const screenResult = await ctx.runAction(
-            internal.utils.fal.falImageActions.geminiFlashTextToImage,
+            internal.utils.fal.falImageActions.geminiFlashEditImage,
             {
-              prompt: screenPrompt,
+              prompt: finalPrompt,
+              image_urls: [canvasUrl],
               num_images: 1,
-              aspect_ratio: "9:16",
               output_format: "png",
             }
           );

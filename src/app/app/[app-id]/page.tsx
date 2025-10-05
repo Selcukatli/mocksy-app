@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use, useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -69,13 +69,18 @@ export default function AppDetailPage({ params }: PageProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [deleteSetId, setDeleteSetId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteAppConfirm, setShowDeleteAppConfirm] = useState(false);
+  const [showDeleteAppMenu, setShowDeleteAppMenu] = useState(false);
+  const [isDeletingApp, setIsDeletingApp] = useState(false);
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const [screenSearch, setScreenSearch] = useState('');
 
   // Store hooks for local data (sets, screenshots)
   // const { getScreenshotsForSet } = useAppStore();
 
   // Convex mutations
   const deleteSetMutation = useMutation(api.screenshotSets.deleteSet);
+  const deleteAppMutation = useMutation(api.apps.deleteApp);
 
   // Get app from Convex
   const app = useQuery(api.apps.getApp, { appId: appId as Id<"apps"> });
@@ -84,7 +89,8 @@ export default function AppDetailPage({ params }: PageProps) {
   const convexSets = useQuery(api.screenshotSets.getSetsForApp, app ? { appId: appId as Id<"apps"> } : "skip") ?? [];
 
   // Fetch app screens from Convex
-  const appScreens = useQuery(api.appScreens.getAppScreens, { appId: appId as Id<"apps"> }) ?? [];
+  const appScreensRaw = useQuery(api.appScreens.getAppScreens, { appId: appId as Id<"apps"> });
+  const appScreens = useMemo(() => appScreensRaw ?? [], [appScreensRaw]);
 
   // If app doesn't exist or still loading, handle accordingly
   useEffect(() => {
@@ -97,6 +103,17 @@ export default function AppDetailPage({ params }: PageProps) {
 
   // Get data for current app
   const sourceImagesCount = appScreens.length;
+  const filteredScreens = useMemo(() => {
+    const term = screenSearch.trim().toLowerCase();
+    if (!term) {
+      return appScreens;
+    }
+
+    return appScreens.filter((screen) => {
+      const name = screen.name?.toLowerCase() ?? '';
+      return name.includes(term);
+    });
+  }, [appScreens, screenSearch]);
 
   useEffect(() => {
     // Check if user has seen onboarding globally
@@ -186,26 +203,51 @@ export default function AppDetailPage({ params }: PageProps) {
                     </span>
                   )}
                 </div>
-                <div>
+                <div className="max-w-lg">
                   <h1 className="text-3xl font-bold">{app?.name || `App ${appId}`}</h1>
-                  <p className="text-muted-foreground mt-1">{app?.description || 'Manage your app store screenshots and source images'}</p>
+                  <p className="text-muted-foreground mt-1 text-sm truncate">
+                    {app?.description || 'Manage your app store screenshots and source images'}
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={handleShowOnboarding}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
                 >
                   <HelpCircle className="w-4 h-4" />
-                  See How It Works
+                  How It Works
                 </button>
                 <button
                   onClick={() => router.push(`/app/${appId}/manage`)}
                   className="px-4 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-2"
                 >
                   <Settings className="w-4 h-4" />
-                  <span className="text-sm">Manage App Details</span>
+                  <span className="text-sm">App Details</span>
                 </button>
+                <Popover open={showDeleteAppMenu} onOpenChange={setShowDeleteAppMenu}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border text-lg leading-none text-muted-foreground transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-600"
+                      aria-label="More app actions"
+                    >
+                      <span className="inline-flex h-full items-center justify-center">...</span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="bottom" align="end" className="w-40 p-1">
+                    <button
+                      onClick={() => {
+                        setShowDeleteAppMenu(false);
+                        setShowDeleteAppConfirm(true);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete App
+                    </button>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           </motion.div>
@@ -579,167 +621,159 @@ export default function AppDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Right Column - Actions */}
-            <div className="w-96 space-y-4">
-              {/* Upload Source Images Box */}
+            {/* Right Column - Screens */}
+            <div className="w-72 flex flex-col overflow-hidden">
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
-                className="bg-card border rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer group"
-                onClick={() => router.push(`/app/${appId}/app-screens`)}
+                className="bg-card border rounded-xl p-6 flex flex-col flex-1 min-h-0"
               >
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
-                    <FileImage className="w-7 h-7 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold mb-2 flex items-center gap-2">
-                      Manage App Screens
-                      <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Upload and organize screenshots from your app for AI generation
-                    </p>
-                  </div>
-                </div>
-
-                {/* Thumbnail Preview Section */}
-                {appScreens.length > 0 && (
-                  <div className="mt-4 grid grid-cols-4 gap-2">
-                    {/* Show actual uploaded images */}
-                    {appScreens.slice(0, Math.min(appScreens.length, 3)).map((screen) => (
-                      <div
-                        key={screen._id}
-                        className="aspect-[9/16] bg-muted/20 rounded-md overflow-hidden"
-                      >
-                        {screen.screenUrl && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={screen.screenUrl}
-                            alt={screen.name}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Add ghost cells if less than 3 images */}
-                    {appScreens.length < 3 && Array(3 - appScreens.length).fill(0).map((_, index) => (
-                      <div
-                        key={`ghost-${index}`}
-                        className="aspect-[9/16] bg-muted/10 border border-dashed border-muted-foreground/20 rounded-md"
-                      />
-                    ))}
-
-                    {/* Show +X indicator for overflow */}
-                    {appScreens.length > 3 && (
-                      <div className="aspect-[9/16] bg-muted/30 rounded-md flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">
-                          +{appScreens.length - 3}
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <FileImage className="w-7 h-7 text-primary" />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="font-semibold">App Screens</h3>
+                        <span className="rounded-full bg-muted/20 px-3 py-1 text-xs font-medium text-muted-foreground whitespace-nowrap">
+                          {sourceImagesCount === 1 ? '1 screen' : `${sourceImagesCount} screens`}
                         </span>
                       </div>
-                    )}
-                  </div>
-                )}
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/app/${appId}/app-screens`);
-                  }}
-                  className="w-full mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <Upload className="w-4 h-4" />
-                  {sourceImagesCount > 0 ? 'Manage Screens' : 'Upload Screens'}
-                </button>
-              </motion.div>
-
-              {/* Browse Vibes Box */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.15 }}
-                className="bg-card border rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer group"
-                onClick={() => router.push('/browse-vibes')}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-purple-500/30 group-hover:to-pink-500/30 transition-colors">
-                    <Palette className="w-7 h-7 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold mb-2 flex items-center gap-2">
-                      Browse Vibes
-                      <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Choose AI style templates to generate stunning, consistent app store screenshots
-                    </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="flex flex-col items-center">
-                        <div className="w-full h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-md mb-1" />
-                        <span className="text-xs">Snap</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="w-full h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-md mb-1" />
-                        <span className="text-xs">Zen</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="w-full h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-md mb-1" />
-                        <span className="text-xs">GenZ</span>
-                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Keep your latest screens ready for AI templates.
+                      </p>
                     </div>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-1">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="search"
+                        placeholder="Search screens..."
+                        value={screenSearch}
+                        onChange={(event) => setScreenSearch(event.target.value)}
+                        className="w-full rounded-lg border border-border bg-background/80 pl-9 pr-3 py-2 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        disabled={sourceImagesCount === 0}
+                      />
+                    </div>
+                    <button
+                      onClick={() => router.push(`/app/${appId}/app-screens`)}
+                      className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 flex items-center gap-1"
+                    >
+                      {sourceImagesCount > 0 ? 'See All' : 'Upload Screens'}
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push('/browse-vibes');
-                  }}
-                  className="w-full mt-4 px-4 py-2 border hover:bg-muted/50 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Explore All Vibes
-                </button>
-              </motion.div>
 
-              {/* Quick Stats */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-                className="bg-muted/30 rounded-xl p-6"
-              >
-                <h3 className="font-semibold mb-4 text-sm">Quick Stats</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Total Sets</span>
-                    <span className="font-semibold">{convexSets.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Ready to Export</span>
-                    <span className="font-semibold text-green-600">
-                      {convexSets.filter(s => getSetStatus(s) === 'ready').length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">In Draft</span>
-                    <span className="font-semibold text-yellow-600">
-                      {convexSets.filter(s => getSetStatus(s) === 'draft').length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Source Images</span>
-                    <span className="font-semibold">
-                      {sourceImagesCount}
-                    </span>
-                  </div>
+                <div className="mt-6 flex-1 overflow-y-auto pr-1">
+                  {sourceImagesCount > 0 ? (
+                    filteredScreens.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-4 pb-1">
+                        {filteredScreens.map((screen) => (
+                          <div
+                            key={screen._id}
+                            className="group relative aspect-[9/16] overflow-hidden rounded-xl border border-border bg-muted/20"
+                          >
+                            {screen.screenUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={screen.screenUrl}
+                                alt={screen.name}
+                                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.04]"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                                No preview
+                              </div>
+                            )}
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                              <p className="text-xs text-white truncate" title={screen.name}>
+                                {screen.name}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+                        <div className="rounded-full bg-muted/40 p-3">
+                          <Search className="h-5 w-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-foreground">No matching screens</p>
+                          <p className="text-sm">Try a different name or reset your search.</p>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+                      <div className="rounded-full bg-muted/40 p-3">
+                        <Upload className="h-5 w-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">No screens yet</p>
+                        <p className="text-sm">Upload images to preview them here.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Delete App Confirmation Dialog */}
+      {showDeleteAppConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg"
+          >
+            <h3 className="text-lg font-semibold mb-2">Delete App?</h3>
+            <p className="text-muted-foreground mb-4">
+              Are you sure you want to delete &ldquo;{app?.name || `App ${appId}`}&rdquo;? This will remove the app and all of its data once the process is complete. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteAppConfirm(false);
+                  setIsDeletingApp(false);
+                }}
+                className="px-4 py-2 rounded-lg border transition-colors hover:bg-muted/50"
+                disabled={isDeletingApp}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    setIsDeletingApp(true);
+                    await deleteAppMutation({ appId: appId as Id<"apps"> });
+                    setShowDeleteAppConfirm(false);
+                    setIsDeletingApp(false);
+                    router.push('/home');
+                  } catch (error) {
+                    console.error('Failed to delete app:', error);
+                    setIsDeletingApp(false);
+                  }
+                }}
+                className={cn(
+                  'px-4 py-2 rounded-lg bg-red-600 text-white transition-colors hover:bg-red-700',
+                  isDeletingApp && 'opacity-80 cursor-not-allowed'
+                )}
+                disabled={isDeletingApp}
+              >
+                {isDeletingApp ? 'Deleting...' : 'Delete App'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && deleteSetId && (

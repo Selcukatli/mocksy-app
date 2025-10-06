@@ -121,6 +121,7 @@ export interface Composition {
 
 export interface DemoAppOutput {
   app_name: string
+  app_subtitle: string
   app_description: string
   app_category: string
   app_icon_prompt: string

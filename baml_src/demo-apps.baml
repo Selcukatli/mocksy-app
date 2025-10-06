@@ -13,6 +13,7 @@
 
 class DemoAppOutput {
   app_name string @description("Short, catchy app name (1-3 words max, e.g., 'FitQuest', 'ZenJournal', 'ShadowVault')")
+  app_subtitle string @description("App Store subtitle (30 characters MAX, including spaces). A single punchy phrase that captures the app's core value. Examples: 'Fitness made fun', 'Your mindful companion', 'Track workouts, earn rewards'. CRITICAL: Must be 30 characters or less.")
   app_description string @description("App Store style description (3-5 sentences, 40-80 words). Explain what the app does, key features, and benefits. Make it compelling and professional.")
   app_category string @description("App Store category. Choose from: Games, Productivity, Lifestyle, Education, Health & Fitness, Business, Social Networking, Entertainment, Photo & Video, Travel, Food & Drink, Finance, News, Sports, Weather, Music, Shopping, Utilities, Medical, Reference. Pick the single most relevant category that matches this app's primary purpose.")
   app_icon_prompt string @description("Complete text-to-image prompt for generating app icon (50-100 words). CRITICAL: Icon must be SIMPLE with LARGE, BOLD symbols recognizable at small sizes. Avoid tiny details, thin lines, or complex patterns. Should be 1024x1024 square, iOS-style icon design matching the app concept and style aesthetic.")
@@ -92,7 +93,22 @@ function GenerateDemoApp(
       * Dark/cyberpunk styles → edgy, mysterious names
     - NO hyphens, NO long phrases, NO descriptions in the name
 
-    ## 2. APP CATEGORY
+    ## 2. APP SUBTITLE
+
+    Create an App Store subtitle (30 characters MAX):
+    - **CRITICAL: Must be 30 characters or less, including spaces**
+    - A single punchy phrase capturing the app's core value
+    - Examples (all ≤30 chars):
+      * "Fitness made fun" (18 chars)
+      * "Your mindful companion" (23 chars)
+      * "Track workouts, earn rewards" (29 chars)
+      * "Gamify your fitness journey" (28 chars)
+      * "Find calm in chaos" (18 chars)
+    - Be concise and impactful
+    - Avoid articles ("a", "the") to save space
+    - Should complement the app name, not repeat it
+
+    ## 3. APP CATEGORY
 
     Choose the most appropriate App Store category from this list:
     - **Games** - Gaming apps of all types
@@ -119,7 +135,7 @@ function GenerateDemoApp(
     Pick ONE category that best matches the app's PRIMARY purpose.
     {% if category_hint %}Consider the user's hint: {{ category_hint }}{% endif %}
 
-    ## 3. APP DESCRIPTION
+    ## 4. APP DESCRIPTION
 
     Write an App Store style description (3-5 sentences, 40-80 words):
     - Explain what the app does and its core purpose
@@ -128,7 +144,7 @@ function GenerateDemoApp(
     - Match the style's mood and target audience
     - Example: "Transform your fitness journey into an epic adventure. FitQuest gamifies your workouts with challenges, achievements, and rewards. Track your progress, compete with friends, and unlock new levels as you get stronger. Perfect for anyone who wants to stay motivated and make exercise fun."
 
-    ## 4. APP ICON PROMPT
+    ## 5. APP ICON PROMPT
 
     Generate a text-to-image prompt for creating the app icon (50-100 words):
     - **CRITICAL: Keep it SIMPLE - use ONE large, bold central symbol**
@@ -142,7 +158,7 @@ function GenerateDemoApp(
       * "iOS app icon. Big crescent moon symbol, deep purple gradient background. Soft glow effect. Simple and bold. Rounded square. 1024x1024."
       * "iOS app icon. Single large bat silhouette in center, glowing purple outline on dark background. Bold and simple. Rounded square. 1024x1024."
 
-    ## 5. COLOR THEME
+    ## 6. COLOR THEME
 
     Define a color palette/theme for the app UI that will be used to generate consistent app screens:
     - Be specific about colors (e.g., "dark purple and electric cyan", "warm beige and sage green")
@@ -155,7 +171,7 @@ function GenerateDemoApp(
       * "Soft blue-green with white and pale yellow highlights"
       * "Bright vibrant yellow with hot pink and cyan accents"
 
-    ## 6. STYLE GUIDE
+    ## 7. STYLE GUIDE
 
     Write a 2-3 sentence visual style guide describing the UI aesthetic:
     - Cover: UI mood/aesthetic, typography approach, and overall design philosophy

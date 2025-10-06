@@ -96,6 +96,7 @@ export namespace partial_types {
     }
     export interface DemoAppOutput {
       app_name?: string | null
+      app_subtitle?: string | null
       app_description?: string | null
       app_category?: string | null
       app_icon_prompt?: string | null

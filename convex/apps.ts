@@ -378,3 +378,116 @@ export const createDemoApp = internalMutation({
     return appId;
   },
 });
+
+// Internal mutation to update a demo app (used by demoActions for progressive updates)
+export const updateDemoApp = internalMutation({
+  args: {
+    appId: v.id("apps"),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    category: v.optional(v.string()),
+    iconStorageId: v.optional(v.id("_storage")),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { appId, ...updates } = args;
+
+    await ctx.db.patch(appId, {
+      ...updates,
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
+// Query to get app generation status with icon and screens info
+export const getAppGenerationStatus = query({
+  args: { appId: v.id("apps") },
+  returns: v.union(
+    v.object({
+      app: v.object({
+        _id: v.id("apps"),
+        name: v.string(),
+        description: v.optional(v.string()),
+        iconStorageId: v.optional(v.id("_storage")),
+        iconUrl: v.optional(v.string()),
+      }),
+      screens: v.array(
+        v.object({
+          _id: v.id("appScreens"),
+          name: v.string(),
+          screenUrl: v.optional(v.string()),
+        })
+      ),
+      totalScreens: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+
+    // Get the user's profile
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
+      .unique();
+
+    if (!profile) {
+      return null;
+    }
+
+    // Get the app
+    const app = await ctx.db.get(args.appId);
+
+    // Verify ownership
+    if (!app || app.profileId !== profile._id) {
+      return null;
+    }
+
+    // Get icon URL if exists
+    let iconUrl: string | undefined = undefined;
+    if (app.iconStorageId) {
+      const url = await ctx.storage.getUrl(app.iconStorageId);
+      iconUrl = url ?? undefined;
+    }
+
+    // Get all screens for this app
+    const appScreens = await ctx.db
+      .query("appScreens")
+      .withIndex("by_app", (q) => q.eq("appId", args.appId))
+      .order("asc")
+      .collect();
+
+    // Get screen URLs
+    const screensWithUrls = await Promise.all(
+      appScreens.map(async (screen) => {
+        let screenUrl: string | undefined = undefined;
+        if (screen.storageId) {
+          const url = await ctx.storage.getUrl(screen.storageId);
+          screenUrl = url ?? undefined;
+        }
+        return {
+          _id: screen._id,
+          name: screen.name,
+          screenUrl,
+        };
+      })
+    );
+
+    return {
+      app: {
+        _id: app._id,
+        name: app.name,
+        description: app.description,
+        iconStorageId: app.iconStorageId,
+        iconUrl,
+      },
+      screens: screensWithUrls,
+      totalScreens: appScreens.length,
+    };
+  },
+});

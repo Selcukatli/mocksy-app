@@ -20,6 +20,7 @@ export const generateDemoAppInternal = internalAction({
     categoryHint: v.optional(v.string()),
     vibeStyle: v.optional(v.string()),
     screenshotSizeId: v.optional(v.id("screenshotSizes")), // Default: iPhone 16 Pro Max
+    appId: v.optional(v.id("apps")), // If provided, update existing app instead of creating new one
   },
   returns: v.id("apps"),
   handler: async (ctx, args): Promise<Id<"apps">> => {
@@ -29,10 +30,31 @@ export const generateDemoAppInternal = internalAction({
 
     console.log("🎬 Generating demo app...");
 
+    if (!args.profileId) {
+      throw new Error("profileId is required to create demo app");
+    }
+
+    // 1. Use existing app ID or create new one
+    let appId: Id<"apps">;
+    if (args.appId) {
+      appId = args.appId;
+      console.log(`✅ Using existing app: ${appId} (will update progressively)`);
+    } else {
+      // CREATE APP IMMEDIATELY with placeholder data
+      console.log("💾 Creating app record with placeholder data...");
+      appId = await ctx.runMutation(internal.apps.createDemoApp, {
+        profileId: args.profileId,
+        name: "Generating...",
+        description: "AI is generating your app. This will update in real-time.",
+        category: args.categoryHint,
+      });
+      console.log(`✅ App created: ${appId} (will update progressively)`);
+    }
+
     let styleName = "Custom Style";
     let styleConfig = null;
 
-    // 1. If styleId provided, fetch the style
+    // 2. If styleId provided, fetch the style
     if (args.styleId) {
       console.log("  From style:", args.styleId);
       const style = await ctx.runQuery(api.styles.getStyleById, {
@@ -54,7 +76,7 @@ export const generateDemoAppInternal = internalAction({
       console.log("  From description:", args.appDescriptionInput?.substring(0, 60) + "...");
     }
 
-    // 2. Use BAML to generate app concept (name, description, category, icon, color theme)
+    // 3. Use BAML to generate app concept (name, description, category, icon, color theme)
     console.log("🤖 Calling BAML to generate app concept...");
     const { b } = await import("../baml_client");
     const appConcept = await b.GenerateDemoApp(
@@ -66,10 +88,23 @@ export const generateDemoAppInternal = internalAction({
     );
 
     console.log(`  ✓ App name: ${appConcept.app_name}`);
+    console.log(`  ✓ App subtitle: ${appConcept.app_subtitle}`);
     console.log(`  ✓ App category: ${appConcept.app_category}`);
     console.log(`  ✓ App description: ${appConcept.app_description.substring(0, 60)}...`);
     console.log(`  ✓ Icon prompt generated (${appConcept.app_icon_prompt.length} chars)`);
     console.log(`  ✓ Color theme: ${appConcept.color_theme}`);
+
+    // 4. UPDATE APP with generated concept (combine subtitle into description for display)
+    console.log("💾 Updating app with generated name, description, and category...");
+    // Use subtitle as the first sentence/preview of description
+    const fullDescription = `${appConcept.app_subtitle}. ${appConcept.app_description}`;
+    await ctx.runMutation(internal.apps.updateDemoApp, {
+      appId,
+      name: appConcept.app_name,
+      description: fullDescription,
+      category: appConcept.app_category,
+    });
+    console.log(`✅ App details updated in real-time`);
 
     // 2b. Generate screen prompts using the app concept
     console.log("🖼️  Calling BAML to generate screen prompts...");
@@ -111,7 +146,7 @@ export const generateDemoAppInternal = internalAction({
 
     console.log(`  ✓ Canvas URL retrieved`);
 
-    // 4. Generate app icon image
+    // 5. Generate app icon image
     console.log("🎨 Generating demo app icon...");
     const iconResult = await ctx.runAction(
       internal.utils.fal.falImageActions.geminiFlashTextToImage,
@@ -129,7 +164,7 @@ export const generateDemoAppInternal = internalAction({
     const iconUrl = iconResult.images[0].url;
     console.log(`  ✓ Icon generated: ${iconUrl.substring(0, 60)}...`);
 
-    // 4. Upload icon to Convex storage
+    // 6. Upload icon to Convex storage
     console.log("📤 Uploading icon to storage...");
     const iconResponse = await fetch(iconUrl);
     if (!iconResponse.ok) {
@@ -140,22 +175,13 @@ export const generateDemoAppInternal = internalAction({
     const iconStorageId = await ctx.storage.store(iconBlob);
     console.log(`  ✓ Icon uploaded: ${iconStorageId}`);
 
-    // 5. Create demo app with icon
-    console.log("💾 Creating demo app record...");
-
-    if (!args.profileId) {
-      throw new Error("profileId is required to create demo app");
-    }
-
-    const appId = await ctx.runMutation(internal.apps.createDemoApp, {
-      profileId: args.profileId,
-      name: appConcept.app_name,
-      description: appConcept.app_description,
-      category: appConcept.app_category,
+    // 7. UPDATE APP with icon
+    console.log("💾 Updating app with icon...");
+    await ctx.runMutation(internal.apps.updateDemoApp, {
+      appId,
       iconStorageId,
     });
-
-    console.log(`✅ Demo app created: ${appId}`);
+    console.log(`✅ Icon added to app in real-time`);
 
     // 6. Generate first screen (reference screen for consistency)
     console.log(`🖼️  Generating screen 1 as reference...`);
@@ -599,6 +625,8 @@ export const generateScreensForApp = action({
 /**
  * Public: Generate a complete app with icon and screens from user's description
  * This is the main action called from the new-app form
+ *
+ * IMPORTANT: Returns app ID immediately and generates content in the background
  */
 export const generateApp = action({
   args: {
@@ -633,14 +661,26 @@ export const generateApp = action({
       }
     }
 
-    // Call internal action with all context
-    return await ctx.runAction(internal.demoActions.generateDemoAppInternal, {
+    // Create placeholder app record immediately
+    const appId = await ctx.runMutation(internal.apps.createDemoApp, {
+      profileId: profile._id,
+      name: "Generating...",
+      description: "AI is generating your app. This will update in real-time.",
+      category: args.category,
+    });
+
+    // Schedule background generation (fire and forget)
+    ctx.scheduler.runAfter(0, internal.demoActions.generateDemoAppInternal, {
       styleId: undefined,
       profileId: profile._id,
       appDescriptionInput: cleanDescription,
       categoryHint: args.category,
       vibeStyle: args.vibe,
+      appId, // Pass the app ID so we update the existing record
     });
+
+    // Return app ID immediately so modal can start showing progress
+    return appId;
   },
 });
 

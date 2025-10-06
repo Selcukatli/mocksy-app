@@ -15,10 +15,12 @@ import {
   X,
   FolderOpen
 } from 'lucide-react';
-import { useAction } from 'convex/react';
+import { useAction, useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import Toast from '@/components/Toast';
+import GenerationProgressModal from './components/GenerationProgressModal';
+import type { Id } from '../../../../convex/_generated/dataModel';
 
 const AUTO_CATEGORY_OPTION = 'Automatically Inferred';
 const CATEGORY_OPTIONS = [AUTO_CATEGORY_OPTION, 'Productivity', 'Lifestyle', 'Education', 'Health & Fitness', 'Business', 'Games'];
@@ -51,6 +53,14 @@ export default function GenerateNewAppPage() {
     type: 'success',
     isOpen: false
   });
+  const [generatingAppId, setGeneratingAppId] = useState<Id<"apps"> | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Poll for app generation status
+  const appStatus = useQuery(
+    api.apps.getAppGenerationStatus,
+    generatingAppId ? { appId: generatingAppId } : "skip"
+  );
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -152,9 +162,34 @@ export default function GenerateNewAppPage() {
     }
   };
 
+  // Handle modal close (only if complete)
+  const handleModalClose = () => {
+    const isComplete = (appStatus?.totalScreens || 0) >= 5;
+    if (isComplete) {
+      setIsModalOpen(false);
+      setGeneratingAppId(null);
+      setIsSubmitting(false);
+      if (generatingAppId) {
+        router.push(`/app/${generatingAppId}`);
+      }
+    }
+  };
+
+  // Handle view app button
+  const handleViewApp = () => {
+    setIsModalOpen(false);
+    setGeneratingAppId(null);
+    setIsSubmitting(false);
+    if (generatingAppId) {
+      router.push(`/app/${generatingAppId}`);
+    }
+  };
+
   const handleGenerate = async () => {
     if (disabled) return;
     setIsSubmitting(true);
+    setIsModalOpen(true);
+
     try {
       const selectedCategory = category === AUTO_CATEGORY_OPTION ? undefined : category;
       const selectedVibe = style.trim() || undefined;
@@ -166,10 +201,19 @@ export default function GenerateNewAppPage() {
         vibe: selectedVibe,
       });
 
-      router.push(`/app/${appId}`);
+      setGeneratingAppId(appId);
+
+      // The modal will stay open and poll for status updates
+      // When complete, user can click "View your app" button
     } catch (error) {
       console.error('Failed to generate app', error);
       setIsSubmitting(false);
+      setIsModalOpen(false);
+      setToast({
+        message: 'Failed to generate app. Please try again.',
+        type: 'error',
+        isOpen: true
+      });
     }
   };
 
@@ -191,6 +235,17 @@ export default function GenerateNewAppPage() {
         type={toast.type}
         isOpen={toast.isOpen}
         onClose={() => setToast({ ...toast, isOpen: false })}
+      />
+      <GenerationProgressModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        appIcon={appStatus?.app.iconUrl}
+        appName={appStatus?.app.name}
+        appDescription={appStatus?.app.description}
+        screenUrls={appStatus?.screens.map(s => s.screenUrl).filter((url): url is string => !!url) || []}
+        screensGenerated={appStatus?.totalScreens || 0}
+        totalScreens={5}
+        onViewApp={handleViewApp}
       />
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-6 py-12 md:px-12">
         <motion.div

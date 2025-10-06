@@ -218,7 +218,7 @@ export class BamlSyncClient {
   }
   
   GenerateDemoApp(
-      app_description_input?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
+      app_description_input?: string | null,category_hint?: string | null,vibe_style?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
       __baml_options__?: BamlCallOptions
   ): types.DemoAppOutput {
     try {
@@ -242,7 +242,7 @@ export class BamlSyncClient {
       const raw = this.runtime.callFunctionSync(
         "GenerateDemoApp",
         {
-          "app_description_input": app_description_input?? null,"style_config": style_config?? null,"style_name": style_name?? null
+          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"vibe_style": vibe_style?? null,"style_config": style_config?? null,"style_name": style_name?? null
         },
         this.ctxManager.cloneContext(),
         options.tb?.__tb(),

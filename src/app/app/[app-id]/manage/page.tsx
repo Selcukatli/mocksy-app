@@ -7,16 +7,15 @@ import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import {
-  ArrowLeft,
   Save,
   Trash2,
   Smartphone,
   Package,
   Link,
-  Image as ImageIcon,
   AlertTriangle,
   X,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 interface PageProps {
   params: Promise<{
@@ -231,37 +230,32 @@ export default function ManageAppPage({ params }: PageProps) {
           transition={{ duration: 0.3 }}
           className="mb-8"
         >
-          <button
-            onClick={() => router.push(`/app/${appId}`)}
-            className="mb-4 px-3 py-1.5 rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2 text-sm text-muted-foreground"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to App
-          </button>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Manage App Details</h1>
-              <p className="text-muted-foreground mt-1">Configure your app settings and metadata</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowDeleteDialog(true)}
-                className="px-4 py-2 border border-red-500/20 hover:bg-red-500/10 text-red-600 rounded-lg transition-colors flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete App
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving || !appName || !hasChanges}
-                className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
-              >
-                <Save className="w-4 h-4" />
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
+          <PageHeader
+            className="px-6"
+            backHref={`/app/${appId}`}
+            backLabel="Back to app"
+            title="Manage App Details"
+            subtitle="Configure your app settings and metadata"
+            actions={(
+              <>
+                <button
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="px-4 py-2 border border-red-500/20 hover:bg-red-500/10 text-red-600 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete App
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving || !appName || !hasChanges}
+                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
+                >
+                  <Save className="w-4 h-4" />
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </>
+            )}
+          />
         </motion.div>
 
         {/* Two Column Layout */}
@@ -281,9 +275,7 @@ export default function ManageAppPage({ params }: PageProps) {
                   {iconPreview ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={iconPreview} alt="App icon" className="w-full h-full object-cover" />
-                  ) : (
-                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                  )}
+                  ) : null}
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-3">

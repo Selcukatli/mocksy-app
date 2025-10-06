@@ -14,6 +14,7 @@
 class DemoAppOutput {
   app_name string @description("Short, catchy app name (1-3 words max, e.g., 'FitQuest', 'ZenJournal', 'ShadowVault')")
   app_description string @description("App Store style description (3-5 sentences, 40-80 words). Explain what the app does, key features, and benefits. Make it compelling and professional.")
+  app_category string @description("App Store category. Choose from: Games, Productivity, Lifestyle, Education, Health & Fitness, Business, Social Networking, Entertainment, Photo & Video, Travel, Food & Drink, Finance, News, Sports, Weather, Music, Shopping, Utilities, Medical, Reference. Pick the single most relevant category that matches this app's primary purpose.")
   app_icon_prompt string @description("Complete text-to-image prompt for generating app icon (50-100 words). CRITICAL: Icon must be SIMPLE with LARGE, BOLD symbols recognizable at small sizes. Avoid tiny details, thin lines, or complex patterns. Should be 1024x1024 square, iOS-style icon design matching the app concept and style aesthetic.")
   color_theme string @description("Color palette/theme for the app UI (e.g., 'dark purple and electric cyan', 'warm beige and sage green', 'bright yellow with hot pink accents'). This will be used to generate consistent app screens.")
 }
@@ -30,9 +31,11 @@ class AppScreenPromptsOutput {
 // DEMO APP GENERATION
 // ============================================
 
-// Generate a demo app concept with name, description, icon prompt, and color theme
+// Generate a demo app concept with name, description, category, icon prompt, and color theme
 function GenerateDemoApp(
   app_description_input: string? @description("Optional user-provided app description/concept to generate from"),
+  category_hint: string? @description("Optional category hint from user (e.g., 'Productivity', 'Health & Fitness'). Use this to inform the category choice, but you can adjust if another category fits better."),
+  vibe_style: string? @description("Optional vibe/style hint (e.g., 'Minimal & clean', 'Playful & vibrant', 'Futuristic neon'). Use this to influence color theme and icon design."),
   style_config: StyleConfig? @description("Optional style configuration to base the app on"),
   style_name: string? @description("Optional name of the style for context")
 ) -> DemoAppOutput {
@@ -40,13 +43,23 @@ function GenerateDemoApp(
   prompt #"
     {{ _.role("user") }}
 
-    You are generating a demo app concept with name, description, icon prompt, and color theme.
+    You are generating a demo app concept with name, description, category, icon prompt, and color theme.
 
     {% if app_description_input %}
     USER'S APP CONCEPT:
     {{ app_description_input }}
 
-    TASK: Create a fictional app based on this user's description. Generate a short catchy name, professional App Store description, and icon prompt that matches the concept.
+    {% if category_hint %}
+    CATEGORY HINT: {{ category_hint }}
+    (Use this to inform your category choice, but adjust if another category fits better)
+    {% endif %}
+
+    {% if vibe_style %}
+    VISUAL STYLE/VIBE: {{ vibe_style }}
+    (Use this to influence color theme and icon design)
+    {% endif %}
+
+    TASK: Create a fictional app based on this user's description. Generate a short catchy name, App Store category, professional description, icon prompt, and color theme that matches the concept.
     {% elif style_config %}
     STYLE TO SHOWCASE:
     - Name: {{ style_name }}
@@ -55,7 +68,15 @@ function GenerateDemoApp(
     - Text Style: {{ style_config.text_style }}
     - Device Style: {{ style_config.device_style }}
 
-    TASK: Create a fictional app with name, description, and icon prompt that would look great in this style.
+    {% if category_hint %}
+    CATEGORY HINT: {{ category_hint }}
+    {% endif %}
+
+    {% if vibe_style %}
+    VISUAL STYLE/VIBE: {{ vibe_style }}
+    {% endif %}
+
+    TASK: Create a fictional app with name, category, description, icon prompt, and color theme that would look great in this style.
     {% endif %}
 
     ## 1. APP NAME
@@ -68,7 +89,34 @@ function GenerateDemoApp(
       * Dark/cyberpunk styles → edgy, mysterious names
     - NO hyphens, NO long phrases, NO descriptions in the name
 
-    ## 2. APP DESCRIPTION
+    ## 2. APP CATEGORY
+
+    Choose the most appropriate App Store category from this list:
+    - **Games** - Gaming apps of all types
+    - **Productivity** - Task management, notes, calendars, organization tools
+    - **Lifestyle** - General lifestyle, hobbies, interests
+    - **Education** - Learning, courses, study tools
+    - **Health & Fitness** - Wellness, workouts, meditation, health tracking
+    - **Business** - Professional tools, team collaboration, enterprise
+    - **Social Networking** - Communication, social media, messaging
+    - **Entertainment** - Media consumption, fun content
+    - **Photo & Video** - Camera, editing, creative tools
+    - **Travel** - Maps, booking, trip planning
+    - **Food & Drink** - Recipes, restaurants, cooking
+    - **Finance** - Banking, budgeting, investing, payments
+    - **News** - News aggregation, journalism
+    - **Sports** - Sports tracking, scores, fan engagement
+    - **Weather** - Weather forecasts and tracking
+    - **Music** - Music streaming, creation, discovery
+    - **Shopping** - E-commerce, retail
+    - **Utilities** - System tools, widgets, extensions
+    - **Medical** - Healthcare, medical tools (professional)
+    - **Reference** - Dictionaries, encyclopedias, information lookup
+
+    Pick ONE category that best matches the app's PRIMARY purpose.
+    {% if category_hint %}Consider the user's hint: {{ category_hint }}{% endif %}
+
+    ## 3. APP DESCRIPTION
 
     Write an App Store style description (3-5 sentences, 40-80 words):
     - Explain what the app does and its core purpose
@@ -77,7 +125,7 @@ function GenerateDemoApp(
     - Match the style's mood and target audience
     - Example: "Transform your fitness journey into an epic adventure. FitQuest gamifies your workouts with challenges, achievements, and rewards. Track your progress, compete with friends, and unlock new levels as you get stronger. Perfect for anyone who wants to stay motivated and make exercise fun."
 
-    ## 3. APP ICON PROMPT
+    ## 4. APP ICON PROMPT
 
     Generate a text-to-image prompt for creating the app icon (50-100 words):
     - **CRITICAL: Keep it SIMPLE - use ONE large, bold central symbol**
@@ -91,12 +139,13 @@ function GenerateDemoApp(
       * "iOS app icon. Big crescent moon symbol, deep purple gradient background. Soft glow effect. Simple and bold. Rounded square. 1024x1024."
       * "iOS app icon. Single large bat silhouette in center, glowing purple outline on dark background. Bold and simple. Rounded square. 1024x1024."
 
-    ## 4. COLOR THEME
+    ## 5. COLOR THEME
 
     Define a color palette/theme for the app UI that will be used to generate consistent app screens:
     - Be specific about colors (e.g., "dark purple and electric cyan", "warm beige and sage green")
     - Should match the icon's color palette
     - Should complement the style's aesthetic if a style is provided
+    - {% if vibe_style %}Match the vibe: {{ vibe_style }}{% endif %}
     - Include 2-4 specific colors that work well together
     - Examples:
       * "Dark purple gradient with electric cyan accents"
@@ -105,10 +154,12 @@ function GenerateDemoApp(
 
     ## MATCHING GUIDELINES:
     - App concept should feel natural with the style's personality
+    - Category should accurately reflect the app's primary purpose
     - Icon colors should match the color theme
     - Icon mood should match style energy (calm vs energetic, playful vs serious, etc.)
     - Color theme should be cohesive with the overall style aesthetic
-    - All outputs (name, description, icon, color theme) should work together harmoniously
+    - {% if vibe_style %}Visual style/vibe should be reflected in colors and icon: {{ vibe_style }}{% endif %}
+    - All outputs (name, category, description, icon, color theme) should work together harmoniously
 
     {{ ctx.output_format }}
   "#

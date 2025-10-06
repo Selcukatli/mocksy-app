@@ -9,7 +9,7 @@ import { useUser } from '@clerk/nextjs';
 import { useMutation, useAction } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 
-export default function ManualNewAppPage() {
+export default function SetupExistingAppPage() {
   const [appName, setAppName] = useState('');
   const [appDescription, setAppDescription] = useState('');
   const [iconPreview, setIconPreview] = useState<string | null>(null);

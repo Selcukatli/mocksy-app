@@ -236,7 +236,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             
         async GenerateDemoApp(
-        app_description_input?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
+        app_description_input?: string | null,category_hint?: string | null,vibe_style?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
         __baml_options__?: BamlCallOptions
         ): Promise<types.DemoAppOutput> {
           try {
@@ -250,7 +250,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
           // Check if onTick is provided - route through streaming if so
           if (options.onTick) {
           const stream = this.stream.GenerateDemoApp(
-          app_description_input,style_config,style_name,
+          app_description_input,category_hint,vibe_style,style_config,style_name,
           __baml_options__
           );
 
@@ -266,7 +266,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             const raw = await this.runtime.callFunction(
             "GenerateDemoApp",
             {
-            "app_description_input": app_description_input?? null,"style_config": style_config?? null,"style_name": style_name?? null
+            "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"vibe_style": vibe_style?? null,"style_config": style_config?? null,"style_name": style_name?? null
             },
             this.ctxManager.cloneContext(),
             options.tb?.__tb(),
@@ -1811,7 +1811,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   }
                   
             GenerateDemoApp(
-            app_description_input?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
+            app_description_input?: string | null,category_hint?: string | null,vibe_style?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
             __baml_options__?: BamlCallOptions
             ): BamlStream<partial_types.DemoAppOutput, types.DemoAppOutput>
               {
@@ -1852,7 +1852,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                 const raw = this.runtime.streamFunction(
                 "GenerateDemoApp",
                 {
-                "app_description_input": app_description_input ?? null,"style_config": style_config ?? null,"style_name": style_name ?? null
+                "app_description_input": app_description_input ?? null,"category_hint": category_hint ?? null,"vibe_style": vibe_style ?? null,"style_config": style_config ?? null,"style_name": style_name ?? null
                 },
                 undefined,
                 this.ctxManager.cloneContext(),

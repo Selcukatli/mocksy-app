@@ -41,7 +41,7 @@ export default class TypeBuilder {
     
     Composition: ClassViewer<'Composition', "priority" | "rules">;
     
-    DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_description" | "app_icon_prompt" | "color_theme">;
+    DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_description" | "app_category" | "app_icon_prompt" | "color_theme">;
     
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
     
@@ -135,7 +135,7 @@ export default class TypeBuilder {
         ]);
         
         this.DemoAppOutput = this.tb.classViewer("DemoAppOutput", [
-          "app_name","app_description","app_icon_prompt","color_theme",
+          "app_name","app_description","app_category","app_icon_prompt","color_theme",
         ]);
         
         this.DetailedResponse = this.tb.classViewer("DetailedResponse", [

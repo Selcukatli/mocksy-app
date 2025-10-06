@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
-import { Sparkles, PenSquare, ArrowRight, Wand2, Layers } from 'lucide-react';
+import { Sparkles, PenSquare, ArrowRight, Wand2, Layers, ListChecks } from 'lucide-react';
 
 const options = [
   {
@@ -15,14 +15,22 @@ const options = [
     icon: Wand2,
     accent: 'from-purple-500/80 via-purple-500/50 to-indigo-500/80',
     pill: 'Fastest',
+    callout: {
+      icon: Sparkles,
+      text: "We'll suggest a name, description, and language defaults you can tweak before publishing.",
+    },
   },
   {
     title: 'Set Up Existing App',
     description: 'Already have the details? Capture your existing app metadata manually at your own pace.',
-    href: '/new-app/manual',
+    href: '/new-app/setup-existing-app',
     icon: PenSquare,
     accent: 'from-primary/70 via-primary/40 to-primary/70',
     pill: 'Most control',
+    callout: {
+      icon: ListChecks,
+      text: 'Work through a clear manual checklist and add assets you already have—Mocksy keeps everything organized.',
+    },
   },
 ];
 
@@ -71,6 +79,7 @@ export default function NewAppEntryPage() {
         <div className="mt-12 grid gap-6 md:grid-cols-2">
           {options.map((option, index) => {
             const Icon = option.icon;
+            const CalloutIcon = option.callout?.icon;
             return (
               <motion.div
                 key={option.href}
@@ -104,10 +113,10 @@ export default function NewAppEntryPage() {
                   <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
                     {option.description}
                   </p>
-                  {index === 0 && (
+                  {option.callout && CalloutIcon && (
                     <div className="mt-6 rounded-lg border border-dashed bg-background/60 p-4 text-sm text-muted-foreground">
-                      <Sparkles className="mr-2 inline h-4 w-4 text-primary" />
-                      We&apos;ll suggest a name, description, and language defaults you can tweak before publishing.
+                      <CalloutIcon className="mr-2 inline h-4 w-4 text-primary" />
+                      {option.callout.text}
                     </div>
                   )}
                 </Link>

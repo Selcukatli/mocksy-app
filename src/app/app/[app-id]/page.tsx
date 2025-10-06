@@ -23,8 +23,8 @@ import {
   Search,
   FolderPlus,
   HelpCircle,
-  Sparkles,
   ArrowRight,
+  ArrowLeft,
   FileImage,
   Palette,
   Trash2,
@@ -89,17 +89,12 @@ export default function AppDetailPage({ params }: PageProps) {
   const convexSets = useQuery(api.screenshotSets.getSetsForApp, app ? { appId: appId as Id<"apps"> } : "skip") ?? [];
 
   // Fetch app screens from Convex
-  const appScreensRaw = useQuery(api.appScreens.getAppScreens, { appId: appId as Id<"apps"> });
+  const appScreensRaw = useQuery(api.appScreens.getAppScreens, { appId: appId as Id<'apps'> });
   const appScreens = useMemo(() => appScreensRaw ?? [], [appScreensRaw]);
-
-  // If app doesn't exist or still loading, handle accordingly
-  useEffect(() => {
-    // app === null means it loaded but doesn't exist
-    // app === undefined means still loading
-    if (app === null) {
-      router.push('/home');
-    }
-  }, [app, router]);
+  const appScreensBasePath = `/app/${appId}/app-screens`;
+  const appScreensReturnTo = `${appScreensBasePath}?returnTo=${encodeURIComponent(`/app/${appId}`)}`;
+  const buildPreviewUrl = (screenId: Id<'appScreens'>) =>
+    `${appScreensBasePath}/preview/${screenId}?returnTo=${encodeURIComponent(`/app/${appId}`)}`;
 
   // Get data for current app
   const sourceImagesCount = appScreens.length;
@@ -114,6 +109,11 @@ export default function AppDetailPage({ params }: PageProps) {
       return name.includes(term);
     });
   }, [appScreens, screenSearch]);
+
+  const sortedScreens = useMemo(() => {
+    // Sort by date (newest first) to match the preview lightbox default sort
+    return [...filteredScreens].sort((a, b) => b.createdAt - a.createdAt);
+  }, [filteredScreens]);
 
   useEffect(() => {
     // Check if user has seen onboarding globally
@@ -142,6 +142,49 @@ export default function AppDetailPage({ params }: PageProps) {
 
   const handleShowOnboarding = () => {
     setShowOnboarding(true);
+  };
+
+  const isAppLoading = app === undefined;
+  const isAppMissing = app === null;
+
+  if (isAppLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading app…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAppMissing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center space-y-4">
+          <h1 className="text-2xl font-semibold">We couldn't find that app</h1>
+          <p className="text-sm text-muted-foreground">
+            The app you're looking for may have been removed or you no longer have access to it. Try returning to your apps dashboard.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push('/home')}
+            className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
+          >
+            Go back home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push('/my-apps');
   };
 
   // Helper to determine set status based on screenshots
@@ -191,23 +234,33 @@ export default function AppDetailPage({ params }: PageProps) {
             className="px-6 pt-6 pb-4 border-b"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-start gap-4">
-                {/* App Icon */}
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {app?.iconUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={app.iconUrl} alt={app?.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-2xl font-bold text-primary">
-                      {app?.name?.charAt(0).toUpperCase() || 'A'}
-                    </span>
-                  )}
-                </div>
-                <div className="max-w-lg">
-                  <h1 className="text-3xl font-bold">{app?.name || `App ${appId}`}</h1>
-                  <p className="text-muted-foreground mt-1 text-sm truncate">
-                    {app?.description || 'Manage your app store screenshots and source images'}
-                  </p>
+              <div className="flex items-center gap-6">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:text-foreground hover:border-muted-foreground/60"
+                  aria-label="Back to apps"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <div className="flex items-start gap-4">
+                  {/* App Icon */}
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {app?.iconUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={app.iconUrl} alt={app?.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-2xl font-bold text-primary">
+                        {app?.name?.charAt(0).toUpperCase() || 'A'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="max-w-lg">
+                    <h1 className="text-3xl font-bold">{app?.name || `App ${appId}`}</h1>
+                    <p className="text-muted-foreground mt-1 text-sm truncate">
+                      {app?.description || 'Manage your app store screenshots and source images'}
+                    </p>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -255,7 +308,8 @@ export default function AppDetailPage({ params }: PageProps) {
           {/* Main Content - 2 Column Layout */}
           <div className="flex-1 flex gap-6 p-6 overflow-hidden">
             {/* Left Column - AppStore Sets */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="bg-card border rounded-xl p-6 flex flex-col flex-1 min-h-0">
               {convexSets.length > 0 && (
                 <div className="mb-6">
                   <div className="mb-4">
@@ -293,55 +347,25 @@ export default function AppDetailPage({ params }: PageProps) {
               <div className="flex-1 overflow-y-auto flex flex-col">
                 {convexSets.length === 0 ? (
                   /* Zero State - No Sets */
-                  <div className="flex-1 flex flex-col">
-                    {/* Header for zero state */}
-                    <div className="mb-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-semibold flex items-center gap-2">
-                          AppStore Screenshot Sets
-                          <span className="group relative">
-                            <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
-                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-sm rounded-md shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                              Collections of screenshots ready for app store submission
-                            </span>
-                          </span>
-                        </h2>
-                        <button
-                          onClick={() => router.push(`/app/${appId}/set/new`)}
-                          className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
-                        >
-                          <FolderPlus className="w-4 h-4" />
-                          Create New Set
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Zero State Content */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4 }}
-                      className="flex-1 flex items-center justify-center"
-                    >
-                      <div className="text-center max-w-lg">
-                        <div className="mb-6">
-                          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl flex items-center justify-center">
-                            <Sparkles className="w-10 h-10 text-primary" />
-                          </div>
-                        </div>
-
-                        <h3 className="text-2xl font-semibold mb-8">Get Started in 3 Steps</h3>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex-1 flex items-center justify-center py-8"
+                  >
+                      <div className="text-center max-w-2xl px-4">
+                        <h3 className="text-3xl font-semibold mb-10">Get Started in 3 Steps</h3>
 
                       {/* Step by Step Guide */}
-                      <div className="space-y-4 mb-8">
+                      <div className="space-y-3 mb-10">
                         {/* Step 1 */}
                         <div className={cn(
-                          "flex items-start gap-4 text-left p-4 border rounded-lg transition-all cursor-pointer group",
+                          "flex items-start gap-4 text-left p-5 border rounded-xl transition-all cursor-pointer group",
                           appScreens.length > 0
                             ? "bg-card/50 hover:shadow-md"
                             : "bg-card hover:shadow-md"
                         )}
-                             onClick={() => router.push(`/app/${appId}/app-screens`)}>
+                            onClick={() => router.push(appScreensReturnTo)}>
                           <div className={cn(
                             "w-10 h-10 rounded-full font-bold flex items-center justify-center flex-shrink-0 transition-colors",
                             appScreens.length > 0
@@ -367,7 +391,7 @@ export default function AppDetailPage({ params }: PageProps) {
 
                         {/* Step 2 */}
                         <div className={cn(
-                          "flex items-start gap-4 text-left p-4 border rounded-lg transition-all",
+                          "flex items-start gap-4 text-left p-5 border rounded-xl transition-all",
                           appScreens.length > 0
                             ? "bg-card hover:shadow-md cursor-pointer group"
                             : "bg-card/50 opacity-75"
@@ -397,7 +421,7 @@ export default function AppDetailPage({ params }: PageProps) {
 
                         {/* Step 3 */}
                         <div className={cn(
-                          "flex items-start gap-4 text-left p-4 border rounded-lg transition-all",
+                          "flex items-start gap-4 text-left p-5 border rounded-xl transition-all",
                           appScreens.length > 0
                             ? "bg-card hover:shadow-md cursor-pointer group"
                             : "bg-card/50 opacity-75"
@@ -430,7 +454,7 @@ export default function AppDetailPage({ params }: PageProps) {
                         {appScreens.length === 0 ? (
                           <>
                             <button
-                              onClick={() => router.push(`/app/${appId}/app-screens`)}
+                              onClick={() => router.push(appScreensReturnTo)}
                               className="w-full px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center justify-center gap-2"
                             >
                               <Upload className="w-5 h-5" />
@@ -453,7 +477,7 @@ export default function AppDetailPage({ params }: PageProps) {
                               Continue: Create Your First Set
                             </button>
                             <button
-                              onClick={() => router.push(`/app/${appId}/app-screens`)}
+                              onClick={() => router.push(appScreensReturnTo)}
                               className="w-full px-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                             >
                               or manage uploaded screens →
@@ -463,7 +487,6 @@ export default function AppDetailPage({ params }: PageProps) {
                       </div>
                     </div>
                   </motion.div>
-                  </div>
                 ) : (
                   <motion.div
                     variants={containerAnimation}
@@ -619,10 +642,11 @@ export default function AppDetailPage({ params }: PageProps) {
                   </motion.div>
                 )}
               </div>
+              </div>
             </div>
 
             {/* Right Column - Screens */}
-            <div className="w-72 flex flex-col overflow-hidden">
+            <div className="w-96 flex flex-col overflow-hidden">
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -659,7 +683,7 @@ export default function AppDetailPage({ params }: PageProps) {
                       />
                     </div>
                     <button
-                      onClick={() => router.push(`/app/${appId}/app-screens`)}
+                      onClick={() => router.push(appScreensReturnTo)}
                       className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 flex items-center gap-1"
                     >
                       {sourceImagesCount > 0 ? 'See All' : 'Upload Screens'}
@@ -670,12 +694,21 @@ export default function AppDetailPage({ params }: PageProps) {
 
                 <div className="mt-6 flex-1 overflow-y-auto pr-1">
                   {sourceImagesCount > 0 ? (
-                    filteredScreens.length > 0 ? (
+                    sortedScreens.length > 0 ? (
                       <div className="grid grid-cols-2 gap-4 pb-1">
-                        {filteredScreens.map((screen) => (
+                        {sortedScreens.map((screen) => (
                           <div
                             key={screen._id}
-                            className="group relative aspect-[9/16] overflow-hidden rounded-xl border border-border bg-muted/20"
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => router.push(buildPreviewUrl(screen._id as Id<'appScreens'>))}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                router.push(buildPreviewUrl(screen._id as Id<'appScreens'>));
+                              }
+                            }}
+                            className="group relative aspect-[9/16] overflow-hidden rounded-xl border border-border bg-muted/20 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                           >
                             {screen.screenUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element

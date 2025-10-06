@@ -8,7 +8,6 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import {
-  ArrowLeft,
   Download,
   Plus,
   Trash2,
@@ -23,6 +22,7 @@ import {
   Languages,
   MoreVertical,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 interface PageProps {
   params: Promise<{
@@ -224,37 +224,26 @@ export default function SetPage({ params }: PageProps) {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="px-6 py-4 border-b bg-card/50"
         >
-          <div className="flex items-center justify-between">
-            {/* Left section with title */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.push(`/app/${appId}`)}
-                className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-
-              {/* App Icon */}
-              {convexApp && (
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {convexApp.iconUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={convexApp.iconUrl}
-                      alt={convexApp.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
+          <PageHeader
+            className="px-6 py-4 bg-card/50"
+            backHref={`/app/${appId}`}
+            backLabel="Back to app"
+            icon={
+              convexApp
+                ? convexApp.iconUrl
+                  ? // eslint-disable-next-line @next/next/no-img-element
+                    <img src={convexApp.iconUrl} alt={convexApp.name} className="w-full h-full object-cover" />
+                  : (
                     <span className="text-lg font-bold text-primary">
                       {convexApp.name.charAt(0).toUpperCase()}
                     </span>
-                  )}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 group">
+                  )
+                : null
+            }
+            iconContainerClassName="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0"
+            title={
+              <>
                 {isEditingName ? (
                   <motion.div
                     initial={{ opacity: 0.8 }}
@@ -333,76 +322,75 @@ export default function SetPage({ params }: PageProps) {
                     </motion.button>
                   </>
                 )}
-              </div>
-              <span className="text-sm text-muted-foreground">
-                {screenshots.filter(s => !s.isEmpty).length} of 10 filled
-              </span>
-            </div>
+                <span className="text-sm text-muted-foreground">
+                  {screenshots.filter(s => !s.isEmpty).length} of 10 filled
+                </span>
+              </>
+            }
+            titleClassName="flex items-center gap-3 group"
+            actions={(
+              <>
+                <div className="flex items-center border rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-1.5 rounded transition-colors ${
+                      viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <Grid3x3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-1.5 rounded transition-colors ${
+                      viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
 
-            {/* Right section with actions */}
-            <div className="flex items-center gap-2">
-              {/* View Mode Toggle */}
-              <div className="flex items-center border rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded transition-colors ${
-                    viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <Grid3x3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded transition-colors ${
-                    viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-
-              <button className="px-4 py-1.5 border rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2 text-sm">
-                <Palette className="w-4 h-4" />
-                Change Vibe
-              </button>
-
-              <button className="px-4 py-1.5 border rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2 text-sm">
-                <Languages className="w-4 h-4" />
-                Translate
-              </button>
-
-              <button className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm">
-                <Download className="w-4 h-4" />
-                Export All
-              </button>
-
-              {/* More Options Menu */}
-              <div className="relative" data-dropdown-menu>
-                <button
-                  onClick={() => setShowMoreMenu(!showMoreMenu)}
-                  className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
-                >
-                  <MoreVertical className="w-4 h-4" />
+                <button className="px-4 py-1.5 border rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2 text-sm">
+                  <Palette className="w-4 h-4" />
+                  Change Vibe
                 </button>
 
-                {showMoreMenu && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-popover border rounded-lg shadow-lg z-50">
-                    <button
-                      onClick={() => {
-                        setShowMoreMenu(false);
-                        setShowDeleteConfirm(true);
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2 text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete Set
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+                <button className="px-4 py-1.5 border rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2 text-sm">
+                  <Languages className="w-4 h-4" />
+                  Translate
+                </button>
 
+                <button className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm">
+                  <Download className="w-4 h-4" />
+                  Export All
+                </button>
+
+                <div className="relative" data-dropdown-menu>
+                  <button
+                    onClick={() => setShowMoreMenu(!showMoreMenu)}
+                    className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+
+                  {showMoreMenu && (
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-popover border rounded-lg shadow-lg z-50">
+                      <button
+                        onClick={() => {
+                          setShowMoreMenu(false);
+                          setShowDeleteConfirm(true);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2 text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Set
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+            actionsClassName="flex items-center gap-2"
+          />
         </motion.div>
 
         {/* Main Content */}

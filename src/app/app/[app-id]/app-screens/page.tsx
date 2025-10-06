@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect, useCallback } from 'react';
+import { use, useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import NextImage from 'next/image';
 import { motion } from 'framer-motion';
@@ -8,7 +8,6 @@ import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import {
-  ArrowLeft,
   Upload,
   Download,
   Trash2,
@@ -22,9 +21,6 @@ import {
   Grid3x3,
   List,
   MoreHorizontal,
-  X,
-  ChevronLeft,
-  ChevronRight,
   Plus,
 } from 'lucide-react';
 import {
@@ -34,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 interface PageProps {
   params: Promise<{
@@ -73,6 +70,7 @@ export default function SourceImagesPage({ params }: PageProps) {
   const returnTo = searchParams.get('returnTo');
 
   // Convex hooks
+  const app = useQuery(api.apps.getApp, { appId });
   const appScreensQuery = useQuery(api.appScreens.getAppScreens, { appId });
   const uploadAppScreen = useMutation(api.appScreens.uploadAppScreen);
   const deleteAppScreen = useMutation(api.appScreens.deleteAppScreen);
@@ -88,7 +86,6 @@ export default function SourceImagesPage({ params }: PageProps) {
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
-  const [previewImage, setPreviewImage] = useState<typeof appScreens[0] | null>(null);
   const [uploadingItems, setUploadingItems] = useState<Array<{id: string, preview: string}>>([]);
 
   // Track when we've received the first non-undefined response
@@ -140,17 +137,42 @@ export default function SourceImagesPage({ params }: PageProps) {
     setSelectedImages(new Set());
   };
 
-  const filteredImages = appScreens.filter(img =>
-    img.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredImages = useMemo(() => {
+    return appScreens.filter((img) =>
+      img.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [appScreens, searchQuery]);
 
-  const sortedImages = [...filteredImages].sort((a, b) => {
-    if (sortBy === 'name') {
-      return a.name.localeCompare(b.name);
-    } else {
+  const sortedImages = useMemo(() => {
+    const sorted = [...filteredImages].sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      }
       return b.createdAt - a.createdAt;
-    }
-  });
+    });
+    return sorted;
+  }, [filteredImages, sortBy]);
+
+  const openPreview = useCallback(
+    (imageId: Id<'appScreens'>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const trimmedSearch = searchQuery.trim();
+
+      if (trimmedSearch) {
+        params.set('search', trimmedSearch);
+      } else {
+        params.delete('search');
+      }
+
+      params.set('sort', sortBy);
+
+      const queryString = params.toString();
+      const basePath = `/app/${appId}/app-screens/preview/${imageId}`;
+      const url = queryString ? `${basePath}?${queryString}` : basePath;
+      router.push(url, { scroll: false });
+    },
+    [appId, router, searchParams, searchQuery, sortBy],
+  );
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -354,114 +376,89 @@ export default function SourceImagesPage({ params }: PageProps) {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="px-6 py-4 border-b bg-card/50"
         >
-          <div className="flex items-center gap-4">
-            {/* Left section with title */}
-            <button
-              onClick={() => router.push(returnTo || `/app/${appId}`)}
-              className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold">Manage App Screens</h1>
-              <p className="text-sm text-muted-foreground">
-                {sortedImages.length} images • {selectedImages.size} selected
-              </p>
-            </div>
-
-            {/* Search Bar - expandable */}
-            <div className="relative flex-1 max-w-xl">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search images..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg bg-background focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
-              />
-            </div>
-
-            {/* Right section with controls */}
-            <div className="flex items-center gap-2">
-              {/* View Mode Toggle */}
-              <div className="flex items-center border rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded transition-colors ${
-                    viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
-                  }`}
+          <PageHeader
+            className="px-6"
+            backHref={returnTo || `/app/${appId}`}
+            backLabel="Back to app"
+            icon={
+              app ? (
+                app.iconUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={app.iconUrl} alt={`${app.name} icon`} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-bold text-primary">
+                    {app.name?.charAt(0).toUpperCase() || 'A'}
+                  </span>
+                )
+              ) : null
+            }
+            title="Manage App Screens"
+            subtitle={
+              app ? (
+                <span>
+                  {app.name} • {sortedImages.length} images • {selectedImages.size} selected
+                </span>
+              ) : (
+                <span>
+                  {sortedImages.length} images • {selectedImages.size} selected
+                </span>
+              )
+            }
+            actions={(
+              <>
+                <div className="relative flex-1 min-w-[220px] max-w-xl text-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search images..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-10 w-full pl-9 pr-3 text-sm border rounded-lg bg-background focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
+                  />
+                </div>
+                <div className="flex h-10 items-center border rounded-lg px-1">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`h-8 w-8 flex items-center justify-center rounded transition-colors ${
+                      viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <Grid3x3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`h-8 w-8 flex items-center justify-center rounded transition-colors ${
+                      viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'name' | 'date')}
+                  className="h-10 px-3 border rounded-lg bg-background text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                 >
-                  <Grid3x3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded transition-colors ${
-                    viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Sort Dropdown */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'name' | 'date')}
-                className="px-3 py-1.5 border rounded-lg bg-background text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
-              >
-                <option value="date">Latest First</option>
-                <option value="name">Name (A-Z)</option>
-              </select>
-
-              <label className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap cursor-pointer">
-                <Upload className="w-4 h-4" />
-                {isUploading ? 'Uploading...' : 'Upload Images'}
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  disabled={isUploading}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Selection Bar - shows when items are selected */}
-          {selectedImages.size > 0 && (
-            <div className="flex items-center gap-2 mt-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg">
-              <span className="text-sm font-medium">{selectedImages.size} selected</span>
-              <button
-                onClick={clearSelection}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Clear
-              </button>
-              <button
-                onClick={selectAll}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Select all
-              </button>
-              <div className="w-px h-4 bg-border mx-2" />
-              <button className="p-1 hover:bg-background/50 rounded transition-colors">
-                <Download className="w-4 h-4" />
-              </button>
-              <button className="p-1 hover:bg-background/50 rounded transition-colors">
-                <Copy className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleDeleteSelected}
-                className="p-1 hover:bg-red-500/20 text-red-600 rounded transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+                  <option value="date">Latest First</option>
+                  <option value="name">Name (A-Z)</option>
+                </select>
+                <label className="h-10 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap cursor-pointer">
+                  <Upload className="w-4 h-4" />
+                  {isUploading ? 'Uploading...' : 'Upload Images'}
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    disabled={isUploading}
+                    className="hidden"
+                  />
+                </label>
+              </>
+            )}
+            actionsClassName="flex-1 items-center gap-2 sm:gap-3"
+          />
         </motion.div>
 
         {/* Main Content */}
@@ -720,9 +717,9 @@ export default function SourceImagesPage({ params }: PageProps) {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem
+                          <DropdownMenuItem
                               className="cursor-pointer"
-                              onClick={() => setPreviewImage(image)}
+                              onClick={() => openPreview(image._id as Id<'appScreens'>)}
                             >
                               <Eye className="w-4 h-4 mr-2" />
                               Preview
@@ -752,7 +749,7 @@ export default function SourceImagesPage({ params }: PageProps) {
                     {/* Image Container */}
                     <div
                       className="relative flex-1 aspect-[9/16] bg-muted/20 rounded-lg overflow-hidden cursor-pointer"
-                      onClick={() => setPreviewImage(image)}
+                      onClick={() => openPreview(image._id as Id<'appScreens'>)}
                     >
                       {/* Image Preview */}
                       {image.screenUrl ? (
@@ -818,12 +815,12 @@ export default function SourceImagesPage({ params }: PageProps) {
                       src={image.screenUrl}
                       alt={image.name}
                       className="w-10 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer"
-                      onClick={() => setPreviewImage(image)}
+                      onClick={() => openPreview(image._id as Id<'appScreens'>)}
                     />
                   ) : (
                     <div
                       className="w-10 h-16 rounded-md bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center flex-shrink-0 cursor-pointer"
-                      onClick={() => setPreviewImage(image)}
+                      onClick={() => openPreview(image._id as Id<'appScreens'>)}
                     >
                       <ImageIcon className="w-5 h-5 text-muted-foreground/30" />
                     </div>
@@ -882,7 +879,7 @@ export default function SourceImagesPage({ params }: PageProps) {
                       <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuItem
                           className="cursor-pointer"
-                          onClick={() => setPreviewImage(image)}
+                          onClick={() => openPreview(image._id as Id<'appScreens'>)}
                         >
                           <Eye className="w-4 h-4 mr-2" />
                           Preview
@@ -909,122 +906,6 @@ export default function SourceImagesPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Lightbox Preview Modal */}
-      {previewImage && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex flex-col bg-black/95"
-          onClick={() => setPreviewImage(null)}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-4">
-            <div className="text-white">
-              <h3 className="text-lg font-medium">{previewImage.name}</h3>
-              <p className="text-white/70 text-sm">
-                {previewImage.dimensions.width} × {previewImage.dimensions.height} • {formatFileSize(previewImage.size)}
-              </p>
-            </div>
-            <button
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-              onClick={() => setPreviewImage(null)}
-            >
-              <X className="w-6 h-6 text-white" />
-            </button>
-          </div>
-
-          {/* Main Image */}
-          <div
-            className="flex-1 flex items-center justify-center px-4 py-2 min-h-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="relative flex items-center gap-4 max-w-full h-full">
-              {/* Previous Button */}
-              <button
-                onClick={() => {
-                  const currentIndex = sortedImages.findIndex(img => img._id === previewImage._id);
-                  if (currentIndex > 0) {
-                    setPreviewImage(sortedImages[currentIndex - 1]);
-                  }
-                }}
-                className={`p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all ${
-                  sortedImages.findIndex(img => img._id === previewImage._id) === 0
-                    ? 'opacity-50 cursor-not-allowed'
-                    : ''
-                }`}
-                disabled={sortedImages.findIndex(img => img._id === previewImage._id) === 0}
-              >
-                <ChevronLeft className="w-6 h-6 text-white" />
-              </button>
-
-              {/* Image */}
-              {previewImage.screenUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={previewImage.screenUrl}
-                  alt={previewImage.name}
-                  className="max-w-[calc(100vw-160px)] max-h-[calc(100vh-220px)] object-contain rounded-lg"
-                />
-              ) : (
-                <div className="w-96 h-[calc(100vh-220px)] bg-gradient-to-br from-muted to-muted/50 rounded-lg flex items-center justify-center">
-                  <ImageIcon className="w-24 h-24 text-muted-foreground/30" />
-                </div>
-              )}
-
-              {/* Next Button */}
-              <button
-                onClick={() => {
-                  const currentIndex = sortedImages.findIndex(img => img._id === previewImage._id);
-                  if (currentIndex < sortedImages.length - 1) {
-                    setPreviewImage(sortedImages[currentIndex + 1]);
-                  }
-                }}
-                className={`p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all ${
-                  sortedImages.findIndex(img => img._id === previewImage._id) === sortedImages.length - 1
-                    ? 'opacity-50 cursor-not-allowed'
-                    : ''
-                }`}
-                disabled={sortedImages.findIndex(img => img._id === previewImage._id) === sortedImages.length - 1}
-              >
-                <ChevronRight className="w-6 h-6 text-white" />
-              </button>
-            </div>
-          </div>
-
-          {/* Thumbnail Strip */}
-          <div className="bg-black/50 p-3" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-center">
-              <div className="flex gap-2 overflow-x-auto max-w-full px-2">
-                {sortedImages.map((image) => (
-                  <button
-                    key={image._id}
-                    onClick={() => setPreviewImage(image)}
-                    className={`flex-shrink-0 relative rounded overflow-hidden transition-all duration-200 ${
-                      image._id === previewImage._id
-                        ? 'opacity-100 border-2 border-white'
-                        : 'opacity-50 hover:opacity-80 border-2 border-transparent'
-                    }`}
-                  >
-                    {image.screenUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={image.screenUrl}
-                        alt={image.name}
-                        className="w-14 h-24 object-cover"
-                      />
-                    ) : (
-                      <div className="w-14 h-24 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                        <ImageIcon className="w-4 h-4 text-muted-foreground/30" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 }

@@ -19,6 +19,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { CreateStyleDialog } from './components/CreateStyleDialog';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function StylesPage() {
   return (
@@ -506,65 +507,74 @@ function StylesPageContent() {
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="mb-6 border-b border-border/60 pb-4"
+        className="mb-6"
       >
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <h1 className="text-3xl font-semibold tracking-tight">Screenshot Styles</h1>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <div className="relative flex-1 min-w-[260px] max-w-md">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search styles..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full rounded-full border border-border/70 bg-muted/90 pl-12 pr-12 py-2.5 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => handleSearchChange('')}
-                  className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                  aria-label="Clear search"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-            <div className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 p-1 text-sm">
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 transition ${
-                  viewMode === 'grid' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-primary'
-                }`}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" /> Grid
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('list')}
-                className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 transition ${
-                  viewMode === 'list' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-primary'
-                }`}
-              >
-                <List className="h-3.5 w-3.5" /> List
-              </button>
-            </div>
+        <PageHeader
+          className="border-b border-border/60 pb-4 pt-0"
+          backHref="/home"
+          backLabel="Back to home"
+          title="Screenshot Styles"
+          subtitle={
             <span className="inline-flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               {filteredStyles.length} styles available
             </span>
-            <button
-              type="button"
-              onClick={() => setShowCreateDialog(true)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-auto"
-            >
-              <Wand2 className="h-4 w-4" />
-              Generate Style
-            </button>
-          </div>
-        </div>
+          }
+          subtitleClassName="mt-1 text-sm text-muted-foreground"
+          actions={(
+            <>
+              <div className="relative flex-1 min-w-[260px] max-w-md text-sm">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search styles..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="w-full rounded-full border border-border/70 bg-muted/90 pl-12 pr-12 py-2.5 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => handleSearchChange('')}
+                    className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+              <div className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 p-1 text-sm">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 transition ${
+                    viewMode === 'grid' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-primary'
+                  }`}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" /> Grid
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 transition ${
+                    viewMode === 'list' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-primary'
+                  }`}
+                >
+                  <List className="h-3.5 w-3.5" /> List
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateDialog(true)}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-auto"
+              >
+                <Wand2 className="h-4 w-4" />
+                Generate Style
+              </button>
+            </>
+          )}
+          actionsClassName="flex flex-wrap items-center gap-3 sm:gap-4"
+        />
       </motion.div>
 
       {/* Sign in prompt */}

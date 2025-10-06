@@ -17,6 +17,8 @@ export const generateDemoAppInternal = internalAction({
     styleId: v.optional(v.id("styles")),
     profileId: v.optional(v.id("profiles")),
     appDescriptionInput: v.optional(v.string()),
+    categoryHint: v.optional(v.string()),
+    vibeStyle: v.optional(v.string()),
     screenshotSizeId: v.optional(v.id("screenshotSizes")), // Default: iPhone 16 Pro Max
   },
   returns: v.id("apps"),
@@ -52,16 +54,19 @@ export const generateDemoAppInternal = internalAction({
       console.log("  From description:", args.appDescriptionInput?.substring(0, 60) + "...");
     }
 
-    // 2. Use BAML to generate app concept (name, description, icon, color theme)
+    // 2. Use BAML to generate app concept (name, description, category, icon, color theme)
     console.log("🤖 Calling BAML to generate app concept...");
     const { b } = await import("../baml_client");
     const appConcept = await b.GenerateDemoApp(
-      args.appDescriptionInput,
+      args.appDescriptionInput ?? null,
+      args.categoryHint ?? null,
+      args.vibeStyle ?? null,
       styleConfig,
       styleName
     );
 
     console.log(`  ✓ App name: ${appConcept.app_name}`);
+    console.log(`  ✓ App category: ${appConcept.app_category}`);
     console.log(`  ✓ App description: ${appConcept.app_description.substring(0, 60)}...`);
     console.log(`  ✓ Icon prompt generated (${appConcept.app_icon_prompt.length} chars)`);
     console.log(`  ✓ Color theme: ${appConcept.color_theme}`);
@@ -146,6 +151,7 @@ export const generateDemoAppInternal = internalAction({
       profileId: args.profileId,
       name: appConcept.app_name,
       description: appConcept.app_description,
+      category: appConcept.app_category,
       iconStorageId,
     });
 
@@ -586,6 +592,54 @@ export const generateScreensForApp = action({
       screenInstructions: args.screenInstructions,
       numScreens: args.numScreens,
       colorTheme: args.colorTheme,
+    });
+  },
+});
+
+/**
+ * Public: Generate a complete app with icon and screens from user's description
+ * This is the main action called from the new-app form
+ */
+export const generateApp = action({
+  args: {
+    appDescription: v.string(),
+    category: v.optional(v.string()),
+    vibe: v.optional(v.string()),
+  },
+  returns: v.id("apps"),
+  handler: async (ctx, args): Promise<Id<"apps">> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get user's profile
+    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    // Parse the "AppName: Description" format if present
+    let cleanDescription = args.appDescription.trim();
+
+    // If description contains "AppName: Description", extract just the description part
+    const colonIndex = cleanDescription.indexOf(':');
+    if (colonIndex > 0 && colonIndex < 30) {
+      const potentialName = cleanDescription.substring(0, colonIndex).trim();
+      const wordCount = potentialName.split(/\s+/).length;
+      if (wordCount <= 4 && potentialName.length <= 30) {
+        // This looks like "AppName: Description" format, use the full thing
+        cleanDescription = cleanDescription;
+      }
+    }
+
+    // Call internal action with all context
+    return await ctx.runAction(internal.demoActions.generateDemoAppInternal, {
+      styleId: undefined,
+      profileId: profile._id,
+      appDescriptionInput: cleanDescription,
+      categoryHint: args.category,
+      vibeStyle: args.vibe,
     });
   },
 });

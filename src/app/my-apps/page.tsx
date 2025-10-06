@@ -91,7 +91,7 @@ export default function MyAppsPage() {
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
-            href="/new-app/manual"
+            href="/new-app/setup-existing-app"
             className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/60"
           >
             <PenSquare className="h-4 w-4" />

@@ -71,7 +71,7 @@ type ReferenceImage = {
 export default function GenerateNewAppPage() {
   const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
-  const createAppMutation = useMutation(api.apps.createApp);
+  const generateAppAction = useAction(api.demoActions.generateApp);
   const improveDescription = useAction(api.demoActions.improveAppDescription);
 
   const [idea, setIdea] = useState('');
@@ -190,17 +190,13 @@ export default function GenerateNewAppPage() {
     setIsSubmitting(true);
     try {
       const selectedCategory = category === AUTO_CATEGORY_OPTION ? undefined : category;
-      const fallbackName = selectedCategory ? `${selectedCategory} App` : 'New Mocksy app';
-      const name = generatedName || fallbackName;
-      const description = buildDescription(idea, selectedCategory, vibe);
-      const platforms = { ios: true, android: true };
+      const selectedVibe = vibe.trim() || undefined;
 
-      const appId = await createAppMutation({
-        name,
-        description,
+      // Call the new generateApp action which creates app with icon + screens
+      const appId = await generateAppAction({
+        appDescription: idea,
         category: selectedCategory,
-        platforms,
-        languages: [language],
+        vibe: selectedVibe,
       });
 
       router.push(`/app/${appId}`);
@@ -455,7 +451,7 @@ export default function GenerateNewAppPage() {
           <div className="flex h-fit flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm">
             <div className="rounded-xl border border-dashed bg-background/80 p-4 text-sm text-muted-foreground">
               <Sparkles className="mr-2 inline h-4 w-4 text-primary" />
-              Mocksy will create the app entry instantly. You can still edit the name, description, platforms, and languages afterward.
+              Mocksy will generate your app with icon and 5 sample screenshots. This takes about 30-60 seconds.
             </div>
             <Button
               type="button"
@@ -464,14 +460,14 @@ export default function GenerateNewAppPage() {
               onClick={handleGenerate}
               disabled={disabled}
             >
-              {isSubmitting ? 'Generating…' : 'Generate app' }
+              {isSubmitting ? 'Generating app with AI…' : 'Generate app' }
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Button
               type="button"
               variant="outline"
               className="w-full"
-              onClick={() => router.push('/new-app/manual')}
+              onClick={() => router.push('/new-app/setup-existing-app')}
             >
               Set up existing app instead
             </Button>

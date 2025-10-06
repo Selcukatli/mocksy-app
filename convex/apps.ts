@@ -285,9 +285,66 @@ export const deleteApp = mutation({
       throw new Error("App not found or access denied");
     }
 
-    // TODO: In the future, also delete related sets, screenshots, etc.
+    // Delete all related data in reverse dependency order
 
-    // Delete the app
+    // 1. Delete all screenshots (which reference screenshotSets)
+    const screenshots = await ctx.db
+      .query("screenshots")
+      .withIndex("by_app", (q) => q.eq("appId", args.appId))
+      .collect();
+
+    for (const screenshot of screenshots) {
+      // Delete screenshot image from storage if it exists
+      if (screenshot.imageStorageId) {
+        await ctx.storage.delete(screenshot.imageStorageId);
+      }
+      await ctx.db.delete(screenshot._id);
+    }
+
+    // 2. Delete all screenshot sets
+    const screenshotSets = await ctx.db
+      .query("screenshotSets")
+      .withIndex("by_app", (q) => q.eq("appId", args.appId))
+      .collect();
+
+    for (const set of screenshotSets) {
+      await ctx.db.delete(set._id);
+    }
+
+    // 3. Delete all app screens and their storage files
+    const appScreens = await ctx.db
+      .query("appScreens")
+      .withIndex("by_app", (q) => q.eq("appId", args.appId))
+      .collect();
+
+    for (const screen of appScreens) {
+      // Delete screen image from storage
+      if (screen.storageId) {
+        await ctx.storage.delete(screen.storageId);
+      }
+      await ctx.db.delete(screen._id);
+    }
+
+    // 4. Delete all template screenshots associated with this app
+    const templateScreenshots = await ctx.db
+      .query("templateScreenshots")
+      .withIndex("by_app", (q) => q.eq("appId", args.appId))
+      .collect();
+
+    for (const templateScreenshot of templateScreenshots) {
+      // Delete generated image from storage if it exists
+      if (templateScreenshot.imageStorageId) {
+        await ctx.storage.delete(templateScreenshot.imageStorageId);
+      }
+      await ctx.db.delete(templateScreenshot._id);
+    }
+
+    // 5. Delete the app icon from storage if it exists
+    if (app.iconStorageId) {
+      await ctx.storage.delete(app.iconStorageId);
+    }
+
+    // 6. Finally, delete the app itself
     await ctx.db.delete(args.appId);
 
     return null;
@@ -300,6 +357,7 @@ export const createDemoApp = internalMutation({
     profileId: v.id("profiles"),
     name: v.string(),
     description: v.optional(v.string()),
+    category: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")),
   },
   returns: v.id("apps"),
@@ -310,6 +368,7 @@ export const createDemoApp = internalMutation({
       profileId: args.profileId,
       name: args.name,
       description: args.description,
+      category: args.category,
       iconStorageId: args.iconStorageId,
       isDemo: true,
       createdAt: now,

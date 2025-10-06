@@ -314,7 +314,9 @@ Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must
       })
     );
 
-    const successfulRemainingScreens = remainingScreenResults.filter(id => id !== null);
+    const successfulRemainingScreens = remainingScreenResults.filter(
+      (id): id is Id<"appScreens"> => id !== null
+    );
     const totalSuccessful = 1 + successfulRemainingScreens.length; // +1 for first screen
     console.log(`✅ Generated ${totalSuccessful}/${screenPrompts.app_screen_prompts.length} app screens (1 reference + ${successfulRemainingScreens.length} matching)`);
 
@@ -477,7 +479,9 @@ Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must
       })
     );
 
-    const successfulScreens = screenResults.filter(id => id !== null) as Id<"appScreens">[];
+    const successfulScreens = screenResults.filter(
+      (id): id is Id<"appScreens"> => id !== null
+    );
     console.log(`✅ Generated ${successfulScreens.length}/${result.app_screen_prompts.length} app screens`);
 
     return successfulScreens;
@@ -597,7 +601,10 @@ export const improveAppDescription = action({
   returns: v.object({
     improvedDescription: v.string(),
   }),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args
+  ): Promise<{ improvedDescription: string }> => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Not authenticated");

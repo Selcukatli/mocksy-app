@@ -367,6 +367,77 @@ export const processData = action({
 - Webhook receives data and needs to process it for a specific user
 - Client action needs same processing with auth validation
 
+## Testing with Convex CLI
+
+### Running functions with npx convex run
+- Test queries, mutations, and actions directly from the CLI
+- Pass arguments as JSON-formatted strings
+- Use `--identity` flag to simulate authenticated users
+- View all available options with `npx convex run --help`
+
+**Basic usage:**
+```bash
+# Run a query or mutation
+npx convex run myModule:myFunction '{"arg1": "value1", "arg2": 123}'
+
+# Run without arguments
+npx convex run myModule:simpleFunction '{}'
+```
+
+**Testing authenticated actions with --identity:**
+```bash
+# Simulate a user with identity
+npx convex run myActions:publicAction \
+  '{"data": "test"}' \
+  --identity '{"subject":"user_123","name":"Test User","email":"test@example.com"}'
+
+# The identity object can include any fields your auth system uses
+# Common fields: subject (required), name, email, tokenIdentifier, etc.
+```
+
+**Testing internal actions (recommended for development):**
+```bash
+# Internal actions bypass authentication - no --identity needed
+npx convex run myActions:internalAction \
+  '{"profileId":"j57d8p1xcgqafkggamgvnbea0s7qvp64","data":"test"}'
+
+# This is why the Internal/Public Action Pattern is valuable for testing
+```
+
+**Other useful CLI flags:**
+```bash
+# Watch a query for changes
+npx convex run myModule:myQuery '{}' --watch
+
+# Push code before running
+npx convex run myModule:myFunction '{}' --push
+
+# Use a specific environment file
+npx convex run myModule:myFunction '{}' --env-file .env.production
+```
+
+### Best practices for CLI testing
+- **Use internal actions with optional profileId** for easier testing without auth mocking
+- **Test public actions with --identity** to verify auth logic works correctly
+- **Keep test data in separate functions** - create test helper functions for seeding data
+- **Use --watch with queries** to see real-time updates during development
+- **Combine with --push** to test latest code changes immediately
+
+### Example: Testing a complete flow
+```bash
+# 1. Create test data with internal action (no auth needed)
+npx convex run demoActions:generateDemoAppInternal \
+  '{"appDescriptionInput":"Test app","profileId":"j57..."}'
+
+# 2. Test public action with authentication
+npx convex run demoActions:generateDemoAppFromDescription \
+  '{"appDescription":"Test app"}' \
+  --identity '{"subject":"user_123","name":"Test User"}'
+
+# 3. Query results and watch for changes
+npx convex run apps:getApp '{"appId":"j97..."}' --watch
+```
+
 ## Scheduling guidelines
 ### Cron guidelines
 - Only use the `crons.interval` or `crons.cron` methods to schedule cron jobs. Do NOT use the `crons.hourly`, `crons.daily`, or `crons.weekly` helpers.

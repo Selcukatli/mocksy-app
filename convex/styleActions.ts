@@ -8,6 +8,13 @@ import BAML from "@boundaryml/baml";
 const { Image } = BAML;
 import type { Id } from "./_generated/dataModel";
 
+type ScoredImage = {
+  url: string;
+  index: number;
+  score: number;
+  details: unknown;
+};
+
 /**
  * Generate a screenshot style from text description
  * Uses BAML to analyze description and generate style config + image prompts
@@ -146,7 +153,7 @@ export const generateStyleFromDescription = action({
 
               // Score all candidates in parallel
               console.log("🔍 Scoring device image candidates...");
-              const scoringPromises = deviceResult.images.map(async (image: { url: string }, index: number) => {
+              const scoringPromises: Promise<ScoredImage>[] = deviceResult.images.map(async (image: { url: string }, index: number): Promise<ScoredImage> => {
                 try {
                   const score = await b.ScoreDeviceReferenceImage(
                     Image.fromUrl(image.url),
@@ -162,7 +169,7 @@ export const generateStyleFromDescription = action({
                     index,
                     score: score.overall_score,
                     details: score,
-                  };
+                  } satisfies ScoredImage;
                 } catch (error) {
                   console.error(`  ❌ Failed to score candidate ${index + 1}:`, error);
                   return {
@@ -170,16 +177,20 @@ export const generateStyleFromDescription = action({
                     index,
                     score: 0,
                     details: null,
-                  };
+                  } satisfies ScoredImage;
                 }
               });
 
               const scoredImages = await Promise.all(scoringPromises);
 
+              if (scoredImages.length === 0) {
+                throw new Error("No candidate images received a score");
+              }
+
               // Find the best scoring image
-              const bestImage = scoredImages.reduce((best, current) => {
+              const bestImage = scoredImages.reduce<ScoredImage>((best, current) => {
                 return current.score > best.score ? current : best;
-              });
+              }, scoredImages[0]);
 
               console.log(`✅ Selected best candidate: #${bestImage.index + 1} with score ${bestImage.score}/100`);
 

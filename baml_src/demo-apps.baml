@@ -19,7 +19,7 @@ class DemoAppOutput {
 }
 
 class ImprovedDescriptionOutput {
-  improved_description string @description("Polished App Store style description (3-5 sentences, 50-90 words) that keeps the original intent but sharpens clarity, benefits, and tone.")
+  improved_description string @description("Combined app name and description in a single cohesive text. Format: 'AppName: Description here.' The app name should be 1-3 catchy words followed by a colon, then a polished App Store style description (3-5 sentences, 50-90 words). Example: 'DynamicDuo: Connect and share privately with your most trusted partner. Securely exchange photos and messages, keeping your communications off the public grid. Coordinate with encrypted chats and instant sharing. Your secret HQ for two.'")
 }
 
 class AppScreenPromptsOutput {
@@ -121,7 +121,19 @@ function ImproveAppDescription(
   client ScreenshotGeneratorMed
   prompt #"
     {{ _.role("system") }}
-    You are a marketing copywriter who specializes in App Store product descriptions that are clear, benefit-driven, and polished. Keep the structure tight (3-5 sentences, 50-90 words). Maintain the product's intent and features while elevating clarity, value, and excitement. Avoid repetition, buzzword overload, or claims that break trust. Match any requested tone or vibe.
+    You are a marketing copywriter who specializes in App Store product descriptions that are clear, benefit-driven, and polished.
+
+    **CRITICAL APP STORE FORMAT REQUIREMENTS:**
+    - First sentence: Hook with the main value proposition (what the app does and why it matters)
+    - Middle 2-3 sentences: Key features and benefits (specific, tangible)
+    - Final sentence: Call-to-action or emotional closer
+    - Length: 3-5 sentences, 50-90 words total
+    - Tone: Professional but approachable, exciting but trustworthy
+    - Avoid: Repetition, buzzword overload, vague claims, excessive punctuation
+
+    **APP STORE DESCRIPTION EXAMPLES:**
+    - "Transform your fitness journey into an epic adventure. Track workouts, earn achievements, and compete with friends through gamified challenges. Stay motivated with smart reminders and personalized goals. Your path to a stronger, healthier you starts here."
+    - "Find calm in the chaos with guided meditation sessions designed for busy professionals. Choose from 5-minute mindfulness breaks, breathing exercises, and ambient soundscapes. Build a consistent practice with gentle reminders and progress tracking. Peace of mind, just a tap away."
 
     {{ _.role("user") }}
     DRAFT DESCRIPTION:
@@ -131,7 +143,21 @@ function ImproveAppDescription(
     TONE / VIBE TO REFLECT: {{ vibe_hint }}
     {% endif %}
 
-    Produce the improved description only.
+    **YOUR TASK:**
+    Return a SINGLE string combining the app name and description in this exact format:
+
+    **Format:** `AppName: Description sentence 1. Description sentence 2. Description sentence 3. [Optional sentence 4-5.]`
+
+    **Requirements:**
+    1. Start with a catchy app name (1-3 words) followed by a colon
+       - If input is rough concept like "photo sharing app between batman and robin" → Create catchy name (e.g., "DynamicDuo", "Gotham Link")
+       - If input mentions an app name → Extract and refine it
+    2. After the colon, write the polished App Store description (3-5 sentences, 50-90 words)
+    3. Match the requested tone/vibe if provided
+
+    **Examples:**
+    - "FitQuest: Transform your fitness journey into an epic adventure. Track workouts, earn achievements, and compete with friends through gamified challenges. Stay motivated with smart reminders and personalized goals. Your path to a stronger, healthier you starts here."
+    - "Mindful Minutes: Discover tranquility amidst your busy schedule with guided meditations crafted for real life. Access quick sessions from 3 to 15 minutes, perfect for commutes or breaks. Build consistent practice with calming sounds and mood tracking. Reclaim your focus and peace, one minute at a time."
 
     {{ ctx.output_format }}
   "#

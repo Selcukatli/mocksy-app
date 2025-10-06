@@ -92,6 +92,19 @@ export default function GenerateNewAppPage() {
 
   const generatedName = useMemo(() => {
     if (!idea.trim()) return '';
+
+    // If idea contains "AppName: Description" format, extract the app name
+    const colonIndex = idea.indexOf(':');
+    if (colonIndex > 0 && colonIndex < 30) {
+      const potentialName = idea.substring(0, colonIndex).trim();
+      // Verify it's a reasonable app name (1-4 words, not too long)
+      const wordCount = potentialName.split(/\s+/).length;
+      if (wordCount <= 4 && potentialName.length <= 30) {
+        return potentialName;
+      }
+    }
+
+    // Fallback: title case the idea
     const base = titleCase(idea);
     if (base.length <= 24) return base;
     return `${base.slice(0, 21).trim()}…`;
@@ -351,33 +364,54 @@ export default function GenerateNewAppPage() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  {referenceImages.map((image) => (
-                    <div key={image.id} className="relative h-24 w-24 overflow-hidden rounded-lg border">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={image.preview} alt={image.name} className="h-full w-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveReferenceImage(image.id)}
-                        className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:text-foreground"
-                        aria-label="Remove reference"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {Array.from({ length: MAX_REFERENCE_IMAGES }).map((_, index) => {
+                    const image = referenceImages[index];
+                    const isAddSlot = !image && index === referenceImages.length && referenceImages.length < MAX_REFERENCE_IMAGES;
 
-                  {referenceImages.length < MAX_REFERENCE_IMAGES && (
-                    <button
-                      type="button"
-                      onClick={triggerReferenceUpload}
-                      className="flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed text-xs text-muted-foreground transition-colors hover:border-muted-foreground hover:bg-muted/40"
-                    >
-                      <Upload className="h-5 w-5" />
-                      Add image
-                      <span className="text-[10px] text-muted-foreground/80">{MAX_REFERENCE_IMAGES - referenceImages.length} left</span>
-                    </button>
-                  )}
+                    if (image) {
+                      return (
+                        <div key={image.id} className="relative h-24 w-full overflow-hidden rounded-lg border">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={image.preview} alt={image.name} className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveReferenceImage(image.id)}
+                            className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:text-foreground"
+                            aria-label="Remove reference"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    if (isAddSlot) {
+                      const remaining = MAX_REFERENCE_IMAGES - referenceImages.length;
+                      return (
+                        <button
+                          key="reference-add"
+                          type="button"
+                          onClick={triggerReferenceUpload}
+                          className="flex h-24 w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/40 text-xs text-muted-foreground transition-colors hover:border-muted-foreground hover:bg-muted/40"
+                        >
+                          <Upload className="h-5 w-5" />
+                          Add image
+                          <span className="text-[10px] text-muted-foreground/80">{remaining} left</span>
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={`reference-ghost-${index}`}
+                        className="flex h-24 w-full items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/20 bg-muted/10 text-[10px] uppercase tracking-wide text-muted-foreground/70"
+                        aria-hidden="true"
+                      >
+                        Preview
+                      </div>
+                    );
+                  })}
                 </div>
                 <input
                   ref={referenceInputRef}

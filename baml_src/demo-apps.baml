@@ -18,6 +18,10 @@ class DemoAppOutput {
   color_theme string @description("Color palette/theme for the app UI (e.g., 'dark purple and electric cyan', 'warm beige and sage green', 'bright yellow with hot pink accents'). This will be used to generate consistent app screens.")
 }
 
+class ImprovedDescriptionOutput {
+  improved_description string @description("Polished App Store style description (3-5 sentences, 50-90 words) that keeps the original intent but sharpens clarity, benefits, and tone.")
+}
+
 class AppScreenPromptsOutput {
   app_screen_prompts string[] @description("Array of 3-10 iPhone screenshot prompts for different app screens. Each prompt follows the full-bleed edge-to-edge pattern.")
 }
@@ -105,6 +109,29 @@ function GenerateDemoApp(
     - Icon mood should match style energy (calm vs energetic, playful vs serious, etc.)
     - Color theme should be cohesive with the overall style aesthetic
     - All outputs (name, description, icon, color theme) should work together harmoniously
+
+    {{ ctx.output_format }}
+  "#
+}
+
+function ImproveAppDescription(
+  draft_description: string @description("Rough or placeholder description that needs to sound polished and App Store ready"),
+  vibe_hint: string? @description("Optional tone, vibe, or audience notes to weave into the copy")
+) -> ImprovedDescriptionOutput {
+  client ScreenshotGeneratorMed
+  prompt #"
+    {{ _.role("system") }}
+    You are a marketing copywriter who specializes in App Store product descriptions that are clear, benefit-driven, and polished. Keep the structure tight (3-5 sentences, 50-90 words). Maintain the product's intent and features while elevating clarity, value, and excitement. Avoid repetition, buzzword overload, or claims that break trust. Match any requested tone or vibe.
+
+    {{ _.role("user") }}
+    DRAFT DESCRIPTION:
+    {{ draft_description }}
+
+    {% if vibe_hint %}
+    TONE / VIBE TO REFLECT: {{ vibe_hint }}
+    {% endif %}
+
+    Produce the improved description only.
 
     {{ ctx.output_format }}
   "#
@@ -247,6 +274,14 @@ test DemoFromDescription {
     app_description_input "A meditation and mindfulness app for busy professionals. Helps users find calm moments throughout their day with 5-minute guided sessions, breathing exercises, and ambient soundscapes."
     style_config null
     style_name null
+  }
+}
+
+test ImproveDescriptionFromDraft {
+  functions [ImproveAppDescription]
+  args {
+    draft_description "This app helps you track workouts and offers some motivation features. It has reminders, a few templates, and a social feed, but the copy feels flat."
+    vibe_hint "Energetic fitness mentor" 
   }
 }
 

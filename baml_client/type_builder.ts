@@ -53,6 +53,8 @@ export default class TypeBuilder {
     
     HeaderText: ClassViewer<'HeaderText', "copy" | "placement" | "font" | "size">;
     
+    ImprovedDescriptionOutput: ClassViewer<'ImprovedDescriptionOutput', "improved_description">;
+    
     LayoutConfig: ClassViewer<'LayoutConfig', "composition" | "device_orientation" | "device_type">;
     
     ModelTestResponse: ClassViewer<'ModelTestResponse', "model_name" | "response_text" | "character_count" | "passed">;
@@ -96,7 +98,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "AppScreenPromptsOutput","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
+            "AppScreenPromptsOutput","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -154,6 +156,10 @@ export default class TypeBuilder {
         
         this.HeaderText = this.tb.classViewer("HeaderText", [
           "copy","placement","font","size",
+        ]);
+        
+        this.ImprovedDescriptionOutput = this.tb.classViewer("ImprovedDescriptionOutput", [
+          "improved_description",
         ]);
         
         this.LayoutConfig = this.tb.classViewer("LayoutConfig", [

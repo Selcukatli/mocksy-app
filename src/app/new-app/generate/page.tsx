@@ -14,7 +14,7 @@ import {
   Image as ImageIcon,
   X
 } from 'lucide-react';
-import { useMutation } from 'convex/react';
+import { useAction, useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Button } from '@/components/ui/button';
 
@@ -72,6 +72,7 @@ export default function GenerateNewAppPage() {
   const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const createAppMutation = useMutation(api.apps.createApp);
+  const improveDescription = useAction(api.demoActions.improveAppDescription);
 
   const [idea, setIdea] = useState('');
   const [category, setCategory] = useState<string>(AUTO_CATEGORY_OPTION);
@@ -82,7 +83,6 @@ export default function GenerateNewAppPage() {
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExpandingIdea, setIsExpandingIdea] = useState(false);
-  const expandTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -106,14 +106,6 @@ export default function GenerateNewAppPage() {
   useEffect(() => {
     return () => {
       referenceImagesRef.current.forEach((image) => URL.revokeObjectURL(image.preview));
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (expandTimeoutRef.current) {
-        clearTimeout(expandTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -154,14 +146,30 @@ export default function GenerateNewAppPage() {
     referenceInputRef.current?.click();
   };
 
-  const handleExpandIdea = () => {
+  const handleExpandIdea = async () => {
     if (!idea.trim() || isExpandingIdea) return;
     setIsExpandingIdea(true);
-    // TODO: replace with AI powered expansion when backend integration is ready
-    expandTimeoutRef.current = setTimeout(() => {
+
+    try {
+      const vibeHint = vibe.trim()
+        ? vibe.trim()
+        : category !== AUTO_CATEGORY_OPTION
+          ? category
+          : undefined;
+
+      const result = await improveDescription({
+        draftDescription: idea,
+        vibeHint,
+      });
+
+      if (result.improvedDescription) {
+        setIdea(result.improvedDescription);
+      }
+    } catch (error) {
+      console.error('Failed to expand description', error);
+    } finally {
       setIsExpandingIdea(false);
-      expandTimeoutRef.current = null;
-    }, 1200);
+    }
   };
 
   const handleGenerate = async () => {

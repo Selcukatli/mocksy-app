@@ -178,6 +178,11 @@ export interface HeaderText {
   
 }
 
+export interface ImprovedDescriptionOutput {
+  improved_description: string
+  
+}
+
 export interface LayoutConfig {
   composition: string
   device_orientation: string

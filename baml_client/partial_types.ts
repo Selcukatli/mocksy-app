@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  AppScreenPromptsOutput,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
+import type {  AppScreenPromptsOutput,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  ImprovedDescriptionOutput,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -140,6 +140,9 @@ export namespace partial_types {
       placement?: string | null
       font?: FontStyle | null
       size?: string | null
+    }
+    export interface ImprovedDescriptionOutput {
+      improved_description?: string | null
     }
     export interface LayoutConfig {
       composition?: string | null

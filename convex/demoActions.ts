@@ -585,3 +585,36 @@ export const generateScreensForApp = action({
     });
   },
 });
+
+/**
+ * Public: Improve an app description draft using BAML
+ */
+export const improveAppDescription = action({
+  args: {
+    draftDescription: v.string(),
+    vibeHint: v.optional(v.string()),
+  },
+  returns: v.object({
+    improvedDescription: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    if (!args.draftDescription.trim()) {
+      throw new Error("Description is required");
+    }
+
+    const { b } = await import("../baml_client");
+    const result = await b.ImproveAppDescription(
+      args.draftDescription,
+      args.vibeHint ?? null
+    );
+
+    return {
+      improvedDescription: result.improved_description,
+    };
+  },
+});

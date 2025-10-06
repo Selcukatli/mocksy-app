@@ -241,6 +241,7 @@ export default function GenerateNewAppPage() {
         onClose={handleModalClose}
         appIcon={appStatus?.app.iconUrl}
         appName={appStatus?.app.name}
+        appCategory={appStatus?.app.category}
         appDescription={appStatus?.app.description}
         screenUrls={appStatus?.screens.map(s => s.screenUrl).filter((url): url is string => !!url) || []}
         screensGenerated={appStatus?.totalScreens || 0}

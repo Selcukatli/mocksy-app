@@ -5,7 +5,6 @@ import { Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -19,6 +18,7 @@ interface GenerationProgressModalProps {
   onClose: () => void;
   appIcon?: string;
   appName?: string;
+  appCategory?: string;
   appDescription?: string;
   screenUrls?: string[];
   screensGenerated?: number;
@@ -30,6 +30,7 @@ export default function GenerationProgressModal({
   isOpen,
   appIcon,
   appName,
+  appCategory,
   appDescription,
   screenUrls = [],
   totalScreens = 5,
@@ -39,7 +40,7 @@ export default function GenerationProgressModal({
   const hasIcon = !!appIcon;
   const hasDetails = !!appName && appName !== 'Generating...';
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
@@ -181,6 +182,11 @@ export default function GenerationProgressModal({
                   <h2 className="text-3xl font-bold text-foreground leading-tight">
                     {appName}
                   </h2>
+                  {appCategory && (
+                    <p className="text-sm text-primary font-medium uppercase tracking-wide">
+                      {appCategory}
+                    </p>
+                  )}
                   <p className="text-base text-muted-foreground">
                     {appDescription?.split('.')[0] || 'Generating details...'}
                   </p>
@@ -295,7 +301,7 @@ export default function GenerationProgressModal({
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.4 }}
                         className="relative h-full w-full cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => setLightboxImage(screenUrl)}
+                        onClick={() => setLightboxImageIndex(index)}
                       >
                         <Image
                           src={screenUrl}
@@ -322,7 +328,7 @@ export default function GenerationProgressModal({
 
                         {/* Shimmer effect - more visible */}
                         <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/20 to-transparent"
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
                           animate={{
                             x: ['-100%', '200%'],
                           }}
@@ -336,7 +342,7 @@ export default function GenerationProgressModal({
                         {/* Content skeleton */}
                         <div className="relative flex h-full w-full flex-col items-center justify-center gap-3 p-4 backdrop-blur-sm">
                           <motion.div
-                            className="h-16 w-16 rounded-lg bg-white/40 dark:bg-white/20"
+                            className="h-16 w-16 rounded-lg bg-muted-foreground/30"
                             animate={{
                               scale: [1, 1.1, 1],
                               opacity: [0.5, 0.8, 0.5],
@@ -349,7 +355,7 @@ export default function GenerationProgressModal({
                           />
                           <div className="space-y-1.5 w-full">
                             <motion.div
-                              className="h-2 w-full rounded bg-white/40 dark:bg-white/20"
+                              className="h-2 w-full rounded bg-muted-foreground/30"
                               animate={{
                                 opacity: [0.5, 0.8, 0.5],
                               }}
@@ -361,7 +367,7 @@ export default function GenerationProgressModal({
                               }}
                             />
                             <motion.div
-                              className="h-2 w-4/5 mx-auto rounded bg-white/40 dark:bg-white/20"
+                              className="h-2 w-4/5 mx-auto rounded bg-muted-foreground/30"
                               animate={{
                                 opacity: [0.5, 0.8, 0.5],
                               }}
@@ -386,11 +392,15 @@ export default function GenerationProgressModal({
       </DialogContent>
 
       {/* Screenshot Lightbox */}
-      <ScreenshotLightbox
-        imageUrl={lightboxImage}
-        onClose={() => setLightboxImage(null)}
-        alt="App screenshot preview"
-      />
+      {lightboxImageIndex !== null && (
+        <ScreenshotLightbox
+          imageUrl={null}
+          onClose={() => setLightboxImageIndex(null)}
+          alt="App screenshot preview"
+          allImages={screenUrls}
+          initialIndex={lightboxImageIndex}
+        />
+      )}
     </Dialog>
   );
 }

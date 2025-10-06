@@ -125,6 +125,7 @@ export interface DemoAppOutput {
   app_category: string
   app_icon_prompt: string
   color_theme: string
+  style_guide: string
   
 }
 
@@ -181,6 +182,8 @@ export interface HeaderText {
 
 export interface ImprovedDescriptionOutput {
   improved_description: string
+  improved_style: string
+  inferred_category: string
   
 }
 

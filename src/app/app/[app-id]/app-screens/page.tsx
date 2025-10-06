@@ -12,7 +12,6 @@ import {
   Download,
   Trash2,
   Edit3,
-  Copy,
   Eye,
   MoreVertical,
   Check,
@@ -97,7 +96,8 @@ export default function SourceImagesPage({ params }: PageProps) {
 
   // Convex returns undefined while loading, then the actual data
   const isLoading = appScreensQuery === undefined || !hasInitiallyLoaded;
-  const appScreens = appScreensQuery ?? [];
+
+  const appScreens = useMemo(() => appScreensQuery ?? [], [appScreensQuery]);
 
   const toggleImageSelection = (id: string) => {
     const newSelection = new Set(selectedImages);
@@ -129,13 +129,6 @@ export default function SourceImagesPage({ params }: PageProps) {
     }
   };
 
-  const selectAll = () => {
-    setSelectedImages(new Set(appScreens.map(img => img._id)));
-  };
-
-  const clearSelection = () => {
-    setSelectedImages(new Set());
-  };
 
   const filteredImages = useMemo(() => {
     return appScreens.filter((img) =>
@@ -242,18 +235,6 @@ export default function SourceImagesPage({ params }: PageProps) {
     }
   };
 
-  const handleDeleteSelected = async () => {
-    try {
-      await Promise.all(
-        Array.from(selectedImages).map(id =>
-          deleteAppScreen({ screenId: id as Id<"appScreens"> })
-        )
-      );
-      setSelectedImages(new Set());
-    } catch (error) {
-      console.error('Failed to delete images:', error);
-    }
-  };
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';

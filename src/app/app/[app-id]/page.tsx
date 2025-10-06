@@ -162,9 +162,9 @@ export default function AppDetailPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center p-6">
         <div className="max-w-md w-full text-center space-y-4">
-          <h1 className="text-2xl font-semibold">We couldn't find that app</h1>
+          <h1 className="text-2xl font-semibold">We couldn&apos;t find that app</h1>
           <p className="text-sm text-muted-foreground">
-            The app you're looking for may have been removed or you no longer have access to it. Try returning to your apps dashboard.
+            The app you&apos;re looking for may have been removed or you no longer have access to it. Try returning to your apps dashboard.
           </p>
           <button
             type="button"

@@ -4,5 +4,5 @@
 generator target {
   output_type "typescript"
   output_dir ".."  // Outputs to project root
-  version "0.209.0"
+  version "0.210.0"
 }

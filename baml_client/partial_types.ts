@@ -100,6 +100,7 @@ export namespace partial_types {
       app_category?: string | null
       app_icon_prompt?: string | null
       color_theme?: string | null
+      style_guide?: string | null
     }
     export interface DetailedResponse {
       answer?: string | null
@@ -144,6 +145,8 @@ export namespace partial_types {
     }
     export interface ImprovedDescriptionOutput {
       improved_description?: string | null
+      improved_style?: string | null
+      inferred_category?: string | null
     }
     export interface LayoutConfig {
       composition?: string | null

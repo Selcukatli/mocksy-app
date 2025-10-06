@@ -654,11 +654,13 @@ export const improveAppDescription = action({
   },
   returns: v.object({
     improvedDescription: v.string(),
+    improvedStyle: v.string(),
+    inferredCategory: v.string(),
   }),
   handler: async (
     ctx,
     args
-  ): Promise<{ improvedDescription: string }> => {
+  ): Promise<{ improvedDescription: string; improvedStyle: string; inferredCategory: string }> => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Not authenticated");
@@ -676,6 +678,8 @@ export const improveAppDescription = action({
 
     return {
       improvedDescription: result.improved_description,
+      improvedStyle: result.improved_style,
+      inferredCategory: result.inferred_category,
     };
   },
 });

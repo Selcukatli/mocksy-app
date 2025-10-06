@@ -17,10 +17,13 @@ class DemoAppOutput {
   app_category string @description("App Store category. Choose from: Games, Productivity, Lifestyle, Education, Health & Fitness, Business, Social Networking, Entertainment, Photo & Video, Travel, Food & Drink, Finance, News, Sports, Weather, Music, Shopping, Utilities, Medical, Reference. Pick the single most relevant category that matches this app's primary purpose.")
   app_icon_prompt string @description("Complete text-to-image prompt for generating app icon (50-100 words). CRITICAL: Icon must be SIMPLE with LARGE, BOLD symbols recognizable at small sizes. Avoid tiny details, thin lines, or complex patterns. Should be 1024x1024 square, iOS-style icon design matching the app concept and style aesthetic.")
   color_theme string @description("Color palette/theme for the app UI (e.g., 'dark purple and electric cyan', 'warm beige and sage green', 'bright yellow with hot pink accents'). This will be used to generate consistent app screens.")
+  style_guide string @description("2-3 sentence visual style guide describing the UI aesthetic, mood, typography approach, and design philosophy. Example: 'Clean minimal interface with generous whitespace and soft shadows. Uses rounded corners throughout for friendly, approachable feel. Typography: Bold sans-serif headlines paired with readable body text.' Should align with the color_theme and app concept.")
 }
 
 class ImprovedDescriptionOutput {
   improved_description string @description("Combined app name and description in a single cohesive text. Format: 'AppName: Description here.' The app name should be 1-3 catchy words followed by a colon, then a polished App Store style description (3-5 sentences, 50-90 words). Example: 'DynamicDuo: Connect and share privately with your most trusted partner. Securely exchange photos and messages, keeping your communications off the public grid. Coordinate with encrypted chats and instant sharing. Your secret HQ for two.'")
+  improved_style string @description("2-3 sentence visual style guide describing the UI aesthetic, mood, typography approach, and design philosophy that matches the app concept. Example: 'Modern dark interface with purple and cyan gradients. Clean typography with bold headlines and readable body text. Rounded UI elements throughout for a friendly, approachable vibe.' Should align with the app's purpose and target audience.")
+  inferred_category string @description("App Store category that best matches this app. Choose from: Games, Productivity, Lifestyle, Education, Health & Fitness, Business, Social Networking, Entertainment, Photo & Video, Travel, Food & Drink, Finance, News, Sports, Weather, Music, Shopping, Utilities, Medical, Reference. Pick the single most relevant category.")
 }
 
 class AppScreenPromptsOutput {
@@ -152,14 +155,26 @@ function GenerateDemoApp(
       * "Soft blue-green with white and pale yellow highlights"
       * "Bright vibrant yellow with hot pink and cyan accents"
 
+    ## 6. STYLE GUIDE
+
+    Write a 2-3 sentence visual style guide describing the UI aesthetic:
+    - Cover: UI mood/aesthetic, typography approach, and overall design philosophy
+    - Should align with the color theme and app concept
+    - {% if vibe_style %}Match the vibe: {{ vibe_style }}{% endif %}
+    - Examples:
+      * "Clean minimal interface with generous whitespace and soft shadows. Uses rounded corners throughout for friendly, approachable feel. Typography: Bold sans-serif headlines paired with readable body text."
+      * "Energetic interface with vibrant gradients and bold gamification elements. Dynamic typography with strong headlines and clear stats. Rounded corners and playful animations create an engaging experience."
+      * "Serene minimal design with generous whitespace. Elegant serif headings paired with clean sans-serif body text. Subtle animations and organic shapes evoke calm and mindfulness."
+
     ## MATCHING GUIDELINES:
     - App concept should feel natural with the style's personality
     - Category should accurately reflect the app's primary purpose
     - Icon colors should match the color theme
     - Icon mood should match style energy (calm vs energetic, playful vs serious, etc.)
     - Color theme should be cohesive with the overall style aesthetic
-    - {% if vibe_style %}Visual style/vibe should be reflected in colors and icon: {{ vibe_style }}{% endif %}
-    - All outputs (name, category, description, icon, color theme) should work together harmoniously
+    - Style guide should align with color theme and app purpose
+    - {% if vibe_style %}Visual style/vibe should be reflected in colors, icon, and style guide: {{ vibe_style }}{% endif %}
+    - All outputs (name, category, description, icon, color theme, style guide) should work together harmoniously
 
     {{ ctx.output_format }}
   "#
@@ -195,20 +210,41 @@ function ImproveAppDescription(
     {% endif %}
 
     **YOUR TASK:**
-    Return a SINGLE string combining the app name and description in this exact format:
+    Return THREE outputs:
+    1. improved_description: The app name + polished description
+    2. improved_style: A visual style guide that matches the app
+    3. inferred_category: The most appropriate App Store category
 
-    **Format:** `AppName: Description sentence 1. Description sentence 2. Description sentence 3. [Optional sentence 4-5.]`
+    **improved_description Format:** `AppName: Description sentence 1. Description sentence 2. Description sentence 3. [Optional sentence 4-5.]`
 
-    **Requirements:**
+    **improved_description Requirements:**
     1. Start with a catchy app name (1-3 words) followed by a colon
        - If input is rough concept like "photo sharing app between batman and robin" → Create catchy name (e.g., "DynamicDuo", "Gotham Link")
        - If input mentions an app name → Extract and refine it
     2. After the colon, write the polished App Store description (3-5 sentences, 50-90 words)
     3. Match the requested tone/vibe if provided
 
+    **improved_style Requirements:**
+    1. Write 2-3 sentences describing the visual design approach
+    2. Cover: UI mood/aesthetic, color palette hints, typography style, and overall design philosophy
+    3. Should feel cohesive with the app's purpose and target audience
+    4. Match the tone/vibe if provided
+
+    **inferred_category Requirements:**
+    1. Choose the SINGLE most relevant App Store category from this list:
+       - Games, Productivity, Lifestyle, Education, Health & Fitness, Business, Social Networking, Entertainment, Photo & Video, Travel, Food & Drink, Finance, News, Sports, Weather, Music, Shopping, Utilities, Medical, Reference
+    2. Base your choice on the app's PRIMARY purpose and functionality
+    3. Return ONLY the category name (e.g., "Health & Fitness", not "the category is Health & Fitness")
+
     **Examples:**
-    - "FitQuest: Transform your fitness journey into an epic adventure. Track workouts, earn achievements, and compete with friends through gamified challenges. Stay motivated with smart reminders and personalized goals. Your path to a stronger, healthier you starts here."
-    - "Mindful Minutes: Discover tranquility amidst your busy schedule with guided meditations crafted for real life. Access quick sessions from 3 to 15 minutes, perfect for commutes or breaks. Build consistent practice with calming sounds and mood tracking. Reclaim your focus and peace, one minute at a time."
+
+    improved_description: "FitQuest: Transform your fitness journey into an epic adventure. Track workouts, earn achievements, and compete with friends through gamified challenges. Stay motivated with smart reminders and personalized goals. Your path to a stronger, healthier you starts here."
+    improved_style: "Energetic interface with vibrant gradients (purple to cyan) and bold gamification elements. Dynamic typography with strong headlines and clear stats. Rounded corners and playful animations create an engaging, motivating experience."
+    inferred_category: "Health & Fitness"
+
+    improved_description: "Mindful Minutes: Discover tranquility amidst your busy schedule with guided meditations crafted for real life. Access quick sessions from 3 to 15 minutes, perfect for commutes or breaks. Build consistent practice with calming sounds and mood tracking. Reclaim your focus and peace, one minute at a time."
+    improved_style: "Serene minimal design with soft blue-green palette and generous whitespace. Elegant serif headings paired with clean sans-serif body text. Subtle animations and organic shapes evoke calm and mindfulness."
+    inferred_category: "Health & Fitness"
 
     {{ ctx.output_format }}
   "#

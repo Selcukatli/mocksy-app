@@ -31,7 +31,8 @@ export default function AppScreenPreview({ appId, screenId }: AppScreenPreviewPr
   const searchParams = useSearchParams();
 
   const appScreensQuery = useQuery(api.appScreens.getAppScreens, { appId });
-  const appScreens = appScreensQuery ?? [];
+
+  const appScreens = useMemo(() => appScreensQuery ?? [], [appScreensQuery]);
 
   const [currentId, setCurrentId] = useState(screenId);
 

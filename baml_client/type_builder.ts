@@ -41,7 +41,7 @@ export default class TypeBuilder {
     
     Composition: ClassViewer<'Composition', "priority" | "rules">;
     
-    DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_description" | "app_category" | "app_icon_prompt" | "color_theme">;
+    DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_description" | "app_category" | "app_icon_prompt" | "color_theme" | "style_guide">;
     
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
     
@@ -53,7 +53,7 @@ export default class TypeBuilder {
     
     HeaderText: ClassViewer<'HeaderText', "copy" | "placement" | "font" | "size">;
     
-    ImprovedDescriptionOutput: ClassViewer<'ImprovedDescriptionOutput', "improved_description">;
+    ImprovedDescriptionOutput: ClassViewer<'ImprovedDescriptionOutput', "improved_description" | "improved_style" | "inferred_category">;
     
     LayoutConfig: ClassViewer<'LayoutConfig', "composition" | "device_orientation" | "device_type">;
     
@@ -135,7 +135,7 @@ export default class TypeBuilder {
         ]);
         
         this.DemoAppOutput = this.tb.classViewer("DemoAppOutput", [
-          "app_name","app_description","app_category","app_icon_prompt","color_theme",
+          "app_name","app_description","app_category","app_icon_prompt","color_theme","style_guide",
         ]);
         
         this.DetailedResponse = this.tb.classViewer("DetailedResponse", [
@@ -159,7 +159,7 @@ export default class TypeBuilder {
         ]);
         
         this.ImprovedDescriptionOutput = this.tb.classViewer("ImprovedDescriptionOutput", [
-          "improved_description",
+          "improved_description","improved_style","inferred_category",
         ]);
         
         this.LayoutConfig = this.tb.classViewer("LayoutConfig", [

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
@@ -12,54 +12,18 @@ import {
   Palette,
   Upload,
   Image as ImageIcon,
-  X
+  X,
+  FolderOpen
 } from 'lucide-react';
-import { useAction, useMutation } from 'convex/react';
+import { useAction } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Button } from '@/components/ui/button';
+import Toast from '@/components/Toast';
 
-const DEFAULT_LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Japanese'];
-const AUTO_CATEGORY_OPTION = 'Let Mocksy decide';
+const AUTO_CATEGORY_OPTION = 'Automatically Inferred';
 const CATEGORY_OPTIONS = [AUTO_CATEGORY_OPTION, 'Productivity', 'Lifestyle', 'Education', 'Health & Fitness', 'Business', 'Games'];
-const VIBE_PRESETS = [
-  {
-    label: 'Minimal & clean',
-    description: 'Neutral palettes, crisp typography, plenty of white space.',
-  },
-  {
-    label: 'Playful & vibrant',
-    description: 'Bright colors, rounded shapes, and an upbeat tone.',
-  },
-  {
-    label: 'Futuristic neon',
-    description: 'High-contrast gradients and glowing, tech-forward motifs.',
-  },
-  {
-    label: 'Calm wellness',
-    description: 'Soft hues, soothing motion, mindful breathing room.',
-  },
-  {
-    label: 'Bold fintech',
-    description: 'Confident tones, sharp edges, data-rich visuals.',
-  },
-];
 const MAX_REFERENCE_IMAGES = 4;
 
-const titleCase = (value: string) =>
-  value
-    .trim()
-    .split(/\s+/)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase())
-    .join(' ');
-
-const buildDescription = (idea: string, category?: string, vibe?: string) => {
-  const categoryDescriptor = category ? `${category.toLowerCase()} concept` : 'concept';
-  const base = `Mocksy drafted this ${categoryDescriptor} from your brief: ${idea.trim()}.`;
-  if (vibe && vibe.trim().length > 0) {
-    return `${base} The design direction leans into a ${vibe.trim()} aesthetic. Tweak any detail before you start planning screenshot sets.`;
-  }
-  return `${base} Tweak any detail before you start planning screenshot sets.`;
-};
 
 type ReferenceImage = {
   id: string;
@@ -76,39 +40,23 @@ export default function GenerateNewAppPage() {
 
   const [idea, setIdea] = useState('');
   const [category, setCategory] = useState<string>(AUTO_CATEGORY_OPTION);
-  const [language, setLanguage] = useState(DEFAULT_LANGUAGES[0]);
-  const [vibe, setVibe] = useState('');
+  const [style, setStyle] = useState('');
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
   const referenceImagesRef = useRef<ReferenceImage[]>([]);
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExpandingIdea, setIsExpandingIdea] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isOpen: boolean }>({
+    message: '',
+    type: 'success',
+    isOpen: false
+  });
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push('/welcome?mode=sign-in&context=new-app');
     }
   }, [isLoaded, isSignedIn, router]);
-
-  const generatedName = useMemo(() => {
-    if (!idea.trim()) return '';
-
-    // If idea contains "AppName: Description" format, extract the app name
-    const colonIndex = idea.indexOf(':');
-    if (colonIndex > 0 && colonIndex < 30) {
-      const potentialName = idea.substring(0, colonIndex).trim();
-      // Verify it's a reasonable app name (1-4 words, not too long)
-      const wordCount = potentialName.split(/\s+/).length;
-      if (wordCount <= 4 && potentialName.length <= 30) {
-        return potentialName;
-      }
-    }
-
-    // Fallback: title case the idea
-    const base = titleCase(idea);
-    if (base.length <= 24) return base;
-    return `${base.slice(0, 21).trim()}…`;
-  }, [idea]);
 
   const disabled = !idea.trim() || isSubmitting || isExpandingIdea;
 
@@ -164,8 +112,9 @@ export default function GenerateNewAppPage() {
     setIsExpandingIdea(true);
 
     try {
-      const vibeHint = vibe.trim()
-        ? vibe.trim()
+      // Use style if provided, fallback to category
+      const vibeHint = style.trim()
+        ? style.trim()
         : category !== AUTO_CATEGORY_OPTION
           ? category
           : undefined;
@@ -178,8 +127,26 @@ export default function GenerateNewAppPage() {
       if (result.improvedDescription) {
         setIdea(result.improvedDescription);
       }
+      if (result.improvedStyle) {
+        setStyle(result.improvedStyle);
+      }
+      if (result.inferredCategory) {
+        setCategory(result.inferredCategory);
+      }
+
+      // Show toast notification
+      setToast({
+        message: 'AI expanded your idea and inferred category & style ✨',
+        type: 'success',
+        isOpen: true
+      });
     } catch (error) {
       console.error('Failed to expand description', error);
+      setToast({
+        message: 'Failed to expand description. Please try again.',
+        type: 'error',
+        isOpen: true
+      });
     } finally {
       setIsExpandingIdea(false);
     }
@@ -190,7 +157,7 @@ export default function GenerateNewAppPage() {
     setIsSubmitting(true);
     try {
       const selectedCategory = category === AUTO_CATEGORY_OPTION ? undefined : category;
-      const selectedVibe = vibe.trim() || undefined;
+      const selectedVibe = style.trim() || undefined;
 
       // Call the new generateApp action which creates app with icon + screens
       const appId = await generateAppAction({
@@ -219,6 +186,12 @@ export default function GenerateNewAppPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isOpen={toast.isOpen}
+        onClose={() => setToast({ ...toast, isOpen: false })}
+      />
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-6 py-12 md:px-12">
         <motion.div
           initial={{ opacity: 0, y: -12 }}
@@ -282,24 +255,6 @@ export default function GenerateNewAppPage() {
                   Expand with AI
                 </Button>
               </div>
-              <div className="mt-6">
-                <label htmlFor="category" className="text-sm font-medium text-foreground">
-                  Pick a category focus
-                </label>
-                <p className="mt-1 text-xs text-muted-foreground">Let Mocksy infer the domain or choose one yourself.</p>
-                <select
-                  id="category"
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                  className="mt-3 w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  {CATEGORY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -309,41 +264,18 @@ export default function GenerateNewAppPage() {
                     <Palette className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-base font-semibold text-foreground">Desired vibe or look</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">Optional. Helps Mocksy match tone when drafting copy.</p>
+                    <h2 className="text-base font-semibold text-foreground">Visual style & vibe</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">Optional. Describe the look, feel, colors, and design aesthetic you want.</p>
                   </div>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {VIBE_PRESETS.map((preset) => {
-                    const isActive = vibe === preset.label;
-                    return (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        onClick={() => setVibe(preset.label)}
-                        aria-pressed={isActive}
-                        title={preset.description}
-                        className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                          isActive
-                            ? 'border-primary bg-primary/10 text-foreground'
-                            : 'border-muted-foreground/20 text-muted-foreground hover:border-muted-foreground/60 hover:bg-muted/40'
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="mt-3">
-                  <label htmlFor="vibe" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Or describe your own look
-                  </label>
-                  <input
-                    id="vibe"
-                    value={vibe}
-                    onChange={(event) => setVibe(event.target.value)}
-                    placeholder="e.g. Cozy illustrated wellness"
-                    className="mt-2 w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                <div className="mt-4">
+                  <textarea
+                    id="style"
+                    value={style}
+                    onChange={(event) => setStyle(event.target.value)}
+                    placeholder="e.g. Minimal & clean with neutral palettes and crisp typography, or Playful & vibrant with bright colors and rounded shapes..."
+                    rows={3}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
@@ -418,31 +350,32 @@ export default function GenerateNewAppPage() {
                   onChange={handleReferenceSelect}
                 />
               </div>
+            </div>
 
-              <div className="rounded-2xl border bg-card p-6 shadow-sm md:col-span-2">
-                <span className="text-sm font-medium text-foreground">Primary language</span>
-                <p className="mt-1 text-xs text-muted-foreground">You can add more locales later.</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {DEFAULT_LANGUAGES.map((lang) => (
-                    <button
-                      key={lang}
-                      type="button"
-                      onClick={() => setLanguage(lang)}
-                      className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
-                        language === lang ? 'bg-foreground text-background border-foreground' : 'hover:bg-muted/60'
-                      }`}
+            <div className="rounded-2xl border bg-card p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                  <FolderOpen className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground">Category</h2>
+                      <p className="mt-1 text-xs text-muted-foreground">App Store category for discoverability.</p>
+                    </div>
+                    <select
+                      id="category"
+                      value={category}
+                      onChange={(event) => setCategory(event.target.value)}
+                      className="w-[360px] rounded-lg border bg-background px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                     >
-                      {lang}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('English')}
-                    className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/50"
-                  >
-                    <RefreshCcw className="h-3.5 w-3.5" />
-                    Reset
-                  </button>
+                      {CATEGORY_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>

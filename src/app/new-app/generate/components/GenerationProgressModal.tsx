@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,14 @@ interface GenerationProgressModalProps {
   onViewApp: () => void;
 }
 
+type GenerationStage =
+  | 'initializing'      // No data yet
+  | 'app_details'       // Has name/description but no icon
+  | 'designing'         // Has icon but no screens
+  | 'first_screen'      // Has 1 screen
+  | 'remaining_screens' // Has 2+ screens but not all
+  | 'complete';         // All screens done
+
 export default function GenerationProgressModal({
   isOpen,
   appIcon,
@@ -36,11 +45,51 @@ export default function GenerationProgressModal({
   totalScreens = 5,
   onViewApp,
 }: GenerationProgressModalProps) {
-  const isComplete = screenUrls.length >= totalScreens;
-  const hasIcon = !!appIcon;
-  const hasDetails = !!appName && appName !== 'Generating...';
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
+
+  // Determine current stage based on what data we have
+  const getCurrentStage = (): GenerationStage => {
+    const hasDetails = !!appName && appName !== 'Generating...';
+    const hasIcon = !!appIcon;
+    const screenCount = screenUrls.length;
+
+    if (screenCount >= totalScreens) return 'complete';
+    if (screenCount >= 2) return 'remaining_screens';
+    if (screenCount === 1) return 'first_screen';
+    if (hasIcon) return 'designing';
+    if (hasDetails) return 'app_details';
+    return 'initializing';
+  };
+
+  const stage = getCurrentStage();
+  const isComplete = stage === 'complete';
+  const hasIcon = !!appIcon;
+  const hasDetails = !!appName && appName !== 'Generating...';
+
+  // Calculate overall progress percentage
+  const getProgressPercentage = (): number => {
+    // Total steps: initializing (0%), app_details (15%), designing (30%), first_screen (40%), remaining_screens (40-100%)
+    switch (stage) {
+      case 'initializing':
+        return 0;
+      case 'app_details':
+        return 15;
+      case 'designing':
+        return 30;
+      case 'first_screen':
+        return 40;
+      case 'remaining_screens':
+        // 40% + (60% * progress through remaining screens)
+        return 40 + (60 * (screenUrls.length / totalScreens));
+      case 'complete':
+        return 100;
+      default:
+        return 0;
+    }
+  };
+
+  const progressPercentage = getProgressPercentage();
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
@@ -49,11 +98,16 @@ export default function GenerationProgressModal({
           <DialogTitle>
             {isComplete ? "App Generation Complete" : "Generating Your App"}
           </DialogTitle>
+          <DialogDescription>
+            {isComplete
+              ? "Your app has been generated and is ready to view."
+              : "Watch as your app is being generated with AI."}
+          </DialogDescription>
         </DialogHeader>
 
         {/* Status Banner - Top of modal */}
         <AnimatePresence mode="wait">
-          {isComplete ? (
+          {stage === 'complete' ? (
             <motion.div
               key="complete"
               initial={{ opacity: 0, y: -10 }}
@@ -83,30 +137,137 @@ export default function GenerationProgressModal({
                 </Button>
               </div>
             </motion.div>
-          ) : !hasDetails ? (
+          ) : stage === 'initializing' ? (
             <motion.div
-              key="generating"
+              key="initializing"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
               className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4"
             >
-              <div className="flex items-center gap-3">
-                <Sparkles className="h-5 w-5 text-primary animate-pulse flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    Generating your app...
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    This takes about 30-60 seconds. Watch as it comes to life.
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-primary animate-pulse flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Starting generation...
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Analyzing your idea and creating the app concept.
+                    </p>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-primary/10">
+                  <motion.div
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/80"
+                    initial={{ width: '0%' }}
+                    animate={{ width: `${progressPercentage}%` }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          ) : stage === 'app_details' ? (
+            <motion.div
+              key="app-details"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 mb-4"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 animate-pulse flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Creating app identity...
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Designing icon and visual style.
+                    </p>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-purple-500/10">
+                  <motion.div
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-400 dark:to-purple-500"
+                    initial={{ width: '0%' }}
+                    animate={{ width: `${progressPercentage}%` }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          ) : stage === 'designing' ? (
+            <motion.div
+              key="designing"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 mb-4"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Planning app structure...
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Designing screens, navigation, and layout.
+                    </p>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-amber-500/10">
+                  <motion.div
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-500 to-amber-600 dark:from-amber-400 dark:to-amber-500"
+                    initial={{ width: '0%' }}
+                    animate={{ width: `${progressPercentage}%` }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          ) : stage === 'first_screen' ? (
+            <motion.div
+              key="first-screen"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 mb-4"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-cyan-600 dark:text-cyan-400 animate-pulse flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      First screen designed!
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Using it as a reference to create the remaining screens.
+                    </p>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-cyan-500/10">
+                  <motion.div
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-cyan-600 dark:from-cyan-400 dark:to-cyan-500"
+                    initial={{ width: '0%' }}
+                    animate={{ width: `${progressPercentage}%` }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  />
                 </div>
               </div>
             </motion.div>
           ) : (
             <motion.div
-              key="loading-screens"
+              key="remaining-screens"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -118,7 +279,7 @@ export default function GenerationProgressModal({
                   <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-pulse flex-shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-foreground">
-                      Generating screenshots...
+                      Generating remaining screens...
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {screenUrls.length} of {totalScreens} complete
@@ -130,7 +291,7 @@ export default function GenerationProgressModal({
                   <motion.div
                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500"
                     initial={{ width: '0%' }}
-                    animate={{ width: `${(screenUrls.length / totalScreens) * 100}%` }}
+                    animate={{ width: `${progressPercentage}%` }}
                     transition={{ duration: 0.5, ease: 'easeOut' }}
                   />
                 </div>
@@ -149,6 +310,7 @@ export default function GenerationProgressModal({
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4 }}
+                  style={{ position: 'relative' }}
                   className="h-full w-full"
                 >
                   <Image
@@ -156,6 +318,8 @@ export default function GenerationProgressModal({
                     alt="App icon"
                     fill
                     className="object-cover"
+                    sizes="96px"
+                    unoptimized
                   />
                 </motion.div>
               ) : (
@@ -300,14 +464,22 @@ export default function GenerationProgressModal({
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.4 }}
-                        className="relative h-full w-full cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => setLightboxImageIndex(index)}
+                        style={{ position: 'relative' }}
+                        className="h-full w-full cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => {
+                          // Find the index of this screen in the filtered array of only valid URLs
+                          const validUrls = screenUrls.filter(url => !!url);
+                          const lightboxIndex = validUrls.indexOf(screenUrl);
+                          setLightboxImageIndex(lightboxIndex);
+                        }}
                       >
                         <Image
                           src={screenUrl}
                           alt={`Screenshot ${index + 1}`}
                           fill
                           className="object-cover"
+                          sizes="(max-width: 768px) 20vw, 15vw"
+                          unoptimized
                         />
                       </motion.button>
                     ) : (
@@ -397,7 +569,7 @@ export default function GenerationProgressModal({
           imageUrl={null}
           onClose={() => setLightboxImageIndex(null)}
           alt="App screenshot preview"
-          allImages={screenUrls}
+          allImages={screenUrls.filter(url => !!url)}
           initialIndex={lightboxImageIndex}
         />
       )}

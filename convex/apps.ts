@@ -28,6 +28,7 @@ export const getApps = query({
       keywords: v.optional(v.array(v.string())),
       ageRating: v.optional(v.string()),
       isDemo: v.optional(v.boolean()),
+      styleGuide: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -102,6 +103,7 @@ export const getApp = query({
       keywords: v.optional(v.array(v.string())),
       ageRating: v.optional(v.string()),
       isDemo: v.optional(v.boolean()),
+      styleGuide: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -387,6 +389,7 @@ export const updateDemoApp = internalMutation({
     description: v.optional(v.string()),
     category: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")),
+    styleGuide: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {

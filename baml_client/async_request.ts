@@ -23,7 +23,7 @@ import type { BamlRuntime, BamlCtxManager, ClientRegistry, Image, Audio, Pdf, Vi
 import { toBamlError, HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {AppScreenPromptsOutput, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TextConfig, VisionTestResponse} from "./types"
+import type {AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 
 type TickReason = "Unknown";
@@ -114,6 +114,31 @@ env?: Record<string, string | undefined>
       }
       }
       
+  async GenerateAppStructure(
+  app_name: string,app_description: string,style_guide: string,num_screens: number,
+  __baml_options__?: BamlCallOptions
+  ): Promise<HTTPRequest> {
+    try {
+    const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const env: Record<string, string> = Object.fromEntries(
+      Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return await this.runtime.buildRequest(
+      "GenerateAppStructure",
+      {
+      "app_name": app_name,"app_description": app_description,"style_guide": style_guide,"num_screens": num_screens
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __baml_options__?.clientRegistry,
+      false,
+      env
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
   async GenerateDemoApp(
   app_description_input?: string | null,category_hint?: string | null,vibe_style?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
   __baml_options__?: BamlCallOptions
@@ -164,8 +189,8 @@ env?: Record<string, string | undefined>
       }
       }
       
-  async GenerateScreensForApp(
-  app_name: string,app_description: string,screen_instructions?: string | null,num_screens?: number | null,color_theme: string,style_config?: types.StyleConfig | null,
+  async GenerateScreenImagePrompt(
+  app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,has_reference_image: boolean,
   __baml_options__?: BamlCallOptions
   ): Promise<HTTPRequest> {
     try {
@@ -174,9 +199,9 @@ env?: Record<string, string | undefined>
       Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return await this.runtime.buildRequest(
-      "GenerateScreensForApp",
+      "GenerateScreenImagePrompt",
       {
-      "app_name": app_name,"app_description": app_description,"screen_instructions": screen_instructions?? null,"num_screens": num_screens?? null,"color_theme": color_theme,"style_config": style_config?? null
+      "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail,"has_reference_image": has_reference_image
       },
       this.ctxManager.cloneContext(),
       __baml_options__?.tb?.__tb(),
@@ -920,6 +945,31 @@ env?: Record<string, string | undefined>
           }
           }
           
+      async GenerateAppStructure(
+      app_name: string,app_description: string,style_guide: string,num_screens: number,
+      __baml_options__?: BamlCallOptions
+      ): Promise<HTTPRequest> {
+        try {
+        const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const env: Record<string, string> = Object.fromEntries(
+          Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+          return await this.runtime.buildRequest(
+          "GenerateAppStructure",
+          {
+          "app_name": app_name,"app_description": app_description,"style_guide": style_guide,"num_screens": num_screens
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __baml_options__?.clientRegistry,
+          true,
+          env
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
       async GenerateDemoApp(
       app_description_input?: string | null,category_hint?: string | null,vibe_style?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
       __baml_options__?: BamlCallOptions
@@ -970,8 +1020,8 @@ env?: Record<string, string | undefined>
           }
           }
           
-      async GenerateScreensForApp(
-      app_name: string,app_description: string,screen_instructions?: string | null,num_screens?: number | null,color_theme: string,style_config?: types.StyleConfig | null,
+      async GenerateScreenImagePrompt(
+      app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,has_reference_image: boolean,
       __baml_options__?: BamlCallOptions
       ): Promise<HTTPRequest> {
         try {
@@ -980,9 +1030,9 @@ env?: Record<string, string | undefined>
           Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
           );
           return await this.runtime.buildRequest(
-          "GenerateScreensForApp",
+          "GenerateScreenImagePrompt",
           {
-          "app_name": app_name,"app_description": app_description,"screen_instructions": screen_instructions?? null,"num_screens": num_screens?? null,"color_theme": color_theme,"style_config": style_config?? null
+          "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail,"has_reference_image": has_reference_image
           },
           this.ctxManager.cloneContext(),
           __baml_options__?.tb?.__tb(),

@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  AppScreenPromptsOutput,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  ImprovedDescriptionOutput,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TextConfig,  VisionTestResponse } from "./types"
+import type {  AppScreenPromptsOutput,  AppStructure,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  ImprovedDescriptionOutput,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenDetail,  ScreenImagePrompt,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TabStructure,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -38,6 +38,11 @@ export interface StreamState<T> {
 export namespace partial_types {
     export interface AppScreenPromptsOutput {
       app_screen_prompts: string[]
+    }
+    export interface AppStructure {
+      tabs?: TabStructure | null
+      common_layout_elements?: string | null
+      screens: ScreenDetail[]
     }
     export interface Avatar {
       summary?: string | null
@@ -100,7 +105,6 @@ export namespace partial_types {
       app_description?: string | null
       app_category?: string | null
       app_icon_prompt?: string | null
-      color_theme?: string | null
       style_guide?: string | null
     }
     export interface DetailedResponse {
@@ -214,6 +218,16 @@ export namespace partial_types {
       character_count?: number | null
       key_elements: string[]
     }
+    export interface ScreenDetail {
+      screen_name?: string | null
+      purpose?: string | null
+      layout_type?: string | null
+      unique_elements?: string | null
+      active_tab_index?: number | null
+    }
+    export interface ScreenImagePrompt {
+      canvas_edit_prompt?: string | null
+    }
     export interface ScreenshotConfig {
       text?: TextConfig | null
       layout?: LayoutConfig | null
@@ -267,6 +281,12 @@ export namespace partial_types {
       description?: string | null
       action?: string | null
       position?: string | null
+    }
+    export interface TabStructure {
+      has_tabs?: boolean | null
+      tab_names: string[]
+      tab_icon_descriptions: string[]
+      tab_styling?: string | null
     }
     export interface TextConfig {
       header?: string | null

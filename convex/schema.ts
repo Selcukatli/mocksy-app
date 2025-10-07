@@ -42,6 +42,8 @@ export default defineSchema({
     ageRating: v.optional(v.string()),
     // Demo app flag
     isDemo: v.optional(v.boolean()), // true for AI-generated demo apps
+    // Style guide for UI consistency
+    styleGuide: v.optional(v.string()), // Complete design guide including colors, typography, mood, philosophy
     createdAt: v.number(),
     updatedAt: v.number(),
   })

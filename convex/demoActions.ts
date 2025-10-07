@@ -92,7 +92,7 @@ export const generateDemoAppInternal = internalAction({
     console.log(`  ✓ App category: ${appConcept.app_category}`);
     console.log(`  ✓ App description: ${appConcept.app_description.substring(0, 60)}...`);
     console.log(`  ✓ Icon prompt generated (${appConcept.app_icon_prompt.length} chars)`);
-    console.log(`  ✓ Color theme: ${appConcept.color_theme}`);
+    console.log(`  ✓ Style guide: ${appConcept.style_guide.substring(0, 60)}...`);
 
     // 4. UPDATE APP with generated concept (combine subtitle into description for display)
     console.log("💾 Updating app with generated name, description, and category...");
@@ -103,21 +103,21 @@ export const generateDemoAppInternal = internalAction({
       name: appConcept.app_name,
       description: fullDescription,
       category: appConcept.app_category,
+      styleGuide: appConcept.style_guide,
     });
     console.log(`✅ App details updated in real-time`);
 
-    // 2b. Generate screen prompts using the app concept
-    console.log("🖼️  Calling BAML to generate screen prompts...");
-    const screenPrompts = await b.GenerateScreensForApp(
+    // 2b. Generate app structure plan (tabs, layout, screen details)
+    console.log("🏗️  Calling BAML to generate app structure plan...");
+    const appStructure = await b.GenerateAppStructure(
       appConcept.app_name,
       appConcept.app_description,
-      null, // no specific instructions for demo apps
-      5,    // default 5 screens
-      appConcept.color_theme,
-      styleConfig
+      appConcept.style_guide,
+      5 // default 5 screens
     );
 
-    console.log(`  ✓ Screen prompts generated (${screenPrompts.app_screen_prompts.length} screens)`);
+    console.log(`  ✓ App structure generated (${appStructure.screens.length} screens planned)`);
+    console.log(`  ✓ Tabs: ${appStructure.tabs.has_tabs ? `Yes (${appStructure.tabs.tab_names.join(', ')})` : 'No'}`);
 
     // 3. Fetch canvas for screen generation
     const IPHONE_16_PRO_MAX_SIZE_ID = "kh74jsbefpsc7wn9pjqfqfa0sd7rn4ct" as Id<"screenshotSizes">;
@@ -186,35 +186,24 @@ export const generateDemoAppInternal = internalAction({
     // 6. Generate first screen (reference screen for consistency)
     console.log(`🖼️  Generating screen 1 as reference...`);
 
-    const firstScreenPrompt = screenPrompts.app_screen_prompts[0];
-    const firstScreenName = firstScreenPrompt.split('.')[0].replace('iPhone screenshot of ', '').trim();
+    const firstScreenDetail = appStructure.screens[0];
+    console.log(`  Screen: ${firstScreenDetail.screen_name}`);
 
-    const firstScreenFinalPrompt = `CANVAS EDITING TASK: You are provided with a BLANK CANVAS image. Your job is to edit this exact canvas by painting app UI directly onto it.
+    // Generate prompt for first screen (no reference image)
+    const firstPromptResult = await b.GenerateScreenImagePrompt(
+      appConcept.app_name,
+      appConcept.style_guide,
+      appStructure.common_layout_elements,
+      appStructure.tabs,
+      firstScreenDetail,
+      false // no reference image for first screen
+    );
 
-MANDATORY: You MUST use the provided canvas image as your base. DO NOT create a new image or change dimensions. Edit the existing canvas only.
-
-TASK: Paint the following app UI directly onto the provided canvas from edge to edge:
-
-${firstScreenPrompt}
-
-CRITICAL RULES - MUST FOLLOW EXACTLY:
-1. USE THE PROVIDED CANVAS - do not create new dimensions or aspect ratio
-2. NO device frame, NO phone bezel, NO notch, NO rounded corners, NO drop shadow, NO padding, NO inset
-3. This is a RAW SCREEN CAPTURE - just app UI pixels painted directly onto the canvas
-4. Fill ENTIRE canvas edge-to-edge:
-   - Status bar pixels touch the TOP edge (no gap)
-   - App content/background extends to BOTTOM edge (no gap)
-   - UI extends to LEFT and RIGHT edges (no side gaps)
-5. Background color must fill ALL 4 edges completely - zero white space, zero gaps
-6. Bottom of canvas: Content or background color must reach the very last pixel row
-7. FORBIDDEN: No rounded corners on the canvas itself, no white gaps at edges, no padding around the UI, no 1:1 square aspect ratio
-
-Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must touch the canvas boundary."`;
-
+    // Generate first screen image
     const firstScreenResult = await ctx.runAction(
       internal.utils.fal.falImageActions.geminiFlashEditImage,
       {
-        prompt: firstScreenFinalPrompt,
+        prompt: firstPromptResult.canvas_edit_prompt,
         image_urls: [canvasUrl],
         num_images: 1,
         output_format: "png",
@@ -242,7 +231,7 @@ Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must
     const firstScreenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
       appId,
       profileId: args.profileId!,
-      name: firstScreenName,
+      name: firstScreenDetail.screen_name,
       storageId: firstScreenStorageId,
       dimensions: {
         width: firstScreenWidth,
@@ -253,53 +242,31 @@ Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must
 
     console.log(`  ✓ Screen 1 created: ${firstScreenId} (will be used as reference)`);
 
-    // 7. Generate remaining screens in parallel using first screen as reference
-    console.log(`🖼️  Generating remaining ${screenPrompts.app_screen_prompts.length - 1} screens with visual reference...`);
+    // 7. Generate remaining screens in parallel using first screen as visual reference
+    console.log(`🖼️  Generating remaining ${appStructure.screens.length - 1} screens with visual reference...`);
 
     const remainingScreenResults = await Promise.all(
-      screenPrompts.app_screen_prompts.slice(1).map(async (screenPrompt, index) => {
-        const screenName = screenPrompt.split('.')[0].replace('iPhone screenshot of ', '').trim();
+      appStructure.screens.slice(1).map(async (screenDetail, index) => {
         const screenNumber = index + 2; // +2 because we're skipping screen 1
-        console.log(`  → Generating screen ${screenNumber}: ${screenName}`);
+        console.log(`  → Generating screen ${screenNumber}: ${screenDetail.screen_name}`);
 
         try {
-          // Wrap BAML prompt with canvas editing instructions + reference screen guidance
-          const finalPrompt = `CANVAS EDITING TASK: You are provided with a BLANK CANVAS and a REFERENCE SCREEN. Your job is to edit the canvas by painting app UI that matches the visual style of the reference.
+          // Generate prompt for this screen (WITH reference image)
+          const promptResult = await b.GenerateScreenImagePrompt(
+            appConcept.app_name,
+            appConcept.style_guide,
+            appStructure.common_layout_elements,
+            appStructure.tabs,
+            screenDetail,
+            true // has reference image
+          );
 
-MANDATORY: You MUST use the provided canvas image as your base. DO NOT create a new image or change dimensions. Edit the existing canvas only.
-
-REFERENCE SCREEN USAGE: The second image shows an existing screen from this app. Match its exact visual design:
-- Use the SAME colors, fonts, and UI component styles
-- Match the status bar style, navigation bar style, and button designs
-- Keep typography, spacing, and visual hierarchy consistent
-- CRITICAL FOR NAVIGATION: The reference shows one tab as active - use its ACTIVE styling (color/appearance) for the active tab in YOUR screen, and its INACTIVE styling for inactive tabs. The WHICH tab is active will be different - that's correct, just match the styling approach.
-- This ensures all screens look like they belong to the same app
-
-TASK: Paint the following app UI directly onto the provided canvas from edge to edge:
-
-${screenPrompt}
-
-CRITICAL RULES - MUST FOLLOW EXACTLY:
-1. USE THE PROVIDED CANVAS - do not create new dimensions or aspect ratio
-2. MATCH THE REFERENCE SCREEN'S visual style (colors, fonts, components, spacing)
-3. NO device frame, NO phone bezel, NO notch, NO rounded corners, NO drop shadow, NO padding, NO inset
-4. This is a RAW SCREEN CAPTURE - just app UI pixels painted directly onto the canvas
-5. Fill ENTIRE canvas edge-to-edge:
-   - Status bar pixels touch the TOP edge (no gap)
-   - App content/background extends to BOTTOM edge (no gap)
-   - UI extends to LEFT and RIGHT edges (no side gaps)
-6. Background color must fill ALL 4 edges completely - zero white space, zero gaps
-7. Bottom of canvas: Content or background color must reach the very last pixel row
-8. FORBIDDEN: No rounded corners on the canvas itself, no white gaps at edges, no padding around the UI, no 1:1 square aspect ratio
-
-Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must touch the canvas boundary. Match the reference screen's visual design exactly."`;
-
-          // Generate screen image with Gemini Flash Edit (canvas + reference screen)
+          // Generate screen image with canvas + first screen as reference
           const screenResult = await ctx.runAction(
             internal.utils.fal.falImageActions.geminiFlashEditImage,
             {
-              prompt: finalPrompt,
-              image_urls: [canvasUrl, firstScreenUrl], // Canvas + reference screen
+              prompt: promptResult.canvas_edit_prompt,
+              image_urls: [canvasUrl, firstScreenUrl], // canvas + reference
               num_images: 1,
               output_format: "png",
             }
@@ -328,7 +295,7 @@ Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must
           const screenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
             appId,
             profileId: args.profileId!,
-            name: screenName,
+            name: screenDetail.screen_name,
             storageId: screenStorageId,
             dimensions: {
               width: screenWidth,
@@ -350,7 +317,7 @@ Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must
       (id): id is Id<"appScreens"> => id !== null
     );
     const totalSuccessful = 1 + successfulRemainingScreens.length; // +1 for first screen
-    console.log(`✅ Generated ${totalSuccessful}/${screenPrompts.app_screen_prompts.length} app screens (1 reference + ${successfulRemainingScreens.length} matching)`);
+    console.log(`✅ Generated ${totalSuccessful}/${appStructure.screens.length} app screens (1 reference + ${successfulRemainingScreens.length} matching)`);
 
     return appId;
   },
@@ -368,7 +335,6 @@ export const generateScreensForExistingApp = internalAction({
     profileId: v.id("profiles"),
     screenInstructions: v.optional(v.string()),
     numScreens: v.optional(v.number()),
-    colorTheme: v.optional(v.string()),
     screenshotSizeId: v.optional(v.id("screenshotSizes")), // Default: iPhone 16 Pro Max
   },
   returns: v.array(v.id("appScreens")),
@@ -385,22 +351,20 @@ export const generateScreensForExistingApp = internalAction({
     console.log(`  Instructions: ${args.screenInstructions || "auto-generate"}`);
     console.log(`  Num screens: ${args.numScreens || 5}`);
 
-    // 2. Determine color theme (use provided or generate from app name)
-    const colorTheme = args.colorTheme || "modern color palette matching the app concept";
+    // 2. Use app's styleGuide or generate a default one
+    const styleGuide = app.styleGuide || "Modern, clean design with a neutral color palette and sans-serif typography.";
 
-    // 3. Call BAML to generate screen prompts
-    console.log("🤖 Calling BAML to generate screen prompts...");
+    // 3. Generate app structure plan
+    console.log("🏗️  Calling BAML to generate app structure plan...");
     const { b } = await import("../baml_client");
-    const result = await b.GenerateScreensForApp(
+    const appStructure = await b.GenerateAppStructure(
       app.name,
       app.description || "An app",
-      args.screenInstructions || null,
-      args.numScreens || 5,
-      colorTheme,
-      null // style_config optional
+      styleGuide,
+      args.numScreens || 5
     );
 
-    console.log(`  ✓ Generated ${result.app_screen_prompts.length} screen prompts`);
+    console.log(`  ✓ App structure generated (${appStructure.screens.length} screens planned)`);
 
     // 4. Fetch canvas for screen generation
     const IPHONE_16_PRO_MAX_SIZE_ID = "kh74jsbefpsc7wn9pjqfqfa0sd7rn4ct" as Id<"screenshotSizes">;
@@ -429,41 +393,28 @@ export const generateScreensForExistingApp = internalAction({
 
     console.log(`  ✓ Canvas URL retrieved`);
 
-    // 5. Generate screens in parallel
+    // 5. Generate all screens in parallel (all with canvas only, no reference)
     const screenResults = await Promise.all(
-      result.app_screen_prompts.map(async (screenPrompt, index) => {
-        const screenName = screenPrompt.split('.')[0].replace('iPhone screenshot of ', '').trim();
-        console.log(`  → Generating screen ${index + 1}: ${screenName}`);
+      appStructure.screens.map(async (screenDetail, index) => {
+        const screenNumber = index + 1;
+        console.log(`  → Generating screen ${screenNumber}: ${screenDetail.screen_name}`);
 
         try {
-          // Wrap BAML prompt with canvas editing instructions
-          const finalPrompt = `CANVAS EDITING TASK: You are provided with a BLANK CANVAS image. Your job is to edit this exact canvas by painting app UI directly onto it.
+          // Generate prompt for this screen
+          const promptResult = await b.GenerateScreenImagePrompt(
+            app.name,
+            styleGuide,
+            appStructure.common_layout_elements,
+            appStructure.tabs,
+            screenDetail,
+            false // no reference image for user-generated apps (generate all in parallel)
+          );
 
-MANDATORY: You MUST use the provided canvas image as your base. DO NOT create a new image or change dimensions. Edit the existing canvas only.
-
-TASK: Paint the following app UI directly onto the provided canvas from edge to edge:
-
-${screenPrompt}
-
-CRITICAL RULES - MUST FOLLOW EXACTLY:
-1. USE THE PROVIDED CANVAS - do not create new dimensions or aspect ratio
-2. NO device frame, NO phone bezel, NO notch, NO rounded corners, NO drop shadow, NO padding, NO inset
-3. This is a RAW SCREEN CAPTURE - just app UI pixels painted directly onto the canvas
-4. Fill ENTIRE canvas edge-to-edge:
-   - Status bar pixels touch the TOP edge (no gap)
-   - App content/background extends to BOTTOM edge (no gap)
-   - UI extends to LEFT and RIGHT edges (no side gaps)
-5. Background color must fill ALL 4 edges completely - zero white space, zero gaps
-6. Bottom of canvas: Content or background color must reach the very last pixel row
-7. FORBIDDEN: No rounded corners on the canvas itself, no white gaps at edges, no padding around the UI, no 1:1 square aspect ratio
-
-Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must touch the canvas boundary."`;
-
-          // Generate screen image with Gemini Flash Edit (canvas-based)
+          // Generate screen image with canvas
           const screenResult = await ctx.runAction(
             internal.utils.fal.falImageActions.geminiFlashEditImage,
             {
-              prompt: finalPrompt,
+              prompt: promptResult.canvas_edit_prompt,
               image_urls: [canvasUrl],
               num_images: 1,
               output_format: "png",
@@ -493,7 +444,7 @@ Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must
           const screenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
             appId: args.appId,
             profileId: args.profileId,
-            name: screenName,
+            name: screenDetail.screen_name,
             storageId: screenStorageId,
             dimensions: {
               width: screenWidth,
@@ -514,7 +465,7 @@ Think: "Paint UI pixels directly from edge pixel to edge pixel - every edge must
     const successfulScreens = screenResults.filter(
       (id): id is Id<"appScreens"> => id !== null
     );
-    console.log(`✅ Generated ${successfulScreens.length}/${result.app_screen_prompts.length} app screens`);
+    console.log(`✅ Generated ${successfulScreens.length}/${appStructure.screens.length} app screens`);
 
     return successfulScreens;
   },
@@ -590,7 +541,6 @@ export const generateScreensForApp = action({
     appId: v.id("apps"),
     screenInstructions: v.optional(v.string()),
     numScreens: v.optional(v.number()),
-    colorTheme: v.optional(v.string()),
   },
   returns: v.array(v.id("appScreens")),
   handler: async (ctx, args): Promise<Id<"appScreens">[]> => {
@@ -617,7 +567,6 @@ export const generateScreensForApp = action({
       profileId: profile._id,
       screenInstructions: args.screenInstructions,
       numScreens: args.numScreens,
-      colorTheme: args.colorTheme,
     });
   },
 });
@@ -670,7 +619,8 @@ export const generateApp = action({
     });
 
     // Schedule background generation (fire and forget)
-    ctx.scheduler.runAfter(0, internal.demoActions.generateDemoAppInternal, {
+    // Note: We intentionally don't await this to return the app ID immediately
+    void ctx.scheduler.runAfter(0, internal.demoActions.generateDemoAppInternal, {
       styleId: undefined,
       profileId: profile._id,
       appDescriptionInput: cleanDescription,

@@ -339,12 +339,11 @@ function GenerateAppStructure(
     ## 2. COMMON LAYOUT ELEMENTS
 
     Define elements that appear on EVERY screen:
-    - **Status bar:** ALWAYS at the absolute top edge of the screen (no gap above). Describe styling: text color (light/dark based on background), icons (battery, signal, time)
-    - **Background color:** Main background color from style_guide that fills the entire screen
-    - **Content start position:** Where main content begins (typically immediately below status bar, around 44-60px from top)
-    - **Header patterns:** If any common headers appear across screens (style, positioning)
-    - **Overall spacing:** Internal padding for content (NOT edge margins - screens must be full bleed)
-    - **Any persistent UI elements:** Elements that appear on all screens
+    - Status bar style (time, battery, signal at top edge)
+    - Background color (from style_guide)
+    - Header patterns (if any common headers)
+    - Overall spacing and margins
+    - Any persistent UI elements
 
     ## 3. SCREEN DETAILS
 
@@ -443,7 +442,6 @@ function GenerateScreenImagePrompt(
     - Match the EXACT tab bar styling (icons, colors, spacing, positioning)
     - Keep the same typography (font sizes, weights, colors)
     - Maintain the same design system (shadows, corner radius, spacing)
-    - **Match the EXACT status bar positioning and background fill** - no gap at top
     - Paint onto the canvas (image 1), using reference (image 2) as your style guide
 
     Only change what's unique to THIS screen: content, headers, main UI elements specific to "{{ screen_detail.screen_name }}".
@@ -454,41 +452,24 @@ function GenerateScreenImagePrompt(
     Paint the app UI directly onto this canvas based on the style guide provided above.
     {% endif %}
 
-    **CRITICAL FULL-BLEED REQUIREMENTS:**
-    - The background color MUST fill the ENTIRE canvas from edge to edge (0,0 to full width/height)
-    - Status bar MUST be painted at the ABSOLUTE TOP EDGE - no gap, no margin above it
-    - If tabs exist, tab bar MUST be painted at the ABSOLUTE BOTTOM EDGE - flush with canvas bottom
-    - Content sits BETWEEN status bar and tab bar (or bottom if no tabs), but background extends to all edges
-
     **GENERATE THE PROMPT:**
 
     Create a complete canvas-editing prompt that:
-    1. Starts with: "IMAGE EDITING TASK: The provided image is a blank iPhone-sized canvas. Paint the entire canvas from edge to edge with no margins."
+    1. Starts with: "IMAGE EDITING TASK: The provided image is a blank iPhone-sized canvas..."
     2. Specifies the screen name: "SCREEN: {{ screen_detail.screen_name }}"
-    3. **FIRST INSTRUCTION - BACKGROUND FILL**: "First, fill the ENTIRE canvas with [background color from style guide] from coordinates (0,0) to full canvas dimensions. No white borders or gaps."
-    4. **SECOND INSTRUCTION - STATUS BAR**: "Paint the status bar at the ABSOLUTE TOP EDGE starting at y=0. The status bar should include: [time on left, signal/wifi/battery on right, specific styling from common_layout]"
-    {% if tabs.has_tabs %}
-    5. **THIRD INSTRUCTION - TAB BAR**: "Paint the tab bar at the ABSOLUTE BOTTOM EDGE ending at y=canvas_height. Tab bar should include: {{ tabs.tab_names | join(', ') }}. Tab styling: {{ tabs.tab_styling }}"
-    {% if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none %}
-    - **Active tab:** "{{ tabs.tab_names[screen_detail.active_tab_index] }}" (index {{ screen_detail.active_tab_index }}) should be highlighted/active state
-    {% else %}
-    - All tabs in inactive state
+    3. Lists all UI elements to paint (from common_layout + unique_elements + tabs if applicable)
+    4. Includes critical canvas-editing requirements (edge-to-edge fill, no margins, etc.)
+    {% if tabs.has_tabs and screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none %}
+    5. Shows the tab bar with "{{ tabs.tab_names[screen_detail.active_tab_index] }}" tab ACTIVE and all others INACTIVE
+    {% elif tabs.has_tabs %}
+    5. Shows the tab bar with all tabs INACTIVE (no active tab for this screen)
     {% endif %}
-    6. **FOURTH INSTRUCTION - MAIN CONTENT**: Lists all UI elements for this screen (from unique_elements)
-    {% else %}
-    5. **THIRD INSTRUCTION - MAIN CONTENT**: Lists all UI elements for this screen (from unique_elements)
-    {% endif %}
-    7. Uses exact colors and styling from the style guide (provide hex codes)
+    6. Uses colors and styling from the style guide
     {% if has_reference_image %}
-    8. **REFERENCE IMAGE NOTE**: "Image 2 shows the exact visual style to match. Use identical colors, spacing, typography, and edge positioning. Only change the screen-specific content."
+    7. Emphasizes matching the reference image's visual consistency
     {% endif %}
 
     Make the prompt detailed and specific with exact positioning, sizes, colors (hex codes from style_guide), and element descriptions.
-
-    **CRITICAL REMINDERS TO INCLUDE IN PROMPT:**
-    - "CRITICAL: The background must fill from edge to edge (0,0) to (full width, full height) with NO white borders"
-    - "CRITICAL: Status bar starts at y=0 (top edge), tab bar ends at y=canvas_height (bottom edge)"
-    - "CRITICAL: No margins or padding around the outer edges of the canvas"
 
     {{ ctx.output_format }}
   "#
@@ -561,3 +542,310 @@ test PlayfulPopArtDemoApp {
 // 1. GenerateAppStructure (creates plan with tabs, layout, screen details)
 // 2. GenerateScreenImagePrompt (generates prompts from structure)
 
+// ============================================
+// DEMO APP TEST CASES (DUPLICATE - KEPT)
+// ============================================
+
+test CyberpunkDemoApp_Duplicate {
+    - Name: {{ app_name }}
+    - Description: {{ app_description }}
+    - Style Guide: {{ style_guide }}
+
+    {% if screen_instructions %}
+    **SCREEN REQUIREMENTS:**
+    {{ screen_instructions }}
+    {% else %}
+    **SCREEN REQUIREMENTS:**
+    Generate {{ num_screens or 5 }} diverse screens showcasing different parts of the app. Include common screens like:
+    - Home/Dashboard (main entry point)
+    - Main feature screen(s) specific to this app type
+    - Profile/Account screen
+    - Settings/Preferences screen
+    - Any other relevant screens for this app's functionality
+
+    Make each screen showcase a unique aspect of the app.
+    {% endif %}
+
+    **CRITICAL INSTRUCTION - TAB COHERENCE:**
+
+    BEFORE generating any screen prompts, follow this 3-step process:
+
+    STEP 1 - INFER TABS (do this internally, don't output separately):
+    Based on {{ app_description }}, determine if this app needs bottom navigation tabs.
+    If yes, choose 4-5 appropriate tab names (e.g., "Home", "Explore", "Messages", "Profile").
+    If no bottom nav makes sense (e.g., single-purpose utility apps), skip tabs entirely.
+
+    STEP 2 - CREATE TAB TEMPLATE (memorize this for ALL screens):
+    If tabs are needed, define the exact tab structure you'll use consistently:
+    - Exact tab names in exact order (e.g., "Home | Discover | Library | Profile")
+    - Icon style description (e.g., "24px outline icons, 1.5px stroke weight")
+    - Active state styling (use ACCENT_COLOR from style guide)
+    - Inactive state styling (use MUTED_COLOR derived from style guide)
+
+    STEP 3 - GENERATE SCREENS (apply the template):
+    For EACH screen prompt you generate:
+    - Copy the EXACT same tab structure (same names, same order, same styling)
+    - Only change which tab is ACTIVE based on the screen type
+    - Example: If generating a "Profile Settings" screen, make the "Profile" tab ACTIVE
+    - All other screens must show the same tabs in INACTIVE state
+
+    **CRITICAL PROMPT REQUIREMENTS:**
+
+    You are generating prompts for CANVAS EDITING with Gemini Flash. A blank iPhone-sized canvas image will be provided, and your prompts will instruct the model to paint UI directly onto it.
+
+    Each prompt MUST follow this exact pattern:
+    "IMAGE EDITING TASK: The provided image is a blank iPhone-sized canvas. Your task is to paint app UI directly onto THIS canvas image, completely filling it from edge to edge. DO NOT create a new image - edit the canvas image provided.
+
+    SCREEN: [screen name]
+
+    UI ELEMENTS TO PAINT: [Detailed UI description: specific elements like headers, buttons, cards, lists, images, text content, interactive components, with exact positioning and styling]
+
+    CRITICAL REQUIREMENTS FOR EDITING THE CANVAS:
+    - Edit the provided canvas image directly - maintain its exact dimensions
+    - Paint background color to fill ALL pixels of the canvas (no transparent areas)
+    - Status bar elements at absolute top edge (y=0)
+    - Bottom navigation bar at absolute bottom edge (y=canvas_height)
+    - UI content extends to left (x=0) and right (x=canvas_width) edges
+    - NO margins, NO padding around the canvas edges
+    - NO device frame, NO phone mockup, NO rounded corners on the canvas itself
+    - NO background extending beyond the canvas boundaries
+    - The canvas dimensions ARE the final output dimensions
+
+    STYLE GUIDE: {{ style_guide }}"
+
+    **UI COLOR CONSISTENCY RULES (CRITICAL - MUST FOLLOW EXACTLY):**
+
+    First, analyze the style guide "{{ style_guide }}" and identify the color palette:
+    - PRIMARY_BG: The main background color (lightest or darkest base color)
+    - ACCENT_COLOR: The brightest/most vibrant color for active states, primary buttons, and highlights
+    - MUTED_COLOR: A softer, desaturated version for inactive states and secondary elements
+    - TEXT_COLOR: High contrast color for readable text
+
+    **MANDATORY: All screens must use these EXACT color assignments:**
+    - Background: PRIMARY_BG (same across all screens)
+    - Active tab/button/selected state: ACCENT_COLOR (same across all screens)
+    - Inactive tab/unselected state: MUTED_COLOR (same across all screens)
+    - Primary action buttons: ACCENT_COLOR (same across all screens)
+    - Text: TEXT_COLOR (same across all screens)
+
+    **BOTTOM NAVIGATION CONSISTENCY (CRITICAL):**
+    - ALL screens must show the EXACT SAME navigation tabs in the SAME ORDER
+    - Choose 4-5 relevant tab names for this app (e.g., "Home", "Journal", "Moods", "Insights", "Profile")
+    - Specify which tab is ACTIVE on each screen (highlighted in ACCENT_COLOR)
+    - All other tabs must be INACTIVE (shown in MUTED_COLOR)
+    - Tab icon style must be identical across screens (same line weight, same icon design approach)
+
+    **EXAMPLE PROMPTS WITH CONSISTENT COLORS AND UI DESIGN SYSTEM:**
+
+    Screen 1: "IMAGE EDITING TASK: The provided image is a blank iPhone-sized canvas. Your task is to paint app UI directly onto THIS canvas image, completely filling it from edge to edge. DO NOT create a new image - edit the canvas image provided.
+
+SCREEN: Home Dashboard
+
+UI ELEMENTS TO PAINT: Soft sage green (PRIMARY_BG: #E8F2E8) background filling entire canvas. Status bar at absolute top (white time/icons). Header 'Today' 28px/700 weight earthy white (#F5F1E8), 16px from top, 16px from left. Central mood tracking card (16px corner radius, 16px internal padding, shadow: 0px 2px 8px rgba(0,0,0,0.12), warm cream #F5E6D3 2px border) centered horizontally, contains mood selector and current mood display. Bottom navigation bar (72px height, 0px corner radius, touching absolute bottom edge, soft sage green background): 4 tabs evenly spaced - Home tab ACTIVE (filled 24px house icon in muted gold #D4AF37, 12px 'Home' label), Journal/Moods/Profile tabs INACTIVE (outline 24px icons in earthy white #F5F1E8, 12px labels).
+
+CRITICAL REQUIREMENTS FOR EDITING THE CANVAS:
+- Edit the provided canvas image directly - maintain its exact dimensions
+- Paint background color to fill ALL pixels of the canvas (no transparent areas)
+- Status bar elements at absolute top edge (y=0)
+- Bottom navigation bar at absolute bottom edge (y=canvas_height)
+- UI content extends to left (x=0) and right (x=canvas_width) edges
+- NO margins, NO padding around the canvas edges
+- NO device frame, NO phone mockup, NO rounded corners on the canvas itself
+- NO background extending beyond the canvas boundaries
+- The canvas dimensions ARE the final output dimensions
+
+COLOR PALETTE: Soft sage green (#E8F2E8), warm cream (#F5E6D3), muted gold (#D4AF37), earthy white (#F5F1E8)"
+
+    Screen 2: "IMAGE EDITING TASK: The provided image is a blank iPhone-sized canvas. Your task is to paint app UI directly onto THIS canvas image, completely filling it from edge to edge. DO NOT create a new image - edit the canvas image provided.
+
+SCREEN: Journal Entry
+
+UI ELEMENTS TO PAINT: Soft sage green (PRIMARY_BG: #E8F2E8) background filling entire canvas. Status bar at absolute top. Header 'New Entry' 28px/700 weight earthy white (#F5F1E8), 16px from top, 16px from left. Large multiline text input field (8px corner radius, 200px height, warm cream #F5E6D3 1px border, placeholder 'Write your thoughts...'), positioned 88px from top, 16px horizontal margins. Save button (48px height, 12px corner radius, muted gold #D4AF37 fill, 'Save' text 16px/600 earthy white, shadow: 0px 1px 4px rgba(0,0,0,0.16)), positioned below input field with 16px gap. Bottom navigation bar (72px height, touching absolute bottom edge): Home/Moods/Profile tabs INACTIVE (outline icons), Journal tab ACTIVE (filled 24px icon in muted gold).
+
+CRITICAL REQUIREMENTS FOR EDITING THE CANVAS:
+- Edit the provided canvas image directly - maintain its exact dimensions
+- Paint background color to fill ALL pixels of the canvas (no transparent areas)
+- Status bar elements at absolute top edge (y=0)
+- Bottom navigation bar at absolute bottom edge (y=canvas_height)
+- UI content extends to left (x=0) and right (x=canvas_width) edges
+- NO margins, NO padding around the canvas edges
+- NO device frame, NO phone mockup, NO rounded corners on the canvas itself
+- NO background extending beyond the canvas boundaries
+- The canvas dimensions ARE the final output dimensions
+
+COLOR PALETTE: Soft sage green (#E8F2E8), warm cream (#F5E6D3), muted gold (#D4AF37), earthy white (#F5F1E8)"
+
+    **UI DESIGN SYSTEM SPECIFICATIONS:**
+
+    Apply these consistent design system rules across ALL screens:
+
+    ELEVATION & SHADOWS:
+    - Cards: 4dp elevation (shadow: 0px 2px 8px rgba(0,0,0,0.12), blur 8px, spread 0px)
+    - Buttons (primary): 2dp elevation (shadow: 0px 1px 4px rgba(0,0,0,0.16))
+    - Buttons (active/pressed): 8dp elevation (shadow: 0px 4px 16px rgba(ACCENT_COLOR,0.24))
+    - Modals/Overlays: 16dp elevation (shadow: 0px 8px 24px rgba(0,0,0,0.20))
+    - Use PRIMARY_BG color for all shadow colors at specified opacity
+
+    CORNER RADIUS:
+    - Buttons: 12px border-radius on all corners
+    - Cards: 16px border-radius on all corners
+    - Input fields: 8px border-radius
+    - Modals: 24px border-radius (top corners only if bottom sheet)
+    - Bottom navigation container: 0px (square, flush with edges)
+
+    TYPOGRAPHY HIERARCHY:
+    - Screen titles/headers: 28px font size, 700 weight (bold), letter-spacing -0.5px
+    - Section headers: 20px font size, 600 weight (semibold)
+    - Body text: 16px font size, 400 weight (regular), line-height 1.5
+    - Labels/captions: 14px font size, 500 weight (medium)
+    - Button text: 16px font size, 600 weight (semibold)
+    - Tab labels: 12px font size, 500 weight (medium)
+
+    LAYOUT GRID & SPACING:
+    - Base spacing unit: 8px (use multiples: 8px, 16px, 24px, 32px)
+    - Screen padding (left/right): 16px from edges
+    - Screen padding (top): 16px below header
+    - Card padding (internal): 16px all sides
+    - Vertical gaps between cards: 12px
+    - Button height: 48px (minimum touch target)
+    - Input field height: 48px
+    - Bottom navigation height: 72px (including safe area)
+    - Header/top bar height: 56px
+
+    ICON SYSTEM:
+    - Icon size: 24px × 24px (navigation, buttons, inline icons)
+    - Icon stroke weight: 2px (consistent across all icons)
+    - Icon style: [outline style - NOT filled, unless active state]
+    - Active nav icons: filled style in ACCENT_COLOR
+    - Inactive nav icons: outline style in MUTED_COLOR
+
+    COMPONENT IDENTITY LOCK (maintain across ALL screens):
+    - Bottom navigation: EXACT same tab count, order, icons, spacing, heights
+    - Header bar: EXACT same height, title positioning, back button style
+    - Button style: EXACT same height, corner radius, font weight, padding
+    - Card style: EXACT same corner radius, shadow, internal padding
+    - All buttons of same type: EXACT same visual treatment
+
+    **DESIGN CONSISTENCY:**
+    - All screens MUST use the color theme EXACTLY as specified above
+    - UI components of the same type MUST use the SAME color across all screens
+    - Typography and font weights must be consistent across screens
+    - Only the ACTIVE tab should change between screens - everything else stays the same
+    - ALL elevation shadows must be subtle and appropriate to depth
+    - ALL spacing must follow the 8px grid system
+
+    **CRITICAL NEGATIVE PROMPTING (MUST AVOID):**
+
+    NEVER include these elements:
+    - ❌ Device bezels, phone frames, screen borders, rounded screen corners
+    - ❌ Home indicator bar at bottom (this is iPhone X+ UI, not the screen content)
+    - ❌ Background padding, margins, or vignette effects around the screen
+    - ❌ Mockup presentation style (floating screen, drop shadows on device)
+    - ❌ Background extending beyond the viewport edges
+    - ❌ Photorealistic effects: lens blur, depth of field, camera grain, lens flare
+    - ❌ Inconsistent corner radius across similar components
+    - ❌ Mixed icon styles (some filled, some outline) on same screen
+    - ❌ Text truncation with "..." unless intentional overflow
+    - ❌ Misaligned elements, uneven spacing, off-grid positioning
+    - ❌ Low-contrast text (ensure WCAG AA minimum: 4.5:1 for body text)
+    - ❌ Pixelated icons, blurry text, compression artifacts
+
+    ENSURE canvas filling:
+    - ✅ Status bar touches absolute top edge (0px from top)
+    - ✅ Content extends to left edge (0px from left)
+    - ✅ Content extends to right edge (0px from right)
+    - ✅ Bottom navigation touches absolute bottom edge (0px from bottom)
+    - ✅ Background color fills entire canvas with NO surrounding space
+
+    {{ ctx.output_format }}
+  "#
+}
+
+// ============================================
+// DEMO APP TEST CASES
+// ============================================
+
+test CyberpunkDemoApp {
+  functions [GenerateDemoApp]
+  args {
+    app_description_input null
+    style_config {
+      background_color "radial gradient from dark navy (#0A0E27) center to bright magenta (#FF006E) edges"
+      details "Futuristic cyberpunk style with holographic circuit patterns (cyan, 60-80px, 4-5 scattered). Glowing pink grid squares (40-60px, 6-8 pieces). Neon hexagons with cyan outline (50-70px, 3-4 at edges). Elements concentrated in outer 12-15% border area."
+      text_style "Futuristic bold sans-serif font, 800 weight, white color with bright cyan (#00F0FF) outline (4-5px) and neon glow effect"
+      device_style "Glossy midnight black frame with vibrant cyan (#00F0FF) neon glow effect around edges and thin modern bezels"
+    }
+    style_name "Cyberpunk Neon"
+  }
+}
+
+test ZenMinimalistDemoApp {
+  functions [GenerateDemoApp]
+  args {
+    app_description_input null
+    style_config {
+      background_color "soft gradient from warm beige (#F5F1E8) to pale sage green (#E8F2E8)"
+      details "Minimalist zen style with delicate watercolor brush strokes (soft greens and browns, 40-60px, 3-4 at corners). Subtle organic leaf silhouettes (30-50px, 4-5 scattered). Small zen circle enso symbols (35-45px, 2-3 pieces). Elements very sparse, outer 10% border only."
+      text_style "Elegant serif font (Playfair Display or similar), 600 weight, deep forest green (#2D4A3E) with subtle cream shadow for depth"
+      device_style "Matte warm wood texture frame with natural bamboo aesthetic and organic rounded edges"
+    }
+    style_name "Zen Minimalist"
+  }
+}
+
+test PlayfulPopArtDemoApp {
+  functions [GenerateDemoApp]
+  args {
+    app_description_input null
+    style_config {
+      background_color "bright vibrant yellow (#FFDD00) solid color"
+      details "Playful pop art style with smiley face emojis (80-100px, 4-5 at edges). Star sparkles in hot pink and cyan (60-80px, 6-8 scattered). Lightning bolts in bright orange (55-75px, 3-4 pieces). Comic book style explosion shapes (70-90px, 2-3 at corners). Elements concentrated in outer 12-18% border area, center clear."
+      text_style "Extra bold rounded sans-serif font (Impact or similar), 900 weight, white color with thick 5-7px black outline stroke and subtle drop shadow"
+      device_style "Colorful gradient frame with cyan-to-green fade on left edge transitioning to orange-to-pink fade on bottom right, glossy finish"
+    }
+    style_name "Snap Style"
+  }
+}
+
+test DemoFromDescription {
+  functions [GenerateDemoApp]
+  args {
+    app_description_input "A meditation and mindfulness app for busy professionals. Helps users find calm moments throughout their day with 5-minute guided sessions, breathing exercises, and ambient soundscapes."
+    style_config null
+    style_name null
+  }
+}
+
+test ImproveDescriptionFromDraft {
+  functions [ImproveAppDescription]
+  args {
+    draft_description "This app helps you track workouts and offers some motivation features. It has reminders, a few templates, and a social feed, but the copy feels flat."
+    vibe_hint "Energetic fitness mentor" 
+  }
+}
+
+// ============================================
+// SCREEN GENERATION TEST CASES
+// ============================================
+
+test GenerateScreensCustomInstructions {
+  functions [GenerateScreensForApp]
+  args {
+    app_name "FitQuest"
+    app_description "Gamified fitness tracking app with challenges, achievements, and social features"
+    screen_instructions "Generate: 1) Today's workout dashboard with progress rings and stats, 2) Exercise library with video previews and categories, 3) Social feed showing friend activities and challenges, 4) Achievement showcase with unlocked badges and trophies"
+    num_screens 4
+    style_guide "Energetic and motivating design with vibrant purple gradient backgrounds (#6B46C1 to #9333EA), electric cyan accents (#06B6D4) for active states and call-to-action buttons. Bold rounded sans-serif typography (700-900 weight) with high contrast white text. Modern card-based layouts with 16px corner radius and subtle elevation shadows. Playful achievement badges and progress visualizations using the purple-cyan color scheme."
+  }
+}
+
+test GenerateScreensAuto {
+  functions [GenerateScreensForApp]
+  args {
+    app_name "CalmFlow"
+    app_description "Meditation and mindfulness app for busy professionals with guided sessions and breathing exercises"
+    screen_instructions null
+    num_screens 5
+    style_guide "Calming and serene design with soft blue-green gradient backgrounds (#E0F2F1 to #B2DFDB), pale yellow highlights (#FFF9C4) for subtle emphasis and mindfulness prompts. Gentle rounded sans-serif typography (400-500 weight) with soft gray text (#546E7A). Minimalist card layouts with large 24px corner radius and soft shadows. Breathing circle animations and progress indicators using the blue-green palette with smooth transitions."
+  }
+}

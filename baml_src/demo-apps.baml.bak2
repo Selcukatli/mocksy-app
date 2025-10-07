@@ -339,12 +339,11 @@ function GenerateAppStructure(
     ## 2. COMMON LAYOUT ELEMENTS
 
     Define elements that appear on EVERY screen:
-    - **Status bar:** ALWAYS at the absolute top edge of the screen (no gap above). Describe styling: text color (light/dark based on background), icons (battery, signal, time)
-    - **Background color:** Main background color from style_guide that fills the entire screen
-    - **Content start position:** Where main content begins (typically immediately below status bar, around 44-60px from top)
-    - **Header patterns:** If any common headers appear across screens (style, positioning)
-    - **Overall spacing:** Internal padding for content (NOT edge margins - screens must be full bleed)
-    - **Any persistent UI elements:** Elements that appear on all screens
+    - Status bar style (time, battery, signal at top edge)
+    - Background color (from style_guide)
+    - Header patterns (if any common headers)
+    - Overall spacing and margins
+    - Any persistent UI elements
 
     ## 3. SCREEN DETAILS
 
@@ -443,7 +442,6 @@ function GenerateScreenImagePrompt(
     - Match the EXACT tab bar styling (icons, colors, spacing, positioning)
     - Keep the same typography (font sizes, weights, colors)
     - Maintain the same design system (shadows, corner radius, spacing)
-    - **Match the EXACT status bar positioning and background fill** - no gap at top
     - Paint onto the canvas (image 1), using reference (image 2) as your style guide
 
     Only change what's unique to THIS screen: content, headers, main UI elements specific to "{{ screen_detail.screen_name }}".
@@ -454,41 +452,24 @@ function GenerateScreenImagePrompt(
     Paint the app UI directly onto this canvas based on the style guide provided above.
     {% endif %}
 
-    **CRITICAL FULL-BLEED REQUIREMENTS:**
-    - The background color MUST fill the ENTIRE canvas from edge to edge (0,0 to full width/height)
-    - Status bar MUST be painted at the ABSOLUTE TOP EDGE - no gap, no margin above it
-    - If tabs exist, tab bar MUST be painted at the ABSOLUTE BOTTOM EDGE - flush with canvas bottom
-    - Content sits BETWEEN status bar and tab bar (or bottom if no tabs), but background extends to all edges
-
     **GENERATE THE PROMPT:**
 
     Create a complete canvas-editing prompt that:
-    1. Starts with: "IMAGE EDITING TASK: The provided image is a blank iPhone-sized canvas. Paint the entire canvas from edge to edge with no margins."
+    1. Starts with: "IMAGE EDITING TASK: The provided image is a blank iPhone-sized canvas..."
     2. Specifies the screen name: "SCREEN: {{ screen_detail.screen_name }}"
-    3. **FIRST INSTRUCTION - BACKGROUND FILL**: "First, fill the ENTIRE canvas with [background color from style guide] from coordinates (0,0) to full canvas dimensions. No white borders or gaps."
-    4. **SECOND INSTRUCTION - STATUS BAR**: "Paint the status bar at the ABSOLUTE TOP EDGE starting at y=0. The status bar should include: [time on left, signal/wifi/battery on right, specific styling from common_layout]"
-    {% if tabs.has_tabs %}
-    5. **THIRD INSTRUCTION - TAB BAR**: "Paint the tab bar at the ABSOLUTE BOTTOM EDGE ending at y=canvas_height. Tab bar should include: {{ tabs.tab_names | join(', ') }}. Tab styling: {{ tabs.tab_styling }}"
-    {% if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none %}
-    - **Active tab:** "{{ tabs.tab_names[screen_detail.active_tab_index] }}" (index {{ screen_detail.active_tab_index }}) should be highlighted/active state
-    {% else %}
-    - All tabs in inactive state
+    3. Lists all UI elements to paint (from common_layout + unique_elements + tabs if applicable)
+    4. Includes critical canvas-editing requirements (edge-to-edge fill, no margins, etc.)
+    {% if tabs.has_tabs and screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none %}
+    5. Shows the tab bar with "{{ tabs.tab_names[screen_detail.active_tab_index] }}" tab ACTIVE and all others INACTIVE
+    {% elif tabs.has_tabs %}
+    5. Shows the tab bar with all tabs INACTIVE (no active tab for this screen)
     {% endif %}
-    6. **FOURTH INSTRUCTION - MAIN CONTENT**: Lists all UI elements for this screen (from unique_elements)
-    {% else %}
-    5. **THIRD INSTRUCTION - MAIN CONTENT**: Lists all UI elements for this screen (from unique_elements)
-    {% endif %}
-    7. Uses exact colors and styling from the style guide (provide hex codes)
+    6. Uses colors and styling from the style guide
     {% if has_reference_image %}
-    8. **REFERENCE IMAGE NOTE**: "Image 2 shows the exact visual style to match. Use identical colors, spacing, typography, and edge positioning. Only change the screen-specific content."
+    7. Emphasizes matching the reference image's visual consistency
     {% endif %}
 
     Make the prompt detailed and specific with exact positioning, sizes, colors (hex codes from style_guide), and element descriptions.
-
-    **CRITICAL REMINDERS TO INCLUDE IN PROMPT:**
-    - "CRITICAL: The background must fill from edge to edge (0,0) to (full width, full height) with NO white borders"
-    - "CRITICAL: Status bar starts at y=0 (top edge), tab bar ends at y=canvas_height (bottom edge)"
-    - "CRITICAL: No margins or padding around the outer edges of the canvas"
 
     {{ ctx.output_format }}
   "#
@@ -561,3 +542,87 @@ test PlayfulPopArtDemoApp {
 // 1. GenerateAppStructure (creates plan with tabs, layout, screen details)
 // 2. GenerateScreenImagePrompt (generates prompts from structure)
 
+test CyberpunkDemoApp {
+  functions [GenerateDemoApp]
+  args {
+    app_description_input null
+    style_config {
+      background_color "radial gradient from dark navy (#0A0E27) center to bright magenta (#FF006E) edges"
+      details "Futuristic cyberpunk style with holographic circuit patterns (cyan, 60-80px, 4-5 scattered). Glowing pink grid squares (40-60px, 6-8 pieces). Neon hexagons with cyan outline (50-70px, 3-4 at edges). Elements concentrated in outer 12-15% border area."
+      text_style "Futuristic bold sans-serif font, 800 weight, white color with bright cyan (#00F0FF) outline (4-5px) and neon glow effect"
+      device_style "Glossy midnight black frame with vibrant cyan (#00F0FF) neon glow effect around edges and thin modern bezels"
+    }
+    style_name "Cyberpunk Neon"
+  }
+}
+
+test ZenMinimalistDemoApp {
+  functions [GenerateDemoApp]
+  args {
+    app_description_input null
+    style_config {
+      background_color "soft gradient from warm beige (#F5F1E8) to pale sage green (#E8F2E8)"
+      details "Minimalist zen style with delicate watercolor brush strokes (soft greens and browns, 40-60px, 3-4 at corners). Subtle organic leaf silhouettes (30-50px, 4-5 scattered). Small zen circle enso symbols (35-45px, 2-3 pieces). Elements very sparse, outer 10% border only."
+      text_style "Elegant serif font (Playfair Display or similar), 600 weight, deep forest green (#2D4A3E) with subtle cream shadow for depth"
+      device_style "Matte warm wood texture frame with natural bamboo aesthetic and organic rounded edges"
+    }
+    style_name "Zen Minimalist"
+  }
+}
+
+test PlayfulPopArtDemoApp {
+  functions [GenerateDemoApp]
+  args {
+    app_description_input null
+    style_config {
+      background_color "bright vibrant yellow (#FFDD00) solid color"
+      details "Playful pop art style with smiley face emojis (80-100px, 4-5 at edges). Star sparkles in hot pink and cyan (60-80px, 6-8 scattered). Lightning bolts in bright orange (55-75px, 3-4 pieces). Comic book style explosion shapes (70-90px, 2-3 at corners). Elements concentrated in outer 12-18% border area, center clear."
+      text_style "Extra bold rounded sans-serif font (Impact or similar), 900 weight, white color with thick 5-7px black outline stroke and subtle drop shadow"
+      device_style "Colorful gradient frame with cyan-to-green fade on left edge transitioning to orange-to-pink fade on bottom right, glossy finish"
+    }
+    style_name "Snap Style"
+  }
+}
+
+test DemoFromDescription {
+  functions [GenerateDemoApp]
+  args {
+    app_description_input "A meditation and mindfulness app for busy professionals. Helps users find calm moments throughout their day with 5-minute guided sessions, breathing exercises, and ambient soundscapes."
+    style_config null
+    style_name null
+  }
+}
+
+test ImproveDescriptionFromDraft {
+  functions [ImproveAppDescription]
+  args {
+    draft_description "This app helps you track workouts and offers some motivation features. It has reminders, a few templates, and a social feed, but the copy feels flat."
+    vibe_hint "Energetic fitness mentor" 
+  }
+}
+
+// ============================================
+// SCREEN GENERATION TEST CASES
+// ============================================
+
+test GenerateScreensCustomInstructions {
+  functions [GenerateScreensForApp]
+  args {
+    app_name "FitQuest"
+    app_description "Gamified fitness tracking app with challenges, achievements, and social features"
+    screen_instructions "Generate: 1) Today's workout dashboard with progress rings and stats, 2) Exercise library with video previews and categories, 3) Social feed showing friend activities and challenges, 4) Achievement showcase with unlocked badges and trophies"
+    num_screens 4
+    style_guide "Energetic and motivating design with vibrant purple gradient backgrounds (#6B46C1 to #9333EA), electric cyan accents (#06B6D4) for active states and call-to-action buttons. Bold rounded sans-serif typography (700-900 weight) with high contrast white text. Modern card-based layouts with 16px corner radius and subtle elevation shadows. Playful achievement badges and progress visualizations using the purple-cyan color scheme."
+  }
+}
+
+test GenerateScreensAuto {
+  functions [GenerateScreensForApp]
+  args {
+    app_name "CalmFlow"
+    app_description "Meditation and mindfulness app for busy professionals with guided sessions and breathing exercises"
+    screen_instructions null
+    num_screens 5
+    style_guide "Calming and serene design with soft blue-green gradient backgrounds (#E0F2F1 to #B2DFDB), pale yellow highlights (#FFF9C4) for subtle emphasis and mindfulness prompts. Gentle rounded sans-serif typography (400-500 weight) with soft gray text (#546E7A). Minimalist card layouts with large 24px corner radius and soft shadows. Breathing circle animations and progress indicators using the blue-green palette with smooth transitions."
+  }
+}

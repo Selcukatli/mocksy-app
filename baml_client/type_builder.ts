@@ -29,6 +29,8 @@ export default class TypeBuilder {
     
     AppScreenPromptsOutput: ClassViewer<'AppScreenPromptsOutput', "app_screen_prompts">;
     
+    AppStructure: ClassViewer<'AppStructure', "tabs" | "common_layout_elements" | "screens">;
+    
     Avatar: ClassViewer<'Avatar', "summary" | "apparent_age" | "gender_presentation" | "ethnic_appearance" | "face_shape" | "jawline" | "body_build" | "skin_tone" | "complexion_details" | "hair_color" | "hair_length" | "hair_style" | "eye_color" | "eye_shape" | "eyebrows" | "nose_description" | "lip_description" | "facial_hair" | "glasses" | "glasses_style" | "distinctive_features" | "confidence" | "key_features">;
     
     Background: ClassViewer<'Background', "colors" | "effects" | "placement" | "seamless_to_bottom" | "forbidden">;
@@ -41,7 +43,7 @@ export default class TypeBuilder {
     
     Composition: ClassViewer<'Composition', "priority" | "rules">;
     
-    DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_subtitle" | "app_description" | "app_category" | "app_icon_prompt" | "color_theme" | "style_guide">;
+    DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_subtitle" | "app_description" | "app_category" | "app_icon_prompt" | "style_guide">;
     
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
     
@@ -69,6 +71,10 @@ export default class TypeBuilder {
     
     Scene: ClassViewer<'Scene', "main_description" | "characters" | "character_arrangement" | "camera_angle" | "shot_type" | "setting" | "background" | "time_of_day" | "mood" | "color_palette" | "lighting_style" | "style_keywords" | "quality_markers" | "main_prompt" | "negative_prompt" | "structured_prompt" | "suggested_guidance" | "complexity_score" | "avatar_integration" | "character_count" | "key_elements">;
     
+    ScreenDetail: ClassViewer<'ScreenDetail', "screen_name" | "purpose" | "layout_type" | "unique_elements" | "active_tab_index">;
+    
+    ScreenImagePrompt: ClassViewer<'ScreenImagePrompt', "canvas_edit_prompt">;
+    
     ScreenshotConfig: ClassViewer<'ScreenshotConfig', "text" | "layout">;
     
     ScreenshotPromptStructured: ClassViewer<'ScreenshotPromptStructured', "style" | "background" | "device" | "header_text" | "composition">;
@@ -89,6 +95,8 @@ export default class TypeBuilder {
     
     Subject: ClassViewer<'Subject', "description" | "action" | "position">;
     
+    TabStructure: ClassViewer<'TabStructure', "has_tabs" | "tab_names" | "tab_icon_descriptions" | "tab_styling">;
+    
     TextConfig: ClassViewer<'TextConfig', "header" | "subheader">;
     
     VisionTestResponse: ClassViewer<'VisionTestResponse', "model_name" | "can_see_image" | "description" | "object_count">;
@@ -98,7 +106,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "AppScreenPromptsOutput","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TextConfig","VisionTestResponse",
+            "AppScreenPromptsOutput","AppStructure","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenDetail","ScreenImagePrompt","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TabStructure","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -108,6 +116,10 @@ export default class TypeBuilder {
         
         this.AppScreenPromptsOutput = this.tb.classViewer("AppScreenPromptsOutput", [
           "app_screen_prompts",
+        ]);
+        
+        this.AppStructure = this.tb.classViewer("AppStructure", [
+          "tabs","common_layout_elements","screens",
         ]);
         
         this.Avatar = this.tb.classViewer("Avatar", [
@@ -135,7 +147,7 @@ export default class TypeBuilder {
         ]);
         
         this.DemoAppOutput = this.tb.classViewer("DemoAppOutput", [
-          "app_name","app_subtitle","app_description","app_category","app_icon_prompt","color_theme","style_guide",
+          "app_name","app_subtitle","app_description","app_category","app_icon_prompt","style_guide",
         ]);
         
         this.DetailedResponse = this.tb.classViewer("DetailedResponse", [
@@ -190,6 +202,14 @@ export default class TypeBuilder {
           "main_description","characters","character_arrangement","camera_angle","shot_type","setting","background","time_of_day","mood","color_palette","lighting_style","style_keywords","quality_markers","main_prompt","negative_prompt","structured_prompt","suggested_guidance","complexity_score","avatar_integration","character_count","key_elements",
         ]);
         
+        this.ScreenDetail = this.tb.classViewer("ScreenDetail", [
+          "screen_name","purpose","layout_type","unique_elements","active_tab_index",
+        ]);
+        
+        this.ScreenImagePrompt = this.tb.classViewer("ScreenImagePrompt", [
+          "canvas_edit_prompt",
+        ]);
+        
         this.ScreenshotConfig = this.tb.classViewer("ScreenshotConfig", [
           "text","layout",
         ]);
@@ -228,6 +248,10 @@ export default class TypeBuilder {
         
         this.Subject = this.tb.classViewer("Subject", [
           "description","action","position",
+        ]);
+        
+        this.TabStructure = this.tb.classViewer("TabStructure", [
+          "has_tabs","tab_names","tab_icon_descriptions","tab_styling",
         ]);
         
         this.TextConfig = this.tb.classViewer("TextConfig", [

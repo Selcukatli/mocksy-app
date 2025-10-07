@@ -52,6 +52,13 @@ export interface AppScreenPromptsOutput {
   
 }
 
+export interface AppStructure {
+  tabs: TabStructure
+  common_layout_elements: string
+  screens: ScreenDetail[]
+  
+}
+
 export interface Avatar {
   summary: string
   apparent_age: string
@@ -125,7 +132,6 @@ export interface DemoAppOutput {
   app_description: string
   app_category: string
   app_icon_prompt: string
-  color_theme: string
   style_guide: string
   
 }
@@ -267,6 +273,20 @@ export interface Scene {
   
 }
 
+export interface ScreenDetail {
+  screen_name: string
+  purpose: string
+  layout_type: string
+  unique_elements: string
+  active_tab_index?: number | null
+  
+}
+
+export interface ScreenImagePrompt {
+  canvas_edit_prompt: string
+  
+}
+
 export interface ScreenshotConfig {
   text: TextConfig
   layout: LayoutConfig
@@ -338,6 +358,14 @@ export interface Subject {
   description: string
   action: string
   position: string
+  
+}
+
+export interface TabStructure {
+  has_tabs: boolean
+  tab_names: string[]
+  tab_icon_descriptions: string[]
+  tab_styling: string
   
 }
 

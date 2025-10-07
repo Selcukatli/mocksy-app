@@ -28,8 +28,8 @@ export default function ScreenshotLightbox({
   }, [initialIndex]);
 
   const currentImageUrl = allImages.length > 0 ? allImages[currentIndex] : imageUrl;
-  const canGoPrevious = currentIndex > 0;
-  const canGoNext = currentIndex < allImages.length - 1;
+  const canGoPrevious = allImages.length > 0 && currentIndex > 0;
+  const canGoNext = allImages.length > 0 && currentIndex < allImages.length - 1;
 
   const goToPrevious = useCallback(() => {
     if (canGoPrevious) {
@@ -124,16 +124,19 @@ export default function ScreenshotLightbox({
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.95, opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="relative w-full max-w-sm h-[85vh]"
+                  style={{ position: 'relative' }}
+                  className="w-full max-w-sm h-[85vh]"
                 >
-                  <Image
-                    src={currentImageUrl}
-                    alt={alt}
-                    fill
-                    className="object-contain"
-                    sizes="(max-width: 640px) 100vw, 640px"
-                    quality={95}
-                  />
+                  {currentImageUrl && (
+                    <Image
+                      src={currentImageUrl}
+                      alt={alt}
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 640px) 100vw, 640px"
+                      unoptimized
+                    />
+                  )}
                 </motion.div>
 
                 {/* Next Button */}

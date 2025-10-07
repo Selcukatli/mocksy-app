@@ -24,7 +24,7 @@ import { toBamlError, BamlStream, BamlAbortError, Collector } from "@boundaryml/
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {AppScreenPromptsOutput, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TextConfig, VisionTestResponse} from "./types"
+import type {AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 import { AsyncHttpRequest, AsyncHttpStreamRequest } from "./async_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -235,6 +235,53 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             }
             
+        async GenerateAppStructure(
+        app_name: string,app_description: string,style_guide: string,num_screens: number,
+        __baml_options__?: BamlCallOptions
+        ): Promise<types.AppStructure> {
+          try {
+          const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+          const signal = options.signal;
+
+          if (signal?.aborted) {
+          throw new BamlAbortError('Operation was aborted', signal.reason);
+          }
+
+          // Check if onTick is provided - route through streaming if so
+          if (options.onTick) {
+          const stream = this.stream.GenerateAppStructure(
+          app_name,app_description,style_guide,num_screens,
+          __baml_options__
+          );
+
+          return await stream.getFinalResponse();
+          }
+
+          const collector = options.collector ? (Array.isArray(options.collector) ? options.collector :
+          [options.collector]) : [];
+          const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+          const env: Record<string, string> = Object.fromEntries(
+            Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+            );
+            const raw = await this.runtime.callFunction(
+            "GenerateAppStructure",
+            {
+            "app_name": app_name,"app_description": app_description,"style_guide": style_guide,"num_screens": num_screens
+            },
+            this.ctxManager.cloneContext(),
+            options.tb?.__tb(),
+            options.clientRegistry,
+            collector,
+            options.tags || {},
+            env,
+            signal,
+            )
+            return raw.parsed(false) as types.AppStructure
+            } catch (error) {
+            throw toBamlError(error);
+            }
+            }
+            
         async GenerateDemoApp(
         app_description_input?: string | null,category_hint?: string | null,vibe_style?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
         __baml_options__?: BamlCallOptions
@@ -329,10 +376,10 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             }
             
-        async GenerateScreensForApp(
-        app_name: string,app_description: string,screen_instructions?: string | null,num_screens?: number | null,color_theme: string,style_config?: types.StyleConfig | null,
+        async GenerateScreenImagePrompt(
+        app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,has_reference_image: boolean,
         __baml_options__?: BamlCallOptions
-        ): Promise<types.AppScreenPromptsOutput> {
+        ): Promise<types.ScreenImagePrompt> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
           const signal = options.signal;
@@ -343,8 +390,8 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
 
           // Check if onTick is provided - route through streaming if so
           if (options.onTick) {
-          const stream = this.stream.GenerateScreensForApp(
-          app_name,app_description,screen_instructions,num_screens,color_theme,style_config,
+          const stream = this.stream.GenerateScreenImagePrompt(
+          app_name,style_guide,common_layout,tabs,screen_detail,has_reference_image,
           __baml_options__
           );
 
@@ -358,9 +405,9 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
             );
             const raw = await this.runtime.callFunction(
-            "GenerateScreensForApp",
+            "GenerateScreenImagePrompt",
             {
-            "app_name": app_name,"app_description": app_description,"screen_instructions": screen_instructions?? null,"num_screens": num_screens?? null,"color_theme": color_theme,"style_config": style_config?? null
+            "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail,"has_reference_image": has_reference_image
             },
             this.ctxManager.cloneContext(),
             options.tb?.__tb(),
@@ -370,7 +417,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             env,
             signal,
             )
-            return raw.parsed(false) as types.AppScreenPromptsOutput
+            return raw.parsed(false) as types.ScreenImagePrompt
             } catch (error) {
             throw toBamlError(error);
             }
@@ -1810,6 +1857,72 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   }
                   }
                   
+            GenerateAppStructure(
+            app_name: string,app_description: string,style_guide: string,num_screens: number,
+            __baml_options__?: BamlCallOptions
+            ): BamlStream<partial_types.AppStructure, types.AppStructure>
+              {
+              try {
+              const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+              const signal = options.signal;
+
+              if (signal?.aborted) {
+              throw new BamlAbortError('Operation was aborted', signal.reason);
+              }
+
+              let collector = options.collector ? (Array.isArray(options.collector) ? options.collector :
+              [options.collector]) : [];
+
+              let onTickWrapper: (() => void) | undefined;
+
+              // Create collector and wrap onTick if provided
+              if (options.onTick) {
+              const tickCollector = new Collector("on-tick-collector");
+              collector = [...collector, tickCollector];
+
+              onTickWrapper = () => {
+              const log = tickCollector.last;
+              if (log) {
+              try {
+              options.onTick!("Unknown", log);
+              } catch (error) {
+              console.error("Error in onTick callback for GenerateAppStructure", error);
+              }
+              }
+              };
+              }
+
+              const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+              const env: Record<string, string> = Object.fromEntries(
+                Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+                );
+                const raw = this.runtime.streamFunction(
+                "GenerateAppStructure",
+                {
+                "app_name": app_name,"app_description": app_description,"style_guide": style_guide,"num_screens": num_screens
+                },
+                undefined,
+                this.ctxManager.cloneContext(),
+                options.tb?.__tb(),
+                options.clientRegistry,
+                collector,
+                options.tags || {},
+                env,
+                signal,
+                onTickWrapper,
+                )
+                return new BamlStream<partial_types.AppStructure, types.AppStructure>(
+                  raw,
+                  (a): partial_types.AppStructure => a,
+                  (a): types.AppStructure => a,
+                  this.ctxManager.cloneContext(),
+                  options.signal,
+                  )
+                  } catch (error) {
+                  throw toBamlError(error);
+                  }
+                  }
+                  
             GenerateDemoApp(
             app_description_input?: string | null,category_hint?: string | null,vibe_style?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
             __baml_options__?: BamlCallOptions
@@ -1942,10 +2055,10 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   }
                   }
                   
-            GenerateScreensForApp(
-            app_name: string,app_description: string,screen_instructions?: string | null,num_screens?: number | null,color_theme: string,style_config?: types.StyleConfig | null,
+            GenerateScreenImagePrompt(
+            app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,has_reference_image: boolean,
             __baml_options__?: BamlCallOptions
-            ): BamlStream<partial_types.AppScreenPromptsOutput, types.AppScreenPromptsOutput>
+            ): BamlStream<partial_types.ScreenImagePrompt, types.ScreenImagePrompt>
               {
               try {
               const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1971,7 +2084,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
               try {
               options.onTick!("Unknown", log);
               } catch (error) {
-              console.error("Error in onTick callback for GenerateScreensForApp", error);
+              console.error("Error in onTick callback for GenerateScreenImagePrompt", error);
               }
               }
               };
@@ -1982,9 +2095,9 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                 Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
                 );
                 const raw = this.runtime.streamFunction(
-                "GenerateScreensForApp",
+                "GenerateScreenImagePrompt",
                 {
-                "app_name": app_name,"app_description": app_description,"screen_instructions": screen_instructions ?? null,"num_screens": num_screens ?? null,"color_theme": color_theme,"style_config": style_config ?? null
+                "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail,"has_reference_image": has_reference_image
                 },
                 undefined,
                 this.ctxManager.cloneContext(),
@@ -1996,10 +2109,10 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                 signal,
                 onTickWrapper,
                 )
-                return new BamlStream<partial_types.AppScreenPromptsOutput, types.AppScreenPromptsOutput>(
+                return new BamlStream<partial_types.ScreenImagePrompt, types.ScreenImagePrompt>(
                   raw,
-                  (a): partial_types.AppScreenPromptsOutput => a,
-                  (a): types.AppScreenPromptsOutput => a,
+                  (a): partial_types.ScreenImagePrompt => a,
+                  (a): types.ScreenImagePrompt => a,
                   this.ctxManager.cloneContext(),
                   options.signal,
                   )

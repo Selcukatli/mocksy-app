@@ -228,7 +228,7 @@ function ImproveAppDescription(
   draft_description: string @description("Rough or placeholder description that needs to sound polished and App Store ready"),
   vibe_hint: string? @description("Optional tone, vibe, or audience notes to weave into the copy")
 ) -> ImprovedDescriptionOutput {
-  client ScreenshotGeneratorMed
+  client Gemini25Flash
   prompt #"
     {{ _.role("system") }}
     You are a marketing copywriter who specializes in App Store product descriptions that are clear, benefit-driven, and polished.

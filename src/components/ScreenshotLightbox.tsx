@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
-import Image from 'next/image';
 import { useEffect, useState, useCallback } from 'react';
 
 interface ScreenshotLightboxProps {
@@ -21,15 +20,22 @@ export default function ScreenshotLightbox({
   initialIndex = 0,
 }: ScreenshotLightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const imageCount = allImages.length;
 
   // Update current index when initialIndex changes
   useEffect(() => {
-    setCurrentIndex(initialIndex);
-  }, [initialIndex]);
+    if (imageCount === 0) {
+      setCurrentIndex(0);
+      return;
+    }
 
-  const currentImageUrl = allImages.length > 0 ? allImages[currentIndex] : imageUrl;
-  const canGoPrevious = allImages.length > 0 && currentIndex > 0;
-  const canGoNext = allImages.length > 0 && currentIndex < allImages.length - 1;
+    const clampedIndex = Math.max(0, Math.min(initialIndex, imageCount - 1));
+    setCurrentIndex(clampedIndex);
+  }, [initialIndex, imageCount]);
+
+  const currentImageUrl = imageCount > 0 ? allImages[currentIndex] : imageUrl;
+  const canGoPrevious = imageCount > 0 && currentIndex > 0;
+  const canGoNext = imageCount > 0 && currentIndex < imageCount - 1;
 
   const goToPrevious = useCallback(() => {
     if (canGoPrevious) {
@@ -79,9 +85,9 @@ export default function ScreenshotLightbox({
             <div className="flex items-center justify-between p-4 pointer-events-auto">
               <span className="h-10 w-10" aria-hidden="true" />
               <div className="flex-1 text-center text-white">
-                {allImages.length > 0 && (
+                {imageCount > 0 && (
                   <p className="text-white/70 text-sm">
-                    {currentIndex + 1} of {allImages.length}
+                    {currentIndex + 1} of {imageCount}
                   </p>
                 )}
               </div>
@@ -104,7 +110,7 @@ export default function ScreenshotLightbox({
             >
               <div className="relative flex items-center gap-4 max-w-full h-full">
                 {/* Previous Button */}
-                {allImages.length > 1 && (
+                {imageCount > 1 && (
                   <button
                     onClick={goToPrevious}
                     className={`p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all ${
@@ -124,23 +130,25 @@ export default function ScreenshotLightbox({
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.95, opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  style={{ position: 'relative' }}
-                  className="w-full max-w-sm h-[85vh]"
+                  className="w-full max-w-sm h-[78vh] flex items-center justify-center"
                 >
-                  {currentImageUrl && (
-                    <Image
+                  {currentImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={currentImageUrl}
                       alt={alt}
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 640px) 100vw, 640px"
-                      unoptimized
+                      className="max-h-full max-w-full object-contain rounded-xl"
+                      loading="lazy"
                     />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-muted to-muted/50">
+                      <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+                    </div>
                   )}
                 </motion.div>
 
                 {/* Next Button */}
-                {allImages.length > 1 && (
+                {imageCount > 1 && (
                   <button
                     onClick={goToNext}
                     className={`p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all ${
@@ -156,30 +164,33 @@ export default function ScreenshotLightbox({
             </div>
 
             {/* Thumbnail Strip */}
-            {allImages.length > 1 && (
-              <div className="bg-black/50 p-3 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+            {imageCount > 1 && (
+              <div
+                className="bg-black/70 p-3 pt-2 pointer-events-auto backdrop-blur-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="flex justify-center">
-                  <div className="flex gap-2 overflow-x-auto max-w-full px-2">
+                  <div className="flex gap-2 overflow-x-auto max-w-full px-2 pb-1">
                     {allImages.map((imgUrl, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentIndex(index)}
                         className={`flex-shrink-0 relative rounded overflow-hidden transition-all duration-200 ${
                           index === currentIndex
-                            ? 'opacity-100 border-2 border-white'
-                            : 'opacity-50 hover:opacity-80 border-2 border-transparent'
+                            ? 'opacity-100 border-[3px] border-white shadow-lg shadow-primary/30'
+                            : 'opacity-40 hover:opacity-80 border-2 border-transparent'
                         }`}
                       >
                         {imgUrl ? (
-                          <Image
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
                             src={imgUrl}
                             alt={`Screenshot ${index + 1}`}
-                            width={56}
-                            height={96}
-                            className="w-14 h-24 object-cover"
+                            className="w-[56px] h-[100px] object-cover rounded-md"
+                            loading="lazy"
                           />
                         ) : (
-                          <div className="w-14 h-24 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                          <div className="w-[56px] h-[100px] bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center rounded-md">
                             <ImageIcon className="w-4 h-4 text-muted-foreground/30" />
                           </div>
                         )}
@@ -191,7 +202,7 @@ export default function ScreenshotLightbox({
             )}
 
             {/* Helper text */}
-            {allImages.length <= 1 && (
+            {imageCount <= 1 && (
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center pointer-events-none">
                 <p className="text-sm text-white/60">Click anywhere to close</p>
                 <p className="text-xs text-white/40 mt-1">or press ESC</p>

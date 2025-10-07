@@ -99,7 +99,7 @@ export class LlmResponseParser {
     }
   }
   
-  GenerateAppStructure(
+  GenerateAppDesignPlan(
       llmResponse: string,
       __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
   ): types.AppStructure {
@@ -109,7 +109,7 @@ export class LlmResponseParser {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return this.runtime.parseLlmResponse(
-        "GenerateAppStructure",
+        "GenerateAppDesignPlan",
         llmResponse,
         false,
         this.ctxManager.cloneContext(),
@@ -145,6 +145,29 @@ export class LlmResponseParser {
     }
   }
   
+  GenerateFirstScreenImagePrompt(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): types.ScreenImagePrompt {
+    try {
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "GenerateFirstScreenImagePrompt",
+        llmResponse,
+        false,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        env,
+      ) as types.ScreenImagePrompt
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
   GenerateScene(
       llmResponse: string,
       __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
@@ -168,7 +191,7 @@ export class LlmResponseParser {
     }
   }
   
-  GenerateScreenImagePrompt(
+  GenerateScreenImagePromptWithReference(
       llmResponse: string,
       __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
   ): types.ScreenImagePrompt {
@@ -178,7 +201,7 @@ export class LlmResponseParser {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return this.runtime.parseLlmResponse(
-        "GenerateScreenImagePrompt",
+        "GenerateScreenImagePromptWithReference",
         llmResponse,
         false,
         this.ctxManager.cloneContext(),
@@ -864,7 +887,7 @@ export class LlmStreamParser {
     }
   }
   
-  GenerateAppStructure(
+  GenerateAppDesignPlan(
       llmResponse: string,
       __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
   ): partial_types.AppStructure {
@@ -874,7 +897,7 @@ export class LlmStreamParser {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return this.runtime.parseLlmResponse(
-        "GenerateAppStructure",
+        "GenerateAppDesignPlan",
         llmResponse,
         true,
         this.ctxManager.cloneContext(),
@@ -910,6 +933,29 @@ export class LlmStreamParser {
     }
   }
   
+  GenerateFirstScreenImagePrompt(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): partial_types.ScreenImagePrompt {
+    try {
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "GenerateFirstScreenImagePrompt",
+        llmResponse,
+        true,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        env,
+      ) as partial_types.ScreenImagePrompt
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
   GenerateScene(
       llmResponse: string,
       __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
@@ -933,7 +979,7 @@ export class LlmStreamParser {
     }
   }
   
-  GenerateScreenImagePrompt(
+  GenerateScreenImagePromptWithReference(
       llmResponse: string,
       __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
   ): partial_types.ScreenImagePrompt {
@@ -943,7 +989,7 @@ export class LlmStreamParser {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return this.runtime.parseLlmResponse(
-        "GenerateScreenImagePrompt",
+        "GenerateScreenImagePromptWithReference",
         llmResponse,
         true,
         this.ctxManager.cloneContext(),

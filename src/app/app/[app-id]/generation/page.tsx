@@ -14,6 +14,7 @@ export default function GenerationPage() {
   const appId = params['app-id'] as Id<'apps'>;
 
   const appStatus = useQuery(api.apps.getAppGenerationStatus, { appId });
+  const jobStatus = useQuery(api.appGenerationJobs.getAppGenerationJobByAppId, { appId });
 
   // If app doesn't exist or user doesn't have access, redirect
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function GenerationPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
-      <GenerationProgress appStatus={appStatus} appId={appId} />
+      <GenerationProgress appStatus={appStatus} jobStatus={jobStatus} appId={appId} />
     </div>
   );
 }

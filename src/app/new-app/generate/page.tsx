@@ -35,7 +35,7 @@ type ReferenceImage = {
 export default function GenerateNewAppPage() {
   const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
-  const generateAppAction = useAction(api.demoActions.generateApp);
+  const scheduleDemoAppGeneration = useAction(api.demoActions.scheduleDemoAppGeneration);
   const improveDescription = useAction(api.demoActions.improveAppDescription);
 
   const [idea, setIdea] = useState('');
@@ -113,7 +113,7 @@ export default function GenerateNewAppPage() {
 
     try {
       // Use style if provided, fallback to category
-      const vibeHint = style.trim()
+      const uiStyleHint = style.trim()
         ? style.trim()
         : category !== AUTO_CATEGORY_OPTION
           ? category
@@ -121,7 +121,7 @@ export default function GenerateNewAppPage() {
 
       const result = await improveDescription({
         draftDescription: idea,
-        vibeHint,
+        uiStyleHint,
       });
 
       if (result.improvedDescription) {
@@ -157,13 +157,13 @@ export default function GenerateNewAppPage() {
 
     try {
       const selectedCategory = category === AUTO_CATEGORY_OPTION ? undefined : category;
-      const selectedVibe = style.trim() || undefined;
+      const selectedUIStyle = style.trim() || undefined;
 
-      // Call the new generateApp action which creates app with icon + screens
-      const appId = await generateAppAction({
-        appDescription: idea,
-        category: selectedCategory,
-        vibe: selectedVibe,
+      // Call scheduleDemoAppGeneration which creates app + job and generates in background
+      const { appId } = await scheduleDemoAppGeneration({
+        appDescriptionInput: idea,
+        categoryHint: selectedCategory,
+        uiStyle: selectedUIStyle,
       });
 
       // Navigate to the generation progress page

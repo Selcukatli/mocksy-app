@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Mocksy - App Store Screenshot Generator",
   description: "Generate, edit and translate app store screenshots with AI",
+  icons: {
+    icon: "/mocksy-app-icon.png",
+  },
 };
 
 export default function RootLayout({

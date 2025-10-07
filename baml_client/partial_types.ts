@@ -286,6 +286,10 @@ export namespace partial_types {
       has_tabs?: boolean | null
       tab_names: string[]
       tab_icon_descriptions: string[]
+      active_tab_color?: string | null
+      inactive_tab_color?: string | null
+      active_icon_style?: string | null
+      inactive_icon_style?: string | null
       tab_styling?: string | null
     }
     export interface TextConfig {

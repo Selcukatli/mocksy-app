@@ -42,6 +42,8 @@ export default defineSchema({
     ageRating: v.optional(v.string()),
     // Demo app flag
     isDemo: v.optional(v.boolean()), // true for AI-generated demo apps
+    // Publishing status (optional for backward compatibility - undefined means published)
+    status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
     // Style guide for UI consistency
     styleGuide: v.optional(v.string()), // Complete design guide including colors, typography, mood, philosophy
     createdAt: v.number(),
@@ -49,7 +51,8 @@ export default defineSchema({
   })
     .index("by_profile", ["profileId"])
     .index("by_profile_and_created", ["profileId", "createdAt"])
-    .index("by_is_demo", ["isDemo"]),
+    .index("by_is_demo", ["isDemo"])
+    .index("by_status", ["status"]),
 
   appScreens: defineTable({
     appId: v.id("apps"), // Which app this screen belongs to
@@ -266,6 +269,39 @@ export default defineSchema({
     .index("by_profile", ["profileId"])
     .index("by_type", ["type"])
     .index("by_status", ["status"]),
+
+  appGenerationJobs: defineTable({
+    profileId: v.id("profiles"), // Owner initiating the generation
+    appId: v.id("apps"), // App being generated
+    status: v.union(
+      v.literal("pending"),
+      v.literal("generating_concept"),
+      v.literal("generating_icon"),
+      v.literal("generating_screens"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("partial") // Some screens succeeded, some failed
+    ),
+    currentStep: v.string(), // Human-readable: "Generating screen 2/5..."
+    progressPercentage: v.optional(v.number()), // 0-100 percentage complete (optional for backward compatibility)
+    screensGenerated: v.number(), // Number of screens successfully generated
+    screensTotal: v.number(), // Total number of screens planned
+    failedScreens: v.optional(
+      v.array(
+        v.object({
+          screenName: v.string(),
+          errorMessage: v.string(),
+        })
+      )
+    ), // Array of screens that failed to generate
+    error: v.optional(v.string()), // Overall error message if job failed
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_profile", ["profileId"])
+    .index("by_app", ["appId"])
+    .index("by_status", ["status"])
+    .index("by_profile_and_status", ["profileId", "status"]),
 
   styles: defineTable({
     // Identity

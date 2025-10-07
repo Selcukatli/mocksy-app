@@ -28,6 +28,7 @@ export const getApps = query({
       keywords: v.optional(v.array(v.string())),
       ageRating: v.optional(v.string()),
       isDemo: v.optional(v.boolean()),
+      status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
       styleGuide: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
@@ -103,6 +104,7 @@ export const getApp = query({
       keywords: v.optional(v.array(v.string())),
       ageRating: v.optional(v.string()),
       isDemo: v.optional(v.boolean()),
+      status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
       styleGuide: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
@@ -218,6 +220,7 @@ export const updateApp = mutation({
     bundleId: v.optional(v.string()),
     keywords: v.optional(v.array(v.string())),
     ageRating: v.optional(v.string()),
+    status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -373,6 +376,7 @@ export const createDemoApp = internalMutation({
       category: args.category,
       iconStorageId: args.iconStorageId,
       isDemo: true,
+      status: "draft", // New demo apps start as draft
       createdAt: now,
       updatedAt: now,
     });
@@ -416,6 +420,7 @@ export const getAppGenerationStatus = query({
         category: v.optional(v.string()),
         iconStorageId: v.optional(v.id("_storage")),
         iconUrl: v.optional(v.string()),
+        status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
       }),
       screens: v.array(
         v.object({
@@ -490,6 +495,7 @@ export const getAppGenerationStatus = query({
         category: app.category,
         iconStorageId: app.iconStorageId,
         iconUrl,
+        status: app.status,
       },
       screens: screensWithUrls,
       totalScreens: appScreens.length,

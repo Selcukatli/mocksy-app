@@ -110,8 +110,8 @@ export class HttpRequest {
     }
   }
   
-  GenerateAppStructure(
-      app_name: string,app_description: string,style_guide: string,num_screens: number,
+  GenerateAppDesignPlan(
+      app_name: string,app_description: string,app_category: string,style_guide: string,num_screens: number,
       __baml_options__?: BamlCallOptions
   ): HTTPRequest {
     try {
@@ -120,9 +120,9 @@ export class HttpRequest {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return this.runtime.buildRequestSync(
-        "GenerateAppStructure",
+        "GenerateAppDesignPlan",
         {
-          "app_name": app_name,"app_description": app_description,"style_guide": style_guide,"num_screens": num_screens
+          "app_name": app_name,"app_description": app_description,"app_category": app_category,"style_guide": style_guide,"num_screens": num_screens
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -136,7 +136,7 @@ export class HttpRequest {
   }
   
   GenerateDemoApp(
-      app_description_input?: string | null,category_hint?: string | null,vibe_style?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
+      app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
       __baml_options__?: BamlCallOptions
   ): HTTPRequest {
     try {
@@ -147,7 +147,32 @@ export class HttpRequest {
       return this.runtime.buildRequestSync(
         "GenerateDemoApp",
         {
-          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"vibe_style": vibe_style?? null,"style_config": style_config?? null,"style_name": style_name?? null
+          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"ui_style": ui_style?? null
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        false,
+        env,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  GenerateFirstScreenImagePrompt(
+      app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
+      __baml_options__?: BamlCallOptions
+  ): HTTPRequest {
+    try {
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.buildRequestSync(
+        "GenerateFirstScreenImagePrompt",
+        {
+          "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -185,8 +210,8 @@ export class HttpRequest {
     }
   }
   
-  GenerateScreenImagePrompt(
-      app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,has_reference_image: boolean,
+  GenerateScreenImagePromptWithReference(
+      app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
       __baml_options__?: BamlCallOptions
   ): HTTPRequest {
     try {
@@ -195,9 +220,9 @@ export class HttpRequest {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return this.runtime.buildRequestSync(
-        "GenerateScreenImagePrompt",
+        "GenerateScreenImagePromptWithReference",
         {
-          "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail,"has_reference_image": has_reference_image
+          "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -941,8 +966,8 @@ export class HttpStreamRequest {
     }
   }
   
-  GenerateAppStructure(
-      app_name: string,app_description: string,style_guide: string,num_screens: number,
+  GenerateAppDesignPlan(
+      app_name: string,app_description: string,app_category: string,style_guide: string,num_screens: number,
       __baml_options__?: BamlCallOptions
   ): HTTPRequest {
     try {
@@ -951,9 +976,9 @@ export class HttpStreamRequest {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return this.runtime.buildRequestSync(
-        "GenerateAppStructure",
+        "GenerateAppDesignPlan",
         {
-          "app_name": app_name,"app_description": app_description,"style_guide": style_guide,"num_screens": num_screens
+          "app_name": app_name,"app_description": app_description,"app_category": app_category,"style_guide": style_guide,"num_screens": num_screens
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -967,7 +992,7 @@ export class HttpStreamRequest {
   }
   
   GenerateDemoApp(
-      app_description_input?: string | null,category_hint?: string | null,vibe_style?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
+      app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
       __baml_options__?: BamlCallOptions
   ): HTTPRequest {
     try {
@@ -978,7 +1003,32 @@ export class HttpStreamRequest {
       return this.runtime.buildRequestSync(
         "GenerateDemoApp",
         {
-          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"vibe_style": vibe_style?? null,"style_config": style_config?? null,"style_name": style_name?? null
+          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"ui_style": ui_style?? null
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        true,
+        env,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  GenerateFirstScreenImagePrompt(
+      app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
+      __baml_options__?: BamlCallOptions
+  ): HTTPRequest {
+    try {
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.buildRequestSync(
+        "GenerateFirstScreenImagePrompt",
+        {
+          "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -1016,8 +1066,8 @@ export class HttpStreamRequest {
     }
   }
   
-  GenerateScreenImagePrompt(
-      app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,has_reference_image: boolean,
+  GenerateScreenImagePromptWithReference(
+      app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
       __baml_options__?: BamlCallOptions
   ): HTTPRequest {
     try {
@@ -1026,9 +1076,9 @@ export class HttpStreamRequest {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       return this.runtime.buildRequestSync(
-        "GenerateScreenImagePrompt",
+        "GenerateScreenImagePromptWithReference",
         {
-          "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail,"has_reference_image": has_reference_image
+          "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),

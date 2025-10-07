@@ -38,7 +38,11 @@ class TabStructure {
   has_tabs bool @description("Whether this app uses bottom navigation tabs")
   tab_names string[] @description("Array of tab names in order (e.g., ['Home', 'Explore', 'Profile']). Empty if has_tabs is false.")
   tab_icon_descriptions string[] @description("Icon description for each tab (e.g., 'house outline icon', 'compass icon'). Should match tab_names length.")
-  tab_styling string @description("Styling rules for tabs: active/inactive colors from style guide, icon size (e.g., '24px'), positioning ('bottom edge, 72px height'), spacing between tabs")
+  active_tab_color string @description("EXACT hex color for active tab icon and label (e.g., '#7B68EE', '#D4704A'). Must be a valid hex code.")
+  inactive_tab_color string @description("EXACT hex color for inactive tab icons and labels (e.g., '#999999', '#CCCCCC'). Must be a valid hex code.")
+  active_icon_style string @description("Icon style for active tab: either 'filled' or 'outline'")
+  inactive_icon_style string @description("Icon style for inactive tabs: either 'filled' or 'outline' (usually opposite of active)")
+  tab_styling string @description("Complete styling description including visual selection indicators, decorations, positioning, and sizing. Must include: (1) SELECTION INDICATOR: How the active tab is visually distinguished - choose ONE clear approach: bottom underline (specify thickness and position), background pill/rounded rectangle behind icon+label (specify padding and corner radius), top border accent, subtle glow/shadow effect, or background color fill. Be specific with measurements. (2) Tab bar layout: height (typically 60-80px), icon size (20-28px), label font size (10-12px), spacing between tabs. (3) Positioning: distance from bottom edge, alignment. Example: 'Active tab has rounded pill background (12px corner radius, 8px horizontal padding, 4px vertical padding) in active color at 20% opacity. Tab bar: 72px height at absolute bottom, 24px icons above 11px labels, evenly spaced with 4px gap between icon and label.' Colors are specified separately in active_tab_color and inactive_tab_color fields.")
 }
 
 class ScreenDetail {
@@ -56,7 +60,7 @@ class AppStructure {
 }
 
 class ScreenImagePrompt {
-  canvas_edit_prompt string @description("Complete prompt for editing canvas image to create this screen")
+  canvas_edit_prompt string @description("Complete prompt for editing canvas image to create this screen") @assert(max_length, {{ this|length <= 4500 }})
 }
 
 // ============================================
@@ -67,9 +71,7 @@ class ScreenImagePrompt {
 function GenerateDemoApp(
   app_description_input: string? @description("Optional user-provided app description/concept to generate from"),
   category_hint: string? @description("Optional category hint from user (e.g., 'Productivity', 'Health & Fitness'). Use this to inform the category choice, but you can adjust if another category fits better."),
-  vibe_style: string? @description("Optional vibe/style hint (e.g., 'Minimal & clean', 'Playful & vibrant', 'Futuristic neon'). Use this to influence color theme and icon design."),
-  style_config: StyleConfig? @description("Optional style configuration to base the app on"),
-  style_name: string? @description("Optional name of the style for context")
+  ui_style: string? @description("Optional UI style/aesthetic hint (e.g., 'Minimal & clean', 'Playful & vibrant', 'Dark mode with neon accents'). Use this to influence color palette, typography, and visual design.")
 ) -> DemoAppOutput {
   client ScreenshotGeneratorMed
   prompt #"
@@ -77,7 +79,6 @@ function GenerateDemoApp(
 
     You are generating a demo app concept with name, description, category, icon prompt, and color theme.
 
-    {% if app_description_input %}
     USER'S APP CONCEPT:
     {{ app_description_input }}
 
@@ -86,34 +87,18 @@ function GenerateDemoApp(
     (Use this to inform your category choice, but adjust if another category fits better)
     {% endif %}
 
-    {% if vibe_style %}
-    VISUAL STYLE/VIBE: {{ vibe_style }}
-    (Use this to influence color theme and icon design)
+    {% if ui_style %}
+    UI STYLE/AESTHETIC: {{ ui_style }}
+    (Use this to influence color palette, typography, and visual design)
     {% endif %}
 
     TASK: Create a fictional app based on this user's description. Generate a short catchy name, App Store category, professional description, icon prompt, and color theme that matches the concept.
-    {% elif style_config %}
-    STYLE TO SHOWCASE:
-    - Name: {{ style_name }}
-    - Background: {{ style_config.background_color }}
-    - Details: {{ style_config.details }}
-    - Text Style: {{ style_config.text_style }}
-    - Device Style: {{ style_config.device_style }}
-
-    {% if category_hint %}
-    CATEGORY HINT: {{ category_hint }}
-    {% endif %}
-
-    {% if vibe_style %}
-    VISUAL STYLE/VIBE: {{ vibe_style }}
-    {% endif %}
-
-    TASK: Create a fictional app with name, category, description, icon prompt, and color theme that would look great in this style.
-    {% endif %}
 
     ## 1. APP NAME
 
-    Create a short, catchy app name (1-3 words max):
+    **IMPORTANT**: If the user's description already includes a specific app name, use that exact name. Do not change it or suggest alternatives.
+
+    If no app name is provided, create a short, catchy app name (1-3 words max):
     - Examples: "FitQuest", "ZenJournal", "BeatFlow", "ShadowVault", "NightGuard"
     - Should match the style's mood:
       * Playful/bright styles → fun, energetic names
@@ -295,13 +280,14 @@ function ImproveAppDescription(
 }
 
 // ============================================
-// APP SCREEN GENERATION
+// APP DESIGN PLANNING
 // ============================================
 
-// Generate app structure plan (tabs, layout, screen details)
-function GenerateAppStructure(
+// Generate app design plan (tabs, layout, screen details) - NO image generation
+function GenerateAppDesignPlan(
   app_name: string @description("Name of the app"),
   app_description: string @description("Description of what the app does"),
+  app_category: string @description("App Store category (e.g., 'Games', 'Productivity', 'Social Networking'). Used to determine appropriate screen types."),
   style_guide: string @description("Complete visual style guide including colors, typography, mood, and design philosophy"),
   num_screens: int @description("Number of screens to plan (3-10)")
 ) -> AppStructure {
@@ -313,6 +299,7 @@ function GenerateAppStructure(
 
     **APP DETAILS:**
     - Name: {{ app_name }}
+    - Category: {{ app_category }}
     - Description: {{ app_description }}
     - Style Guide: {{ style_guide }}
     - Number of screens: {{ num_screens }}
@@ -334,16 +321,42 @@ function GenerateAppStructure(
     If using tabs:
     - Choose 3-5 clear tab names (e.g., "Home", "Explore", "Messages", "Profile")
     - Describe each tab's icon (outline style, 24px size)
-    - Define tab styling using colors from style_guide (active color, inactive color, positioning)
+    - **CRITICAL: Extract EXACT colors as hex codes:**
+      * **active_tab_color**: EXACT hex code for active tab icon and label (e.g., '#7B68EE', '#D4704A', '#FF6B6B'). Extract from style_guide colors.
+      * **inactive_tab_color**: EXACT hex code for inactive tabs (e.g., '#999999', '#CCCCCC', '#888888'). Usually a muted gray.
+      * **active_icon_style**: Either "filled" or "outline" - which looks better for the active tab?
+      * **inactive_icon_style**: Either "filled" or "outline" - usually opposite of active (if active is filled, inactive is outline)
+    - **CRITICAL: Define tab_styling (decorations and positioning):**
+      * **SELECTION INDICATOR** - Pick ONE clear visual indicator for the active tab:
+        - Bottom underline: Specify thickness (2-3px) and positioning ("2px bottom underline centered under icon+label")
+        - Background pill: Specify corner radius and padding ("rounded pill with 12px corners, 8px horizontal padding, 4px vertical padding")
+        - Top border accent: Specify thickness and position ("3px top border accent")
+        - Glow/shadow: Specify blur and spread ("soft glow with 4px blur, 2px spread")
+        - Background fill: Specify coverage ("full tab area background fill at 15% opacity")
+      * Specify exact measurements for the selection indicator
+      * Specify tab bar layout: height (typically 60-80px), icon size (20-28px), label font size (10-12px), icon-to-label spacing (2-4px), tab spacing
+      * **Example**: "Active tab has rounded pill background (12px corner radius, 8px horizontal padding, 4px vertical padding) in active color at 20% opacity. Tab bar: 72px height at absolute bottom, 24px icons above 11px labels, evenly spaced with 4px gap between icon and label."
+      * Note: Colors are specified separately in active_tab_color and inactive_tab_color
+    - Call out safe area behavior: tab bar hugs absolute bottom edge, but interactive content stays above it with at least 24px spacing
 
     ## 2. COMMON LAYOUT ELEMENTS
 
     Define elements that appear on EVERY screen:
-    - **Status bar:** ALWAYS at the absolute top edge of the screen (no gap above). Describe styling: text color (light/dark based on background), icons (battery, signal, time)
-    - **Background color:** Main background color from style_guide that fills the entire screen
-    - **Content start position:** Where main content begins (typically immediately below status bar, around 44-60px from top)
+
+    **CRITICAL - FULL BLEED REQUIREMENT:**
+    - ALL screens MUST be full-bleed (edge-to-edge) with NO white margins or borders
+    - Background fills from coordinates (0, 0) to (full canvas width, full canvas height)
+    - Status bar starts at y=0 (absolute top edge, no gap above)
+    - Tab bar (if exists) ends at y=canvas_height (absolute bottom edge, no gap below)
+    - Content can extend to all four edges of the screen
+
+    **Common elements to define:**
+    - **Status bar:** ALWAYS at absolute top edge (y=0, no gap above). Styling: text color (light/dark based on background), icons (battery, signal, time)
+    - **Background color:** Main background color from style_guide that fills ENTIRE screen edge-to-edge
+    - **Content start position:** Where main content begins (immediately below status bar, around 44-60px from top)
     - **Header patterns:** If any common headers appear across screens (style, positioning)
-    - **Overall spacing:** Internal padding for content (NOT edge margins - screens must be full bleed)
+    - **Overall spacing:** Internal padding for content (NOT edge margins - backgrounds fill to edges)
+    - **Safe area guidance:** Define where scrollable content ends and safe area begins. When tabs exist: all interactive content (CTAs, buttons, cards) must end at least 24-32px ABOVE the tab bar. Floating action buttons should be positioned in this safe area zone (e.g., "bottom: 96px" for 72px tab bar + 24px spacing). When no tabs: maintain 24-32px from bottom edge for home indicator.
     - **Any persistent UI elements:** Elements that appear on all screens
 
     ## 3. SCREEN DETAILS
@@ -355,6 +368,8 @@ function GenerateAppStructure(
     **purpose:** What this screen accomplishes in 1-2 sentences
 
     **layout_type:** Choose from:
+
+    GENERAL (all apps):
     - "dashboard" - Stats, cards, summaries, overview
     - "list" - Scrollable list of items (messages, products, articles)
     - "grid" - Grid of images/cards (photos, products, media)
@@ -364,6 +379,12 @@ function GenerateAppStructure(
     - "chat" - Messaging interface
     - "map" - Location-based interface
 
+    GAMES ONLY (use these for Games category):
+    - "gameplay" - Main game action screen showing actual gameplay (player view, HUD, interactive scene, game environment)
+    - "level" - Level/mission selection or progress screen
+    - "inventory" - Character equipment, items, upgrades, gear
+    - "dialogue" - Story scenes, character conversations, narrative moments
+
     **unique_elements:** Specific UI components for THIS screen:
     - Headers, titles, labels (with text examples)
     - Buttons and CTAs (what they say, where positioned)
@@ -371,11 +392,48 @@ function GenerateAppStructure(
     - Input fields (what data they collect)
     - Images, icons, illustrations (what they depict)
     - Stats, progress bars, graphs (what metrics)
+    - **CRITICAL: Use REALISTIC placeholder content, NOT bracketed placeholders:**
+      * ✅ GOOD: "Username: Sarah Chen", "Post title: My Morning Routine", "Score: 1,250 points", "Profile photo: woman with glasses"
+      * ❌ BAD: "[Username]", "[Post Title]", "[User Photo]", "[Image #1]", "[Score]"
+      * Generate believable names, titles, numbers, descriptions
     - Be concrete and specific!
 
     **active_tab_index:** If using tabs, which tab (0-based index) is active on this screen? If screen doesn't map to a tab or no tabs exist, use null.
 
     **SCREEN VARIETY:**
+
+    **CRITICAL - Category-Specific Screen Types:**
+
+    {% if app_category == "Games" %}
+    **THIS IS A GAME (Category: {{ app_category }}):**
+    Focus on GAMEPLAY screens, NOT menu screens. Players want to see the actual game experience.
+
+    For {{ num_screens }} screens, breakdown:
+    - **{{ num_screens - 1 }} screens: GAMEPLAY-FOCUSED**
+      * Use layout_type: "gameplay", "level", "inventory", "dialogue"
+      * Examples: "Desert Highway Chase", "Bar Fight Scene", "Character Inventory", "Boss Battle", "Story Dialogue with Villain"
+      * Show actual game environments, characters, action, HUD elements
+    - **Maximum 1 screen: Menu/UI screen**
+      * Only if needed: main menu, settings, or pause screen
+      * Use layout_type: "dashboard" or "form"
+
+    ❌ **AVOID for games:**
+    - Multiple settings/preferences screens
+    - Save game screens
+    - Credits screens
+    - "Quit to title" screens
+    - Loading screens
+
+    ✅ **SHOW for games:**
+    - Different game locations/levels
+    - Character interactions
+    - Combat/action scenes
+    - Puzzle/challenge screens
+    - Inventory/equipment management
+    - Story/narrative moments
+
+    {% else %}
+    **THIS IS A REGULAR APP (Category: {{ app_category }}):**
     - Include diverse screen types (mix of dashboard, list, detail, form)
     - Each screen should serve a distinct purpose
     - Cover main user flows of the app
@@ -384,25 +442,30 @@ function GenerateAppStructure(
       * 2-3 feature screens (core functionality)
       * 1 profile/account screen
       * 1 settings/preferences screen
+    {% endif %}
 
     {{ ctx.output_format }}
   "#
 }
 
-// Generate image prompt for a single screen based on app structure
-function GenerateScreenImagePrompt(
+// ============================================
+// IMAGE PROMPT GENERATION
+// ============================================
+
+// Generate image prompt for the FIRST screen (establishes visual style foundation)
+function GenerateFirstScreenImagePrompt(
   app_name: string @description("Name of the app"),
   style_guide: string @description("Complete visual style guide including colors, typography, mood"),
   common_layout: string @description("Common layout elements from AppStructure"),
   tabs: TabStructure @description("Tab structure from AppStructure"),
-  screen_detail: ScreenDetail @description("Details for this specific screen"),
-  has_reference_image: bool @description("Whether a visual reference screen image is provided (true for screens 2+, false for screen 1)")
+  screen_detail: ScreenDetail @description("Details for this specific screen")
 ) -> ScreenImagePrompt {
   client ScreenshotGeneratorMed
   prompt #"
     {{ _.role("user") }}
 
-    Generate a canvas-editing prompt for Gemini Flash to create an iPhone app screen.
+    Generate a canvas-editing prompt for Gemini Flash to create the FIRST iPhone app screen.
+    This screen establishes the visual style foundation for all subsequent screens.
 
     **APP CONTEXT:**
     - App Name: {{ app_name }}
@@ -418,7 +481,14 @@ function GenerateScreenImagePrompt(
     - Tab {{ loop.index0 }}: "{{ tab_name }}" ({{ tabs.tab_icon_descriptions[loop.index0] }})
     {% endfor %}
 
-    Tab Styling: {{ tabs.tab_styling }}
+    **TAB STYLING (USE EXACT HEX CODES):**
+    - Active tab color: {{ tabs.active_tab_color }} (icon + label)
+    - Inactive tab color: {{ tabs.inactive_tab_color }} (icon + label)
+    - Active icon style: {{ tabs.active_icon_style }}
+    - Inactive icon style: {{ tabs.inactive_icon_style }}
+    - Decorations: {{ tabs.tab_styling }}
+
+    **NO inventing colors. Use {{ tabs.active_tab_color }} for active, {{ tabs.inactive_tab_color }} for inactive.**
     {% else %}
     This app does not use bottom navigation tabs.
     {% endif %}
@@ -433,66 +503,158 @@ function GenerateScreenImagePrompt(
     {% endif %}
 
     **IMAGE EDITING INSTRUCTIONS:**
-    {% if has_reference_image %}
-    You will receive TWO images:
-    1. **Canvas image (image 1)**: Blank iPhone-sized canvas to edit/paint on
-    2. **Reference image (image 2)**: Previously generated screen showing the visual style
-
-    **CRITICAL:** Match the reference image's visual consistency:
-    - Use the EXACT same colors for backgrounds, buttons, text
-    - Match the EXACT tab bar styling (icons, colors, spacing, positioning)
-    - Keep the same typography (font sizes, weights, colors)
-    - Maintain the same design system (shadows, corner radius, spacing)
-    - **Match the EXACT status bar positioning and background fill** - no gap at top
-    - Paint onto the canvas (image 1), using reference (image 2) as your style guide
-
-    Only change what's unique to THIS screen: content, headers, main UI elements specific to "{{ screen_detail.screen_name }}".
-    {% else %}
     You will receive ONE image:
-    - **Canvas image**: Blank iPhone-sized canvas to edit/paint on
+    - **Canvas image**: Blank iPhone-sized canvas to paint on
 
-    Paint the app UI directly onto this canvas based on the style guide provided above.
-    {% endif %}
+    Paint the app UI directly onto this canvas.
 
     **CRITICAL FULL-BLEED REQUIREMENTS:**
-    - The background color MUST fill the ENTIRE canvas from edge to edge (0,0 to full width/height)
-    - Status bar MUST be painted at the ABSOLUTE TOP EDGE - no gap, no margin above it
-    - If tabs exist, tab bar MUST be painted at the ABSOLUTE BOTTOM EDGE - flush with canvas bottom
-    - Content sits BETWEEN status bar and tab bar (or bottom if no tabs), but background extends to all edges
+    - Background fills entire canvas edge-to-edge. NO white borders around edges.
+    - Status bar at top edge (y=0)
+    {% if tabs.has_tabs %}- Tab bar at bottom edge{% endif %}
+    - Paint OVER entire canvas. IGNORE any device frame you see. Fill EVERY pixel.
 
     **GENERATE THE PROMPT:**
 
-    Create a complete canvas-editing prompt that:
-    1. Starts with: "IMAGE EDITING TASK: The provided image is a blank iPhone-sized canvas. Paint the entire canvas from edge to edge with no margins."
-    2. Specifies the screen name: "SCREEN: {{ screen_detail.screen_name }}"
-    3. **FIRST INSTRUCTION - BACKGROUND FILL**: "First, fill the ENTIRE canvas with [background color from style guide] from coordinates (0,0) to full canvas dimensions. No white borders or gaps."
-    4. **SECOND INSTRUCTION - STATUS BAR**: "Paint the status bar at the ABSOLUTE TOP EDGE starting at y=0. The status bar should include: [time on left, signal/wifi/battery on right, specific styling from common_layout]"
+    **CRITICAL: Output MUST be under 4000 characters. Use extreme brevity.**
+
+    Create a concise canvas-editing prompt:
+    1. Start: "EDIT TASK: Paint DIRECTLY ONTO entire canvas image. CRITICAL: Fill EVERY pixel edge-to-edge from top-left corner to bottom-right corner. NO margins, NO white space, NO borders around edges. Paint over entire canvas area."
+    2. Screen: "{{ screen_detail.screen_name }}"
+    3. **BACKGROUND**: Extract bg color from common_layout. Fill entire canvas edge-to-edge with this color.
+    4. **STATUS BAR** (y=0, top edge): Time left, wifi/battery/icons right, styling from common_layout
     {% if tabs.has_tabs %}
-    5. **THIRD INSTRUCTION - TAB BAR**: "Paint the tab bar at the ABSOLUTE BOTTOM EDGE ending at y=canvas_height. Tab bar should include: {{ tabs.tab_names | join(', ') }}. Tab styling: {{ tabs.tab_styling }}"
+    5. **TAB BAR** (bottom of canvas, 72px height): {{ tabs.tab_names | join(', ') }}. {{ tabs.tab_styling }}
     {% if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none %}
-    - **Active tab:** "{{ tabs.tab_names[screen_detail.active_tab_index] }}" (index {{ screen_detail.active_tab_index }}) should be highlighted/active state
+    - Active: "{{ tabs.tab_names[screen_detail.active_tab_index] }}" - {{ tabs.active_icon_style }} icon + label {{ tabs.active_tab_color }}
+    - Inactive: {{ tabs.inactive_icon_style }} icon + label {{ tabs.inactive_tab_color }}
     {% else %}
-    - All tabs in inactive state
+    - Active: "{{ tabs.tab_names[0] }}" - {{ tabs.active_icon_style }} icon + label {{ tabs.active_tab_color }}
+    - Inactive: {{ tabs.inactive_icon_style }} icon + label {{ tabs.inactive_tab_color }}
     {% endif %}
-    6. **FOURTH INSTRUCTION - MAIN CONTENT**: Lists all UI elements for this screen (from unique_elements)
+    6. **CONTENT**: {{ screen_detail.unique_elements }}. All buttons/interactive elements must end at least 96px above tab bar.
     {% else %}
-    5. **THIRD INSTRUCTION - MAIN CONTENT**: Lists all UI elements for this screen (from unique_elements)
+    5. **CONTENT**: {{ screen_detail.unique_elements }}. Buttons/CTAs near bottom should leave ~32px margin from bottom edge.
     {% endif %}
-    7. Uses exact colors and styling from the style guide (provide hex codes)
-    {% if has_reference_image %}
-    8. **REFERENCE IMAGE NOTE**: "Image 2 shows the exact visual style to match. Use identical colors, spacing, typography, and edge positioning. Only change the screen-specific content."
-    {% endif %}
+    7. Colors: Use hex from style_guide
 
-    Make the prompt detailed and specific with exact positioning, sizes, colors (hex codes from style_guide), and element descriptions.
+    **BREVITY RULES:**
+    - Use abbreviations: "y=" not "y-coordinate", "bg", "px"
+    - Combine related info
+    - Target 2500-3500 chars MAX
 
-    **CRITICAL REMINDERS TO INCLUDE IN PROMPT:**
-    - "CRITICAL: The background must fill from edge to edge (0,0) to (full width, full height) with NO white borders"
-    - "CRITICAL: Status bar starts at y=0 (top edge), tab bar ends at y=canvas_height (bottom edge)"
-    - "CRITICAL: No margins or padding around the outer edges of the canvas"
+    **MUST INCLUDE:**
+    - Paint entire canvas edge-to-edge. ZERO margins. Fill EVERY pixel to all 4 edges.
+    - Status bar at top edge{% if tabs.has_tabs %}, tab bar at bottom edge{% endif %}
+    {% if tabs.has_tabs %}- All buttons/CTAs at least 96px above tab bar{% endif %}
+    - Background color fills entire canvas corner to corner
+    - If you see white space or device frame, paint OVER it completely
 
     {{ ctx.output_format }}
   "#
 }
+
+// Generate image prompt for screens 2+ WITH reference image (maintains visual consistency)
+function GenerateScreenImagePromptWithReference(
+  app_name: string @description("Name of the app"),
+  style_guide: string @description("Complete visual style guide including colors, typography, mood"),
+  common_layout: string @description("Common layout elements from AppStructure"),
+  tabs: TabStructure @description("Tab structure from AppStructure"),
+  screen_detail: ScreenDetail @description("Details for this specific screen")
+) -> ScreenImagePrompt {
+  client ScreenshotGeneratorMed
+  prompt #"
+    {{ _.role("user") }}
+
+    Generate a canvas-editing prompt for Gemini Flash. This screen MUST match the reference image's visual style.
+
+    **APP CONTEXT:**
+    - App Name: {{ app_name }}
+    - Style Guide: {{ style_guide }}
+
+    **COMMON LAYOUT:**
+    {{ common_layout }}
+
+    **TAB NAVIGATION:**
+    {% if tabs.has_tabs %}
+    Tabs: {% for tab_name in tabs.tab_names %}"{{ tab_name }}"{% if not loop.last %}, {% endif %}{% endfor %}
+
+    **TAB COLORS (EXACT):**
+    - Active: {{ tabs.active_tab_color }} ({{ tabs.active_icon_style }} icon + label)
+    - Inactive: {{ tabs.inactive_tab_color }} ({{ tabs.inactive_icon_style }} icon + label)
+    - Decorations: {{ tabs.tab_styling }}
+    {% else %}
+    No tabs.
+    {% endif %}
+
+    **THIS SCREEN:**
+    - Name: {{ screen_detail.screen_name }}
+    - Layout: {{ screen_detail.layout_type }}
+    - Elements: {{ screen_detail.unique_elements }}
+    {% if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none %}
+    - Active Tab: "{{ tabs.tab_names[screen_detail.active_tab_index] }}" (index {{ screen_detail.active_tab_index }})
+    {% endif %}
+
+    **IMAGE EDITING:**
+    TWO images provided:
+    1. Reference image (image 1) - match this visual style EXACTLY
+    2. Blank canvas (image 2) - paint on this
+
+    **MATCH REFERENCE:**
+    - Copy EXACT colors, fonts, shadows, spacing, corner radius from reference (image 1)
+    - Status bar positioning and background fill - no gap at top
+    - Paint on blank canvas (image 2) using reference (image 1) as style guide
+
+    {% if tabs.has_tabs and screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none %}
+    **TAB ADAPTATION (CRITICAL):**
+    Reference shows different active tab. For THIS screen:
+    - Active "{{ tabs.tab_names[screen_detail.active_tab_index] }}": {{ tabs.active_icon_style }} icon + label in {{ tabs.active_tab_color }}
+    - Inactive (all others): {{ tabs.inactive_icon_style }} icon + label in {{ tabs.inactive_tab_color }}
+
+    Match reference decorations (underline/glow/pill), but use EXACT colors above. NO color copying from reference.
+    {% endif %}
+
+    Only change: screen-specific content for "{{ screen_detail.screen_name }}".
+
+    **FULL-BLEED:**
+    - Paint entire canvas edge-to-edge. NO white borders around edges.
+    - Status bar at top edge{% if tabs.has_tabs %}, tab bar at bottom edge{% endif %}
+    - Paint OVER entire canvas. IGNORE device frame. Fill EVERY pixel.
+
+    **GENERATE PROMPT:**
+
+    **CRITICAL: Under 4000 chars. Extreme brevity.**
+
+    1. Start: "EDIT TASK: Paint on blank canvas (image 2). Match reference (image 1) style EXACTLY. Fill EVERY pixel edge-to-edge from corner to corner. NO margins, NO white space."
+    2. Screen: "{{ screen_detail.screen_name }}"
+    3. **BG**: Match reference gradient/color exactly. Fill entire canvas edge-to-edge.
+    4. **STATUS BAR** (top edge): Match reference positioning exactly
+    {% if tabs.has_tabs %}
+    5. **TAB BAR UPDATE (CRITICAL - bottom edge, 72px)**: Look at reference (image 1) tab bar. Copy its EXACT visual style (layout, spacing, icons, decorations). ONLY change: deselect previously active tab, activate "{{ tabs.tab_names[screen_detail.active_tab_index] if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none else tabs.tab_names[0] }}" tab.
+    - Active "{{ tabs.tab_names[screen_detail.active_tab_index] if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none else tabs.tab_names[0] }}": {{ tabs.active_icon_style }} icon + {{ tabs.active_tab_color }} label + decoration (pill/underline/etc from reference)
+    - All other tabs: {{ tabs.inactive_icon_style }} icon + {{ tabs.inactive_tab_color }} label, no decoration
+    - Tab order: {{ tabs.tab_names | join(', ') }}. Keep EXACT positioning, sizing, spacing from reference.
+    6. **CONTENT**: {{ screen_detail.unique_elements }}. All buttons/CTAs at least 96px above tab bar.
+    {% else %}
+    5. **CONTENT**: {{ screen_detail.unique_elements }}. Buttons/CTAs near bottom leave ~32px margin from bottom edge.
+    {% endif %}
+    7. Match reference: colors, fonts, shadows, spacing, corner radii
+
+    **BREVITY:**
+    - Abbreviations: y=, bg, px
+    - Combine info
+    - 2500-3500 chars
+
+    **MUST INCLUDE:**
+    - Match reference (image 1). Paint on canvas (image 2). Fill EVERY pixel edge-to-edge to all 4 corners. ZERO white space.
+    - Background fills entire canvas corner to corner
+    {% if tabs.has_tabs %}- Tab bar: Copy reference tab bar exactly. ONLY update active tab indicator from reference tab to "{{ tabs.tab_names[screen_detail.active_tab_index] if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none else tabs.tab_names[0] }}" ({{ tabs.active_tab_color }}){% endif %}
+    - Status bar at top edge{% if tabs.has_tabs %}, tabs at bottom edge{% endif %}
+
+    {{ ctx.output_format }}
+  "#
+}
+
 
 // ============================================
 // DEMO APP TEST CASES
@@ -512,6 +674,17 @@ test ImproveDescriptionFromDraft {
   args {
     draft_description "This app helps you track workouts and offers some motivation features. It has reminders, a few templates, and a social feed, but the copy feels flat."
     vibe_hint "Energetic fitness mentor"
+  }
+}
+
+test BatSignalAppDesignPlan {
+  functions [GenerateAppDesignPlan]
+  args {
+    app_name "BatSignal"
+    app_description "Emergency Batman summoning app. Fire the iconic bat signal into the Gotham sky with a tap. Track Batman's response time and view your signal history."
+    app_category "Utilities"
+    style_guide "Dark noir aesthetic with deep blacks (#0A0A0A) and bright yellow accents (#FFD700) for the bat signal glow. Dramatic shadows and bold typography. Status bar in light color for dark background. Glowing effects on interactive elements."
+    num_screens 5
   }
 }
 
@@ -560,4 +733,3 @@ test PlayfulPopArtDemoApp {
 // NOTE: Old GenerateScreensForApp function removed - replaced by two-stage approach:
 // 1. GenerateAppStructure (creates plan with tabs, layout, screen details)
 // 2. GenerateScreenImagePrompt (generates prompts from structure)
-

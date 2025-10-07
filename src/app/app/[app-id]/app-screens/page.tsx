@@ -86,6 +86,7 @@ export default function SourceImagesPage({ params }: PageProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [uploadingItems, setUploadingItems] = useState<Array<{id: string, preview: string}>>([]);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
   // Track when we've received the first non-undefined response
   useEffect(() => {
@@ -166,6 +167,76 @@ export default function SourceImagesPage({ params }: PageProps) {
     },
     [appId, router, searchParams, searchQuery, sortBy],
   );
+
+  const handleDownloadAll = useCallback(async () => {
+    if (isDownloadingAll || sortedImages.length === 0) {
+      return;
+    }
+
+    setIsDownloadingAll(true);
+
+    const contentTypeToExtension: Record<string, string> = {
+      'image/png': 'png',
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+      'image/svg+xml': 'svg',
+      'image/heic': 'heic',
+      'image/heif': 'heif',
+    };
+
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        window.setTimeout(resolve, ms);
+      });
+
+    try {
+      for (const image of sortedImages) {
+        if (!image.screenUrl) {
+          continue;
+        }
+
+        try {
+          const response = await fetch(image.screenUrl);
+          if (!response.ok) {
+            console.error('Failed to download image', image._id, response.statusText);
+            continue;
+          }
+
+          const blob = await response.blob();
+          const rawContentType = response.headers.get('content-type');
+          const contentType = rawContentType?.split(';')[0].trim() ?? '';
+          const inferredExtension =
+            contentTypeToExtension[contentType] || blob.type.split('/')[1] || '';
+
+          const originalName = image.name?.trim() || `app-screen-${image._id}`;
+          const safeBaseName = originalName.replace(/[\\/:*?"<>|]/g, '_');
+          const hasExtension = safeBaseName.includes('.');
+          const filename = hasExtension || !inferredExtension
+            ? safeBaseName
+            : `${safeBaseName}.${inferredExtension}`;
+
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = objectUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(objectUrl);
+
+          // Small delay so the browser can process sequential downloads
+          // without flagging as a spammy multi-download.
+          await delay(150);
+        } catch (error) {
+          console.error('Failed to download app screen', image._id, error);
+        }
+      }
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  }, [isDownloadingAll, sortedImages]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -424,6 +495,15 @@ export default function SourceImagesPage({ params }: PageProps) {
                   <option value="date">Latest First</option>
                   <option value="name">Name (A-Z)</option>
                 </select>
+                <button
+                  type="button"
+                  onClick={handleDownloadAll}
+                  disabled={sortedImages.length === 0 || isDownloadingAll}
+                  className="h-10 px-4 border rounded-lg bg-background text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:pointer-events-none hover:bg-muted/50"
+                >
+                  <Download className="w-4 h-4" />
+                  {isDownloadingAll ? 'Preparing…' : 'Download All'}
+                </button>
                 <label className="h-10 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap cursor-pointer">
                   <Upload className="w-4 h-4" />
                   {isUploading ? 'Uploading...' : 'Upload Images'}

@@ -282,10 +282,11 @@ export default function AppDetailPage({ params }: PageProps) {
                   <PopoverTrigger asChild>
                     <button
                       type="button"
-                      className="flex h-10 w-10 items-center justify-center rounded-lg border text-lg leading-none text-muted-foreground transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-600"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border text-lg text-muted-foreground transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-600"
+                      style={{ lineHeight: 1 }}
                       aria-label="More app actions"
                     >
-                      <span className="inline-flex h-full items-center justify-center">...</span>
+                      ...
                     </button>
                   </PopoverTrigger>
                   <PopoverContent side="bottom" align="end" className="w-40 p-1">

@@ -365,6 +365,10 @@ export interface TabStructure {
   has_tabs: boolean
   tab_names: string[]
   tab_icon_descriptions: string[]
+  active_tab_color: string
+  inactive_tab_color: string
+  active_icon_style: string
+  inactive_icon_style: string
   tab_styling: string
   
 }

@@ -6,26 +6,127 @@ import { internal, api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
 /**
- * Internal: Generate a demo app from a style OR description using BAML
- *
- * Accepts either a styleId OR a user-provided description.
- * Uses BAML to generate app concept and icon prompt,
- * generates the icon, and creates the complete demo app.
+ * Progress point allocation:
+ * - Generating concept: 15 points
+ * - Generating icon: 15 points (parallel with screens)
+ * - Generating first screen: 20 points
+ * - Generating remaining screens: 50 points (distributed equally)
+ * Total: 100 points
  */
-export const generateDemoAppInternal = internalAction({
+const PROGRESS_POINTS = {
+  CONCEPT: 15,
+  ICON: 15,
+  FIRST_SCREEN: 20,
+  REMAINING_SCREENS: 50,
+};
+
+/**
+ * Helper function to fetch with retry logic
+ */
+async function fetchWithRetry(url: string, maxAttempts = 3): Promise<Response> {
+  let lastError: string = "";
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`  Attempt ${attempt}/${maxAttempts} to download from ${url.substring(0, 60)}...`);
+      const response = await fetch(url);
+      if (response.ok) {
+        return response;
+      }
+      lastError = response.statusText;
+      console.log(`  ⚠️  Attempt ${attempt} failed: ${lastError}`);
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+      console.log(`  ⚠️  Attempt ${attempt} failed: ${lastError}`);
+    }
+
+    // Wait before retrying (exponential backoff)
+    if (attempt < maxAttempts) {
+      const delayMs = Math.pow(2, attempt) * 1000; // 2s, 4s
+      console.log(`  ⏳ Waiting ${delayMs/1000}s before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+
+  throw new Error(`Failed to download after ${maxAttempts} attempts: ${lastError}`);
+}
+
+/**
+ * Public: Schedule demo app generation and return app ID + job ID
+ * Client can poll the job for progress and the app for results
+ */
+export const scheduleDemoAppGeneration = action({
   args: {
-    styleId: v.optional(v.id("styles")),
+    appDescriptionInput: v.optional(v.string()),
+    categoryHint: v.optional(v.string()),
+    uiStyle: v.optional(v.string()),
+    screenshotSizeId: v.optional(v.id("screenshotSizes")),
+  },
+  returns: v.object({
+    appId: v.id("apps"),
+    jobId: v.id("appGenerationJobs"),
+  }),
+  handler: async (ctx, args): Promise<{ appId: Id<"apps">; jobId: Id<"appGenerationJobs"> }> => {
+    // Get user's profile
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Must be authenticated to generate demo app");
+    }
+
+    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    if (!profile) {
+      throw new Error("Failed to get user profile");
+    }
+
+    // Create placeholder app
+    const appId: Id<"apps"> = await ctx.runMutation(internal.apps.createDemoApp, {
+      profileId: profile._id,
+      name: "Generating...",
+      description: "AI is generating your app. This will update in real-time.",
+      category: args.categoryHint,
+    });
+
+    // Create job to track progress
+    const jobId = await ctx.runMutation(internal.appGenerationJobs.createAppGenerationJob, {
+      profileId: profile._id,
+      appId,
+      status: "pending",
+      currentStep: "Starting generation...",
+      progressPercentage: 0,
+      screensGenerated: 0,
+      screensTotal: 0,
+    });
+
+    // Schedule the actual generation in the background
+    await ctx.scheduler.runAfter(0, internal.demoActions.generateDemoApp, {
+      ...args,
+      profileId: profile._id,
+      appId,
+      jobId,
+    });
+
+    return { appId, jobId };
+  },
+});
+
+/**
+ * Internal: Generate a demo app from user description using BAML
+ * Uses parallel execution for icon + screen generation
+ */
+export const generateDemoApp = internalAction({
+  args: {
     profileId: v.optional(v.id("profiles")),
     appDescriptionInput: v.optional(v.string()),
     categoryHint: v.optional(v.string()),
-    vibeStyle: v.optional(v.string()),
-    screenshotSizeId: v.optional(v.id("screenshotSizes")), // Default: iPhone 16 Pro Max
-    appId: v.optional(v.id("apps")), // If provided, update existing app instead of creating new one
+    uiStyle: v.optional(v.string()),
+    screenshotSizeId: v.optional(v.id("screenshotSizes")),
+    appId: v.optional(v.id("apps")),
+    jobId: v.optional(v.id("appGenerationJobs")),
   },
   returns: v.id("apps"),
   handler: async (ctx, args): Promise<Id<"apps">> => {
-    if (!args.styleId && !args.appDescriptionInput) {
-      throw new Error("Either styleId or appDescriptionInput must be provided");
+    if (!args.appDescriptionInput) {
+      throw new Error("appDescriptionInput is required");
     }
 
     console.log("🎬 Generating demo app...");
@@ -34,603 +135,339 @@ export const generateDemoAppInternal = internalAction({
       throw new Error("profileId is required to create demo app");
     }
 
-    // 1. Use existing app ID or create new one
-    let appId: Id<"apps">;
-    if (args.appId) {
-      appId = args.appId;
-      console.log(`✅ Using existing app: ${appId} (will update progressively)`);
-    } else {
-      // CREATE APP IMMEDIATELY with placeholder data
-      console.log("💾 Creating app record with placeholder data...");
-      appId = await ctx.runMutation(internal.apps.createDemoApp, {
-        profileId: args.profileId,
-        name: "Generating...",
-        description: "AI is generating your app. This will update in real-time.",
-        category: args.categoryHint,
+    // Wrap entire generation in try-catch to handle errors gracefully
+    try {
+      // 1. Use existing app ID or create new one
+      let appId: Id<"apps">;
+      if (args.appId) {
+        appId = args.appId;
+        console.log(`✅ Using existing app: ${appId} (will update progressively)`);
+      } else {
+        console.log("💾 Creating app record with placeholder data...");
+        appId = await ctx.runMutation(internal.apps.createDemoApp, {
+          profileId: args.profileId,
+          name: "Generating...",
+          description: "AI is generating your app. This will update in real-time.",
+          category: args.categoryHint,
+        });
+        console.log(`✅ App created: ${appId} (will update progressively)`);
+      }
+
+      console.log("  From description:", args.appDescriptionInput.substring(0, 60) + "...");
+
+      // 2. Use BAML to generate app concept
+      if (args.jobId) {
+        await ctx.runMutation(internal.appGenerationJobs.updateAppGenerationJob, {
+          jobId: args.jobId,
+          status: "generating_concept",
+          currentStep: "Generating app concept...",
+          progressPercentage: 0,
+        });
+      }
+
+      console.log("🤖 Calling BAML to generate app concept...");
+      const { b } = await import("../baml_client");
+      const appConcept = await b.GenerateDemoApp(
+        args.appDescriptionInput,
+        args.categoryHint ?? null,
+        args.uiStyle ?? null
+      );
+
+      console.log(`  ✓ App name: ${appConcept.app_name}`);
+      console.log(`  ✓ App category: ${appConcept.app_category}`);
+      console.log(`  ✓ Style guide: ${appConcept.style_guide.substring(0, 60)}...`);
+
+      // Update progress after concept generation
+      if (args.jobId) {
+        await ctx.runMutation(internal.appGenerationJobs.updateAppGenerationJob, {
+          jobId: args.jobId,
+          progressPercentage: PROGRESS_POINTS.CONCEPT,
+        });
+      }
+
+      // 3. UPDATE APP with generated concept
+      console.log("💾 Updating app with generated name, description, and category...");
+      const fullDescription = `${appConcept.app_subtitle}. ${appConcept.app_description}`;
+      await ctx.runMutation(internal.apps.updateDemoApp, {
+        appId,
+        name: appConcept.app_name,
+        description: fullDescription,
+        category: appConcept.app_category,
+        styleGuide: appConcept.style_guide,
       });
-      console.log(`✅ App created: ${appId} (will update progressively)`);
-    }
+      console.log(`✅ App details updated in real-time`);
 
-    let styleName = "Custom Style";
-    let styleConfig = null;
+      // PARALLEL EXECUTION: Icon generation + Screen generation
+      console.log("🚀 Starting parallel generation: Icon + Screens...");
 
-    // 2. If styleId provided, fetch the style
-    if (args.styleId) {
-      console.log("  From style:", args.styleId);
-      const style = await ctx.runQuery(api.styles.getStyleById, {
-        styleId: args.styleId,
-      });
+      const IPHONE_16_PRO_MAX_SIZE_ID = "kh74jsbefpsc7wn9pjqfqfa0sd7rn4ct" as Id<"screenshotSizes">;
+      const sizeId = args.screenshotSizeId || IPHONE_16_PRO_MAX_SIZE_ID;
 
-      if (!style) {
-        throw new Error(`Style not found: ${args.styleId}`);
-      }
-
-      styleName = style.name;
-      styleConfig = {
-        background_color: style.backgroundColor,
-        details: style.details,
-        text_style: style.textStyle,
-        device_style: style.deviceStyle,
-      };
-    } else {
-      console.log("  From description:", args.appDescriptionInput?.substring(0, 60) + "...");
-    }
-
-    // 3. Use BAML to generate app concept (name, description, category, icon, color theme)
-    console.log("🤖 Calling BAML to generate app concept...");
-    const { b } = await import("../baml_client");
-    const appConcept = await b.GenerateDemoApp(
-      args.appDescriptionInput ?? null,
-      args.categoryHint ?? null,
-      args.vibeStyle ?? null,
-      styleConfig,
-      styleName
-    );
-
-    console.log(`  ✓ App name: ${appConcept.app_name}`);
-    console.log(`  ✓ App subtitle: ${appConcept.app_subtitle}`);
-    console.log(`  ✓ App category: ${appConcept.app_category}`);
-    console.log(`  ✓ App description: ${appConcept.app_description.substring(0, 60)}...`);
-    console.log(`  ✓ Icon prompt generated (${appConcept.app_icon_prompt.length} chars)`);
-    console.log(`  ✓ Style guide: ${appConcept.style_guide.substring(0, 60)}...`);
-
-    // 4. UPDATE APP with generated concept (combine subtitle into description for display)
-    console.log("💾 Updating app with generated name, description, and category...");
-    // Use subtitle as the first sentence/preview of description
-    const fullDescription = `${appConcept.app_subtitle}. ${appConcept.app_description}`;
-    await ctx.runMutation(internal.apps.updateDemoApp, {
-      appId,
-      name: appConcept.app_name,
-      description: fullDescription,
-      category: appConcept.app_category,
-      styleGuide: appConcept.style_guide,
-    });
-    console.log(`✅ App details updated in real-time`);
-
-    // 2b. Generate app structure plan (tabs, layout, screen details)
-    console.log("🏗️  Calling BAML to generate app structure plan...");
-    const appStructure = await b.GenerateAppStructure(
-      appConcept.app_name,
-      appConcept.app_description,
-      appConcept.style_guide,
-      5 // default 5 screens
-    );
-
-    console.log(`  ✓ App structure generated (${appStructure.screens.length} screens planned)`);
-    console.log(`  ✓ Tabs: ${appStructure.tabs.has_tabs ? `Yes (${appStructure.tabs.tab_names.join(', ')})` : 'No'}`);
-
-    // 3. Fetch canvas for screen generation
-    const IPHONE_16_PRO_MAX_SIZE_ID = "kh74jsbefpsc7wn9pjqfqfa0sd7rn4ct" as Id<"screenshotSizes">;
-    const sizeId = args.screenshotSizeId || IPHONE_16_PRO_MAX_SIZE_ID;
-
-    console.log(`📐 Fetching canvas for screenshot size: ${sizeId}`);
-    const size = await ctx.runQuery(api.screenshotSizes.getSizeById, {
-      sizeId,
-    });
-
-    if (!size) {
-      throw new Error(`Screenshot size not found: ${sizeId}`);
-    }
-
-    if (!size.canvasStorageId) {
-      throw new Error(`Screenshot size ${sizeId} has no canvas image`);
-    }
-
-    const canvasUrl = await ctx.runQuery(api.fileStorage.files.getFileUrl, {
-      storageId: size.canvasStorageId,
-    });
-
-    if (!canvasUrl) {
-      throw new Error(`Could not get canvas URL for size: ${sizeId}`);
-    }
-
-    console.log(`  ✓ Canvas URL retrieved`);
-
-    // 5. Generate app icon image
-    console.log("🎨 Generating demo app icon...");
-    const iconResult = await ctx.runAction(
-      internal.utils.fal.falImageActions.geminiFlashTextToImage,
-      {
-        prompt: appConcept.app_icon_prompt,
-        num_images: 1,
-        output_format: "png",
-      }
-    );
-
-    if (!iconResult.images || iconResult.images.length === 0) {
-      throw new Error("Failed to generate app icon");
-    }
-
-    const iconUrl = iconResult.images[0].url;
-    console.log(`  ✓ Icon generated: ${iconUrl.substring(0, 60)}...`);
-
-    // 6. Upload icon to Convex storage
-    console.log("📤 Uploading icon to storage...");
-    const iconResponse = await fetch(iconUrl);
-    if (!iconResponse.ok) {
-      throw new Error(`Failed to download icon: ${iconResponse.statusText}`);
-    }
-
-    const iconBlob = await iconResponse.blob();
-    const iconStorageId = await ctx.storage.store(iconBlob);
-    console.log(`  ✓ Icon uploaded: ${iconStorageId}`);
-
-    // 7. UPDATE APP with icon
-    console.log("💾 Updating app with icon...");
-    await ctx.runMutation(internal.apps.updateDemoApp, {
-      appId,
-      iconStorageId,
-    });
-    console.log(`✅ Icon added to app in real-time`);
-
-    // 6. Generate first screen (reference screen for consistency)
-    console.log(`🖼️  Generating screen 1 as reference...`);
-
-    const firstScreenDetail = appStructure.screens[0];
-    console.log(`  Screen: ${firstScreenDetail.screen_name}`);
-
-    // Generate prompt for first screen (no reference image)
-    const firstPromptResult = await b.GenerateScreenImagePrompt(
-      appConcept.app_name,
-      appConcept.style_guide,
-      appStructure.common_layout_elements,
-      appStructure.tabs,
-      firstScreenDetail,
-      false // no reference image for first screen
-    );
-
-    // Generate first screen image
-    const firstScreenResult = await ctx.runAction(
-      internal.utils.fal.falImageActions.geminiFlashEditImage,
-      {
-        prompt: firstPromptResult.canvas_edit_prompt,
-        image_urls: [canvasUrl],
-        num_images: 1,
-        output_format: "png",
-      }
-    );
-
-    if (!firstScreenResult.images || firstScreenResult.images.length === 0) {
-      throw new Error("Failed to generate first reference screen");
-    }
-
-    const firstScreenUrl = firstScreenResult.images[0].url;
-    const firstScreenWidth = firstScreenResult.images[0].width || 1290;
-    const firstScreenHeight = firstScreenResult.images[0].height || 2796;
-
-    // Download and upload first screen to storage
-    const firstScreenResponse = await fetch(firstScreenUrl);
-    if (!firstScreenResponse.ok) {
-      throw new Error("Failed to download first screen");
-    }
-
-    const firstScreenBlob = await firstScreenResponse.blob();
-    const firstScreenStorageId = await ctx.storage.store(firstScreenBlob);
-
-    // Create first screen record
-    const firstScreenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
-      appId,
-      profileId: args.profileId!,
-      name: firstScreenDetail.screen_name,
-      storageId: firstScreenStorageId,
-      dimensions: {
-        width: firstScreenWidth,
-        height: firstScreenHeight,
-      },
-      size: firstScreenBlob.size,
-    });
-
-    console.log(`  ✓ Screen 1 created: ${firstScreenId} (will be used as reference)`);
-
-    // 7. Generate remaining screens in parallel using first screen as visual reference
-    console.log(`🖼️  Generating remaining ${appStructure.screens.length - 1} screens with visual reference...`);
-
-    const remainingScreenResults = await Promise.all(
-      appStructure.screens.slice(1).map(async (screenDetail, index) => {
-        const screenNumber = index + 2; // +2 because we're skipping screen 1
-        console.log(`  → Generating screen ${screenNumber}: ${screenDetail.screen_name}`);
-
-        try {
-          // Generate prompt for this screen (WITH reference image)
-          const promptResult = await b.GenerateScreenImagePrompt(
-            appConcept.app_name,
-            appConcept.style_guide,
-            appStructure.common_layout_elements,
-            appStructure.tabs,
-            screenDetail,
-            true // has reference image
-          );
-
-          // Generate screen image with canvas + first screen as reference
-          const screenResult = await ctx.runAction(
-            internal.utils.fal.falImageActions.geminiFlashEditImage,
+      const [iconStorageId, screenResults] = await Promise.all([
+        // ===== PARALLEL BRANCH 1: Icon Generation =====
+        (async () => {
+          console.log("🎨 [ICON] Generating app icon...");
+          const iconResult = await ctx.runAction(
+            internal.utils.fal.falImageActions.geminiFlashTextToImage,
             {
-              prompt: promptResult.canvas_edit_prompt,
-              image_urls: [canvasUrl, firstScreenUrl], // canvas + reference
+              prompt: appConcept.app_icon_prompt,
               num_images: 1,
               output_format: "png",
             }
           );
 
-          if (!screenResult.images || screenResult.images.length === 0) {
-            console.log(`  ❌ Failed to generate screen ${screenNumber}: No images returned`);
-            return null;
+          if (!iconResult.images || iconResult.images.length === 0) {
+            throw new Error("Failed to generate app icon");
           }
 
-          const screenUrl = screenResult.images[0].url;
-          const screenWidth = screenResult.images[0].width || 1290;
-          const screenHeight = screenResult.images[0].height || 2796;
+          const iconUrl = iconResult.images[0].url;
+          console.log(`  ✓ [ICON] Generated`);
 
-          // Download and upload to storage
-          const screenResponse = await fetch(screenUrl);
-          if (!screenResponse.ok) {
-            console.log(`  ❌ Failed to download screen ${screenNumber}`);
-            return null;
-          }
+          console.log("📤 [ICON] Uploading to storage...");
+          const iconResponse = await fetchWithRetry(iconUrl);
+          const iconBlob = await iconResponse.blob();
+          const storageId = await ctx.storage.store(iconBlob);
+          console.log(`  ✓ [ICON] Uploaded: ${storageId}`);
 
-          const screenBlob = await screenResponse.blob();
-          const screenStorageId = await ctx.storage.store(screenBlob);
-
-          // Create app screen record
-          const screenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
+          // Update app with icon
+          await ctx.runMutation(internal.apps.updateDemoApp, {
             appId,
-            profileId: args.profileId!,
-            name: screenDetail.screen_name,
-            storageId: screenStorageId,
-            dimensions: {
-              width: screenWidth,
-              height: screenHeight,
-            },
-            size: screenBlob.size,
+            iconStorageId: storageId,
           });
+          console.log(`✅ [ICON] Added to app`);
 
-          console.log(`  ✓ Screen ${screenNumber} created: ${screenId}`);
-          return screenId;
-        } catch (error) {
-          console.log(`  ❌ Error generating screen ${screenNumber}:`, error);
-          return null;
-        }
-      })
-    );
+          // Update progress for icon completion
+          if (args.jobId) {
+            await ctx.runMutation(internal.appGenerationJobs.updateAppGenerationJob, {
+              jobId: args.jobId,
+              progressPercentage: PROGRESS_POINTS.CONCEPT + PROGRESS_POINTS.ICON,
+            });
+          }
 
-    const successfulRemainingScreens = remainingScreenResults.filter(
-      (id): id is Id<"appScreens"> => id !== null
-    );
-    const totalSuccessful = 1 + successfulRemainingScreens.length; // +1 for first screen
-    console.log(`✅ Generated ${totalSuccessful}/${appStructure.screens.length} app screens (1 reference + ${successfulRemainingScreens.length} matching)`);
+          return storageId;
+        })(),
 
-    return appId;
-  },
-});
-
-/**
- * Generate app screens for an existing app (demo or user-created)
- *
- * Uses BAML to generate screen prompts based on app details,
- * then generates the screens in parallel using Gemini Flash.
- */
-export const generateScreensForExistingApp = internalAction({
-  args: {
-    appId: v.id("apps"),
-    profileId: v.id("profiles"),
-    screenInstructions: v.optional(v.string()),
-    numScreens: v.optional(v.number()),
-    screenshotSizeId: v.optional(v.id("screenshotSizes")), // Default: iPhone 16 Pro Max
-  },
-  returns: v.array(v.id("appScreens")),
-  handler: async (ctx, args): Promise<Id<"appScreens">[]> => {
-    console.log(`🖼️  Generating screens for existing app: ${args.appId}`);
-
-    // 1. Get app details
-    const app = await ctx.runQuery(api.apps.getApp, { appId: args.appId });
-    if (!app) {
-      throw new Error("App not found");
-    }
-
-    console.log(`  App: ${app.name}`);
-    console.log(`  Instructions: ${args.screenInstructions || "auto-generate"}`);
-    console.log(`  Num screens: ${args.numScreens || 5}`);
-
-    // 2. Use app's styleGuide or generate a default one
-    const styleGuide = app.styleGuide || "Modern, clean design with a neutral color palette and sans-serif typography.";
-
-    // 3. Generate app structure plan
-    console.log("🏗️  Calling BAML to generate app structure plan...");
-    const { b } = await import("../baml_client");
-    const appStructure = await b.GenerateAppStructure(
-      app.name,
-      app.description || "An app",
-      styleGuide,
-      args.numScreens || 5
-    );
-
-    console.log(`  ✓ App structure generated (${appStructure.screens.length} screens planned)`);
-
-    // 4. Fetch canvas for screen generation
-    const IPHONE_16_PRO_MAX_SIZE_ID = "kh74jsbefpsc7wn9pjqfqfa0sd7rn4ct" as Id<"screenshotSizes">;
-    const sizeId = args.screenshotSizeId || IPHONE_16_PRO_MAX_SIZE_ID;
-
-    console.log(`📐 Fetching canvas for screenshot size: ${sizeId}`);
-    const size = await ctx.runQuery(api.screenshotSizes.getSizeById, {
-      sizeId,
-    });
-
-    if (!size) {
-      throw new Error(`Screenshot size not found: ${sizeId}`);
-    }
-
-    if (!size.canvasStorageId) {
-      throw new Error(`Screenshot size ${sizeId} has no canvas image`);
-    }
-
-    const canvasUrl = await ctx.runQuery(api.fileStorage.files.getFileUrl, {
-      storageId: size.canvasStorageId,
-    });
-
-    if (!canvasUrl) {
-      throw new Error(`Could not get canvas URL for size: ${sizeId}`);
-    }
-
-    console.log(`  ✓ Canvas URL retrieved`);
-
-    // 5. Generate all screens in parallel (all with canvas only, no reference)
-    const screenResults = await Promise.all(
-      appStructure.screens.map(async (screenDetail, index) => {
-        const screenNumber = index + 1;
-        console.log(`  → Generating screen ${screenNumber}: ${screenDetail.screen_name}`);
-
-        try {
-          // Generate prompt for this screen
-          const promptResult = await b.GenerateScreenImagePrompt(
-            app.name,
-            styleGuide,
-            appStructure.common_layout_elements,
-            appStructure.tabs,
-            screenDetail,
-            false // no reference image for user-generated apps (generate all in parallel)
+        // ===== PARALLEL BRANCH 2: Screen Generation =====
+        (async () => {
+          // Generate app structure plan
+          console.log("🏗️  [SCREENS] Generating app structure plan...");
+          const appStructure = await b.GenerateAppDesignPlan(
+            appConcept.app_name,
+            appConcept.app_description,
+            appConcept.app_category,
+            appConcept.style_guide,
+            5
           );
 
-          // Generate screen image with canvas
-          const screenResult = await ctx.runAction(
+          console.log(`  ✓ [SCREENS] Structure generated (${appStructure.screens.length} screens)`);
+          console.log(`  ✓ [SCREENS] Tabs: ${appStructure.tabs.has_tabs ? `Yes (${appStructure.tabs.tab_names.join(', ')})` : 'No'}`);
+
+          // Update job with screen count
+          if (args.jobId) {
+            await ctx.runMutation(internal.appGenerationJobs.updateAppGenerationJob, {
+              jobId: args.jobId,
+              screensTotal: appStructure.screens.length,
+            });
+          }
+
+          // Fetch canvas
+          console.log(`📐 [SCREENS] Fetching canvas...`);
+          const size = await ctx.runQuery(api.screenshotSizes.getSizeById, { sizeId });
+          if (!size?.canvasStorageId) {
+            throw new Error(`Screenshot size not found: ${sizeId}`);
+          }
+
+          const canvasUrl = await ctx.runQuery(api.fileStorage.files.getFileUrl, {
+            storageId: size.canvasStorageId,
+          });
+          if (!canvasUrl) {
+            throw new Error(`Could not get canvas URL`);
+          }
+
+          // Generate first screen
+          if (args.jobId) {
+            await ctx.runMutation(internal.appGenerationJobs.updateAppGenerationJob, {
+              jobId: args.jobId,
+              status: "generating_screens",
+              currentStep: `Generating screen 1/${appStructure.screens.length}...`,
+            });
+          }
+
+          console.log(`🖼️  [SCREENS] Generating screen 1 as reference...`);
+          const firstScreenDetail = appStructure.screens[0];
+
+          const firstPromptResult = await b.GenerateFirstScreenImagePrompt(
+            appConcept.app_name,
+            appConcept.style_guide,
+            appStructure.common_layout_elements,
+            appStructure.tabs,
+            firstScreenDetail
+          );
+
+          const firstScreenResult = await ctx.runAction(
             internal.utils.fal.falImageActions.geminiFlashEditImage,
             {
-              prompt: promptResult.canvas_edit_prompt,
+              prompt: firstPromptResult.canvas_edit_prompt,
               image_urls: [canvasUrl],
               num_images: 1,
               output_format: "png",
             }
           );
 
-          if (!screenResult.images || screenResult.images.length === 0) {
-            console.log(`  ❌ Failed to generate screen ${index + 1}: No images returned`);
-            return null;
+          if (!firstScreenResult.images || firstScreenResult.images.length === 0) {
+            throw new Error("Failed to generate first reference screen");
           }
 
-          const screenUrl = screenResult.images[0].url;
-          const screenWidth = screenResult.images[0].width || 1080; // Default 9:16 aspect ratio
-          const screenHeight = screenResult.images[0].height || 1920;
+          const firstScreenUrl = firstScreenResult.images[0].url;
+          const firstScreenWidth = firstScreenResult.images[0].width || 1290;
+          const firstScreenHeight = firstScreenResult.images[0].height || 2796;
 
-          // Download and upload to storage
-          const screenResponse = await fetch(screenUrl);
-          if (!screenResponse.ok) {
-            console.log(`  ❌ Failed to download screen ${index + 1}`);
-            return null;
-          }
+          // Upload first screen
+          const firstScreenResponse = await fetchWithRetry(firstScreenUrl);
+          const firstScreenBlob = await firstScreenResponse.blob();
+          const firstScreenStorageId = await ctx.storage.store(firstScreenBlob);
 
-          const screenBlob = await screenResponse.blob();
-          const screenStorageId = await ctx.storage.store(screenBlob);
-
-          // Create app screen record
-          const screenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
-            appId: args.appId,
-            profileId: args.profileId,
-            name: screenDetail.screen_name,
-            storageId: screenStorageId,
-            dimensions: {
-              width: screenWidth,
-              height: screenHeight,
-            },
-            size: screenBlob.size,
+          const firstScreenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
+            appId,
+            profileId: args.profileId!,
+            name: firstScreenDetail.screen_name,
+            storageId: firstScreenStorageId,
+            dimensions: { width: firstScreenWidth, height: firstScreenHeight },
+            size: firstScreenBlob.size,
           });
 
-          console.log(`  ✓ Screen ${index + 1} created: ${screenId}`);
-          return screenId;
-        } catch (error) {
-          console.log(`  ❌ Error generating screen ${index + 1}:`, error);
-          return null;
-        }
-      })
-    );
+          console.log(`  ✓ [SCREENS] Screen 1 created: ${firstScreenId}`);
 
-    const successfulScreens = screenResults.filter(
-      (id): id is Id<"appScreens"> => id !== null
-    );
-    console.log(`✅ Generated ${successfulScreens.length}/${appStructure.screens.length} app screens`);
+          // Update progress after first screen
+          const progressAfterFirstScreen = PROGRESS_POINTS.CONCEPT + PROGRESS_POINTS.ICON + PROGRESS_POINTS.FIRST_SCREEN;
+          if (args.jobId) {
+            await ctx.runMutation(internal.appGenerationJobs.updateAppGenerationJob, {
+              jobId: args.jobId,
+              screensGenerated: 1,
+              progressPercentage: progressAfterFirstScreen,
+              currentStep: `Matching style from first screen... (1/${appStructure.screens.length})`,
+            });
+          }
 
-    return successfulScreens;
-  },
-});
+          // Generate remaining screens IN PARALLEL
+          console.log(`🖼️  [SCREENS] Generating remaining ${appStructure.screens.length - 1} screens in parallel...`);
 
-// ============================================
-// PUBLIC ACTIONS
-// ============================================
+          const failedScreens: Array<{ screenName: string; errorMessage: string }> = [];
+          const remainingScreenCount = appStructure.screens.length - 1;
+          const pointsPerScreen = PROGRESS_POINTS.REMAINING_SCREENS / remainingScreenCount;
 
-/**
- * Public: Generate a demo app from a style for the current user
- */
-export const generateDemoAppFromStyle = action({
-  args: {
-    styleId: v.id("styles"),
-  },
-  returns: v.id("apps"),
-  handler: async (ctx, args): Promise<Id<"apps">> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+          const remainingScreenResults: (Id<"appScreens"> | null)[] = await Promise.all(
+            appStructure.screens.slice(1).map(async (screenDetail, i) => {
+              const screenNumber = i + 2;
+              console.log(`  → [SCREENS] Generating screen ${screenNumber}: ${screenDetail.screen_name}`);
 
-    // Get user's profile
-    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
-    if (!profile) {
-      throw new Error("Profile not found");
-    }
+              try {
+                const promptResult = await b.GenerateScreenImagePromptWithReference(
+                  appConcept.app_name,
+                  appConcept.style_guide,
+                  appStructure.common_layout_elements,
+                  appStructure.tabs,
+                  screenDetail
+                );
 
-    // Call internal action
-    return await ctx.runAction(internal.demoActions.generateDemoAppInternal, {
-      styleId: args.styleId,
-      profileId: profile._id,
-      appDescriptionInput: undefined,
-    });
-  },
-});
+                const screenResult = await ctx.runAction(
+                  internal.utils.fal.falImageActions.geminiFlashEditImage,
+                  {
+                    prompt: promptResult.canvas_edit_prompt,
+                    image_urls: [firstScreenUrl, canvasUrl], // Reference first, canvas second
+                    num_images: 1,
+                    output_format: "png",
+                  }
+                );
 
-/**
- * Public: Generate a demo app from a description for the current user
- */
-export const generateDemoAppFromDescription = action({
-  args: {
-    appDescription: v.string(),
-  },
-  returns: v.id("apps"),
-  handler: async (ctx, args): Promise<Id<"apps">> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+                if (!screenResult.images || screenResult.images.length === 0) {
+                  const errorMsg = "No images returned from generation";
+                  failedScreens.push({ screenName: screenDetail.screen_name, errorMessage: errorMsg });
+                  return null;
+                }
 
-    // Get user's profile
-    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
-    if (!profile) {
-      throw new Error("Profile not found");
-    }
+                const screenUrl = screenResult.images[0].url;
+                const screenWidth = screenResult.images[0].width || 1290;
+                const screenHeight = screenResult.images[0].height || 2796;
 
-    // Call internal action
-    return await ctx.runAction(internal.demoActions.generateDemoAppInternal, {
-      styleId: undefined,
-      profileId: profile._id,
-      appDescriptionInput: args.appDescription,
-    });
-  },
-});
+                const screenResponse = await fetchWithRetry(screenUrl);
+                const screenBlob = await screenResponse.blob();
+                const screenStorageId = await ctx.storage.store(screenBlob);
 
-/**
- * Public: Generate additional screens for an existing app
- */
-export const generateScreensForApp = action({
-  args: {
-    appId: v.id("apps"),
-    screenInstructions: v.optional(v.string()),
-    numScreens: v.optional(v.number()),
-  },
-  returns: v.array(v.id("appScreens")),
-  handler: async (ctx, args): Promise<Id<"appScreens">[]> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+                const screenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
+                  appId,
+                  profileId: args.profileId!,
+                  name: screenDetail.screen_name,
+                  storageId: screenStorageId,
+                  dimensions: { width: screenWidth, height: screenHeight },
+                  size: screenBlob.size,
+                });
 
-    // Get user's profile
-    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
-    if (!profile) {
-      throw new Error("Profile not found");
-    }
+                console.log(`  ✓ [SCREENS] Screen ${screenNumber} created: ${screenId}`);
 
-    // Verify app ownership
-    const app = await ctx.runQuery(api.apps.getApp, { appId: args.appId });
-    if (!app || app.profileId !== profile._id) {
-      throw new Error("App not found or access denied");
-    }
+                // Update progress
+                if (args.jobId) {
+                  const newProgress = progressAfterFirstScreen + (pointsPerScreen * (i + 1));
+                  await ctx.runMutation(internal.appGenerationJobs.incrementScreenCount, {
+                    jobId: args.jobId,
+                    progressPercentage: Math.min(100, Math.round(newProgress)),
+                  });
+                }
 
-    // Call internal action
-    return await ctx.runAction(internal.demoActions.generateScreensForExistingApp, {
-      appId: args.appId,
-      profileId: profile._id,
-      screenInstructions: args.screenInstructions,
-      numScreens: args.numScreens,
-    });
-  },
-});
+                return screenId;
+              } catch (error) {
+                const errorMsg = error instanceof Error ? error.message : String(error);
+                console.log(`  ❌ [SCREENS] Error generating screen ${screenNumber}:`, errorMsg);
+                failedScreens.push({ screenName: screenDetail.screen_name, errorMessage: errorMsg });
+                return null;
+              }
+            })
+          );
 
-/**
- * Public: Generate a complete app with icon and screens from user's description
- * This is the main action called from the new-app form
- *
- * IMPORTANT: Returns app ID immediately and generates content in the background
- */
-export const generateApp = action({
-  args: {
-    appDescription: v.string(),
-    category: v.optional(v.string()),
-    vibe: v.optional(v.string()),
-  },
-  returns: v.id("apps"),
-  handler: async (ctx, args): Promise<Id<"apps">> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+          const successfulRemainingScreens = remainingScreenResults.filter(
+            (id: Id<"appScreens"> | null): id is Id<"appScreens"> => id !== null
+          );
+          const totalSuccessful = 1 + successfulRemainingScreens.length;
+          console.log(`✅ [SCREENS] Generated ${totalSuccessful}/${appStructure.screens.length} screens`);
 
-    // Get user's profile
-    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
-    if (!profile) {
-      throw new Error("Profile not found");
-    }
+          return { totalSuccessful, totalScreens: appStructure.screens.length, failedScreens };
+        })(),
+      ]);
 
-    // Parse the "AppName: Description" format if present
-    let cleanDescription = args.appDescription.trim();
+      // Both branches complete - update final job status
+      const { totalSuccessful, totalScreens, failedScreens } = screenResults;
 
-    // If description contains "AppName: Description", extract just the description part
-    const colonIndex = cleanDescription.indexOf(':');
-    if (colonIndex > 0 && colonIndex < 30) {
-      const potentialName = cleanDescription.substring(0, colonIndex).trim();
-      const wordCount = potentialName.split(/\s+/).length;
-      if (wordCount <= 4 && potentialName.length <= 30) {
-        // This looks like "AppName: Description" format, use the full thing
-        cleanDescription = cleanDescription;
+      if (args.jobId) {
+        const finalStatus = totalSuccessful === totalScreens ? "completed" : "partial";
+        await ctx.runMutation(internal.appGenerationJobs.updateAppGenerationJob, {
+          jobId: args.jobId,
+          status: finalStatus,
+          currentStep: `Completed: ${totalSuccessful}/${totalScreens} screens generated`,
+          progressPercentage: 100,
+          screensGenerated: totalSuccessful,
+          failedScreens: failedScreens.length > 0 ? failedScreens : undefined,
+        });
       }
+
+      console.log(`🎉 Demo app generation complete! Icon: ${iconStorageId}, Screens: ${totalSuccessful}/${totalScreens}`);
+
+      return appId;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("❌ Error during app generation:", errorMessage);
+
+      if (args.jobId) {
+        await ctx.runMutation(internal.appGenerationJobs.updateAppGenerationJob, {
+          jobId: args.jobId,
+          status: "failed",
+          currentStep: "Generation failed",
+          error: errorMessage,
+        });
+      }
+
+      throw error;
     }
-
-    // Create placeholder app record immediately
-    const appId = await ctx.runMutation(internal.apps.createDemoApp, {
-      profileId: profile._id,
-      name: "Generating...",
-      description: "AI is generating your app. This will update in real-time.",
-      category: args.category,
-    });
-
-    // Schedule background generation (fire and forget)
-    // Note: We intentionally don't await this to return the app ID immediately
-    void ctx.scheduler.runAfter(0, internal.demoActions.generateDemoAppInternal, {
-      styleId: undefined,
-      profileId: profile._id,
-      appDescriptionInput: cleanDescription,
-      categoryHint: args.category,
-      vibeStyle: args.vibe,
-      appId, // Pass the app ID so we update the existing record
-    });
-
-    // Return app ID immediately so modal can start showing progress
-    return appId;
   },
 });
 
@@ -640,17 +477,14 @@ export const generateApp = action({
 export const improveAppDescription = action({
   args: {
     draftDescription: v.string(),
-    vibeHint: v.optional(v.string()),
+    uiStyleHint: v.optional(v.string()),
   },
   returns: v.object({
     improvedDescription: v.string(),
     improvedStyle: v.string(),
     inferredCategory: v.string(),
   }),
-  handler: async (
-    ctx,
-    args
-  ): Promise<{ improvedDescription: string; improvedStyle: string; inferredCategory: string }> => {
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Not authenticated");
@@ -663,7 +497,7 @@ export const improveAppDescription = action({
     const { b } = await import("../baml_client");
     const result = await b.ImproveAppDescription(
       args.draftDescription,
-      args.vibeHint ?? null
+      args.uiStyleHint ?? null
     );
 
     return {

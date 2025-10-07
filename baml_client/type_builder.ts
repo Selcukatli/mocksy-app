@@ -95,7 +95,7 @@ export default class TypeBuilder {
     
     Subject: ClassViewer<'Subject', "description" | "action" | "position">;
     
-    TabStructure: ClassViewer<'TabStructure', "has_tabs" | "tab_names" | "tab_icon_descriptions" | "tab_styling">;
+    TabStructure: ClassViewer<'TabStructure', "has_tabs" | "tab_names" | "tab_icon_descriptions" | "active_tab_color" | "inactive_tab_color" | "active_icon_style" | "inactive_icon_style" | "tab_styling">;
     
     TextConfig: ClassViewer<'TextConfig', "header" | "subheader">;
     
@@ -251,7 +251,7 @@ export default class TypeBuilder {
         ]);
         
         this.TabStructure = this.tb.classViewer("TabStructure", [
-          "has_tabs","tab_names","tab_icon_descriptions","tab_styling",
+          "has_tabs","tab_names","tab_icon_descriptions","active_tab_color","inactive_tab_color","active_icon_style","inactive_icon_style","tab_styling",
         ]);
         
         this.TextConfig = this.tb.classViewer("TextConfig", [

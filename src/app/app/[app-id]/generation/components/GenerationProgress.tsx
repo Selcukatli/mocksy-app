@@ -34,18 +34,32 @@ interface AppStatus {
   totalScreens: number;
 }
 
+type JobStatus = {
+  _id: Id<'appGenerationJobs'>;
+  appId: Id<'apps'>;
+  status: 'pending' | 'generating_concept' | 'generating_icon' | 'generating_screens' | 'completed' | 'failed' | 'partial';
+  currentStep: string;
+  screensGenerated: number;
+  screensTotal: number;
+  failedScreens?: Array<{ screenName: string; errorMessage: string }>;
+  error?: string;
+  createdAt: number;
+  updatedAt: number;
+} | null | undefined;
+
 interface GenerationProgressProps {
   appStatus: AppStatus;
+  jobStatus: JobStatus;
   appId: Id<'apps'>;
 }
 
-export default function GenerationProgress({ appStatus, appId }: GenerationProgressProps) {
+export default function GenerationProgress({ appStatus, jobStatus, appId }: GenerationProgressProps) {
   const router = useRouter();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isSubtitleExpanded, setIsSubtitleExpanded] = useState(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
 
-  const totalScreens = 5;
+  const totalScreens = jobStatus?.screensTotal || 5;
   const screenUrls = appStatus.screens.map(s => s.screenUrl).filter((url): url is string => !!url);
 
   useEffect(() => {
@@ -58,8 +72,25 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
     });
   }, [screenUrls.length]);
 
-  // Determine current stage based on what data we have
+  // Determine current stage based on job status (preferred) or infer from data
   const getCurrentStage = (): GenerationStage => {
+    // If we have job status, use it for accurate stage determination
+    if (jobStatus) {
+      if (jobStatus.status === 'completed') return 'complete';
+      if (jobStatus.status === 'failed') return 'complete'; // Show as complete with error
+      if (jobStatus.status === 'partial') return 'complete'; // Show as complete with partial error
+      if (jobStatus.status === 'generating_screens') {
+        const screenCount = jobStatus.screensGenerated;
+        if (screenCount >= 2) return 'remaining_screens';
+        if (screenCount === 1) return 'first_screen';
+        return 'designing'; // About to generate first screen
+      }
+      if (jobStatus.status === 'generating_icon') return 'designing';
+      if (jobStatus.status === 'generating_concept') return 'app_details';
+      if (jobStatus.status === 'pending') return 'initializing';
+    }
+
+    // Fallback: infer from data (for legacy apps without job tracking)
     const hasDetails = !!appStatus.app.name && appStatus.app.name !== 'Generating...';
     const hasIcon = !!appStatus.app.iconUrl;
     const screenCount = screenUrls.length;
@@ -78,6 +109,13 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
 
   // Calculate overall progress percentage
   const getProgressPercentage = (): number => {
+    // If we have job status with screen counts, use it for accurate progress
+    if (jobStatus && jobStatus.status === 'generating_screens' && jobStatus.screensTotal > 0) {
+      // 40% for setup (concept + icon), 60% for screens
+      return 40 + (60 * (jobStatus.screensGenerated / jobStatus.screensTotal));
+    }
+
+    // Fallback to stage-based progress
     switch (stage) {
       case 'initializing':
         return 0;
@@ -98,6 +136,33 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
 
   const progressPercentage = getProgressPercentage();
 
+  // Get status message from job if available
+  const getStatusMessage = (): string => {
+    if (jobStatus?.currentStep) {
+      return jobStatus.currentStep;
+    }
+
+    // Fallback messages based on stage
+    switch (stage) {
+      case 'initializing':
+        return 'Starting generation...';
+      case 'app_details':
+        return 'Creating app identity...';
+      case 'designing':
+        return 'Planning app structure...';
+      case 'first_screen':
+        return 'First screen designed!';
+      case 'remaining_screens':
+        return `Matching style from first screen... (${screenUrls.length}/${totalScreens})`;
+      case 'complete':
+        return 'Your app is ready!';
+      default:
+        return 'Generating...';
+    }
+  };
+
+  const statusMessage = getStatusMessage();
+
   const handleViewApp = () => {
     router.push(`/app/${appId}`);
   };
@@ -105,20 +170,105 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 min-w-0">
       {/* Status Banner */}
-      <AnimatePresence mode="wait">
-        {stage === 'complete' ? (
-          <motion.div
-            key="complete"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className="rounded-xl border border-green-500/20 bg-green-500/10 p-6 mb-8"
-          >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-start gap-3 lg:items-center lg:gap-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20">
-                  <Sparkles className="h-6 w-6 text-green-600 dark:text-green-400" />
+      <div className="sticky top-4 z-30">
+        <AnimatePresence mode="wait">
+          {stage === 'complete' && jobStatus?.status === 'failed' ? (
+            <motion.div
+              key="failed"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 mb-8 backdrop-blur-md"
+            >
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
+                    <Sparkles className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-lg font-semibold text-red-700 dark:text-red-400">
+                      Generation Failed
+                    </p>
+                    <p className="text-sm text-red-600/80 dark:text-red-400/80">
+                      {jobStatus.error || 'An error occurred during generation'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleViewApp}
+                  size="lg"
+                  variant="outline"
+                  className="w-full lg:w-auto"
+                >
+                  View Partial Results
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </motion.div>
+          ) : stage === 'complete' && jobStatus?.status === 'partial' ? (
+            <motion.div
+              key="partial"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-6 mb-8 backdrop-blur-md"
+            >
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/20">
+                    <Sparkles className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-lg font-semibold text-amber-700 dark:text-amber-400">
+                      Partially Complete
+                    </p>
+                    <p className="text-sm text-amber-600/80 dark:text-amber-400/80">
+                      {jobStatus.screensGenerated} of {jobStatus.screensTotal} screens generated successfully.
+                      {jobStatus.failedScreens && jobStatus.failedScreens.length > 0 && (
+                        <> {jobStatus.failedScreens.length} screen(s) failed.</>
+                      )}
+                    </p>
+                    {jobStatus.failedScreens && jobStatus.failedScreens.length > 0 && (
+                      <details className="mt-2">
+                        <summary className="text-xs cursor-pointer hover:underline">
+                          View failed screens
+                        </summary>
+                        <ul className="mt-2 space-y-1 text-xs">
+                          {jobStatus.failedScreens.map((failed, idx) => (
+                            <li key={idx} className="pl-2 border-l-2 border-amber-500/30">
+                              <span className="font-medium">{failed.screenName}:</span> {failed.errorMessage}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  onClick={handleViewApp}
+                  size="lg"
+                  className="w-full lg:w-auto bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  View App
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </motion.div>
+          ) : stage === 'complete' ? (
+            <motion.div
+              key="complete"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-xl border border-green-500/20 bg-green-500/10 p-6 mb-8 backdrop-blur-md"
+            >
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-start gap-3 lg:items-center lg:gap-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20">
+                    <Sparkles className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-lg font-semibold text-green-700 dark:text-green-400">
@@ -146,7 +296,7 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="rounded-xl border border-primary/20 bg-primary/5 p-6 mb-8"
+            className="rounded-xl border border-primary/20 bg-primary/5 p-6 mb-8 backdrop-blur-md"
           >
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -155,7 +305,7 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
                 </div>
                 <div className="flex-1">
                   <p className="text-lg font-semibold text-foreground">
-                    Starting generation...
+                    {statusMessage}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Analyzing your idea and creating the app concept.
@@ -179,7 +329,7 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-6 mb-8"
+            className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-6 mb-8 backdrop-blur-md"
           >
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -188,7 +338,7 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
                 </div>
                 <div className="flex-1">
                   <p className="text-lg font-semibold text-foreground">
-                    Creating app identity...
+                    {statusMessage}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Designing icon and visual style.
@@ -212,7 +362,7 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-6 mb-8"
+            className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-6 mb-8 backdrop-blur-md"
           >
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -221,7 +371,7 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
                 </div>
                 <div className="flex-1">
                   <p className="text-lg font-semibold text-foreground">
-                    Planning app structure...
+                    {statusMessage}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Designing screens, navigation, and layout.
@@ -245,7 +395,7 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-6 mb-8"
+            className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-6 mb-8 backdrop-blur-md"
           >
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -254,7 +404,7 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
                 </div>
                 <div className="flex-1">
                   <p className="text-lg font-semibold text-foreground">
-                    First screen designed!
+                    {statusMessage}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Using it as a reference to create the remaining screens.
@@ -278,7 +428,7 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-6 mb-8"
+            className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-6 mb-8 backdrop-blur-md"
           >
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -287,10 +437,10 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
                 </div>
                 <div className="flex-1">
                   <p className="text-lg font-semibold text-foreground">
-                    Generating remaining screens...
+                    {statusMessage}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {screenUrls.length} of {totalScreens} complete
+                    Using the first screen as a visual reference for consistency.
                   </p>
                 </div>
               </div>
@@ -305,7 +455,8 @@ export default function GenerationProgress({ appStatus, appId }: GenerationProgr
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
+        </AnimatePresence>
+      </div>
 
       {/* App Store Style Preview */}
       <div className="w-full rounded-2xl border bg-card shadow-sm overflow-hidden">

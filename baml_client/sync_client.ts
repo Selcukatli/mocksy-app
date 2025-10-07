@@ -217,8 +217,8 @@ export class BamlSyncClient {
     }
   }
   
-  GenerateAppStructure(
-      app_name: string,app_description: string,style_guide: string,num_screens: number,
+  GenerateAppDesignPlan(
+      app_name: string,app_description: string,app_category: string,style_guide: string,num_screens: number,
       __baml_options__?: BamlCallOptions
   ): types.AppStructure {
     try {
@@ -240,9 +240,9 @@ export class BamlSyncClient {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       const raw = this.runtime.callFunctionSync(
-        "GenerateAppStructure",
+        "GenerateAppDesignPlan",
         {
-          "app_name": app_name,"app_description": app_description,"style_guide": style_guide,"num_screens": num_screens
+          "app_name": app_name,"app_description": app_description,"app_category": app_category,"style_guide": style_guide,"num_screens": num_screens
         },
         this.ctxManager.cloneContext(),
         options.tb?.__tb(),
@@ -259,7 +259,7 @@ export class BamlSyncClient {
   }
   
   GenerateDemoApp(
-      app_description_input?: string | null,category_hint?: string | null,vibe_style?: string | null,style_config?: types.StyleConfig | null,style_name?: string | null,
+      app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
       __baml_options__?: BamlCallOptions
   ): types.DemoAppOutput {
     try {
@@ -283,7 +283,7 @@ export class BamlSyncClient {
       const raw = this.runtime.callFunctionSync(
         "GenerateDemoApp",
         {
-          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"vibe_style": vibe_style?? null,"style_config": style_config?? null,"style_name": style_name?? null
+          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"ui_style": ui_style?? null
         },
         this.ctxManager.cloneContext(),
         options.tb?.__tb(),
@@ -294,6 +294,47 @@ export class BamlSyncClient {
         signal,
       )
       return raw.parsed(false) as types.DemoAppOutput
+    } catch (error: any) {
+      throw toBamlError(error);
+    }
+  }
+  
+  GenerateFirstScreenImagePrompt(
+      app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
+      __baml_options__?: BamlCallOptions
+  ): types.ScreenImagePrompt {
+    try {
+      const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+      const signal = options.signal;
+      
+      if (signal?.aborted) {
+        throw new BamlAbortError('Operation was aborted', signal.reason);
+      }
+      
+      // Check if onTick is provided and reject for sync operations
+      if (options.onTick) {
+        throw new Error("onTick is not supported for synchronous functions. Please use the async client instead.");
+      }
+      
+      const collector = options.collector ? (Array.isArray(options.collector) ? options.collector : [options.collector]) : [];
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      const raw = this.runtime.callFunctionSync(
+        "GenerateFirstScreenImagePrompt",
+        {
+          "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail
+        },
+        this.ctxManager.cloneContext(),
+        options.tb?.__tb(),
+        options.clientRegistry,
+        collector,
+        options.tags || {},
+        env,
+        signal,
+      )
+      return raw.parsed(false) as types.ScreenImagePrompt
     } catch (error: any) {
       throw toBamlError(error);
     }
@@ -340,8 +381,8 @@ export class BamlSyncClient {
     }
   }
   
-  GenerateScreenImagePrompt(
-      app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,has_reference_image: boolean,
+  GenerateScreenImagePromptWithReference(
+      app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
       __baml_options__?: BamlCallOptions
   ): types.ScreenImagePrompt {
     try {
@@ -363,9 +404,9 @@ export class BamlSyncClient {
         Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
       );
       const raw = this.runtime.callFunctionSync(
-        "GenerateScreenImagePrompt",
+        "GenerateScreenImagePromptWithReference",
         {
-          "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail,"has_reference_image": has_reference_image
+          "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail
         },
         this.ctxManager.cloneContext(),
         options.tb?.__tb(),

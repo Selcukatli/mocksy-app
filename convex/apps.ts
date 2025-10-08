@@ -502,3 +502,79 @@ export const getAppGenerationStatus = query({
     };
   },
 });
+
+// Public query to get app preview (no authentication required)
+export const getPublicAppPreview = query({
+  args: { appId: v.id("apps") },
+  returns: v.union(
+    v.object({
+      app: v.object({
+        _id: v.id("apps"),
+        name: v.string(),
+        description: v.optional(v.string()),
+        category: v.optional(v.string()),
+        iconUrl: v.optional(v.string()),
+      }),
+      screens: v.array(
+        v.object({
+          _id: v.id("appScreens"),
+          name: v.string(),
+          screenUrl: v.optional(v.string()),
+        })
+      ),
+      totalScreens: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    // Get the app (no authentication required)
+    const app = await ctx.db.get(args.appId);
+
+    // Return null if app doesn't exist
+    if (!app) {
+      return null;
+    }
+
+    // Get icon URL if exists
+    let iconUrl: string | undefined = undefined;
+    if (app.iconStorageId) {
+      const url = await ctx.storage.getUrl(app.iconStorageId);
+      iconUrl = url ?? undefined;
+    }
+
+    // Get all screens for this app
+    const appScreens = await ctx.db
+      .query("appScreens")
+      .withIndex("by_app", (q) => q.eq("appId", args.appId))
+      .order("asc")
+      .collect();
+
+    // Get screen URLs
+    const screensWithUrls = await Promise.all(
+      appScreens.map(async (screen) => {
+        let screenUrl: string | undefined = undefined;
+        if (screen.storageId) {
+          const url = await ctx.storage.getUrl(screen.storageId);
+          screenUrl = url ?? undefined;
+        }
+        return {
+          _id: screen._id,
+          name: screen.name,
+          screenUrl,
+        };
+      })
+    );
+
+    return {
+      app: {
+        _id: app._id,
+        name: app.name,
+        description: app.description,
+        category: app.category,
+        iconUrl,
+      },
+      screens: screensWithUrls,
+      totalScreens: appScreens.length,
+    };
+  },
+});

@@ -29,6 +29,7 @@ import {
   Palette,
   Trash2,
   Copy,
+  ExternalLink,
 } from 'lucide-react';
 
 interface PageProps {
@@ -270,6 +271,13 @@ export default function AppDetailPage({ params }: PageProps) {
                 >
                   <HelpCircle className="w-4 h-4" />
                   How It Works
+                </button>
+                <button
+                  onClick={() => window.open(`/appstore/${appId}`, '_blank')}
+                  className="px-4 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span className="text-sm">Preview</span>
                 </button>
                 <button
                   onClick={() => router.push(`/app/${appId}/manage`)}

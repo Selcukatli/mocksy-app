@@ -177,7 +177,7 @@ function GenerateDemoApp(
     - Be specific about colors (e.g., "dark purple and electric cyan", "warm beige and sage green")
     - Should match the icon's color palette
     - Should complement the style's aesthetic if a style is provided
-    - {% if vibe_style %}Match the vibe: {{ vibe_style }}{% endif %}
+    - {% if ui_style %}Match the vibe: {{ ui_style }}{% endif %}
     - Include 2-4 specific colors that work well together
     - Examples:
       * "Dark purple gradient with electric cyan accents"
@@ -189,7 +189,7 @@ function GenerateDemoApp(
     Write a 2-3 sentence visual style guide describing the UI aesthetic:
     - Cover: UI mood/aesthetic, typography approach, and overall design philosophy
     - Should align with the color theme and app concept
-    - {% if vibe_style %}Match the vibe: {{ vibe_style }}{% endif %}
+    - {% if ui_style %}Match the vibe: {{ ui_style }}{% endif %}
     - Examples:
       * "Clean minimal interface with generous whitespace and soft shadows. Uses rounded corners throughout for friendly, approachable feel. Typography: Bold sans-serif headlines paired with readable body text."
       * "Energetic interface with vibrant gradients and bold gamification elements. Dynamic typography with strong headlines and clear stats. Rounded corners and playful animations create an engaging experience."
@@ -202,7 +202,7 @@ function GenerateDemoApp(
     - Icon mood should match style energy (calm vs energetic, playful vs serious, etc.)
     - Color theme should be cohesive with the overall style aesthetic
     - Style guide should align with color theme and app purpose
-    - {% if vibe_style %}Visual style/vibe should be reflected in colors, icon, and style guide: {{ vibe_style }}{% endif %}
+    - {% if ui_style %}Visual style/vibe should be reflected in colors, icon, and style guide: {{ ui_style }}{% endif %}
     - All outputs (name, category, description, icon, color theme, style guide) should work together harmoniously
 
     {{ ctx.output_format }}

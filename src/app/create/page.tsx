@@ -180,59 +180,59 @@ export default function Home() {
       >
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link href="/new-app" className="group">
+          <Link href="/new-app/generate" className="group">
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 p-6 transition-all duration-300 hover:shadow-xl shadow-lg"
             >
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+              <div className="absolute top-6 right-6">
+                <ArrowRight className="w-6 h-6 text-white/70 group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+              </div>
               <div className="relative flex items-start gap-4">
                 <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition-colors">
                   <Wand2 className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="text-xl font-bold mb-1 text-white">
-                    <span className="font-normal">Generate</span> AppStore Page for an Idea
+                  <h3 className="text-xl font-bold mb-1 text-white leading-snug">
+                    <span className="font-normal">Generate</span><br />
+                    AppStore Page for an Idea
                   </h3>
-                  <p className="text-white/90 mb-3 text-sm">
+                  <p className="text-white/90 text-sm">
                     AI creates a full app concept with App Store page and screenshots
                   </p>
-                  <div className="flex items-center gap-2 text-white font-medium text-sm">
-                    <span>Get Started</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
                 </div>
               </div>
             </motion.div>
           </Link>
 
-          <Link href="/styles" className="group">
+          <button onClick={() => setShowAppSelectionDialog(true)} className="group w-full text-left">
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 to-orange-500 p-6 transition-all duration-300 hover:shadow-xl shadow-lg"
             >
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+              <div className="absolute top-6 right-6">
+                <ArrowRight className="w-6 h-6 text-white/70 group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+              </div>
               <div className="relative flex items-start gap-4">
                 <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition-colors">
                   <Layout className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="text-xl font-bold mb-1 text-white">
-                    <span className="font-normal">Generate</span> AppStore Screenshots for Your App
+                  <h3 className="text-xl font-bold mb-1 text-white leading-snug">
+                    <span className="font-normal">Generate</span><br />
+                    AppStore Screenshots for Your App
                   </h3>
-                  <p className="text-white/90 mb-3 text-sm">
+                  <p className="text-white/90 text-sm">
                     Create beautiful screenshots for your existing app
                   </p>
-                  <div className="flex items-center gap-2 text-white font-medium text-sm">
-                    <span>Get Started</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
                 </div>
               </div>
             </motion.div>
-          </Link>
+          </button>
         </div>
       </motion.div>
 
@@ -596,12 +596,37 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="space-y-2">
+                      {/* Create New App Option - Moved to top */}
+                      <Link href="/new-app">
+                        <motion.button
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                          whileHover={{ scale: 1.02, transition: { duration: 0.1 } }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setShowAppSelectionDialog(false)}
+                          className="w-full p-3 rounded-lg border border-dashed border-border/50 bg-muted/20 hover:bg-muted/40 hover:border-primary/30 transition-all duration-200 flex items-center gap-3 group mb-3"
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Plus className="w-6 h-6 text-primary" />
+                          </div>
+                          <div className="flex-1 text-left">
+                            <h3 className="font-medium text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                              Create New App
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                              Start fresh with a new app
+                            </p>
+                          </div>
+                        </motion.button>
+                      </Link>
+
                       {apps.map((app, index) => (
                         <motion.button
                           key={app._id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2, delay: index * 0.05 }}
+                          transition={{ duration: 0.2, delay: (index + 1) * 0.05 }}
                           whileHover={{ scale: 1.02, transition: { duration: 0.1 } }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => {
@@ -623,31 +648,6 @@ export default function Home() {
                           </div>
                         </motion.button>
                       ))}
-
-                      {/* Create New App Option */}
-                      <Link href="/new-app">
-                        <motion.button
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2, delay: apps.length * 0.05 }}
-                          whileHover={{ scale: 1.02, transition: { duration: 0.1 } }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setShowAppSelectionDialog(false)}
-                          className="w-full p-3 rounded-lg border-2 border-dashed bg-card/30 hover:bg-card/50 hover:border-primary/30 transition-all duration-200 flex items-center gap-3 group"
-                        >
-                          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <Plus className="w-6 h-6 text-primary" />
-                          </div>
-                          <div className="flex-1 text-left">
-                            <h3 className="font-medium text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                              Create New App
-                            </h3>
-                            <p className="text-xs text-muted-foreground">
-                              Start fresh with a new app
-                            </p>
-                          </div>
-                        </motion.button>
-                      </Link>
                     </div>
                   )}
                     </motion.div>

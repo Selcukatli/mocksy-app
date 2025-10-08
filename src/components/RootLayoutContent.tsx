@@ -108,7 +108,7 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
             onMenuClick={toggleSidebar}
             isSidebarExpanded={isSidebarExpanded}
           />
-          <div className="pt-16">
+          <div className="pt-12">
             {children}
           </div>
         </div>

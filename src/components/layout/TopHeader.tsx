@@ -45,7 +45,15 @@ export default function TopHeader({
           </button>
 
           {title && (
-            <h1 className="text-lg font-semibold truncate">{title}</h1>
+            <button
+              onClick={!isSidebarExpanded ? onMenuClick : undefined}
+              className={cn(
+                "text-lg font-semibold truncate transition-colors",
+                !isSidebarExpanded && "hover:text-muted-foreground cursor-pointer"
+              )}
+            >
+              {title}
+            </button>
           )}
         </div>
 

@@ -6,7 +6,7 @@
 import "dotenv/config";
 import { createCanvas } from "canvas";
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../convex/_generated/api";
+import { api } from '@convex/_generated/api';
 import fs from "fs";
 import path from "path";
 

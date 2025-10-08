@@ -2,8 +2,8 @@
 
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../../convex/_generated/api';
-import { Id } from '../../../../convex/_generated/dataModel';
+import { api } from '@convex/_generated/api';
+import { Id } from '@convex/_generated/dataModel';
 import { useState, type MouseEvent, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {

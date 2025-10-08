@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import NextImage from 'next/image';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useAction } from 'convex/react';
-import { api } from '../../../../../convex/_generated/api';
-import { Id } from '../../../../../convex/_generated/dataModel';
+import { api } from '@convex/_generated/api';
+import { Id } from '@convex/_generated/dataModel';
 import {
   Upload,
   Download,

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
-import { Id } from '@/../convex/_generated/dataModel';
+import { Id } from '@convex/_generated/dataModel';
 import ScreenshotLightbox from '@/components/ScreenshotLightbox';
 
 interface AppStorePreviewCardProps {

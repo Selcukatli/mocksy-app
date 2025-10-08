@@ -12,8 +12,8 @@ import {
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useQuery, useAction, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import type { Id } from '../../../convex/_generated/dataModel';
+import { api } from '@convex/_generated/api';
+import type { Id } from '@convex/_generated/dataModel';
 import { Suspense, useState, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';

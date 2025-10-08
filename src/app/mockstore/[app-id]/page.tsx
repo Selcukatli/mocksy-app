@@ -2,8 +2,8 @@
 
 import { use } from 'react';
 import { useQuery } from 'convex/react';
-import { api } from '@/../convex/_generated/api';
-import { Id } from '@/../convex/_generated/dataModel';
+import { api } from '@convex/_generated/api';
+import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
 import { Copy, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,13 +33,13 @@ export default function PublicAppStorePage({ params }: PageProps) {
   };
 
   const handleCreateYourOwn = () => {
-    router.push('/new-app');
+    router.push('/create');
   };
 
   // Loading state
   if (appPreview === undefined) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.16))] py-12">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading app preview...</p>
@@ -51,7 +51,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
   // App not found
   if (appPreview === null) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center p-6">
+      <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.16))] py-12 px-6">
         <div className="max-w-md w-full text-center space-y-4">
           <h1 className="text-2xl font-semibold">App Not Found</h1>
           <p className="text-sm text-muted-foreground">
@@ -70,8 +70,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
-      <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 min-w-0">
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 min-w-0">
         {/* Action Bar */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -138,7 +137,6 @@ export default function PublicAppStorePage({ params }: PageProps) {
             Get Started for Free
           </Button>
         </motion.div>
-      </div>
     </div>
   );
 }

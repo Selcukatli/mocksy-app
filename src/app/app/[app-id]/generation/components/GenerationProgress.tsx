@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { Id } from '@/../convex/_generated/dataModel';
+import { Id } from '@convex/_generated/dataModel';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
 
 type GenerationStage =

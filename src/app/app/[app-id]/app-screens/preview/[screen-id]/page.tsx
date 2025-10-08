@@ -2,7 +2,7 @@
 
 import { use } from 'react';
 import AppScreenPreview from '../../components/AppScreenPreview';
-import { Id } from '@/../convex/_generated/dataModel';
+import { Id } from '@convex/_generated/dataModel';
 
 interface PageProps {
   params: Promise<{

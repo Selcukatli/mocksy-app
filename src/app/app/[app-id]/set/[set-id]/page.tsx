@@ -71,7 +71,7 @@ export default function SetPage({ params }: PageProps) {
   // Check if app exists
   useEffect(() => {
     if (convexApp === null) {
-      router.push('/home');
+      router.push('/create');
     }
   }, [convexApp, router]);
 

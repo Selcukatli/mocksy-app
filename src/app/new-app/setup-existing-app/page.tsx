@@ -297,7 +297,7 @@ export default function SetupExistingAppPage() {
               type="button"
               variant="ghost"
               className="w-full"
-              onClick={() => router.push('/home')}
+              onClick={() => router.push('/create')}
             >
               Cancel
             </Button>

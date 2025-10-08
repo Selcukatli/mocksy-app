@@ -59,14 +59,14 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.push('/home');
+    router.push('/create');
   };
 
   const handleDeleteAccount = async () => {
     // This would connect to your backend to delete the user account
     // For now, just sign out
     await signOut();
-    router.push('/home');
+    router.push('/create');
   };
 
   const profileSections = [

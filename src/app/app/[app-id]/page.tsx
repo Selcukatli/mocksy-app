@@ -6,8 +6,8 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 // import { useAppStore } from '@/stores/appStore';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../../convex/_generated/api';
-import { Id } from '../../../../convex/_generated/dataModel';
+import { api } from '@convex/_generated/api';
+import { Id } from '@convex/_generated/dataModel';
 import OnboardingDialog from '@/components/OnboardingDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -169,7 +169,7 @@ export default function AppDetailPage({ params }: PageProps) {
           </p>
           <button
             type="button"
-            onClick={() => router.push('/home')}
+            onClick={() => router.push('/create')}
             className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
           >
             Go back home
@@ -185,7 +185,7 @@ export default function AppDetailPage({ params }: PageProps) {
       return;
     }
 
-    router.push('/my-apps');
+    router.push('/dashboard/apps');
   };
 
   // Helper to determine set status based on screenshots
@@ -273,7 +273,7 @@ export default function AppDetailPage({ params }: PageProps) {
                   How It Works
                 </button>
                 <button
-                  onClick={() => window.open(`/appstore/${appId}`, '_blank')}
+                  onClick={() => window.open(`/mockstore/${appId}`, '_blank')}
                   className="px-4 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-2"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -798,7 +798,7 @@ export default function AppDetailPage({ params }: PageProps) {
                     await deleteAppMutation({ appId: appId as Id<"apps"> });
                     setShowDeleteAppConfirm(false);
                     setIsDeletingApp(false);
-                    router.push('/home');
+                    router.push('/create');
                   } catch (error) {
                     console.error('Failed to delete app:', error);
                     setIsDeletingApp(false);

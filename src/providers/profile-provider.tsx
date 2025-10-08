@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useRef } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { api } from "@convex/_generated/api";
 
 interface ProfileProviderProps {
   children: ReactNode;

@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react';
 import { useQuery } from 'convex/react';
-import { api } from '@/../convex/_generated/api';
-import { Id } from '@/../convex/_generated/dataModel';
+import { api } from '@convex/_generated/api';
+import { Id } from '@convex/_generated/dataModel';
 
 interface AppScreenPreviewProps {
   appId: Id<'apps'>;

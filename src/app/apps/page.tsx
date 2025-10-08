@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+import { api } from '@convex/_generated/api';
 import { Plus, ArrowLeft, ArrowRight, Sparkles, PenSquare, Clock } from 'lucide-react';
 
 export default function MyAppsPage() {

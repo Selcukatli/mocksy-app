@@ -128,7 +128,7 @@ export default function ManageAppPage({ params }: PageProps) {
   // Redirect if app not found
   useEffect(() => {
     if (app === null) {
-      router.push('/home');
+      router.push('/create');
     }
   }, [app, router]);
 
@@ -202,7 +202,7 @@ export default function ManageAppPage({ params }: PageProps) {
     setIsDeleting(true);
     try {
       await deleteApp({ appId });
-      router.push('/home');
+      router.push('/create');
     } catch {
       setIsDeleting(false);
       // TODO: Show error toast

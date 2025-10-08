@@ -15,8 +15,8 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { api } from '@convex/_generated/api';
+import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import FeatureSlides, { type Slide as FeatureSlide } from '@/components/FeatureSlides';
@@ -172,68 +172,6 @@ export default function Home() {
         transition={{ duration: 0.5 }}
         className="text-center mb-12"
       >
-        <motion.h1
-          className="text-5xl md:text-7xl font-black mb-8 relative inline-block cursor-pointer group"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          whileHover={{ scale: 1.02 }}
-        >
-          <span className="relative">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-orange-500 animate-gradient-x">
-              Welcome to Mocksy
-            </span>
-            <motion.span
-              className="absolute -inset-x-4 -inset-y-2 bg-gradient-to-r from-blue-600/5 via-purple-600/5 via-pink-600/5 to-orange-500/5 blur-3xl transition-all duration-300 group-hover:blur-2xl group-hover:opacity-60"
-              animate={{
-                opacity: [0.2, 0.4, 0.2],
-                scale: [0.95, 1.05, 0.95],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-          </span>
-          <motion.div
-            className="absolute -bottom-1 left-0 right-0 h-0.5 overflow-hidden"
-            initial={{ scaleX: 0, opacity: 0 }}
-            animate={{ scaleX: 1, opacity: 1 }}
-            transition={{ duration: 1.2, delay: 0.8, ease: "easeOut" }}
-            style={{ originX: 0.5 }}
-          >
-            <div className="h-full w-[200%] bg-gradient-to-r from-transparent via-purple-600/20 to-transparent group-hover:via-purple-600/40 transition-all duration-300 group-hover:animate-gradient-slide" />
-          </motion.div>
-        </motion.h1>
-
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <div className="text-center">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/10 dark:from-blue-400/20 dark:to-blue-500/20 flex items-center justify-center mx-auto mb-3">
-              <Wand2 className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-            </div>
-            <h3 className="font-semibold text-base mb-1">Generate App Store Screenshots</h3>
-            <p className="text-sm text-muted-foreground">Generate consistent, beautiful screenshots instantly</p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/10 dark:from-purple-400/20 dark:to-purple-500/20 flex items-center justify-center mx-auto mb-3">
-              <Layout className="w-7 h-7 text-purple-600 dark:text-purple-400" />
-            </div>
-            <h3 className="font-semibold text-base mb-1">A/B Test Variations</h3>
-            <p className="text-sm text-muted-foreground">Optimize conversions with AI-powered editing and testing</p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/10 dark:from-green-400/20 dark:to-green-500/20 flex items-center justify-center mx-auto mb-3">
-              <Languages className="w-7 h-7 text-green-600 dark:text-green-400" />
-            </div>
-            <h3 className="font-semibold text-base mb-1">Automatically Translate Screenshots</h3>
-            <p className="text-sm text-muted-foreground">Instantly localize for global markets in 30+ languages</p>
-          </div>
-        </div>
-
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link href="/new-app" className="group">
@@ -245,12 +183,14 @@ export default function Home() {
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
               <div className="relative flex items-start gap-4">
                 <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition-colors">
-                  <Plus className="w-7 h-7 text-white" />
+                  <Wand2 className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="text-xl font-bold mb-1 text-white">Create New App</h3>
+                  <h3 className="text-xl font-bold mb-1 text-white">
+                    <span className="font-normal">Generate</span> AppStore Page for an Idea
+                  </h3>
                   <p className="text-white/90 mb-3 text-sm">
-                    Start fresh with templates and AI assistance
+                    AI creates a full app concept with App Store page and screenshots
                   </p>
                   <div className="flex items-center gap-2 text-white font-medium text-sm">
                     <span>Get Started</span>
@@ -270,15 +210,17 @@ export default function Home() {
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
               <div className="relative flex items-start gap-4">
                 <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition-colors">
-                  <ImageIcon className="w-7 h-7 text-white" />
+                  <Layout className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="text-xl font-bold mb-1 text-white">Browse Styles</h3>
+                  <h3 className="text-xl font-bold mb-1 text-white">
+                    <span className="font-normal">Generate</span> AppStore Screenshots for Your App
+                  </h3>
                   <p className="text-white/90 mb-3 text-sm">
-                    Explore professional screenshot styles
+                    Create beautiful screenshots for your existing app
                   </p>
                   <div className="flex items-center gap-2 text-white font-medium text-sm">
-                    <span>View Styles</span>
+                    <span>Get Started</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -305,7 +247,7 @@ export default function Home() {
                 </span>
               )}
               <Link
-                href="/my-apps"
+                href="/dashboard/apps"
                 className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
               >
                 See All Apps

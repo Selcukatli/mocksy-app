@@ -91,7 +91,7 @@ export default function ScreenshotSetPageContent({
   // Check if app exists
   useEffect(() => {
     if (convexApp === null && !isBackground) {
-      router.push('/home');
+      router.push('/create');
     }
   }, [convexApp, router, isBackground]);
 

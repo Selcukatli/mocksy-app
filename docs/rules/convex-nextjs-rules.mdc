@@ -1,0 +1,243 @@
+---
+description: Guidelines for integrating Convex with Next.js applications, including deployment, build configuration, and best practices
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,package.json,tsconfig.json
+---
+
+# Convex + Next.js Integration Rules
+
+## Architecture Overview
+
+**Key Concept:** Convex and Next.js are separate systems:
+- **Convex Backend:** Functions run on Convex Cloud servers (queries, mutations, actions)
+- **Next.js Frontend:** Runs on Vercel (or other hosting), only needs TypeScript types to compile
+
+The Next.js app imports types from `convex/_generated/` to call Convex functions, but the actual functions execute on Convex's infrastructure.
+
+## Build Configuration
+
+### Package.json Setup
+
+**ALWAYS** generate Convex types before building Next.js:
+
+```json
+{
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "npx convex codegen && next build --turbopack",
+    "start": "next start"
+  }
+}
+```
+
+**Why:** The `convex/_generated/` folder is gitignored, so CI/CD environments need to regenerate types during the build process.
+
+### TypeScript Path Aliases
+
+**CRITICAL:** Configure path aliases in `tsconfig.json` to prevent import breakage:
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@convex/*": ["./convex/*"]
+    }
+  }
+}
+```
+
+**Then use aliases everywhere:**
+
+```typescript
+// ❌ Bad - breaks when file moves to different depth
+import { api } from '../../../../../convex/_generated/api';
+import { Id } from '../../../../../convex/_generated/dataModel';
+
+// ✅ Good - always works regardless of file location
+import { api } from '@convex/_generated/api';
+import { Id } from '@convex/_generated/dataModel';
+```
+
+See `docs/rules/convex-rules.mdc` for more details on import path guidelines.
+
+## Deployment Configuration
+
+### Environment Variables
+
+#### Local Development (.env.local)
+```bash
+# Development deployment
+CONVEX_DEPLOYMENT=dev:your-dev-slug
+NEXT_PUBLIC_CONVEX_URL=https://your-dev-slug.convex.cloud
+
+# Other env vars (Clerk, etc.)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+```
+
+#### Production (Vercel/Hosting Platform)
+
+**Required environment variables:**
+
+1. **CONVEX_DEPLOY_KEY** (sensitive, all environments)
+   - Get from: Convex Dashboard → Settings → Deploy Keys
+   - Purpose: Allows build process to authenticate and generate types
+   - **Without this:** Build fails with "no Convex deployment configuration found"
+
+2. **NEXT_PUBLIC_CONVEX_URL** (public, all environments)
+   - Format: `https://your-prod-slug.convex.cloud`
+   - Purpose: Client-side code connects to Convex backend
+   - **Must be different** from local development URL (separate deployments)
+
+3. **Other public vars** (Clerk keys, API keys, etc.)
+
+### Dev vs Production Deployments
+
+**Best Practice:** Maintain separate Convex deployments:
+
+| Environment | Convex Deployment | URL |
+|-------------|------------------|-----|
+| Local Dev | `dev:fantastic-squid-750` | `https://fantastic-squid-750.convex.cloud` |
+| Production | `prod:energized-orca-703` | `https://energized-orca-703.convex.cloud` |
+
+**Benefits:**
+- ✅ Prevents dev data from affecting production
+- ✅ Safe testing of schema changes
+- ✅ Independent scaling and monitoring
+
+## Common Build Issues
+
+### Issue: "Module not found: Can't resolve '@convex/_generated/api'"
+
+**Cause:** Generated types don't exist in CI/CD environment
+
+**Solutions:**
+1. ✅ Add `npx convex codegen &&` before `next build` in package.json
+2. ✅ Ensure `CONVEX_DEPLOY_KEY` is set in Vercel environment variables
+3. ✅ Ensure `NEXT_PUBLIC_CONVEX_URL` points to correct deployment
+
+### Issue: "Vercel build environment detected but no Convex deployment configuration found"
+
+**Cause:** Missing `CONVEX_DEPLOY_KEY` environment variable
+
+**Solution:** Add deploy key to Vercel:
+1. Go to Convex Dashboard → Settings → Deploy Keys
+2. Copy the deploy key
+3. Add to Vercel → Project Settings → Environment Variables
+4. Name: `CONVEX_DEPLOY_KEY`
+5. Value: (paste deploy key)
+6. Environments: All (Production, Preview, Development)
+
+### Issue: Relative import paths breaking after refactoring
+
+**Cause:** Using relative paths like `'../../../convex/_generated/api'`
+
+**Solution:** Use path aliases:
+```bash
+# Find all files with relative Convex imports
+grep -r "from ['\"]\\.\\..*convex/_generated" src/
+
+# Replace with path aliases (automated)
+find src -type f \( -name "*.ts" -o -name "*.tsx" \) -exec sed -i '' -E "s|from ['\"](\.\./)+convex/_generated/api['\"]|from '@convex/_generated/api'|g" {} \;
+find src -type f \( -name "*.ts" -o -name "*.tsx" \) -exec sed -i '' -E "s|from ['\"](\.\./)+convex/_generated/dataModel['\"]|from '@convex/_generated/dataModel'|g" {} \;
+```
+
+## Next.js-Specific Patterns
+
+### Server Components vs Client Components
+
+**Client Components** (with "use client"):
+```typescript
+'use client';
+
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@convex/_generated/api';
+
+export function MyComponent() {
+  const data = useQuery(api.myModule.myQuery);
+  const doSomething = useMutation(api.myModule.myMutation);
+
+  // React hooks work here
+}
+```
+
+**Server Components** (Next.js 13+ App Router):
+```typescript
+import { fetchQuery } from 'convex/nextjs';
+import { api } from '@convex/_generated/api';
+
+export default async function ServerComponent() {
+  // Direct server-side query - no hooks
+  const data = await fetchQuery(api.myModule.myQuery);
+
+  return <div>{/* render data */}</div>;
+}
+```
+
+**Best Practice:**
+- Use Server Components for initial page load (faster, better SEO)
+- Use Client Components for interactive features (real-time updates, mutations)
+
+### Loading States in Client Components
+
+**IMPORTANT:** `useQuery` returns `undefined` during initial load - handle this properly to avoid UI flash:
+
+```typescript
+// ❌ Bad - shows zero state briefly before data loads
+const data = useQuery(api.myQuery) ?? [];
+if (data.length === 0) {
+  return <ZeroState />;
+}
+
+// ✅ Good - properly distinguishes loading vs empty
+const data = useQuery(api.myQuery);
+const isLoading = data === undefined;
+
+if (isLoading) {
+  return <LoadingSkeleton />;
+}
+if (data.length === 0) {
+  return <ZeroState />;
+}
+```
+
+## Vercel-Specific Notes
+
+### TypeScript Compiler Warnings (Safe to Ignore)
+
+**Warning you might see:**
+```
+Temporary directory '/tmp' and project directory 'convex/_generated'
+are on different filesystems.
+```
+
+**Why it appears:** Vercel's build environment uses separate filesystems for temp files and project files.
+
+**Is it a problem?** ❌ No - this only affects file watchers in dev mode, not production builds.
+
+**When to worry:** Never in CI/CD. Only matters if you see it during local development with `npm run dev`.
+
+### Build Performance
+
+- Convex codegen typically adds **~2-5 seconds** to build time
+- Next.js caching works normally with generated types
+- Vercel caches `node_modules` but regenerates `convex/_generated` each build (correct behavior)
+
+## Checklist: Setting Up Convex + Next.js
+
+- [ ] Add `@convex/*` path alias to `tsconfig.json`
+- [ ] Update all imports to use `@convex/_generated/api` instead of relative paths
+- [ ] Add `npx convex codegen &&` before `next build` in `package.json`
+- [ ] Create production Convex deployment (separate from dev)
+- [ ] Add `CONVEX_DEPLOY_KEY` to Vercel environment variables
+- [ ] Add `NEXT_PUBLIC_CONVEX_URL` to Vercel (pointing to prod deployment)
+- [ ] Add `.env.local` to `.gitignore`
+- [ ] Verify `convex/_generated/` is in `.gitignore`
+- [ ] Test build locally: `npm run build`
+- [ ] Deploy to Vercel and verify build succeeds
+
+## Related Documentation
+
+- **Convex Development Patterns:** See `docs/rules/convex-rules.mdc`
+- **BAML Integration:** See `docs/rules/baml-rules.md`
+- **Authentication:** See `docs/rules/clerk-convex-setup.mdc`

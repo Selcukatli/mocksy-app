@@ -9,6 +9,9 @@ globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
 ---
 
 # Convex guidelines
+
+> **📦 Next.js Integration:** For deployment, build configuration, and Next.js-specific patterns with Convex, see [convex-nextjs-rules.mdc](./convex-nextjs-rules.mdc)
+
 ## Function guidelines
 ### New function syntax
 - ALWAYS use the new function syntax for Convex functions. For example:

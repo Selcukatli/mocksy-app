@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -19,18 +18,16 @@ import {
   Compass,
   Settings,
   Pencil,
-  PanelLeftClose,
-  PanelLeft,
 } from 'lucide-react';
 import Image from 'next/image';
 
 interface SidebarProps {
   mode: 'static' | 'overlay';
   isExpanded: boolean;
-  onExpandedChange?: (expanded: boolean) => void;
+  onExpandedChange?: (_expanded: boolean) => void;
 }
 
-export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarProps) {
+export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpandedChange }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { isSignedIn, user } = useUser();

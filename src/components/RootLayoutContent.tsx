@@ -4,8 +4,6 @@ import { ReactNode, useState, createContext, useContext, useEffect } from 'react
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import TopHeader from '@/components/layout/TopHeader';
-import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface RootLayoutContentProps {
   children: ReactNode;

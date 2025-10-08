@@ -18,8 +18,9 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FeatureSlides, { type Slide as FeatureSlide } from '@/components/FeatureSlides';
+import { usePageHeader } from '@/components/RootLayoutContent';
 
 const signInBenefits = [
   'Pick up saved screenshot sets right where you left them.',
@@ -85,6 +86,7 @@ export default function Home() {
   const { user } = useUser();
   const router = useRouter();
   const isSignedIn = !!user;
+  const { setTitle } = usePageHeader();
 
   const apps = useQuery(api.apps.getApps) || [];
   const recentSets = useQuery(api.screenshotSets.getRecentSets) || [];
@@ -94,6 +96,10 @@ export default function Home() {
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const [setName, setSetName] = useState('');
   const [creatingSet, setCreatingSet] = useState(false);
+
+  useEffect(() => {
+    setTitle('Create');
+  }, [setTitle]);
 
   // Function to handle creating a new set
   const handleCreateSet = async () => {

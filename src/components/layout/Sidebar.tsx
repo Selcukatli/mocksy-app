@@ -9,6 +9,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
+import { useState } from 'react';
+import SearchModal from '@/components/SearchModal';
 import {
   Moon,
   Sun,
@@ -18,6 +20,7 @@ import {
   Compass,
   Settings,
   Pencil,
+  Search,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -32,6 +35,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpande
   const { theme, setTheme } = useTheme();
   const { isSignedIn, user } = useUser();
   const apps = useQuery(api.apps.getApps) || [];
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
   const isAppActive = (appId: string) => pathname === `/app/${appId}`;
@@ -39,61 +43,71 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpande
   // Static mode: always expanded, animates on mode change
   if (mode === 'static') {
     return (
-      <motion.div
-        initial={false}
-        animate={{ width: 256 }}
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 30,
-          mass: 0.8
-        }}
-        className="h-screen flex flex-col bg-background sticky top-0 flex-shrink-0"
-      >
-        {/* Header */}
-        <Link href="/create" className="h-16 flex items-center px-4 justify-start transition-all duration-300">
-          <div className="relative w-36 h-9 flex-shrink-0">
-            <Image
-              src={theme === 'dark' ? '/mocksy-logo-dark-mode.png' : '/mocksy-logo-light-mode.png'}
-              alt="Mocksy"
-              fill
-              className="object-contain object-left"
-              sizes="144px"
-              priority
-            />
-          </div>
-        </Link>
+      <>
+        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+        <motion.div
+          initial={false}
+          animate={{ width: 256 }}
+          transition={{
+            type: "spring",
+            stiffness: 300,
+            damping: 30,
+            mass: 0.8
+          }}
+          className="h-screen flex flex-col bg-background sticky top-0 flex-shrink-0"
+        >
+          {/* Header */}
+          <Link href="/create" className="h-16 flex items-center px-4 justify-start transition-all duration-300">
+            <div className="relative w-36 h-9 flex-shrink-0">
+              <Image
+                src={theme === 'dark' ? '/mocksy-logo-dark-mode.png' : '/mocksy-logo-light-mode.png'}
+                alt="Mocksy"
+                fill
+                className="object-contain object-left"
+                sizes="144px"
+                priority
+              />
+            </div>
+          </Link>
 
-        {/* Navigation */}
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Main Navigation */}
-          <nav className="pt-2 px-2 flex flex-col items-start gap-1 flex-shrink-0">
-            <Link
-              href="/create"
-              className={cn(
-                "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
-                isActive('/create')
-                  ? "text-foreground font-medium bg-muted shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              <Pencil className="w-5 h-5 flex-shrink-0" />
-              <span>Create</span>
-            </Link>
+          {/* Navigation */}
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Main Navigation */}
+            <nav className="pt-2 px-2 flex flex-col items-start gap-1 flex-shrink-0">
+              <Link
+                href="/create"
+                className={cn(
+                  "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
+                  isActive('/create')
+                    ? "text-foreground font-medium bg-muted shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                <Pencil className="w-5 h-5 flex-shrink-0" />
+                <span>Create</span>
+              </Link>
 
-            <Link
-              href="/appstore"
-              className={cn(
-                "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
-                isActive('/appstore')
-                  ? "text-foreground font-medium bg-muted shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              <Compass className="w-5 h-5 flex-shrink-0" />
-              <span>App Store</span>
-            </Link>
-          </nav>
+              <Link
+                href="/appstore"
+                className={cn(
+                  "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
+                  isActive('/appstore')
+                    ? "text-foreground font-medium bg-muted shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                <Compass className="w-5 h-5 flex-shrink-0" />
+                <span>App Store</span>
+              </Link>
+
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full"
+              >
+                <Search className="w-5 h-5 flex-shrink-0" />
+                <span>Search</span>
+              </button>
+            </nav>
 
           {/* Divider */}
           <div className="mx-12 my-4 border-t flex-shrink-0" />
@@ -269,23 +283,26 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpande
             </Link>
           )}
         </div>
-      </motion.div>
+        </motion.div>
+      </>
     );
   }
 
   // Overlay mode: collapsible with animation, pushes content
   return (
-    <motion.div
-      initial={false}
-      animate={{ width: isExpanded ? 256 : 0 }}
-      transition={{
-        type: "spring",
-        stiffness: 300,
-        damping: 30,
-        mass: 0.8
-      }}
-      className="h-screen flex flex-col bg-background border-r overflow-hidden flex-shrink-0"
-    >
+    <>
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <motion.div
+        initial={false}
+        animate={{ width: isExpanded ? 256 : 0 }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+          mass: 0.8
+        }}
+        className="h-screen flex flex-col bg-background border-r overflow-hidden flex-shrink-0"
+      >
       {/* Header */}
       {isExpanded && (
         <Link
@@ -345,6 +362,14 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpande
                 <Compass className="w-5 h-5 flex-shrink-0" />
                 <span>App Store</span>
               </Link>
+
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full"
+              >
+                <Search className="w-5 h-5 flex-shrink-0" />
+                <span>Search</span>
+              </button>
             </nav>
 
             {/* Divider */}
@@ -533,6 +558,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpande
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+      </motion.div>
+    </>
   );
 }

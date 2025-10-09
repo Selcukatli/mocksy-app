@@ -503,6 +503,149 @@ export const getAppGenerationStatus = query({
   },
 });
 
+// Public query to get all published demo apps for the explore page
+export const getPublicDemoApps = query({
+  args: {
+    limit: v.optional(v.number()),
+    category: v.optional(v.string()),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("apps"),
+      name: v.string(),
+      description: v.optional(v.string()),
+      category: v.optional(v.string()),
+      iconUrl: v.optional(v.string()),
+      createdAt: v.number(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 50;
+
+    // Query published demo apps
+    let query = ctx.db
+      .query("apps")
+      .withIndex("by_is_demo", (q) => q.eq("isDemo", true));
+
+    const allDemoApps = await query.collect();
+
+    // Filter for published apps and optionally by category
+    const filteredApps = allDemoApps.filter((app) => {
+      const isPublished = app.status === "published" || app.status === undefined;
+      const matchesCategory = !args.category || app.category === args.category;
+      return isPublished && matchesCategory;
+    });
+
+    // Sort by creation date (newest first) and limit
+    const sortedApps = filteredApps
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit);
+
+    // Get icon URLs
+    const appsWithUrls = await Promise.all(
+      sortedApps.map(async (app) => {
+        let iconUrl: string | undefined = undefined;
+        if (app.iconStorageId) {
+          const url = await ctx.storage.getUrl(app.iconStorageId);
+          iconUrl = url ?? undefined;
+        }
+        return {
+          _id: app._id,
+          name: app.name,
+          description: app.description,
+          category: app.category,
+          iconUrl,
+          createdAt: app.createdAt,
+        };
+      })
+    );
+
+    return appsWithUrls;
+  },
+});
+
+// Public query to get featured demo apps for the carousel
+export const getFeaturedApps = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("apps"),
+      name: v.string(),
+      description: v.optional(v.string()),
+      category: v.optional(v.string()),
+      iconUrl: v.optional(v.string()),
+      createdAt: v.number(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 10;
+
+    // Query published demo apps
+    const allDemoApps = await ctx.db
+      .query("apps")
+      .withIndex("by_is_demo", (q) => q.eq("isDemo", true))
+      .collect();
+
+    // Filter for published apps only
+    const publishedApps = allDemoApps.filter((app) => {
+      return app.status === "published" || app.status === undefined;
+    });
+
+    // Sort by creation date (newest first) and limit
+    const featuredApps = publishedApps
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit);
+
+    // Get icon URLs
+    const appsWithUrls = await Promise.all(
+      featuredApps.map(async (app) => {
+        let iconUrl: string | undefined = undefined;
+        if (app.iconStorageId) {
+          const url = await ctx.storage.getUrl(app.iconStorageId);
+          iconUrl = url ?? undefined;
+        }
+        return {
+          _id: app._id,
+          name: app.name,
+          description: app.description,
+          category: app.category,
+          iconUrl,
+          createdAt: app.createdAt,
+        };
+      })
+    );
+
+    return appsWithUrls;
+  },
+});
+
+// Public query to get unique categories from published demo apps
+export const getAppCategories = query({
+  args: {},
+  returns: v.array(v.string()),
+  handler: async (ctx) => {
+    // Query all published demo apps
+    const allDemoApps = await ctx.db
+      .query("apps")
+      .withIndex("by_is_demo", (q) => q.eq("isDemo", true))
+      .collect();
+
+    // Filter for published apps and extract unique categories
+    const categories = new Set<string>();
+    allDemoApps.forEach((app) => {
+      const isPublished = app.status === "published" || app.status === undefined;
+      if (isPublished && app.category) {
+        categories.add(app.category);
+      }
+    });
+
+    // Convert to sorted array
+    return Array.from(categories).sort();
+  },
+});
+
 // Public query to get app preview (no authentication required)
 export const getPublicAppPreview = query({
   args: { appId: v.id("apps") },

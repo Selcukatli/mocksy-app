@@ -36,10 +36,20 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpande
   const isActive = (path: string) => pathname === path;
   const isAppActive = (appId: string) => pathname === `/app/${appId}`;
 
-  // Static mode: always expanded, no animation
+  // Static mode: always expanded, animates on mode change
   if (mode === 'static') {
     return (
-      <div className="w-64 h-screen flex flex-col bg-background">
+      <motion.div
+        initial={false}
+        animate={{ width: 256 }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+          mass: 0.8
+        }}
+        className="h-screen flex flex-col bg-background sticky top-0 flex-shrink-0"
+      >
         {/* Header */}
         <Link href="/create" className="h-16 flex items-center px-4 justify-start transition-all duration-300">
           <div className="relative w-36 h-9 flex-shrink-0">
@@ -259,7 +269,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpande
             </Link>
           )}
         </div>
-      </div>
+      </motion.div>
     );
   }
 

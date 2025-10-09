@@ -34,8 +34,8 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
   const [pageActions, setPageActions] = useState<ReactNode>(null);
   const pathname = usePathname();
 
-  // Don't show sidebar on mockstore routes or welcome page
-  const shouldShowSidebar = !pathname?.startsWith('/mockstore') && !pathname?.startsWith('/welcome');
+  // Don't show sidebar only on welcome page (onboarding)
+  const shouldShowSidebar = !pathname?.startsWith('/welcome');
 
   // Determine sidebar mode based on route
   const staticRoutes = ['/create', '/explore', '/settings', '/profile'];

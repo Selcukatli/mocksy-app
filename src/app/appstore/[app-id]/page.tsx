@@ -27,17 +27,10 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const { setTitle } = usePageHeader();
   const [showToast, setShowToast] = useState(false);
 
-  const [reviewsKey, setReviewsKey] = useState(0);
-
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
 
-  // Fetch reviews for this app (reviewsKey is used to force refresh)
+  // Fetch reviews for this app (Convex queries are reactive and auto-update)
   const reviewsData = useQuery(api.mockReviews.getAppReviews, { appId: appId as Id<'apps'>, limit: 5 });
-
-  const handleReviewSubmitted = useCallback(() => {
-    // Force re-fetch of reviews by incrementing key
-    setReviewsKey((prev) => prev + 1);
-  }, []);
 
   // Fetch similar apps from the same category
   const similarApps = useQuery(
@@ -142,7 +135,6 @@ export default function PublicAppStorePage({ params }: PageProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.15 }}
             className="mt-6"
-            key={reviewsKey}
           >
             <ReviewsSection
               appId={appId as Id<'apps'>}
@@ -151,7 +143,6 @@ export default function PublicAppStorePage({ params }: PageProps) {
               averageRating={reviewsData.averageRating}
               totalReviews={reviewsData.totalReviews}
               ratingCounts={reviewsData.ratingCounts}
-              onReviewSubmitted={handleReviewSubmitted}
             />
           </motion.div>
         )}

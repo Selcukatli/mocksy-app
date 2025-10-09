@@ -40,7 +40,6 @@ export default function AppStorePreviewCard({
   onCreateYourOwn,
 }: AppStorePreviewCardProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [isSubtitleExpanded, setIsSubtitleExpanded] = useState(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
 
   const screenUrls = screens.map(s => s.screenUrl).filter((url): url is string => !!url);
@@ -141,8 +140,8 @@ export default function AppStorePreviewCard({
               )}
             </div>
 
-            {/* App Info */}
-            <div className="flex-1 w-full space-y-2">
+            {/* App Title & Category */}
+            <div className="flex-1 w-full">
               {hasDetails ? (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -157,21 +156,6 @@ export default function AppStorePreviewCard({
                     <p className="text-sm text-primary font-medium uppercase tracking-wide">
                       {app.category}
                     </p>
-                  )}
-                  {app.description && (
-                    <div className="pt-1 space-y-1">
-                      <p className={`text-base text-muted-foreground ${!isSubtitleExpanded ? 'line-clamp-3' : ''}`}>
-                        {app.description.split('.')[0]}.
-                      </p>
-                      {app.description.split('.')[0].length > 100 && (
-                        <button
-                          onClick={() => setIsSubtitleExpanded(!isSubtitleExpanded)}
-                          className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-                        >
-                          {isSubtitleExpanded ? 'Show less' : 'See more'}
-                        </button>
-                      )}
-                    </div>
                   )}
                 </motion.div>
               ) : (
@@ -196,48 +180,34 @@ export default function AppStorePreviewCard({
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            {hasDetails && app.description ? (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-                className="space-y-2"
-              >
-                <p className={`text-base leading-relaxed text-muted-foreground ${!isDescriptionExpanded ? 'line-clamp-3' : ''}`}>
-                  {app.description}
-                </p>
-                {app.description.length > 200 && (
-                  <button
-                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                    className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-                  >
-                    {isDescriptionExpanded ? (
-                      <>
-                        Show less <ChevronUp className="h-4 w-4" />
-                      </>
-                    ) : (
-                      <>
-                        Show more <ChevronDown className="h-4 w-4" />
-                      </>
-                    )}
-                  </button>
-                )}
-              </motion.div>
-            ) : (
-              <div className="space-y-2">
-                {[100, 98, 85].map((width, i) => (
-                  <div key={i} className={`relative h-4 overflow-hidden rounded-md bg-muted`} style={{ width: `${width}%` }}>
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
-                      animate={{ x: ['-100%', '200%'] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: 'linear', delay: i * 0.15 }}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {hasDetails && app.description && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="space-y-2"
+            >
+              <p className={`text-base leading-relaxed text-muted-foreground ${!isDescriptionExpanded ? 'line-clamp-3' : ''}`}>
+                {app.description}
+              </p>
+              {app.description.length > 200 && (
+                <button
+                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                  className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  {isDescriptionExpanded ? (
+                    <>
+                      Show less <ChevronUp className="h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      See more <ChevronDown className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              )}
+            </motion.div>
+          )}
 
           <div className="pt-4 border-t">
             <div className="flex items-center justify-between mb-4">

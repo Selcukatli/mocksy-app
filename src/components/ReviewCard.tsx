@@ -24,7 +24,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
   const timeAgo = getTimeAgo(review.createdAt);
 
   return (
-    <div className="w-[280px] md:w-[320px] flex-shrink-0 p-4 rounded-xl border bg-card/50 backdrop-blur-sm">
+    <div className="w-[280px] md:w-[320px] flex-shrink-0 p-4 rounded-xl border bg-card/50 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
       {/* Review title */}
       {review.title && (
         <h5 className="font-semibold text-sm mb-2 line-clamp-1">{review.title}</h5>
@@ -53,7 +53,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
       </p>
 
       {/* Reviewer info */}
-      <div className="flex items-center gap-2 pt-3 border-t">
+      <div className="flex items-center gap-2 pt-3">
         {/* Avatar */}
         <div className="w-6 h-6 rounded-full overflow-hidden bg-muted flex-shrink-0">
           {review.reviewer.imageUrl ? (

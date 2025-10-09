@@ -90,6 +90,38 @@ export const getAppReviews = query({
   },
 });
 
+export const getUserReview = query({
+  args: { appId: v.id("apps") },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("mockReviews"),
+      rating: v.number(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const profile = await getCurrentUser(ctx);
+    if (!profile) {
+      return null;
+    }
+
+    const existingReview = await ctx.db
+      .query("mockReviews")
+      .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
+      .filter((q) => q.eq(q.field("appId"), args.appId))
+      .first();
+
+    if (!existingReview) {
+      return null;
+    }
+
+    return {
+      _id: existingReview._id,
+      rating: existingReview.rating,
+    };
+  },
+});
+
 export const createReview = mutation({
   args: {
     appId: v.id("apps"),
@@ -124,29 +156,35 @@ export const createReview = mutation({
       .filter((q) => q.eq(q.field("appId"), args.appId))
       .first();
 
-    if (existingReview) {
-      return {
-        success: false,
-        message: "You have already reviewed this app",
-      };
-    }
+    let reviewId: any;
 
-    // Create the review
-    const reviewId = await ctx.db.insert("mockReviews", {
-      appId: args.appId,
-      profileId: profile._id,
-      rating: args.rating,
-      title: args.title,
-      reviewText: args.reviewText,
-      helpfulCount: 0,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
+    if (existingReview) {
+      // Update existing review
+      await ctx.db.patch(existingReview._id, {
+        rating: args.rating,
+        title: args.title,
+        reviewText: args.reviewText,
+        updatedAt: Date.now(),
+      });
+      reviewId = existingReview._id;
+    } else {
+      // Create new review
+      reviewId = await ctx.db.insert("mockReviews", {
+        appId: args.appId,
+        profileId: profile._id,
+        rating: args.rating,
+        title: args.title,
+        reviewText: args.reviewText,
+        helpfulCount: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
 
     return {
       success: true,
       reviewId,
-      message: "Review submitted successfully",
+      message: existingReview ? "Review updated successfully" : "Review submitted successfully",
     };
   },
 });

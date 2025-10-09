@@ -2,14 +2,13 @@
 
 import { useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import FeaturedAppsCarousel from '@/components/FeaturedAppsCarousel';
 import HorizontalAppCarousel from '@/components/HorizontalAppCarousel';
 import AppListItem from '@/components/AppListItem';
 import { Search } from 'lucide-react';
-import { usePageHeader } from '@/components/RootLayoutContent';
 
 export default function AppStorePage() {
   const [searchQuery, setSearchQuery] = useState('');

@@ -83,7 +83,7 @@ export default function ProfilePage() {
       const result = await syncProfile({});
       setSyncMessage(result.message);
       setTimeout(() => setSyncMessage(''), 3000);
-    } catch (error) {
+    } catch {
       setSyncMessage('Failed to sync profile');
       setTimeout(() => setSyncMessage(''), 3000);
     } finally {

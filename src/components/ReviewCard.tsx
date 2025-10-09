@@ -2,6 +2,7 @@
 
 import { Star } from 'lucide-react';
 import { Id } from '@convex/_generated/dataModel';
+import Image from 'next/image';
 
 interface ReviewCardProps {
   review: {
@@ -55,12 +56,14 @@ export default function ReviewCard({ review }: ReviewCardProps) {
       {/* Reviewer info */}
       <div className="flex items-center gap-2 pt-3">
         {/* Avatar */}
-        <div className="w-6 h-6 rounded-full overflow-hidden bg-muted flex-shrink-0">
+        <div className="w-6 h-6 rounded-full overflow-hidden bg-muted flex-shrink-0 relative">
           {review.reviewer.imageUrl ? (
-            <img
+            <Image
               src={review.reviewer.imageUrl}
               alt={displayName}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="24px"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-semibold text-xs">

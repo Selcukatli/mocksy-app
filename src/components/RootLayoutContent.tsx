@@ -30,14 +30,14 @@ export function usePageHeader() {
   return context;
 }
 
+// Define static (browse) pages - everything else defaults to overlay (dynamic)
+const staticRoutes = ['/create', '/appstore', '/settings', '/profile'];
+const getDefaultMode = (path: string | null): SidebarMode => {
+  return staticRoutes.includes(path || '') ? 'static' : 'overlay';
+};
+
 export default function RootLayoutContent({ children }: RootLayoutContentProps) {
   const pathname = usePathname();
-
-  // Define static (browse) pages - everything else defaults to overlay (dynamic)
-  const staticRoutes = ['/create', '/appstore', '/settings', '/profile'];
-  const getDefaultMode = (path: string | null): SidebarMode => {
-    return staticRoutes.includes(path || '') ? 'static' : 'overlay';
-  };
 
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [pageTitle, setPageTitle] = useState('');

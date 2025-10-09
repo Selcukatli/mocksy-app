@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import AppListItem from '@/components/AppListItem';

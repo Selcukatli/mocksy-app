@@ -30,7 +30,7 @@ interface SidebarProps {
   onExpandedChange?: (_expanded: boolean) => void;
 }
 
-export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpandedChange }: SidebarProps) {
+export default function Sidebar({ mode, isExpanded }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { isSignedIn, user } = useUser();

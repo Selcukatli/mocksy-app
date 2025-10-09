@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Star, Edit, Sparkles } from 'lucide-react';
+import { Star, Edit } from 'lucide-react';
 import ReviewCard from './ReviewCard';
 import WriteReviewModal from './WriteReviewModal';
 import InlineStarRating from './InlineStarRating';

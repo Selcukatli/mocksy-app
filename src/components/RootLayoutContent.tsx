@@ -9,11 +9,15 @@ interface RootLayoutContentProps {
   children: ReactNode;
 }
 
+type SidebarMode = 'static' | 'overlay';
+
 interface PageContextValue {
   title: string;
   setTitle: (title: string) => void;
   actions: ReactNode;
   setActions: (actions: ReactNode) => void;
+  sidebarMode: SidebarMode;
+  setSidebarMode: (mode: SidebarMode) => void;
 }
 
 const PageContext = createContext<PageContextValue | null>(null);
@@ -26,28 +30,34 @@ export function usePageHeader() {
   return context;
 }
 
-type SidebarMode = 'static' | 'overlay';
-
 export default function RootLayoutContent({ children }: RootLayoutContentProps) {
+  const pathname = usePathname();
+
+  // Define static (browse) pages - everything else defaults to overlay (dynamic)
+  const staticRoutes = ['/create', '/appstore', '/settings', '/profile'];
+  const getDefaultMode = (path: string | null): SidebarMode => {
+    return staticRoutes.includes(path || '') ? 'static' : 'overlay';
+  };
+
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [pageTitle, setPageTitle] = useState('');
   const [pageActions, setPageActions] = useState<ReactNode>(null);
-  const pathname = usePathname();
+  const [pageSidebarMode, setPageSidebarMode] = useState<SidebarMode>(getDefaultMode(pathname));
 
   // Don't show sidebar only on welcome page (onboarding)
   const shouldShowSidebar = !pathname?.startsWith('/welcome');
 
-  // Determine sidebar mode based on route
-  const staticRoutes = ['/create', '/explore', '/settings', '/profile'];
-  const isStaticRoute = staticRoutes.includes(pathname || '');
-  const sidebarMode: SidebarMode = isStaticRoute ? 'static' : 'overlay';
+  // Reset to default mode when pathname changes
+  useEffect(() => {
+    setPageSidebarMode(getDefaultMode(pathname));
+  }, [pathname]);
 
   // Collapse sidebar when navigating to overlay mode pages
   useEffect(() => {
-    if (sidebarMode === 'overlay') {
+    if (pageSidebarMode === 'overlay') {
       setIsSidebarExpanded(false);
     }
-  }, [pathname, sidebarMode]);
+  }, [pathname, pageSidebarMode]);
 
   const toggleSidebar = () => {
     setIsSidebarExpanded(!isSidebarExpanded);
@@ -58,7 +68,7 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
   }
 
   // Static mode: sidebar always visible, no overlay
-  if (sidebarMode === 'static') {
+  if (pageSidebarMode === 'static') {
     return (
       <PageContext.Provider
         value={{
@@ -66,6 +76,8 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
           setTitle: setPageTitle,
           actions: pageActions,
           setActions: setPageActions,
+          sidebarMode: pageSidebarMode,
+          setSidebarMode: setPageSidebarMode,
         }}
       >
         <div className="min-h-screen flex">
@@ -90,6 +102,8 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
         setTitle: setPageTitle,
         actions: pageActions,
         setActions: setPageActions,
+        sidebarMode: pageSidebarMode,
+        setSidebarMode: setPageSidebarMode,
       }}
     >
       <div className="min-h-screen flex">

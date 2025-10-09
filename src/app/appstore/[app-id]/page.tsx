@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState, useCallback } from 'react';
+import { use, useEffect, useState, useCallback, useMemo } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Sparkles, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
+import AppsInCategoryCarousel from '@/components/AppsInCategoryCarousel';
 import { motion } from 'framer-motion';
 import { usePageHeader } from '@/components/RootLayoutContent';
 
@@ -26,16 +27,48 @@ export default function PublicAppStorePage({ params }: PageProps) {
 
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
 
-  const handleShareClick = useCallback(() => {
+  // Fetch similar apps from the same category
+  const similarApps = useQuery(
+    api.apps.getPublicDemoApps,
+    appPreview?.app.category
+      ? { category: appPreview.app.category, limit: 7 }
+      : 'skip'
+  );
+
+  const handleShareClick = useCallback(async () => {
     const url = window.location.href;
+
+    // Try native share if available
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: appPreview?.app.name || 'Check out this app',
+          url: url,
+        });
+        return;
+      } catch (err) {
+        // User cancelled or share failed, fall through to clipboard
+        if ((err as Error).name === 'AbortError') {
+          return; // User cancelled, don't show copied message
+        }
+      }
+    }
+
+    // Fallback to clipboard
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, []);
+  }, [appPreview?.app.name]);
 
   const handleCreateYourOwn = useCallback(() => {
     router.push('/create');
   }, [router]);
+
+  // Filter out current app from similar apps
+  const filteredSimilarApps = useMemo(() => {
+    if (!similarApps) return [];
+    return similarApps.filter((app) => app._id !== appId);
+  }, [similarApps, appId]);
 
   useEffect(() => {
     setTitle('Appstore');
@@ -45,7 +78,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
           variant="outline"
           size="sm"
           onClick={handleShareClick}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 w-[100px]"
         >
           <Share className="h-4 w-4" />
           {copied ? 'Copied!' : 'Share'}
@@ -112,6 +145,21 @@ export default function PublicAppStorePage({ params }: PageProps) {
             isLoading={false}
           />
         </motion.div>
+
+        {/* Similar Apps Recommendations */}
+        {filteredSimilarApps.length > 0 && appPreview.app.category && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="mt-12"
+          >
+            <AppsInCategoryCarousel
+              category={appPreview.app.category}
+              apps={filteredSimilarApps}
+            />
+          </motion.div>
+        )}
 
         {/* Footer CTA */}
         <motion.div

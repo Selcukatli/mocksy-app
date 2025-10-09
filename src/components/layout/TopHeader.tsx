@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { PanelLeftClose } from 'lucide-react';
 
@@ -17,6 +18,23 @@ export default function TopHeader({
   onMenuClick,
   isSidebarExpanded
 }: TopHeaderProps) {
+  const router = useRouter();
+
+  const handleTitleClick = () => {
+    // Map title to route
+    const titleRouteMap: Record<string, string> = {
+      'Create': '/create',
+      'Appstore': '/appstore',
+      'AppStore': '/appstore',
+      'App Store': '/appstore',
+    };
+
+    const route = titleRouteMap[title || ''];
+    if (route) {
+      router.push(route);
+    }
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 z-40 h-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-full items-center justify-between px-6">
@@ -46,11 +64,8 @@ export default function TopHeader({
 
           {title && (
             <button
-              onClick={!isSidebarExpanded ? onMenuClick : undefined}
-              className={cn(
-                "text-lg font-semibold truncate transition-colors",
-                !isSidebarExpanded && "hover:text-muted-foreground cursor-pointer"
-              )}
+              onClick={handleTitleClick}
+              className="text-lg font-semibold truncate transition-colors hover:text-primary cursor-pointer"
             >
               {title}
             </button>

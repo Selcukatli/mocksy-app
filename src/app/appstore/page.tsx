@@ -2,15 +2,18 @@
 
 import { useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import FeaturedAppsCarousel from '@/components/FeaturedAppsCarousel';
 import HorizontalAppCarousel from '@/components/HorizontalAppCarousel';
 import AppListItem from '@/components/AppListItem';
 import { Search } from 'lucide-react';
+import { usePageHeader } from '@/components/RootLayoutContent';
 
-export default function ExplorePage() {
+export default function AppStorePage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
 
   const featuredApps = useQuery(api.apps.getFeaturedApps, { limit: 5 });
   const categories = useQuery(api.apps.getAppCategories);
@@ -166,6 +169,7 @@ export default function ExplorePage() {
                   <HorizontalAppCarousel
                     title={category}
                     apps={categoryApps}
+                    onSeeAll={() => router.push(`/appstore/category/${encodeURIComponent(category)}`)}
                   />
                 </motion.div>
               );

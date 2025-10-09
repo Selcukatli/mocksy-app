@@ -82,16 +82,16 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpande
             </Link>
 
             <Link
-              href="/explore"
+              href="/appstore"
               className={cn(
                 "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
-                isActive('/explore')
+                isActive('/appstore')
                   ? "text-foreground font-medium bg-muted shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
               <Compass className="w-5 h-5 flex-shrink-0" />
-              <span>Explore</span>
+              <span>App Store</span>
             </Link>
           </nav>
 
@@ -334,16 +334,16 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange: _onExpande
               </Link>
 
               <Link
-                href="/explore"
+                href="/appstore"
                 className={cn(
                   "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
-                  isActive('/explore')
+                  isActive('/appstore')
                     ? "text-foreground font-medium bg-muted shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 )}
               >
                 <Compass className="w-5 h-5 flex-shrink-0" />
-                <span>Explore</span>
+                <span>App Store</span>
               </Link>
             </nav>
 

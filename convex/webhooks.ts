@@ -5,6 +5,8 @@ export const upsertUserFromClerk = internalMutation({
   args: {
     userId: v.string(),
     username: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
   },
   returns: v.null(),
@@ -21,6 +23,8 @@ export const upsertUserFromClerk = internalMutation({
         updatedAt: number;
         username?: string | undefined;
         usernameUpdatedAt?: number;
+        firstName?: string | undefined;
+        lastName?: string | undefined;
         imageUrl?: string | undefined;
         imageUrlUpdatedAt?: number;
       } = {
@@ -28,6 +32,8 @@ export const upsertUserFromClerk = internalMutation({
       };
 
       const usernameChanged = existingProfile.username !== args.username;
+      const firstNameChanged = existingProfile.firstName !== args.firstName;
+      const lastNameChanged = existingProfile.lastName !== args.lastName;
       const imageUrlChanged = existingProfile.imageUrl !== args.imageUrl;
 
       if (usernameChanged) {
@@ -35,12 +41,20 @@ export const upsertUserFromClerk = internalMutation({
         updates.usernameUpdatedAt = Date.now();
       }
 
+      if (firstNameChanged) {
+        updates.firstName = args.firstName;
+      }
+
+      if (lastNameChanged) {
+        updates.lastName = args.lastName;
+      }
+
       if (imageUrlChanged) {
         updates.imageUrl = args.imageUrl;
         updates.imageUrlUpdatedAt = Date.now();
       }
 
-      if (usernameChanged || imageUrlChanged) {
+      if (usernameChanged || firstNameChanged || lastNameChanged || imageUrlChanged) {
         await ctx.db.patch(existingProfile._id, updates);
         console.log(`Updated profile for user ${args.userId}`);
       }
@@ -50,6 +64,8 @@ export const upsertUserFromClerk = internalMutation({
         userId: args.userId,
         username: args.username,
         usernameUpdatedAt: args.username ? Date.now() : undefined,
+        firstName: args.firstName,
+        lastName: args.lastName,
         imageUrl: args.imageUrl,
         imageUrlUpdatedAt: args.imageUrl ? Date.now() : undefined,
         preferences: {},

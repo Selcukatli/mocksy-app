@@ -102,6 +102,8 @@ http.route({
         await ctx.runMutation(internal.webhooks.upsertUserFromClerk, {
           userId: id,
           username: displayUsername,
+          firstName: first_name ?? undefined,
+          lastName: last_name ?? undefined,
           imageUrl: userImageUrl,
         });
         break;

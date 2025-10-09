@@ -6,6 +6,8 @@ export default defineSchema({
     userId: v.string(), // Clerk's user ID (unique)
     username: v.optional(v.string()), // Username from Clerk (unique when present)
     usernameUpdatedAt: v.optional(v.number()), // Last time username was synced
+    firstName: v.optional(v.string()), // First name from Clerk
+    lastName: v.optional(v.string()), // Last name from Clerk
     imageUrl: v.optional(v.string()), // Profile image URL from Clerk
     imageUrlUpdatedAt: v.optional(v.number()), // Last time image was synced from Clerk
     preferences: v.optional(

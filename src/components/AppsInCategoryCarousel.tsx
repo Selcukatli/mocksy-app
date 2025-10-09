@@ -20,7 +20,7 @@ interface AppsInCategoryCarouselProps {
 export default function AppsInCategoryCarousel({ category, apps }: AppsInCategoryCarouselProps) {
   return (
     <AppListCarousel
-      title={category}
+      title={`More ${category} Apps`}
       apps={apps}
       headerAction={
         apps.length > 1 ? (

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Share, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Id } from '@convex/_generated/dataModel';
@@ -15,6 +15,10 @@ interface AppStorePreviewCardProps {
     category?: string;
     iconUrl?: string;
   };
+  creator?: {
+    username?: string;
+    imageUrl?: string;
+  };
   screens: Array<{
     _id: Id<'appScreens'>;
     name: string;
@@ -22,13 +26,18 @@ interface AppStorePreviewCardProps {
   }>;
   totalScreens: number;
   isLoading?: boolean;
+  onShare?: () => void;
+  onCreateYourOwn?: () => void;
 }
 
 export default function AppStorePreviewCard({
   app,
+  creator,
   screens,
   totalScreens,
   isLoading = false,
+  onShare,
+  onCreateYourOwn,
 }: AppStorePreviewCardProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isSubtitleExpanded, setIsSubtitleExpanded] = useState(false);
@@ -42,6 +51,49 @@ export default function AppStorePreviewCard({
     <>
       <div className="w-full rounded-2xl border bg-card shadow-sm overflow-hidden">
         <div className="p-6 md:p-8 space-y-6">
+          {/* Card Header - Creator and Actions */}
+          <div className="flex items-center justify-between gap-4">
+            {/* Creator Info */}
+            {creator && (
+              <div className="flex items-center gap-2">
+                {creator.imageUrl && (
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={creator.imageUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs text-muted-foreground">Created by</p>
+                  <p className="text-sm font-medium">{creator.username || 'Developer'}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {(onShare || onCreateYourOwn) && (
+              <div className="flex items-center gap-2">
+                {onShare && (
+                  <button
+                    onClick={onShare}
+                    className="px-3 py-2 text-sm rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-1.5"
+                  >
+                    <Share className="h-3.5 w-3.5" />
+                    Share
+                  </button>
+                )}
+                {onCreateYourOwn && (
+                  <button
+                    onClick={onCreateYourOwn}
+                    className="px-3 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Remix
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* App Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
             {/* App Icon */}

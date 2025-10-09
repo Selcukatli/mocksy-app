@@ -5,12 +5,13 @@ import { useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Share } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
 import AppsInCategoryCarousel from '@/components/AppsInCategoryCarousel';
 import { motion } from 'framer-motion';
 import { usePageHeader } from '@/components/RootLayoutContent';
+import Toast from '@/components/Toast';
 
 interface PageProps {
   params: Promise<{
@@ -22,8 +23,8 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const resolvedParams = use(params);
   const appId = resolvedParams['app-id'];
   const router = useRouter();
-  const { setTitle, setActions } = usePageHeader();
-  const [copied, setCopied] = useState(false);
+  const { setTitle } = usePageHeader();
+  const [showToast, setShowToast] = useState(false);
 
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
 
@@ -38,26 +39,22 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const handleShareClick = useCallback(async () => {
     const url = window.location.href;
 
-    // Try native share if available
+    // Always copy to clipboard first
+    await navigator.clipboard.writeText(url);
+    setShowToast(true);
+
+    // Then show native share sheet if available
     if (navigator.share) {
       try {
         await navigator.share({
           title: appPreview?.app.name || 'Check out this app',
           url: url,
         });
-        return;
       } catch (err) {
-        // User cancelled or share failed, fall through to clipboard
-        if ((err as Error).name === 'AbortError') {
-          return; // User cancelled, don't show copied message
-        }
+        // User cancelled or share failed, but we already copied to clipboard
+        console.log('Share cancelled or failed', err);
       }
     }
-
-    // Fallback to clipboard
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }, [appPreview?.app.name]);
 
   const handleCreateYourOwn = useCallback(() => {
@@ -72,30 +69,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
 
   useEffect(() => {
     setTitle('Appstore');
-    setActions(
-      <>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleShareClick}
-          className="flex items-center gap-2 w-[100px]"
-        >
-          <Share className="h-4 w-4" />
-          {copied ? 'Copied!' : 'Share'}
-        </Button>
-        <Button
-          size="sm"
-          onClick={handleCreateYourOwn}
-          className="flex items-center gap-2"
-        >
-          <Sparkles className="h-4 w-4" />
-          Create Your Own
-        </Button>
-      </>
-    );
-
-    return () => setActions(null);
-  }, [setTitle, setActions, copied, handleShareClick, handleCreateYourOwn]);
+  }, [setTitle]);
 
   // Loading state
   if (appPreview === undefined) {
@@ -131,6 +105,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
   }
 
   return (
+    <>
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 min-w-0">
         {/* App Store Preview Card */}
         <motion.div
@@ -140,9 +115,12 @@ export default function PublicAppStorePage({ params }: PageProps) {
         >
           <AppStorePreviewCard
             app={appPreview.app}
+            creator={appPreview.creator}
             screens={appPreview.screens}
             totalScreens={appPreview.totalScreens}
             isLoading={false}
+            onShare={handleShareClick}
+            onCreateYourOwn={handleCreateYourOwn}
           />
         </motion.div>
 
@@ -152,7 +130,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="mt-12"
+            className="mt-6"
           >
             <AppsInCategoryCarousel
               category={appPreview.app.category}
@@ -166,7 +144,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="mt-12 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border p-8 text-center relative overflow-hidden"
+          className="mt-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border p-8 text-center relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
           <div className="relative">
@@ -188,5 +166,14 @@ export default function PublicAppStorePage({ params }: PageProps) {
           </div>
         </motion.div>
     </div>
+
+    <Toast
+      message="Link copied to clipboard"
+      type="success"
+      isOpen={showToast}
+      onClose={() => setShowToast(false)}
+      duration={2000}
+    />
+    </>
   );
 }

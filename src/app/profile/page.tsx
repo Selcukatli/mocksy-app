@@ -4,6 +4,8 @@ import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMutation } from 'convex/react';
+import { api } from '@convex/_generated/api';
 import {
   User,
   Mail,
@@ -21,7 +23,8 @@ import {
   Globe,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ThemeProvider';
@@ -34,6 +37,10 @@ export default function ProfilePage() {
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
+
+  const syncProfile = useMutation(api.profiles.syncMyProfileFromClerk);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -67,6 +74,21 @@ export default function ProfilePage() {
     // For now, just sign out
     await signOut();
     router.push('/create');
+  };
+
+  const handleSyncProfile = async () => {
+    setIsSyncing(true);
+    setSyncMessage('');
+    try {
+      const result = await syncProfile({});
+      setSyncMessage(result.message);
+      setTimeout(() => setSyncMessage(''), 3000);
+    } catch (error) {
+      setSyncMessage('Failed to sync profile');
+      setTimeout(() => setSyncMessage(''), 3000);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const profileSections = [
@@ -173,8 +195,18 @@ export default function ProfilePage() {
             {/* Profile Card */}
             <div className="bg-card rounded-xl border p-6">
               <div className="flex flex-col">
-                {/* Edit button in top right corner */}
-                <div className="flex justify-end mb-2">
+                {/* Edit and Sync buttons in top right corner */}
+                <div className="flex justify-end gap-2 mb-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSyncProfile}
+                    disabled={isSyncing}
+                    className="text-xs"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? 'Syncing...' : 'Sync'}
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -185,6 +217,11 @@ export default function ProfilePage() {
                     Edit
                   </Button>
                 </div>
+                {syncMessage && (
+                  <div className="mb-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg text-sm text-green-600 dark:text-green-500">
+                    {syncMessage}
+                  </div>
+                )}
 
                 {/* Avatar and User Info */}
                 <div className="flex items-center gap-4 mb-4">

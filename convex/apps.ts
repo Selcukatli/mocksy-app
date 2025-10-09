@@ -658,6 +658,12 @@ export const getPublicAppPreview = query({
         category: v.optional(v.string()),
         iconUrl: v.optional(v.string()),
       }),
+      creator: v.optional(
+        v.object({
+          username: v.optional(v.string()),
+          imageUrl: v.optional(v.string()),
+        })
+      ),
       screens: v.array(
         v.object({
           _id: v.id("appScreens"),
@@ -683,6 +689,20 @@ export const getPublicAppPreview = query({
     if (app.iconStorageId) {
       const url = await ctx.storage.getUrl(app.iconStorageId);
       iconUrl = url ?? undefined;
+    }
+
+    // Get creator profile
+    let creator: { username?: string; imageUrl?: string } | undefined = undefined;
+    if (app.profileId) {
+      const profile = await ctx.db.get(app.profileId);
+      if (profile) {
+        // Use username, or fall back to firstName, or "Developer"
+        const displayName = profile.username || profile.firstName || undefined;
+        creator = {
+          username: displayName,
+          imageUrl: profile.imageUrl,
+        };
+      }
     }
 
     // Get all screens for this app
@@ -716,6 +736,7 @@ export const getPublicAppPreview = query({
         category: app.category,
         iconUrl,
       },
+      creator,
       screens: screensWithUrls,
       totalScreens: appScreens.length,
     };

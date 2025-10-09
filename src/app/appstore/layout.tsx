@@ -8,31 +8,6 @@ export default function MockstoreLayout({
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Image
-              src="/mocksy-app-icon.png"
-              alt="Mocksy"
-              width={40}
-              height={40}
-              className="rounded-lg"
-              quality={100}
-              priority
-            />
-            <span className="text-xl font-bold">Mockstore</span>
-          </Link>
-
-          <Link
-            href="/new-app"
-            className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors text-sm font-medium"
-          >
-            Create Your Own
-          </Link>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main>
         {children}

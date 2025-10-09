@@ -1,15 +1,15 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useState, useCallback } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
-import { Copy, Sparkles } from 'lucide-react';
+import { Sparkles, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
-import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { usePageHeader } from '@/components/RootLayoutContent';
 
 interface PageProps {
   params: Promise<{
@@ -21,20 +21,48 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const resolvedParams = use(params);
   const appId = resolvedParams['app-id'];
   const router = useRouter();
+  const { setTitle, setActions } = usePageHeader();
   const [copied, setCopied] = useState(false);
 
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
 
-  const handleCopyLink = () => {
+  const handleShareClick = useCallback(() => {
     const url = window.location.href;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, []);
 
-  const handleCreateYourOwn = () => {
+  const handleCreateYourOwn = useCallback(() => {
     router.push('/create');
-  };
+  }, [router]);
+
+  useEffect(() => {
+    setTitle('Appstore');
+    setActions(
+      <>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleShareClick}
+          className="flex items-center gap-2"
+        >
+          <Share className="h-4 w-4" />
+          {copied ? 'Copied!' : 'Share'}
+        </Button>
+        <Button
+          size="sm"
+          onClick={handleCreateYourOwn}
+          className="flex items-center gap-2"
+        >
+          <Sparkles className="h-4 w-4" />
+          Create Your Own
+        </Button>
+      </>
+    );
+
+    return () => setActions(null);
+  }, [setTitle, setActions, copied, handleShareClick, handleCreateYourOwn]);
 
   // Loading state
   if (appPreview === undefined) {
@@ -70,39 +98,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 min-w-0">
-        {/* Action Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">App Store Preview</h2>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              onClick={handleCopyLink}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Copy className="h-4 w-4" />
-              {copied ? 'Copied!' : 'Copy Link'}
-            </Button>
-            <Button
-              onClick={handleCreateYourOwn}
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Sparkles className="h-4 w-4" />
-              Create Your Own
-            </Button>
-          </div>
-        </motion.div>
-
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 min-w-0">
         {/* App Store Preview Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -121,21 +117,27 @@ export default function PublicAppStorePage({ params }: PageProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="mt-8 rounded-xl border bg-card p-6 text-center shadow-sm"
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="mt-12 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border p-8 text-center relative overflow-hidden"
         >
-          <h3 className="text-xl font-semibold mb-2">Want to create an app like this?</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Generate beautiful App Store screenshots with AI in minutes
-          </p>
-          <Button
-            onClick={handleCreateYourOwn}
-            size="lg"
-            className="flex items-center gap-2 mx-auto"
-          >
-            <Sparkles className="h-5 w-5" />
-            Get Started for Free
-          </Button>
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
+          <div className="relative">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold mb-2">Create Your Own App</h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+              Generate stunning App Store screenshots with AI in minutes. No design skills needed.
+            </p>
+            <Button
+              onClick={handleCreateYourOwn}
+              size="lg"
+              className="flex items-center gap-2 mx-auto shadow-lg"
+            >
+              <Sparkles className="h-5 w-5" />
+              Get Started for Free
+            </Button>
+          </div>
         </motion.div>
     </div>
   );

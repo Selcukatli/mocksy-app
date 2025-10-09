@@ -9,6 +9,7 @@ import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
 import AppsInCategoryCarousel from '@/components/AppsInCategoryCarousel';
+import ReviewsSection from '@/components/ReviewsSection';
 import { motion } from 'framer-motion';
 import { usePageHeader } from '@/components/RootLayoutContent';
 import Toast from '@/components/Toast';
@@ -26,7 +27,17 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const { setTitle } = usePageHeader();
   const [showToast, setShowToast] = useState(false);
 
+  const [reviewsKey, setReviewsKey] = useState(0);
+
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
+
+  // Fetch reviews for this app (reviewsKey is used to force refresh)
+  const reviewsData = useQuery(api.mockReviews.getAppReviews, { appId: appId as Id<'apps'>, limit: 5 });
+
+  const handleReviewSubmitted = useCallback(() => {
+    // Force re-fetch of reviews by incrementing key
+    setReviewsKey((prev) => prev + 1);
+  }, []);
 
   // Fetch similar apps from the same category
   const similarApps = useQuery(
@@ -123,6 +134,27 @@ export default function PublicAppStorePage({ params }: PageProps) {
             onCreateYourOwn={handleCreateYourOwn}
           />
         </motion.div>
+
+        {/* Reviews Section */}
+        {reviewsData && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="mt-6"
+            key={reviewsKey}
+          >
+            <ReviewsSection
+              appId={appId as Id<'apps'>}
+              appName={appPreview.app.name}
+              reviews={reviewsData.reviews}
+              averageRating={reviewsData.averageRating}
+              totalReviews={reviewsData.totalReviews}
+              ratingCounts={reviewsData.ratingCounts}
+              onReviewSubmitted={handleReviewSubmitted}
+            />
+          </motion.div>
+        )}
 
         {/* Similar Apps Recommendations */}
         {filteredSimilarApps.length > 0 && appPreview.app.category && (

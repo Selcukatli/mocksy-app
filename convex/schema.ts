@@ -72,6 +72,21 @@ export default defineSchema({
     .index("by_app", ["appId"])
     .index("by_profile", ["profileId"]),
 
+  mockReviews: defineTable({
+    appId: v.id("apps"), // App being reviewed
+    profileId: v.id("profiles"), // Reviewer
+    rating: v.number(), // 1-5 stars
+    title: v.optional(v.string()), // Review title
+    reviewText: v.string(), // Review content
+    helpfulCount: v.optional(v.number()), // Number of helpful votes
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_app", ["appId"])
+    .index("by_profile", ["profileId"])
+    .index("by_app_and_created", ["appId", "createdAt"])
+    .index("by_rating", ["appId", "rating"]),
+
   screenshotSets: defineTable({
     appId: v.id("apps"), // Which app this set belongs to
     createdBy: v.id("profiles"), // User who created the set

@@ -522,6 +522,7 @@ export const generateAppCoverImage = internalAction({
   returns: v.object({
     success: v.boolean(),
     imageUrl: v.optional(v.string()),
+    storageId: v.optional(v.id("_storage")),
     imagePrompt: v.optional(v.string()),
     styleNotes: v.optional(v.string()),
     width: v.optional(v.number()),
@@ -531,6 +532,7 @@ export const generateAppCoverImage = internalAction({
   handler: async (ctx, args): Promise<{
     success: boolean;
     imageUrl?: string;
+    storageId?: Id<"_storage">;
     imagePrompt?: string;
     styleNotes?: string;
     width?: number;
@@ -595,9 +597,24 @@ export const generateAppCoverImage = internalAction({
       const imageUrl: string = imageResult.images[0].url;
       console.log(`  ✅ Cover image generated: ${imageUrl}`);
 
+      // 6. Download and save to storage
+      console.log("📤 Downloading and uploading to storage...");
+      const imageResponse = await fetchWithRetry(imageUrl);
+      const imageBlob = await imageResponse.blob();
+      const storageId = await ctx.storage.store(imageBlob);
+      console.log(`  ✓ Uploaded to storage: ${storageId}`);
+
+      // 7. Update app with cover image
+      await ctx.runMutation(internal.apps.updateDemoApp, {
+        appId: args.appId,
+        coverImageStorageId: storageId,
+      });
+      console.log(`  ✓ App updated with cover image`);
+
       return {
         success: true,
         imageUrl,
+        storageId,
         imagePrompt: promptResult.image_prompt,
         styleNotes: promptResult.style_notes,
         width: imageResult.images[0].width ?? undefined,

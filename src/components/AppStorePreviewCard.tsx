@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { Id } from '@convex/_generated/dataModel';
 import ScreenshotLightbox from '@/components/ScreenshotLightbox';
+import { useDominantColor } from '@/hooks/useDominantColor';
 
 interface AppStorePreviewCardProps {
   app: {
@@ -14,6 +15,7 @@ interface AppStorePreviewCardProps {
     description?: string;
     category?: string;
     iconUrl?: string;
+    coverImageUrl?: string;
   };
   creator?: {
     username?: string;
@@ -41,6 +43,9 @@ export default function AppStorePreviewCard({
 }: AppStorePreviewCardProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
+  
+  // Extract dominant color from cover image for dynamic blending
+  const { color: dominantColor } = useDominantColor(app.coverImageUrl);
 
   const screenUrls = screens.map(s => s.screenUrl).filter((url): url is string => !!url);
   const hasIcon = !!app.iconUrl;
@@ -93,42 +98,49 @@ export default function AppStorePreviewCard({
             )}
           </div>
 
-          {/* App Header */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
-            {/* App Icon */}
-            <div className="relative h-24 w-24 flex-shrink-0 rounded-[22%] overflow-hidden bg-muted/15 shadow-lg md:h-32 md:w-32">
-              {hasIcon && app.iconUrl ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4 }}
-                  style={{ position: 'relative' }}
-                  className="h-full w-full"
-                >
-                  <Image
-                    src={app.iconUrl}
-                    alt="App icon"
-                    fill
-                    className="object-cover"
-                    sizes="128px"
-                    unoptimized
-                  />
-                </motion.div>
-              ) : (
-                <div className="relative h-full w-full overflow-hidden">
-                  {isLoading ? (
-                    <>
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-br from-muted/70 via-muted/40 to-muted/70"
-                        animate={{ opacity: [0.6, 0.85, 0.6], scale: [1, 1.03, 1] }}
-                        transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-                      />
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
-                        animate={{ x: ['-120%', '220%'] }}
-                        transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
-                      />
-                    </>
+          {/* Cover Image with Integrated App Header */}
+          {app.coverImageUrl ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="rounded-xl overflow-hidden shadow-md"
+            >
+              {/* Cover Image with Integrated Info Bar */}
+              <div className="relative w-full aspect-video">
+                {/* Cover Image */}
+                <Image
+                  src={app.coverImageUrl}
+                  alt={`${app.name} cover image`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 896px"
+                  unoptimized
+                />
+                
+                {/* Seamless gradient overlay - darker for better text visibility */}
+                <div 
+                  className="absolute inset-x-0 bottom-0 h-48"
+                  style={{
+                    background: dominantColor 
+                      ? `linear-gradient(to bottom, transparent 0%, ${dominantColor.replace('0.85', '0.75')} 30%, ${dominantColor.replace('0.85', '0.95')} 100%)`
+                      : 'linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.75) 30%, rgba(0, 0, 0, 0.95) 100%)',
+                  }}
+                />
+                
+                {/* App Info - Overlaid at bottom, no additional background */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 flex items-center gap-4">
+                {/* App Icon - Larger size with border and elevation */}
+                <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30">
+                  {hasIcon && app.iconUrl ? (
+                    <Image
+                      src={app.iconUrl}
+                      alt="App icon"
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                      unoptimized
+                    />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/10">
                       <span className="text-2xl font-bold text-primary">
@@ -137,54 +149,124 @@ export default function AppStorePreviewCard({
                     </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* App Title & Category */}
-            <div className="flex-1 w-full">
-              {hasDetails ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-1"
-                >
-                  <h1 className="text-3xl font-bold text-foreground">
-                    {app.name}
-                  </h1>
-                  {app.category && (
-                    <p className="text-sm text-primary font-medium uppercase tracking-wide">
-                      {app.category}
-                    </p>
+                {/* App Title & Category - Larger text */}
+                <div className="flex-1 min-w-0">
+                  {hasDetails ? (
+                    <div className="space-y-1">
+                      <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg truncate">
+                        {app.name}
+                      </h1>
+                      {app.category && (
+                        <p className="text-sm md:text-base text-white/90 font-medium uppercase tracking-wide drop-shadow">
+                          {app.category}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="h-8 w-48 bg-white/20 rounded animate-pulse" />
+                      <div className="h-5 w-24 bg-white/20 rounded animate-pulse" />
+                    </div>
                   )}
-                </motion.div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="relative h-10 w-64 overflow-hidden rounded-lg bg-muted">
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
-                      animate={{ x: ['-100%', '200%'] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-                    />
-                  </div>
-                  <div className="relative h-5 w-40 overflow-hidden rounded-md bg-muted">
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
-                      animate={{ x: ['-100%', '200%'] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: 'linear', delay: 0.2 }}
-                    />
-                  </div>
                 </div>
-              )}
+              </div>
+              </div>
+            </motion.div>
+          ) : (
+            /* Fallback: Traditional Header Layout when no cover image */
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
+              {/* App Icon */}
+              <div className="relative h-20 w-20 flex-shrink-0 rounded-[22%] overflow-hidden bg-muted/15 shadow-lg md:h-24 md:w-24">
+                {hasIcon && app.iconUrl ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                    style={{ position: 'relative' }}
+                    className="h-full w-full"
+                  >
+                    <Image
+                      src={app.iconUrl}
+                      alt="App icon"
+                      fill
+                      className="object-cover"
+                      sizes="96px"
+                      unoptimized
+                    />
+                  </motion.div>
+                ) : (
+                  <div className="relative h-full w-full overflow-hidden">
+                    {isLoading ? (
+                      <>
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-br from-muted/70 via-muted/40 to-muted/70"
+                          animate={{ opacity: [0.6, 0.85, 0.6], scale: [1, 1.03, 1] }}
+                          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
+                          animate={{ x: ['-120%', '220%'] }}
+                          transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
+                        />
+                      </>
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/10">
+                        <span className="text-2xl font-bold text-primary">
+                          {app.name?.charAt(0).toUpperCase() || 'A'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* App Title & Category */}
+              <div className="flex-1 w-full">
+                {hasDetails ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-1"
+                  >
+                    <h1 className="text-3xl font-bold text-foreground">
+                      {app.name}
+                    </h1>
+                    {app.category && (
+                      <p className="text-sm text-primary font-medium uppercase tracking-wide">
+                        {app.category}
+                      </p>
+                    )}
+                  </motion.div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="relative h-10 w-64 overflow-hidden rounded-lg bg-muted">
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                      />
+                    </div>
+                    <div className="relative h-5 w-40 overflow-hidden rounded-md bg-muted">
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: 'linear', delay: 0.2 }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Description */}
           {hasDetails && app.description && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
+              transition={{ duration: 0.3, delay: 0.15 }}
               className="space-y-2"
             >
               <p className={`text-base leading-relaxed text-muted-foreground ${!isDescriptionExpanded ? 'line-clamp-3' : ''}`}>

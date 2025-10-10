@@ -126,6 +126,12 @@ export interface Composition {
   
 }
 
+export interface CoverImagePrompt {
+  image_prompt: string
+  style_notes: string
+  
+}
+
 export interface DemoAppOutput {
   app_name: string
   app_subtitle: string

@@ -43,6 +43,8 @@ export default class TypeBuilder {
     
     Composition: ClassViewer<'Composition', "priority" | "rules">;
     
+    CoverImagePrompt: ClassViewer<'CoverImagePrompt', "image_prompt" | "style_notes">;
+    
     DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_subtitle" | "app_description" | "app_category" | "app_icon_prompt" | "style_guide">;
     
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
@@ -106,7 +108,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "AppScreenPromptsOutput","AppStructure","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenDetail","ScreenImagePrompt","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TabStructure","TextConfig","VisionTestResponse",
+            "AppScreenPromptsOutput","AppStructure","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","CoverImagePrompt","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenDetail","ScreenImagePrompt","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TabStructure","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -144,6 +146,10 @@ export default class TypeBuilder {
         
         this.Composition = this.tb.classViewer("Composition", [
           "priority","rules",
+        ]);
+        
+        this.CoverImagePrompt = this.tb.classViewer("CoverImagePrompt", [
+          "image_prompt","style_notes",
         ]);
         
         this.DemoAppOutput = this.tb.classViewer("DemoAppOutput", [

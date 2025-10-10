@@ -24,7 +24,7 @@ import { toBamlError, BamlStream, BamlAbortError, Collector } from "@boundaryml/
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
+import type {AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 import { AsyncHttpRequest, AsyncHttpStreamRequest } from "./async_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -230,6 +230,53 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             signal,
             )
             return raw.parsed(false) as types.DetailedResponse
+            } catch (error) {
+            throw toBamlError(error);
+            }
+            }
+            
+        async GenerateAppCoverImagePrompt(
+        app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],
+        __baml_options__?: BamlCallOptions
+        ): Promise<types.CoverImagePrompt> {
+          try {
+          const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+          const signal = options.signal;
+
+          if (signal?.aborted) {
+          throw new BamlAbortError('Operation was aborted', signal.reason);
+          }
+
+          // Check if onTick is provided - route through streaming if so
+          if (options.onTick) {
+          const stream = this.stream.GenerateAppCoverImagePrompt(
+          app_name,app_description,app_category,style_guide,screen_names,
+          __baml_options__
+          );
+
+          return await stream.getFinalResponse();
+          }
+
+          const collector = options.collector ? (Array.isArray(options.collector) ? options.collector :
+          [options.collector]) : [];
+          const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+          const env: Record<string, string> = Object.fromEntries(
+            Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+            );
+            const raw = await this.runtime.callFunction(
+            "GenerateAppCoverImagePrompt",
+            {
+            "app_name": app_name,"app_description": app_description,"app_category": app_category?? null,"style_guide": style_guide?? null,"screen_names": screen_names
+            },
+            this.ctxManager.cloneContext(),
+            options.tb?.__tb(),
+            options.clientRegistry,
+            collector,
+            options.tags || {},
+            env,
+            signal,
+            )
+            return raw.parsed(false) as types.CoverImagePrompt
             } catch (error) {
             throw toBamlError(error);
             }
@@ -1896,6 +1943,72 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   raw,
                   (a): partial_types.DetailedResponse => a,
                   (a): types.DetailedResponse => a,
+                  this.ctxManager.cloneContext(),
+                  options.signal,
+                  )
+                  } catch (error) {
+                  throw toBamlError(error);
+                  }
+                  }
+                  
+            GenerateAppCoverImagePrompt(
+            app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],
+            __baml_options__?: BamlCallOptions
+            ): BamlStream<partial_types.CoverImagePrompt, types.CoverImagePrompt>
+              {
+              try {
+              const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+              const signal = options.signal;
+
+              if (signal?.aborted) {
+              throw new BamlAbortError('Operation was aborted', signal.reason);
+              }
+
+              let collector = options.collector ? (Array.isArray(options.collector) ? options.collector :
+              [options.collector]) : [];
+
+              let onTickWrapper: (() => void) | undefined;
+
+              // Create collector and wrap onTick if provided
+              if (options.onTick) {
+              const tickCollector = new Collector("on-tick-collector");
+              collector = [...collector, tickCollector];
+
+              onTickWrapper = () => {
+              const log = tickCollector.last;
+              if (log) {
+              try {
+              options.onTick!("Unknown", log);
+              } catch (error) {
+              console.error("Error in onTick callback for GenerateAppCoverImagePrompt", error);
+              }
+              }
+              };
+              }
+
+              const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+              const env: Record<string, string> = Object.fromEntries(
+                Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+                );
+                const raw = this.runtime.streamFunction(
+                "GenerateAppCoverImagePrompt",
+                {
+                "app_name": app_name,"app_description": app_description,"app_category": app_category ?? null,"style_guide": style_guide ?? null,"screen_names": screen_names
+                },
+                undefined,
+                this.ctxManager.cloneContext(),
+                options.tb?.__tb(),
+                options.clientRegistry,
+                collector,
+                options.tags || {},
+                env,
+                signal,
+                onTickWrapper,
+                )
+                return new BamlStream<partial_types.CoverImagePrompt, types.CoverImagePrompt>(
+                  raw,
+                  (a): partial_types.CoverImagePrompt => a,
+                  (a): types.CoverImagePrompt => a,
                   this.ctxManager.cloneContext(),
                   options.signal,
                   )

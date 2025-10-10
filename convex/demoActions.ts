@@ -507,3 +507,109 @@ export const improveAppDescription = action({
     };
   },
 });
+
+/**
+ * Internal: Generate a cover image for an app using BAML + Seed Dream 4
+ * Analyzes app description and screens to create a promotional banner image
+ * No authentication required - for admin/internal use
+ */
+export const generateAppCoverImage = internalAction({
+  args: {
+    appId: v.id("apps"),
+    width: v.optional(v.number()), // Custom width, default: 1920
+    height: v.optional(v.number()), // Custom height, default: 1080
+  },
+  returns: v.object({
+    success: v.boolean(),
+    imageUrl: v.optional(v.string()),
+    imagePrompt: v.optional(v.string()),
+    styleNotes: v.optional(v.string()),
+    width: v.optional(v.number()),
+    height: v.optional(v.number()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    imageUrl?: string;
+    imagePrompt?: string;
+    styleNotes?: string;
+    width?: number;
+    height?: number;
+    error?: string;
+  }> => {
+    // 1. Fetch app details (no auth check - internal use)
+    const app = await ctx.runQuery(internal.apps.getAppById, {
+      appId: args.appId,
+    });
+    if (!app) {
+      throw new Error("App not found");
+    }
+
+    // 2. Fetch app screens (no auth check - internal use)
+    const screens = await ctx.runQuery(internal.appScreens.getScreensByAppId, {
+      appId: args.appId,
+    });
+
+    console.log(`🎨 Generating cover image for app: ${app.name}`);
+    console.log(`  Description: ${app.description?.substring(0, 60)}...`);
+    console.log(`  Screens: ${screens.length}`);
+
+    try {
+      // 4. Prepare screen names
+      const screenNames: string[] = screens.map((s) => s.name);
+
+      // 5. Call BAML to generate image prompt
+      console.log("🤖 Generating image prompt with BAML...");
+      const { b } = await import("../baml_client");
+      const promptResult = await b.GenerateAppCoverImagePrompt(
+        app.name,
+        app.description || "",
+        app.category ?? null,
+        app.styleGuide ?? null,
+        screenNames
+      );
+
+      console.log(`  ✓ Image prompt generated (${promptResult.image_prompt.length} chars)`);
+      console.log(`  Prompt preview: ${promptResult.image_prompt.substring(0, 100)}...`);
+
+      // 6. Generate image with Seed Dream 4
+      const width = args.width || 1920;
+      const height = args.height || 1080;
+
+      console.log(`🖼️  Generating image with Seed Dream 4 (${width}×${height})...`);
+      const imageResult: {
+        images?: Array<{ url: string; width?: number; height?: number }>;
+      } = await ctx.runAction(
+        internal.utils.fal.falImageActions.seedDream4TextToImage,
+        {
+          prompt: promptResult.image_prompt,
+          image_size: { width, height },
+          num_images: 1,
+        }
+      );
+
+      if (!imageResult.images || imageResult.images.length === 0) {
+        throw new Error("No images generated");
+      }
+
+      const imageUrl: string = imageResult.images[0].url;
+      console.log(`  ✅ Cover image generated: ${imageUrl}`);
+
+      return {
+        success: true,
+        imageUrl,
+        imagePrompt: promptResult.image_prompt,
+        styleNotes: promptResult.style_notes,
+        width: imageResult.images[0].width ?? undefined,
+        height: imageResult.images[0].height ?? undefined,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("❌ Error generating cover image:", errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  },
+});

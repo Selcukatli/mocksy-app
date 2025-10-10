@@ -1,5 +1,17 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
+
+// Internal query: Get app screens by app ID (no auth check)
+export const getScreensByAppId = internalQuery({
+  args: { appId: v.id("apps") },
+  returns: v.any(), // Returns array of full screen documents
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("appScreens")
+      .withIndex("by_app", (q) => q.eq("appId", args.appId))
+      .collect();
+  },
+});
 
 // Upload an app screen
 export const uploadAppScreen = mutation({

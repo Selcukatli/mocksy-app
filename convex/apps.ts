@@ -1,5 +1,14 @@
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
+
+// Internal query: Get any app by ID (no auth check)
+export const getAppById = internalQuery({
+  args: { appId: v.id("apps") },
+  returns: v.any(), // Returns full app document or null
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.appId);
+  },
+});
 
 // Query to get all apps for the current user
 export const getApps = query({
@@ -13,6 +22,8 @@ export const getApps = query({
       description: v.optional(v.string()),
       iconStorageId: v.optional(v.id("_storage")),
       iconUrl: v.optional(v.union(v.string(), v.null())),
+      coverImageStorageId: v.optional(v.id("_storage")),
+      coverImageUrl: v.optional(v.union(v.string(), v.null())),
       category: v.optional(v.string()),
       platforms: v.optional(
         v.object({
@@ -59,16 +70,21 @@ export const getApps = query({
       .order("desc")
       .collect();
 
-    // Get icon URLs for all apps with icons
+    // Get icon URLs and cover image URLs for all apps
     const appsWithUrls = await Promise.all(
       apps.map(async (app) => {
         let iconUrl: string | null = null;
         if (app.iconStorageId) {
           iconUrl = await ctx.storage.getUrl(app.iconStorageId);
         }
+        let coverImageUrl: string | null = null;
+        if (app.coverImageStorageId) {
+          coverImageUrl = await ctx.storage.getUrl(app.coverImageStorageId);
+        }
         return {
           ...app,
           iconUrl: iconUrl ?? undefined,
+          coverImageUrl: coverImageUrl ?? undefined,
         };
       }),
     );
@@ -89,6 +105,8 @@ export const getApp = query({
       description: v.optional(v.string()),
       iconStorageId: v.optional(v.id("_storage")),
       iconUrl: v.optional(v.union(v.string(), v.null())),
+      coverImageStorageId: v.optional(v.id("_storage")),
+      coverImageUrl: v.optional(v.union(v.string(), v.null())),
       category: v.optional(v.string()),
       platforms: v.optional(
         v.object({
@@ -141,9 +159,16 @@ export const getApp = query({
       iconUrl = await ctx.storage.getUrl(app.iconStorageId);
     }
 
+    // Get cover image URL if exists
+    let coverImageUrl: string | null = null;
+    if (app.coverImageStorageId) {
+      coverImageUrl = await ctx.storage.getUrl(app.coverImageStorageId);
+    }
+
     return {
       ...app,
       iconUrl: iconUrl ?? undefined,
+      coverImageUrl: coverImageUrl ?? undefined,
     };
   },
 });
@@ -154,6 +179,7 @@ export const createApp = mutation({
     name: v.string(),
     description: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")),
+    coverImageStorageId: v.optional(v.id("_storage")),
     category: v.optional(v.string()),
     platforms: v.optional(
       v.object({
@@ -188,6 +214,7 @@ export const createApp = mutation({
       name: args.name,
       description: args.description,
       iconStorageId: args.iconStorageId,
+      coverImageStorageId: args.coverImageStorageId,
       category: args.category,
       platforms: args.platforms,
       languages: args.languages,
@@ -206,6 +233,7 @@ export const updateApp = mutation({
     name: v.optional(v.string()),
     description: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")),
+    coverImageStorageId: v.optional(v.id("_storage")),
     category: v.optional(v.string()),
     platforms: v.optional(
       v.object({
@@ -349,7 +377,12 @@ export const deleteApp = mutation({
       await ctx.storage.delete(app.iconStorageId);
     }
 
-    // 6. Finally, delete the app itself
+    // 6. Delete the cover image from storage if it exists
+    if (app.coverImageStorageId) {
+      await ctx.storage.delete(app.coverImageStorageId);
+    }
+
+    // 7. Finally, delete the app itself
     await ctx.db.delete(args.appId);
 
     return null;
@@ -364,6 +397,7 @@ export const createDemoApp = internalMutation({
     description: v.optional(v.string()),
     category: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")),
+    coverImageStorageId: v.optional(v.id("_storage")),
   },
   returns: v.id("apps"),
   handler: async (ctx, args) => {
@@ -375,6 +409,7 @@ export const createDemoApp = internalMutation({
       description: args.description,
       category: args.category,
       iconStorageId: args.iconStorageId,
+      coverImageStorageId: args.coverImageStorageId,
       isDemo: true,
       status: "draft", // New demo apps start as draft
       createdAt: now,
@@ -393,6 +428,7 @@ export const updateDemoApp = internalMutation({
     description: v.optional(v.string()),
     category: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")),
+    coverImageStorageId: v.optional(v.id("_storage")),
     styleGuide: v.optional(v.string()),
   },
   returns: v.null(),
@@ -420,6 +456,8 @@ export const getAppGenerationStatus = query({
         category: v.optional(v.string()),
         iconStorageId: v.optional(v.id("_storage")),
         iconUrl: v.optional(v.string()),
+        coverImageStorageId: v.optional(v.id("_storage")),
+        coverImageUrl: v.optional(v.string()),
         status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
       }),
       screens: v.array(
@@ -464,6 +502,13 @@ export const getAppGenerationStatus = query({
       iconUrl = url ?? undefined;
     }
 
+    // Get cover image URL if exists
+    let coverImageUrl: string | undefined = undefined;
+    if (app.coverImageStorageId) {
+      const url = await ctx.storage.getUrl(app.coverImageStorageId);
+      coverImageUrl = url ?? undefined;
+    }
+
     // Get all screens for this app
     const appScreens = await ctx.db
       .query("appScreens")
@@ -495,6 +540,8 @@ export const getAppGenerationStatus = query({
         category: app.category,
         iconStorageId: app.iconStorageId,
         iconUrl,
+        coverImageStorageId: app.coverImageStorageId,
+        coverImageUrl,
         status: app.status,
       },
       screens: screensWithUrls,
@@ -516,6 +563,7 @@ export const getPublicDemoApps = query({
       description: v.optional(v.string()),
       category: v.optional(v.string()),
       iconUrl: v.optional(v.string()),
+      coverImageUrl: v.optional(v.string()),
       createdAt: v.number(),
     })
   ),
@@ -523,7 +571,7 @@ export const getPublicDemoApps = query({
     const limit = args.limit ?? 50;
 
     // Query published demo apps
-    let query = ctx.db
+    const query = ctx.db
       .query("apps")
       .withIndex("by_is_demo", (q) => q.eq("isDemo", true));
 
@@ -541,7 +589,7 @@ export const getPublicDemoApps = query({
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, limit);
 
-    // Get icon URLs
+    // Get icon URLs and cover image URLs
     const appsWithUrls = await Promise.all(
       sortedApps.map(async (app) => {
         let iconUrl: string | undefined = undefined;
@@ -549,12 +597,18 @@ export const getPublicDemoApps = query({
           const url = await ctx.storage.getUrl(app.iconStorageId);
           iconUrl = url ?? undefined;
         }
+        let coverImageUrl: string | undefined = undefined;
+        if (app.coverImageStorageId) {
+          const url = await ctx.storage.getUrl(app.coverImageStorageId);
+          coverImageUrl = url ?? undefined;
+        }
         return {
           _id: app._id,
           name: app.name,
           description: app.description,
           category: app.category,
           iconUrl,
+          coverImageUrl,
           createdAt: app.createdAt,
         };
       })
@@ -576,6 +630,7 @@ export const getFeaturedApps = query({
       description: v.optional(v.string()),
       category: v.optional(v.string()),
       iconUrl: v.optional(v.string()),
+      coverImageUrl: v.optional(v.string()),
       createdAt: v.number(),
     })
   ),
@@ -598,7 +653,7 @@ export const getFeaturedApps = query({
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, limit);
 
-    // Get icon URLs
+    // Get icon URLs and cover image URLs
     const appsWithUrls = await Promise.all(
       featuredApps.map(async (app) => {
         let iconUrl: string | undefined = undefined;
@@ -606,12 +661,18 @@ export const getFeaturedApps = query({
           const url = await ctx.storage.getUrl(app.iconStorageId);
           iconUrl = url ?? undefined;
         }
+        let coverImageUrl: string | undefined = undefined;
+        if (app.coverImageStorageId) {
+          const url = await ctx.storage.getUrl(app.coverImageStorageId);
+          coverImageUrl = url ?? undefined;
+        }
         return {
           _id: app._id,
           name: app.name,
           description: app.description,
           category: app.category,
           iconUrl,
+          coverImageUrl,
           createdAt: app.createdAt,
         };
       })
@@ -657,6 +718,7 @@ export const getPublicAppPreview = query({
         description: v.optional(v.string()),
         category: v.optional(v.string()),
         iconUrl: v.optional(v.string()),
+        coverImageUrl: v.optional(v.string()),
       }),
       creator: v.optional(
         v.object({
@@ -689,6 +751,13 @@ export const getPublicAppPreview = query({
     if (app.iconStorageId) {
       const url = await ctx.storage.getUrl(app.iconStorageId);
       iconUrl = url ?? undefined;
+    }
+
+    // Get cover image URL if exists
+    let coverImageUrl: string | undefined = undefined;
+    if (app.coverImageStorageId) {
+      const url = await ctx.storage.getUrl(app.coverImageStorageId);
+      coverImageUrl = url ?? undefined;
     }
 
     // Get creator profile
@@ -735,6 +804,7 @@ export const getPublicAppPreview = query({
         description: app.description,
         category: app.category,
         iconUrl,
+        coverImageUrl,
       },
       creator,
       screens: screensWithUrls,

@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  AppScreenPromptsOutput,  AppStructure,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  ImprovedDescriptionOutput,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenDetail,  ScreenImagePrompt,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TabStructure,  TextConfig,  VisionTestResponse } from "./types"
+import type {  AppScreenPromptsOutput,  AppStructure,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  CoverImagePrompt,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  ImprovedDescriptionOutput,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenDetail,  ScreenImagePrompt,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TabStructure,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -98,6 +98,10 @@ export namespace partial_types {
     export interface Composition {
       priority?: string | null
       rules: string[]
+    }
+    export interface CoverImagePrompt {
+      image_prompt?: string | null
+      style_notes?: string | null
     }
     export interface DemoAppOutput {
       app_name?: string | null

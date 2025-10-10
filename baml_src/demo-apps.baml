@@ -655,6 +655,92 @@ function GenerateScreenImagePromptWithReference(
   "#
 }
 
+// ============================================
+// COVER IMAGE GENERATION
+// ============================================
+
+class CoverImagePrompt {
+  image_prompt string @description("Complete text-to-image prompt for generating a promotional cover image (100-150 words). Should capture the app's essence, visual style, and key features in a single compelling hero image.")
+  style_notes string @description("Visual style guidance: composition, color palette, mood, and design approach for the cover image")
+}
+
+function GenerateAppCoverImagePrompt(
+  app_name: string @description("Name of the app"),
+  app_description: string @description("App description and subtitle"),
+  app_category: string? @description("App Store category"),
+  style_guide: string? @description("Visual style guide if available"),
+  screen_names: string[] @description("Names of the app screens (e.g., 'Home Dashboard', 'Profile Settings', 'Chat View'). These names are often descriptive of the screen's purpose.")
+) -> CoverImagePrompt {
+  client ScreenshotGeneratorMed
+  prompt #"
+    {{ _.role("user") }}
+    
+    You are creating a text-to-image prompt for a promotional COVER IMAGE for an app.
+    This is like the hero/banner images you see in app stores - NOT the app icon.
+    
+    **APP DETAILS:**
+    - Name: {{ app_name }}
+    - Description: {{ app_description }}
+    {% if app_category %}- Category: {{ app_category }}{% endif %}
+    {% if style_guide %}- Style Guide: {{ style_guide }}{% endif %}
+    
+    **APP SCREENS:**
+    The app has the following screens:
+    {% for screen_name in screen_names %}
+    - {{ screen_name }}
+    {% endfor %}
+    
+    **COVER IMAGE REQUIREMENTS:**
+    
+    1. **Format:** Horizontal/landscape banner (works well at 1920×1080 or similar)
+    2. **Purpose:** Promotional hero image for app store listings - eye-catching, professional
+    3. **Content:** Should showcase the app's personality and key features visually
+    4. **NOT an icon:** This is a large promotional banner, not a small icon
+    
+    **CRITICAL: NO TEXT IN IMAGE**
+    - DO NOT include any text, labels, titles, or typography in the image prompt
+    - NO app name overlays, NO screen labels, NO UI text mockups
+    - NO hex codes or color values (use "bright teal" instead of hex codes)
+    - The cover image should be purely visual - no readable text or codes
+    - Communicate the app through imagery, composition, and visual elements only
+    - Use color names (teal, violet, orange) NOT hex codes in the prompt
+    
+    **PROMPT STRUCTURE:**
+    
+    Your image_prompt should describe:
+    - Main visual concept (what's the hero image showing?)
+    - Composition (layout, perspective, focal points)
+    - Color scheme (should align with style_guide if provided)
+    - Mood and atmosphere
+    - Key visual elements that represent the app's functionality
+    - Style (modern UI mockup, lifestyle shot, abstract concept, etc.)
+    - **NO TEXT** - purely visual storytelling
+    
+    **EXAMPLES OF GOOD PROMPTS (NO TEXT):**
+    
+    For a fitness app:
+    "Modern fitness app promotional banner. Dynamic composition with vibrant gradient background (purple to cyan). Central phone mockup showing colorful workout interface with stats and progress rings. Energetic diagonal layout with floating UI elements (achievement badges, graph lines, heart rate icons) around the phone. Depth and dimension with subtle shadows. Professional product photography style. Clean, motivational, high-energy aesthetic. NO text overlays or labels. 1920x1080."
+    
+    For a meditation app:
+    "Serene meditation app cover image. Soft blue-green gradient background with organic flowing shapes. Elegant phone mockup centered showing peaceful interface with breathing exercise visualization. Floating abstract elements: gentle waves, soft circles, calming patterns in muted pastels (sage green, warm beige, soft blue). Generous whitespace. Dreamy, tranquil atmosphere with subtle glow effects. Minimal, zen aesthetic. Horizontal banner format. NO text or typography elements."
+    
+    For a social app:
+    "Vibrant social networking app banner. Bright gradient background (yellow to pink). Multiple phone mockups at dynamic angles showing chat screens, profile pages, photo feeds. Floating emoji reactions, notification bubbles, and message icons creating depth. Playful, energetic composition with overlapping elements. Modern, fun, connected vibe. Bold colors and rounded UI elements. Product shot style. Pure visual composition without text overlays. 1920x1080."
+    
+    **YOUR TASK:**
+    Generate image_prompt (100-150 words) and style_notes (2-3 sentences) for {{ app_name }}.
+    
+    **CRITICAL REMINDER:**
+    - DO NOT include text, titles, labels, or any readable typography in the image prompt
+    - DO NOT include hex codes or color values (use "bright teal" not hex codes)
+    - Reference visual scenes and elements, but don't ask for text labels on them
+    - The image should communicate purely through visuals, colors, and composition
+    - Colors should be described as names/adjectives: "vibrant teal", "deep violet", "bright orange"
+    
+    {{ ctx.output_format }}
+  "#
+}
+
 
 // ============================================
 // DEMO APP TEST CASES

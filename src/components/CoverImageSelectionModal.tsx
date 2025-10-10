@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Check, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Check, Loader2, ArrowLeft, Sparkles, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CoverImageVariant {
   imageUrl: string;
@@ -18,6 +19,9 @@ interface CoverImageSelectionModalProps {
   isGenerating: boolean;
   imagePrompt?: string;
   onSave: (imageUrl: string) => Promise<void>;
+  appName: string;
+  appIconUrl: string | null;
+  onGenerate: (feedback: string) => void;
 }
 
 export default function CoverImageSelectionModal({
@@ -27,10 +31,48 @@ export default function CoverImageSelectionModal({
   isGenerating,
   imagePrompt,
   onSave,
+  appName,
+  appIconUrl,
+  onGenerate,
 }: CoverImageSelectionModalProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isPromptExpanded, setIsPromptExpanded] = useState(false);
+  const [stage, setStage] = useState<'input' | 'generating' | 'results'>('input');
+  const [userFeedback, setUserFeedback] = useState('');
+  const [progress, setProgress] = useState(0);
+
+  // Reset to input stage when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setStage('input');
+      setUserFeedback('');
+      setSelectedIndex(null);
+    }
+  }, [isOpen]);
+
+  // Update stage based on generation state
+  useEffect(() => {
+    if (isGenerating) {
+      setStage('generating');
+      setProgress(0);
+    } else if (variants && variants.length > 0) {
+      setStage('results');
+      setProgress(100);
+    }
+  }, [isGenerating, variants]);
+
+  // Animate progress bar during generation
+  useEffect(() => {
+    if (stage === 'generating') {
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) return prev; // Stop at 90% until actually complete
+          return prev + Math.random() * 10;
+        });
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [stage]);
 
   if (!isOpen) return null;
 
@@ -54,57 +96,119 @@ export default function CoverImageSelectionModal({
     setSelectedIndex(null);
   };
 
+  const handleGenerate = () => {
+    onGenerate(userFeedback);
+  };
+
+  const handleBack = () => {
+    setStage('input');
+    setSelectedIndex(null);
+  };
+
+  const handleCopyPrompt = async () => {
+    if (imagePrompt) {
+      await navigator.clipboard.writeText(imagePrompt);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-background rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col">
         {/* Header - Sticky */}
-        <div className="sticky top-0 bg-background border-b px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-          <div>
-            <h2 className="text-xl font-semibold">Select Cover Image</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Choose the best variant for your app
-            </p>
+        <div className="sticky top-0 bg-background px-6 py-5 flex flex-col rounded-t-2xl z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-5">
+              {appIconUrl && stage === 'input' && (
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="w-20 h-20 relative rounded-2xl overflow-hidden flex-shrink-0 border-2 border-muted"
+                >
+                  <Image
+                    src={appIconUrl}
+                    alt={appName}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </motion.div>
+              )}
+              <div>
+                <h2 className="text-3xl font-semibold">
+                  {stage === 'input' ? `Generate Cover Image for ${appName}` : 'Select Cover Image'}
+                </h2>
+                {stage !== 'input' && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {stage === 'generating'
+                      ? 'Generating cover image variants...'
+                      : 'Choose the best variant for your app'}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={handleClose}
+              disabled={isSaving || isGenerating}
+              className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <button
-            onClick={handleClose}
-            disabled={isSaving}
-            className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          
+          {/* Progress Bar */}
+          {stage === 'generating' && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4"
+            >
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary rounded-full"
+                  initial={{ width: '0%' }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.5, ease: 'easeInOut' }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                {progress < 30 ? 'Analyzing your app...' : progress < 60 ? 'Creating prompt...' : progress < 90 ? 'Generating images...' : 'Almost there...'}
+              </p>
+            </motion.div>
+          )}
         </div>
 
         {/* Content - Scrollable */}
-        <div className="p-6 overflow-y-auto flex-1">
-          {/* Image Prompt - Collapsible */}
-          {imagePrompt && !isGenerating && (
-            <div className="mb-6">
-              <button
-                onClick={() => setIsPromptExpanded(!isPromptExpanded)}
-                className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted/70 rounded-lg transition-colors"
+        <div className="px-6 pt-2 pb-2 overflow-y-auto flex-1">
+          <AnimatePresence mode="wait">
+            {stage === 'input' && (
+              <motion.div
+                key="input"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
               >
-                <p className="text-xs font-medium text-muted-foreground">
-                  Generated Prompt
-                </p>
-                {isPromptExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                )}
-              </button>
-              {isPromptExpanded && (
-                <div className="mt-2 p-4 bg-muted/30 rounded-lg border border-muted">
-                  <p className="text-sm leading-relaxed">{imagePrompt}</p>
-                </div>
-              )}
-            </div>
-          )}
+                <textarea
+                  id="feedback"
+                  value={userFeedback}
+                  onChange={(e) => setUserFeedback(e.target.value)}
+                  placeholder="Guide the AI (optional) - e.g., 'Focus on gameplay', 'Minimal and clean', 'Show social features'..."
+                  className="w-full h-36 px-4 py-3 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                />
+              </motion.div>
+            )}
 
-          {/* Image Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {isGenerating ? (
-              // Loading placeholders - colorful and fun
-              Array.from({ length: 4 }).map((_, i) => {
+            {stage === 'generating' && (
+              <motion.div
+                key="generating"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+              >
+            <div className="grid grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => {
                 const gradients = [
                   'from-purple-400/20 via-pink-400/20 to-red-400/20',
                   'from-blue-400/20 via-cyan-400/20 to-teal-400/20',
@@ -142,61 +246,110 @@ export default function CoverImageSelectionModal({
                     </div>
                   </div>
                 );
-              })
-            ) : (
-              // Generated images
-              variants?.map((variant, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedIndex(i)}
-                  className={`group relative aspect-video rounded-lg overflow-hidden border-4 transition-all duration-200 ${
-                    selectedIndex === i
-                      ? 'border-primary shadow-xl scale-[1.02]'
-                      : 'border-muted hover:border-primary/60 hover:shadow-lg hover:scale-[1.05]'
-                  }`}
-                >
-                  <Image
-                    src={variant.imageUrl}
-                    alt={`Cover variant ${i + 1}`}
-                    fill
-                    className="object-cover transition-transform duration-200 group-hover:scale-110"
-                    unoptimized
-                  />
-                  
-                  {/* Selected checkmark */}
-                  {selectedIndex === i && (
-                    <div className="absolute top-3 right-3 bg-primary text-primary-foreground rounded-full p-1.5 shadow-lg animate-in zoom-in-50 duration-200">
-                      <Check className="h-5 w-5" />
-                    </div>
-                  )}
-                  
-                  {/* Variant label - only show when NOT selected */}
-                  {selectedIndex !== i && (
-                    <div className="absolute bottom-3 left-3 text-white text-xs px-2.5 py-1.5 rounded-md bg-black/70 group-hover:bg-black/90 transition-all duration-200">
-                      Variant {i + 1}
-                    </div>
-                  )}
-                </button>
-              ))
-            )}
-          </div>
-
-          {/* Empty state if no variants and not generating */}
-          {!isGenerating && (!variants || variants.length === 0) && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No variants generated</p>
+              })}
             </div>
-          )}
+              </motion.div>
+            )}
+
+            {stage === 'results' && (
+              <motion.div
+                key="results"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+            <>
+              {/* Compact Prompt Display with Copy */}
+              {imagePrompt && (
+                <div className="mb-4 flex items-center gap-2 p-2 bg-muted/30 rounded-lg border border-muted/50">
+                  <p className="text-xs text-muted-foreground flex-1 truncate">
+                    <span className="font-medium">Prompt:</span> {imagePrompt}
+                  </p>
+                  <button
+                    onClick={handleCopyPrompt}
+                    className="p-1.5 hover:bg-muted rounded transition-colors flex-shrink-0"
+                    title="Copy prompt"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+              )}
+
+              {/* Image Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {variants?.map((variant, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedIndex(i)}
+                    className={`group relative aspect-video rounded-lg overflow-hidden border-4 transition-all duration-200 ${
+                      selectedIndex === i
+                        ? 'border-primary shadow-xl scale-[1.02]'
+                        : 'border-muted hover:border-primary/60 hover:shadow-lg hover:scale-[1.05]'
+                    }`}
+                  >
+                    <Image
+                      src={variant.imageUrl}
+                      alt={`Cover variant ${i + 1}`}
+                      fill
+                      className="object-cover transition-transform duration-200 group-hover:scale-110"
+                      unoptimized
+                    />
+                    
+                    {/* Selected checkmark */}
+                    {selectedIndex === i && (
+                      <div className="absolute top-3 right-3 bg-primary text-primary-foreground rounded-full p-1.5 shadow-lg animate-in zoom-in-50 duration-200">
+                        <Check className="h-5 w-5" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Footer - Sticky */}
-        {!isGenerating && variants && variants.length > 0 && (
+        {stage === 'input' && (
+          <div className="sticky bottom-0 bg-background px-6 py-3 flex items-center justify-end gap-3 rounded-b-2xl z-10">
+            <Button
+              onClick={handleClose}
+              variant="outline"
+              size="lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGenerate}
+              size="lg"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Generate
+            </Button>
+          </div>
+        )}
+
+        {stage === 'results' && variants && variants.length > 0 && (
           <div className="sticky bottom-0 bg-background border-t px-6 py-4 flex items-center justify-between rounded-b-2xl z-10">
-            <p className="text-sm text-muted-foreground">
-              {selectedIndex !== null
-                ? `Variant ${selectedIndex + 1} selected`
-                : 'Select a variant to save'}
-            </p>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleBack}
+                variant="ghost"
+                size="sm"
+                disabled={isSaving}
+                className="flex items-center gap-1"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                {selectedIndex !== null
+                  ? `Variant ${selectedIndex + 1} selected`
+                  : 'Select a variant to save'}
+              </p>
+            </div>
             <div className="flex gap-2">
               <Button
                 onClick={handleClose}

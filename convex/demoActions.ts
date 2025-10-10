@@ -519,6 +519,7 @@ export const generateAppCoverImage = action({
     numVariants: v.optional(v.number()), // Number of variants to generate (1-6), default: 4
     width: v.optional(v.number()), // Custom width, default: 1920
     height: v.optional(v.number()), // Custom height, default: 1080
+    userFeedback: v.optional(v.string()), // Optional user guidance for cover image generation
   },
   returns: v.object({
     success: v.boolean(),
@@ -571,7 +572,8 @@ export const generateAppCoverImage = action({
         app.description || "",
         app.category ?? null,
         app.styleGuide ?? null,
-        screenNames
+        screenNames,
+        args.userFeedback ?? null
       );
 
       console.log(`  ✓ Image prompt generated (${promptResult.image_prompt.length} chars)`);
@@ -684,3 +686,4 @@ export const saveAppCoverImage = action({
     }
   },
 });
+

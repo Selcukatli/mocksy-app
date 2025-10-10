@@ -1,9 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, Share, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronUp, Share, Sparkles, Edit3 } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Id } from '@convex/_generated/dataModel';
 import ScreenshotLightbox from '@/components/ScreenshotLightbox';
 import { useDominantColor } from '@/hooks/useDominantColor';
@@ -30,6 +30,8 @@ interface AppStorePreviewCardProps {
   isLoading?: boolean;
   onShare?: () => void;
   onCreateYourOwn?: () => void;
+  isAdmin?: boolean;
+  onGenerateCover?: () => void;
 }
 
 export default function AppStorePreviewCard({
@@ -40,12 +42,30 @@ export default function AppStorePreviewCard({
   isLoading = false,
   onShare,
   onCreateYourOwn,
+  isAdmin = false,
+  onGenerateCover,
 }: AppStorePreviewCardProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
+  const [showCoverMenu, setShowCoverMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   
   // Extract dominant color from cover image for dynamic blending
   const { color: dominantColor } = useDominantColor(app.coverImageUrl);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowCoverMenu(false);
+      }
+    };
+
+    if (showCoverMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showCoverMenu]);
 
   const screenUrls = screens.map(s => s.screenUrl).filter((url): url is string => !!url);
   const hasIcon = !!app.iconUrl;
@@ -104,32 +124,78 @@ export default function AppStorePreviewCard({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="rounded-xl overflow-hidden shadow-md"
+              className="rounded-xl overflow-hidden shadow-md group relative"
+              style={{
+                background: dominantColor || 'rgba(0, 0, 0, 0.85)',
+              }}
             >
-              {/* Cover Image with Integrated Info Bar */}
+              {/* Admin Edit Overlay - Only show on hover when admin - covers entire card */}
+              {isAdmin && (
+                <>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 z-10 pointer-events-none" />
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
+                      <div className="relative" ref={menuRef}>
+                        {/* Popover Menu */}
+                        {showCoverMenu ? (
+                          <div className="absolute top-0 right-0 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-10">
+                            <button
+                              onClick={() => {
+                                setShowCoverMenu(false);
+                                onGenerateCover?.();
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
+                            >
+                              <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Generate New Cover</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowCoverMenu(false);
+                                // onEditWithAI?.(); // Coming later
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left opacity-50 cursor-not-allowed"
+                            >
+                              <Edit3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Edit with AI</span>
+                              <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">Soon</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setShowCoverMenu(true)}
+                            className="flex items-center gap-2 px-3 py-2 bg-white/95 hover:bg-white text-gray-900 rounded-lg shadow-lg backdrop-blur-sm transition-colors"
+                          >
+                            <Sparkles className="h-4 w-4" />
+                            <span className="text-sm font-medium">Edit with AI</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                </>
+              )}
+              
+              {/* Cover Image - fades to transparent at bottom */}
               <div className="relative w-full aspect-video">
-                {/* Cover Image */}
-                <Image
-                  src={app.coverImageUrl}
-                  alt={`${app.name} cover image`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 896px"
-                  unoptimized
-                />
-                
-                {/* Seamless gradient overlay - darker for better text visibility */}
                 <div 
-                  className="absolute inset-x-0 bottom-0 h-48"
+                  className="absolute inset-0"
                   style={{
-                    background: dominantColor 
-                      ? `linear-gradient(to bottom, transparent 0%, ${dominantColor.replace('0.85', '0.75')} 30%, ${dominantColor.replace('0.85', '0.95')} 100%)`
-                      : 'linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.75) 30%, rgba(0, 0, 0, 0.95) 100%)',
+                    maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
                   }}
-                />
-                
-                {/* App Info - Overlaid at bottom, no additional background */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 flex items-center gap-4">
+                >
+                  <Image
+                    src={app.coverImageUrl}
+                    alt={`${app.name} cover image`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 896px"
+                    unoptimized
+                  />
+                </div>
+              </div>
+              
+              {/* App info positioned at card bottom */}
+              <div className="relative p-6 flex items-center gap-4 -mt-16">
                 {/* App Icon - Larger size with border and elevation */}
                 <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30">
                   {hasIcon && app.iconUrl ? (
@@ -170,7 +236,6 @@ export default function AppStorePreviewCard({
                     </div>
                   )}
                 </div>
-              </div>
               </div>
             </motion.div>
           ) : (

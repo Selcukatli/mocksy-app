@@ -648,9 +648,20 @@ export const getFeaturedApps = query({
       return app.status === "published" || app.status === undefined;
     });
 
-    // Sort by creation date (newest first) and limit
+    // Sort by: 1) apps with cover images first, 2) then by creation date (newest first)
     const featuredApps = publishedApps
-      .sort((a, b) => b.createdAt - a.createdAt)
+      .sort((a, b) => {
+        // Prioritize apps with cover images
+        const aHasCover = a.coverImageStorageId ? 1 : 0;
+        const bHasCover = b.coverImageStorageId ? 1 : 0;
+        
+        if (aHasCover !== bHasCover) {
+          return bHasCover - aHasCover; // Apps with cover images first
+        }
+        
+        // If both have or both don't have cover images, sort by date
+        return b.createdAt - a.createdAt;
+      })
       .slice(0, limit);
 
     // Get icon URLs and cover image URLs

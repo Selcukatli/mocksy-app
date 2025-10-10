@@ -236,7 +236,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             
         async GenerateAppCoverImagePrompt(
-        app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],
+        app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],user_feedback?: string | null,
         __baml_options__?: BamlCallOptions
         ): Promise<types.CoverImagePrompt> {
           try {
@@ -250,7 +250,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
           // Check if onTick is provided - route through streaming if so
           if (options.onTick) {
           const stream = this.stream.GenerateAppCoverImagePrompt(
-          app_name,app_description,app_category,style_guide,screen_names,
+          app_name,app_description,app_category,style_guide,screen_names,user_feedback,
           __baml_options__
           );
 
@@ -266,7 +266,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             const raw = await this.runtime.callFunction(
             "GenerateAppCoverImagePrompt",
             {
-            "app_name": app_name,"app_description": app_description,"app_category": app_category?? null,"style_guide": style_guide?? null,"screen_names": screen_names
+            "app_name": app_name,"app_description": app_description,"app_category": app_category?? null,"style_guide": style_guide?? null,"screen_names": screen_names,"user_feedback": user_feedback?? null
             },
             this.ctxManager.cloneContext(),
             options.tb?.__tb(),
@@ -1952,7 +1952,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   }
                   
             GenerateAppCoverImagePrompt(
-            app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],
+            app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],user_feedback?: string | null,
             __baml_options__?: BamlCallOptions
             ): BamlStream<partial_types.CoverImagePrompt, types.CoverImagePrompt>
               {
@@ -1993,7 +1993,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                 const raw = this.runtime.streamFunction(
                 "GenerateAppCoverImagePrompt",
                 {
-                "app_name": app_name,"app_description": app_description,"app_category": app_category ?? null,"style_guide": style_guide ?? null,"screen_names": screen_names
+                "app_name": app_name,"app_description": app_description,"app_category": app_category ?? null,"style_guide": style_guide ?? null,"screen_names": screen_names,"user_feedback": user_feedback ?? null
                 },
                 undefined,
                 this.ctxManager.cloneContext(),

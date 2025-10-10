@@ -669,7 +669,8 @@ function GenerateAppCoverImagePrompt(
   app_description: string @description("App description and subtitle"),
   app_category: string? @description("App Store category"),
   style_guide: string? @description("Visual style guide if available"),
-  screen_names: string[] @description("Names of the app screens (e.g., 'Home Dashboard', 'Profile Settings', 'Chat View'). These names are often descriptive of the screen's purpose.")
+  screen_names: string[] @description("Names of the app screens (e.g., 'Home Dashboard', 'Profile Settings', 'Chat View'). These names are often descriptive of the screen's purpose."),
+  user_feedback: string? @description("Optional user guidance or feedback for the cover image generation (e.g., 'focus on gameplay', 'show the social features', 'make it minimal')")
 ) -> CoverImagePrompt {
   client ScreenshotGeneratorMed
   prompt #"
@@ -689,6 +690,12 @@ function GenerateAppCoverImagePrompt(
     {% for screen_name in screen_names %}
     - {{ screen_name }}
     {% endfor %}
+    
+    {% if user_feedback %}
+    **USER GUIDANCE:**
+    {{ user_feedback }}
+    (Consider this feedback when deciding on composition, device mockup usage, visual elements, and overall approach)
+    {% endif %}
     
     **COVER IMAGE REQUIREMENTS:**
     

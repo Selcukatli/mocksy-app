@@ -5,7 +5,7 @@ import { useQuery, useAction } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Shield, ImagePlus } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
 import AppsInCategoryCarousel from '@/components/AppsInCategoryCarousel';
@@ -81,11 +81,15 @@ export default function PublicAppStorePage({ params }: PageProps) {
     router.push('/create');
   }, [router]);
 
-  const handleGenerateCoverImage = useCallback(async () => {
+  const handleGenerateCoverImage = useCallback(() => {
+    if (!appId) return;
+    // Just open the modal - generation happens after user provides feedback
+    setIsModalOpen(true);
+  }, [appId]);
+
+  const handleStartGeneration = useCallback(async (feedback: string) => {
     if (!appId) return;
     
-    // Open modal and start generation
-    setIsModalOpen(true);
     setIsGeneratingVariants(true);
     setCoverVariants(undefined);
     setGeneratedPrompt(undefined);
@@ -93,7 +97,8 @@ export default function PublicAppStorePage({ params }: PageProps) {
     try {
       const result = await generateCoverImage({ 
         appId: appId as Id<'apps'>,
-        numVariants: 4, // Generate 4 variants
+        numVariants: 4,
+        userFeedback: feedback || undefined,
       });
       
       if (result.success && result.variants) {
@@ -189,39 +194,11 @@ export default function PublicAppStorePage({ params }: PageProps) {
   return (
     <>
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 min-w-0">
-        {/* Admin Controls */}
-        {isAdmin && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.05 }}
-            className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
-                Admin Controls
-              </h3>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleGenerateCoverImage}
-                size="sm"
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <ImagePlus className="h-4 w-4" />
-                Generate Cover Image
-              </Button>
-            </div>
-          </motion.div>
-        )}
-
         {/* App Store Preview Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
+          transition={{ duration: 0.4, delay: 0.05 }}
         >
           <AppStorePreviewCard
             app={appPreview.app}
@@ -231,6 +208,8 @@ export default function PublicAppStorePage({ params }: PageProps) {
             isLoading={false}
             onShare={handleShareClick}
             onCreateYourOwn={handleCreateYourOwn}
+            isAdmin={isAdmin}
+            onGenerateCover={handleGenerateCoverImage}
           />
         </motion.div>
 
@@ -303,6 +282,9 @@ export default function PublicAppStorePage({ params }: PageProps) {
       isGenerating={isGeneratingVariants}
       imagePrompt={generatedPrompt}
       onSave={handleSaveCoverImage}
+      appName={appPreview?.app.name || 'App'}
+      appIconUrl={appPreview?.app.iconUrl || null}
+      onGenerate={handleStartGeneration}
     />
 
     <Toast

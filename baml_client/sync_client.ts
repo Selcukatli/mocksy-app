@@ -218,7 +218,7 @@ export class BamlSyncClient {
   }
   
   GenerateAppCoverImagePrompt(
-      app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],
+      app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],user_feedback?: string | null,
       __baml_options__?: BamlCallOptions
   ): types.CoverImagePrompt {
     try {
@@ -242,7 +242,7 @@ export class BamlSyncClient {
       const raw = this.runtime.callFunctionSync(
         "GenerateAppCoverImagePrompt",
         {
-          "app_name": app_name,"app_description": app_description,"app_category": app_category?? null,"style_guide": style_guide?? null,"screen_names": screen_names
+          "app_name": app_name,"app_description": app_description,"app_category": app_category?? null,"style_guide": style_guide?? null,"screen_names": screen_names,"user_feedback": user_feedback?? null
         },
         this.ctxManager.cloneContext(),
         options.tb?.__tb(),

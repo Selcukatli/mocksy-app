@@ -10,6 +10,7 @@ export default defineSchema({
     lastName: v.optional(v.string()), // Last name from Clerk
     imageUrl: v.optional(v.string()), // Profile image URL from Clerk
     imageUrlUpdatedAt: v.optional(v.number()), // Last time image was synced from Clerk
+    isAdmin: v.optional(v.boolean()), // Admin access flag
     preferences: v.optional(
       v.object({
         // Future preferences can be added here

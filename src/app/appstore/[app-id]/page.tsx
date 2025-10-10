@@ -1,15 +1,16 @@
 'use client';
 
 import { use, useEffect, useState, useCallback, useMemo } from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery, useAction } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Shield, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
 import AppsInCategoryCarousel from '@/components/AppsInCategoryCarousel';
 import ReviewsSection from '@/components/ReviewsSection';
+import CoverImageSelectionModal from '@/components/CoverImageSelectionModal';
 import { motion } from 'framer-motion';
 import { usePageHeader } from '@/components/RootLayoutContent';
 import Toast from '@/components/Toast';
@@ -26,8 +27,21 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const router = useRouter();
   const { setTitle } = usePageHeader();
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('Link copied to clipboard');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
+  const [coverVariants, setCoverVariants] = useState<Array<{
+    imageUrl: string;
+    width?: number;
+    height?: number;
+  }> | undefined>(undefined);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string | undefined>(undefined);
 
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
+  const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
+  const generateCoverImage = useAction(api.demoActions.generateAppCoverImage);
+  const saveCoverImage = useAction(api.demoActions.saveAppCoverImage);
 
   // Fetch reviews for this app (Convex queries are reactive and auto-update)
   const reviewsData = useQuery(api.mockReviews.getAppReviews, { appId: appId as Id<'apps'>, limit: 5 });
@@ -45,6 +59,8 @@ export default function PublicAppStorePage({ params }: PageProps) {
 
     // Always copy to clipboard first
     await navigator.clipboard.writeText(url);
+    setToastMessage('Link copied to clipboard');
+    setToastType('success');
     setShowToast(true);
 
     // Then show native share sheet if available
@@ -64,6 +80,68 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const handleCreateYourOwn = useCallback(() => {
     router.push('/create');
   }, [router]);
+
+  const handleGenerateCoverImage = useCallback(async () => {
+    if (!appId) return;
+    
+    // Open modal and start generation
+    setIsModalOpen(true);
+    setIsGeneratingVariants(true);
+    setCoverVariants(undefined);
+    setGeneratedPrompt(undefined);
+    
+    try {
+      const result = await generateCoverImage({ 
+        appId: appId as Id<'apps'>,
+        numVariants: 4, // Generate 4 variants
+      });
+      
+      if (result.success && result.variants) {
+        setCoverVariants(result.variants);
+        setGeneratedPrompt(result.imagePrompt);
+      } else {
+        setToastMessage(result.error || 'Failed to generate cover images');
+        setToastType('error');
+        setShowToast(true);
+        setIsModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error generating cover images:', error);
+      setToastMessage('Failed to generate cover images');
+      setToastType('error');
+      setShowToast(true);
+      setIsModalOpen(false);
+    } finally {
+      setIsGeneratingVariants(false);
+    }
+  }, [appId, generateCoverImage]);
+
+  const handleSaveCoverImage = useCallback(async (imageUrl: string) => {
+    if (!appId) return;
+    
+    try {
+      const result = await saveCoverImage({
+        appId: appId as Id<'apps'>,
+        imageUrl,
+      });
+      
+      if (result.success) {
+        setToastMessage('Cover image saved successfully!');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        setToastMessage(result.error || 'Failed to save cover image');
+        setToastType('error');
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Error saving cover image:', error);
+      setToastMessage('Failed to save cover image');
+      setToastType('error');
+      setShowToast(true);
+      throw error; // Re-throw to let modal handle it
+    }
+  }, [appId, saveCoverImage]);
 
   // Filter out current app from similar apps
   const filteredSimilarApps = useMemo(() => {
@@ -111,6 +189,34 @@ export default function PublicAppStorePage({ params }: PageProps) {
   return (
     <>
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 min-w-0">
+        {/* Admin Controls */}
+        {isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.05 }}
+            className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                Admin Controls
+              </h3>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleGenerateCoverImage}
+                size="sm"
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <ImagePlus className="h-4 w-4" />
+                Generate Cover Image
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
         {/* App Store Preview Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -190,9 +296,18 @@ export default function PublicAppStorePage({ params }: PageProps) {
         </motion.div>
     </div>
 
+    <CoverImageSelectionModal
+      isOpen={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+      variants={coverVariants}
+      isGenerating={isGeneratingVariants}
+      imagePrompt={generatedPrompt}
+      onSave={handleSaveCoverImage}
+    />
+
     <Toast
-      message="Link copied to clipboard"
-      type="success"
+      message={toastMessage}
+      type={toastType}
       isOpen={showToast}
       onClose={() => setShowToast(false)}
       duration={2000}

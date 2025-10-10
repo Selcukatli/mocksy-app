@@ -696,6 +696,7 @@ function GenerateAppCoverImagePrompt(
     2. **Purpose:** Promotional hero image for app store listings - eye-catching, professional
     3. **Content:** Should showcase the app's personality and key features visually
     4. **NOT an icon:** This is a large promotional banner, not a small icon
+    5. **Device mockups:** Use a smartphone mockup ONLY if it genuinely helps demonstrate the app's UI or functionality. For abstract concepts, lifestyle imagery, or conceptual apps, consider pure visual storytelling without devices.
     
     **CRITICAL: NO TEXT IN IMAGE**
     - DO NOT include any text, labels, titles, or typography in the image prompt
@@ -704,6 +705,17 @@ function GenerateAppCoverImagePrompt(
     - The cover image should be purely visual - no readable text or codes
     - Communicate the app through imagery, composition, and visual elements only
     - Use color names (teal, violet, orange) NOT hex codes in the prompt
+    
+    **DECISION FRAMEWORK - Use device mockup when:**
+    - The app's UI is a key selling point (design tools, games, productivity apps with unique interfaces)
+    - Showing specific screens helps explain functionality (multi-screen flows, unique interactions)
+    - The app category is UI-focused (Photo & Video, Productivity, Games with visible UI)
+    
+    **Skip device mockup when:**
+    - Abstract concept is more powerful (meditation, wellness, simple utilities)
+    - Lifestyle imagery better conveys the benefit (fitness outcomes, travel experiences, social connection)
+    - The app is more about outcomes than interface (habits, tracking, minimal tools)
+    - Pure visual metaphor tells the story better
     
     **PROMPT STRUCTURE:**
     
@@ -716,16 +728,19 @@ function GenerateAppCoverImagePrompt(
     - Style (modern UI mockup, lifestyle shot, abstract concept, etc.)
     - **NO TEXT** - purely visual storytelling
     
-    **EXAMPLES OF GOOD PROMPTS (NO TEXT):**
+    **EXAMPLES OF GOOD PROMPTS (showing variety):**
     
-    For a fitness app:
+    WITH device mockup (when it demonstrates the UI):
     "Modern fitness app promotional banner. Dynamic composition with vibrant gradient background (purple to cyan). Central phone mockup showing colorful workout interface with stats and progress rings. Energetic diagonal layout with floating UI elements (achievement badges, graph lines, heart rate icons) around the phone. Depth and dimension with subtle shadows. Professional product photography style. Clean, motivational, high-energy aesthetic. NO text overlays or labels. 1920x1080."
     
-    For a meditation app:
-    "Serene meditation app cover image. Soft blue-green gradient background with organic flowing shapes. Elegant phone mockup centered showing peaceful interface with breathing exercise visualization. Floating abstract elements: gentle waves, soft circles, calming patterns in muted pastels (sage green, warm beige, soft blue). Generous whitespace. Dreamy, tranquil atmosphere with subtle glow effects. Minimal, zen aesthetic. Horizontal banner format. NO text or typography elements."
+    WITHOUT device (when concept is more powerful abstractly):
+    "Serene meditation cover image. Abstract breathing visualization with expanding concentric circles pulsing from center. Soft blue-green gradient background with organic flowing waves and particles. Floating abstract elements: gentle ripples, soft orbs, calming geometric patterns in muted pastels (sage green, warm beige, soft blue). Generous whitespace. Dreamy, tranquil atmosphere with subtle glow effects. Minimal, zen aesthetic. Pure visual metaphor for mindfulness. Horizontal banner format. NO text."
     
-    For a social app:
-    "Vibrant social networking app banner. Bright gradient background (yellow to pink). Multiple phone mockups at dynamic angles showing chat screens, profile pages, photo feeds. Floating emoji reactions, notification bubbles, and message icons creating depth. Playful, energetic composition with overlapping elements. Modern, fun, connected vibe. Bold colors and rounded UI elements. Product shot style. Pure visual composition without text overlays. 1920x1080."
+    WITH device mockup (showcasing social features):
+    "Vibrant social networking app banner. Bright gradient background (yellow to pink). Angled phone mockup showing colorful chat interface. Floating emoji reactions, notification bubbles, and message icons creating depth around the device. Playful, energetic composition. Modern, fun, connected vibe. Bold colors and rounded UI elements. Product shot style. Pure visual composition without text overlays. 1920x1080."
+    
+    WITHOUT device (lifestyle/conceptual):
+    "Travel adventure app cover. Sweeping landscape with abstract location pins and route lines overlaid on mountain vista. Warm sunset gradient (orange to deep purple). Flowing path lines connecting floating compass icons, map markers, and destination badges. Sense of journey and exploration. Inspiring, wanderlust atmosphere. Dynamic composition suggesting movement and discovery. Clean, adventurous aesthetic without device mockup. 1920x1080."
     
     **YOUR TASK:**
     Generate image_prompt (100-150 words) and style_notes (2-3 sentences) for {{ app_name }}.

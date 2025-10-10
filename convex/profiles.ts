@@ -36,6 +36,7 @@ export const getCurrentProfile = query({
       lastName: v.optional(v.string()),
       imageUrl: v.optional(v.string()),
       imageUrlUpdatedAt: v.optional(v.number()),
+      isAdmin: v.optional(v.boolean()),
       preferences: v.optional(v.object({})),
       createdAt: v.number(),
       updatedAt: v.number(),
@@ -162,6 +163,7 @@ export const getProfileByUsername = query({
       lastName: v.optional(v.string()),
       imageUrl: v.optional(v.string()),
       imageUrlUpdatedAt: v.optional(v.number()),
+      isAdmin: v.optional(v.boolean()),
       preferences: v.optional(v.object({})),
       createdAt: v.number(),
       updatedAt: v.number(),
@@ -220,5 +222,38 @@ export const syncMyProfileFromClerk = mutation({
       success: true,
       message: `Synced profile: ${firstName} ${lastName || ''}`,
     };
+  },
+});
+
+// Check if current user is an admin
+export const isCurrentUserAdmin = query({
+  args: {},
+  returns: v.boolean(),
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return false;
+    
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
+      .unique();
+    
+    return profile?.isAdmin === true;
+  },
+});
+
+// Internal mutation to set admin status (for initial setup)
+export const setAdminStatus = internalMutation({
+  args: {
+    profileId: v.id("profiles"),
+    isAdmin: v.boolean(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.profileId, {
+      isAdmin: args.isAdmin,
+      updatedAt: Date.now(),
+    });
+    return null;
   },
 });

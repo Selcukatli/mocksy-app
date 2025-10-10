@@ -509,46 +509,49 @@ export const improveAppDescription = action({
 });
 
 /**
- * Internal: Generate a cover image for an app using BAML + Seed Dream 4
- * Analyzes app description and screens to create a promotional banner image
- * No authentication required - for admin/internal use
+ * Generate cover image variants for an app using BAML + Seed Dream 4
+ * Analyzes app description and screens to create promotional banner images
+ * Returns multiple variants for user selection (does not save to database)
  */
-export const generateAppCoverImage = internalAction({
+export const generateAppCoverImage = action({
   args: {
     appId: v.id("apps"),
+    numVariants: v.optional(v.number()), // Number of variants to generate (1-6), default: 4
     width: v.optional(v.number()), // Custom width, default: 1920
     height: v.optional(v.number()), // Custom height, default: 1080
   },
   returns: v.object({
     success: v.boolean(),
-    imageUrl: v.optional(v.string()),
-    storageId: v.optional(v.id("_storage")),
+    variants: v.optional(v.array(v.object({
+      imageUrl: v.string(),
+      width: v.optional(v.number()),
+      height: v.optional(v.number()),
+    }))),
     imagePrompt: v.optional(v.string()),
     styleNotes: v.optional(v.string()),
-    width: v.optional(v.number()),
-    height: v.optional(v.number()),
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args): Promise<{
     success: boolean;
-    imageUrl?: string;
-    storageId?: Id<"_storage">;
+    variants?: Array<{
+      imageUrl: string;
+      width?: number;
+      height?: number;
+    }>;
     imagePrompt?: string;
     styleNotes?: string;
-    width?: number;
-    height?: number;
     error?: string;
   }> => {
-    // 1. Fetch app details (no auth check - internal use)
-    const app = await ctx.runQuery(internal.apps.getAppById, {
+    // 1. Fetch app details
+    const app = await ctx.runQuery(api.apps.getApp, {
       appId: args.appId,
     });
     if (!app) {
-      throw new Error("App not found");
+      throw new Error("App not found or access denied");
     }
 
-    // 2. Fetch app screens (no auth check - internal use)
-    const screens = await ctx.runQuery(internal.appScreens.getScreensByAppId, {
+    // 2. Fetch app screens
+    const screens = await ctx.runQuery(api.appScreens.getAppScreens, {
       appId: args.appId,
     });
 
@@ -574,11 +577,12 @@ export const generateAppCoverImage = internalAction({
       console.log(`  ✓ Image prompt generated (${promptResult.image_prompt.length} chars)`);
       console.log(`  Prompt preview: ${promptResult.image_prompt.substring(0, 100)}...`);
 
-      // 6. Generate image with Seed Dream 4
+      // 6. Generate image variants with Seed Dream 4
       const width = args.width || 1920;
       const height = args.height || 1080;
+      const numVariants = Math.min(args.numVariants || 4, 6); // Max 6 variants
 
-      console.log(`🖼️  Generating image with Seed Dream 4 (${width}×${height})...`);
+      console.log(`🖼️  Generating ${numVariants} variants with Seed Dream 4 (${width}×${height})...`);
       const imageResult: {
         images?: Array<{ url: string; width?: number; height?: number }>;
       } = await ctx.runAction(
@@ -586,7 +590,7 @@ export const generateAppCoverImage = internalAction({
         {
           prompt: promptResult.image_prompt,
           image_size: { width, height },
-          num_images: 1,
+          num_images: numVariants,
         }
       );
 
@@ -594,35 +598,85 @@ export const generateAppCoverImage = internalAction({
         throw new Error("No images generated");
       }
 
-      const imageUrl: string = imageResult.images[0].url;
-      console.log(`  ✅ Cover image generated: ${imageUrl}`);
+      console.log(`  ✅ Generated ${imageResult.images.length} cover image variants`);
 
-      // 6. Download and save to storage
-      console.log("📤 Downloading and uploading to storage...");
-      const imageResponse = await fetchWithRetry(imageUrl);
-      const imageBlob = await imageResponse.blob();
-      const storageId = await ctx.storage.store(imageBlob);
-      console.log(`  ✓ Uploaded to storage: ${storageId}`);
-
-      // 7. Update app with cover image
-      await ctx.runMutation(internal.apps.updateDemoApp, {
-        appId: args.appId,
-        coverImageStorageId: storageId,
-      });
-      console.log(`  ✓ App updated with cover image`);
+      // Return all variants without saving
+      const variants = imageResult.images.map((img) => ({
+        imageUrl: img.url,
+        width: img.width ?? undefined,
+        height: img.height ?? undefined,
+      }));
 
       return {
         success: true,
-        imageUrl,
-        storageId,
+        variants,
         imagePrompt: promptResult.image_prompt,
         styleNotes: promptResult.style_notes,
-        width: imageResult.images[0].width ?? undefined,
-        height: imageResult.images[0].height ?? undefined,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("❌ Error generating cover image:", errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  },
+});
+
+/**
+ * Save a selected cover image to an app
+ * Downloads the image from URL and uploads to Convex storage
+ */
+export const saveAppCoverImage = action({
+  args: {
+    appId: v.id("apps"),
+    imageUrl: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    storageId: v.optional(v.id("_storage")),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    storageId?: Id<"_storage">;
+    error?: string;
+  }> => {
+    try {
+      // 1. Check ownership (getApp includes auth check)
+      const app = await ctx.runQuery(api.apps.getApp, { appId: args.appId });
+      if (!app) {
+        throw new Error("App not found or access denied");
+      }
+
+      console.log(`💾 Saving cover image for app: ${app.name}`);
+
+      // 2. Download image from URL
+      console.log("📥 Downloading image...");
+      const response = await fetchWithRetry(args.imageUrl);
+      const blob = await response.blob();
+      console.log(`  ✓ Downloaded (${blob.size} bytes)`);
+
+      // 3. Upload to storage
+      console.log("📤 Uploading to storage...");
+      const storageId = await ctx.storage.store(blob);
+      console.log(`  ✓ Uploaded: ${storageId}`);
+
+      // 4. Update app with cover image
+      await ctx.runMutation(internal.apps.updateDemoApp, {
+        appId: args.appId,
+        coverImageStorageId: storageId,
+      });
+      console.log(`  ✅ App updated with cover image`);
+
+      return {
+        success: true,
+        storageId,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("❌ Error saving cover image:", errorMessage);
       return {
         success: false,
         error: errorMessage,

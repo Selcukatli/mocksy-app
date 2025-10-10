@@ -188,7 +188,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
               }}
             />
             
-            {/* Decorative patterns */}
+            {/* Decorative patterns - only in upper area */}
             <div className="absolute inset-0 opacity-10">
               {/* Grid pattern */}
               <div 
@@ -200,9 +200,9 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                 }}
               />
               
-              {/* Floating circles */}
+              {/* Floating circles - positioned in upper portion only */}
               <div className="absolute top-10 right-20 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-              <div className="absolute bottom-16 left-32 w-24 h-24 rounded-full bg-white/8 blur-xl" />
+              <div className="absolute top-20 left-32 w-24 h-24 rounded-full bg-white/8 blur-xl" />
               <div className="absolute top-1/3 right-1/3 w-40 h-40 rounded-full bg-white/5 blur-3xl" />
             </div>
           </div>

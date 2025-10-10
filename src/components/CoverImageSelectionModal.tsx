@@ -22,6 +22,7 @@ interface CoverImageSelectionModalProps {
   appName: string;
   appIconUrl: string | null;
   onGenerate: (feedback: string) => void;
+  estimatedTimeMs?: number;
 }
 
 export default function CoverImageSelectionModal({
@@ -34,6 +35,7 @@ export default function CoverImageSelectionModal({
   appName,
   appIconUrl,
   onGenerate,
+  estimatedTimeMs,
 }: CoverImageSelectionModalProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,18 +63,30 @@ export default function CoverImageSelectionModal({
     }
   }, [isGenerating, variants]);
 
-  // Animate progress bar during generation
+  // Animate progress bar during generation using estimated time
   useEffect(() => {
     if (stage === 'generating') {
+      // Use estimated time if available, otherwise default to 28 seconds (4 images × 7s)
+      const expectedDuration = estimatedTimeMs || 28000;
+      const targetProgress = 90; // Stop at 90% until complete
+      
+      // Calculate increment to reach 90% over expected duration
+      const updateInterval = 500; // Update every 500ms
+      const totalUpdates = expectedDuration / updateInterval;
+      const incrementPerUpdate = targetProgress / totalUpdates;
+      
       const interval = setInterval(() => {
         setProgress((prev) => {
-          if (prev >= 90) return prev; // Stop at 90% until actually complete
-          return prev + Math.random() * 10;
+          if (prev >= targetProgress) return prev;
+          // Add small random variation for natural feel
+          const increment = incrementPerUpdate + (Math.random() - 0.5) * 2;
+          return Math.min(targetProgress, prev + increment);
         });
-      }, 500);
+      }, updateInterval);
+      
       return () => clearInterval(interval);
     }
-  }, [stage]);
+  }, [stage, estimatedTimeMs]);
 
   if (!isOpen) return null;
 
@@ -171,9 +185,6 @@ export default function CoverImageSelectionModal({
                   transition={{ duration: 0.5, ease: 'easeInOut' }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                {progress < 30 ? 'Analyzing your app...' : progress < 60 ? 'Creating prompt...' : progress < 90 ? 'Generating images...' : 'Almost there...'}
-              </p>
             </motion.div>
           )}
         </div>
@@ -199,14 +210,14 @@ export default function CoverImageSelectionModal({
               </motion.div>
             )}
 
-            {stage === 'generating' && (
-              <motion.div
-                key="generating"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-              >
+          {stage === 'generating' && (
+            <motion.div
+              key="generating"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+            >
             <div className="grid grid-cols-2 gap-4">
               {Array.from({ length: 4 }).map((_, i) => {
                 const gradients = [
@@ -222,29 +233,75 @@ export default function CoverImageSelectionModal({
                   'text-green-500',
                 ];
                 return (
-                  <div
+                  <motion.div
                     key={i}
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: i * 0.1 }}
                     className={`aspect-video bg-gradient-to-br ${gradients[i]} rounded-lg flex items-center justify-center border border-dashed border-current/20 relative overflow-hidden`}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent animate-pulse" />
+                    {/* Animated gradient shimmer */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent"
+                      animate={{
+                        x: ['-100%', '100%'],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: 'linear',
+                        delay: i * 0.3,
+                      }}
+                    />
+                    
+                    {/* Pulsing background */}
+                    <motion.div
+                      className="absolute inset-0 bg-white/5"
+                      animate={{
+                        opacity: [0.3, 0.6, 0.3],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                        delay: i * 0.2,
+                      }}
+                    />
+                    
                     <div className="text-center relative z-10">
-                      <Loader2 className={`h-10 w-10 animate-spin ${spinnerColors[i]} mx-auto mb-3`} />
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: 'linear',
+                        }}
+                      >
+                        <Loader2 className={`h-10 w-10 ${spinnerColors[i]} mx-auto mb-3`} />
+                      </motion.div>
                       <p className="text-sm font-medium text-foreground/80">
                         Generating variant {i + 1}...
                       </p>
                       <div className="flex gap-1 justify-center mt-2">
                         {[0, 1, 2].map((dot) => (
-                          <div
+                          <motion.div
                             key={dot}
-                            className={`w-1.5 h-1.5 rounded-full ${spinnerColors[i]} opacity-60`}
-                            style={{
-                              animation: `bounce 1.4s infinite ${dot * 0.2}s`,
+                            className={`w-1.5 h-1.5 rounded-full ${spinnerColors[i]}`}
+                            animate={{
+                              y: [0, -8, 0],
+                              opacity: [0.4, 1, 0.4],
+                            }}
+                            transition={{
+                              duration: 1.2,
+                              repeat: Infinity,
+                              delay: dot * 0.15,
+                              ease: 'easeInOut',
                             }}
                           />
                         ))}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>

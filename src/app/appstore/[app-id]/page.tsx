@@ -37,6 +37,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
     height?: number;
   }> | undefined>(undefined);
   const [generatedPrompt, setGeneratedPrompt] = useState<string | undefined>(undefined);
+  const [estimatedTimeMs, setEstimatedTimeMs] = useState<number | undefined>(undefined);
 
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
@@ -93,6 +94,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
     setIsGeneratingVariants(true);
     setCoverVariants(undefined);
     setGeneratedPrompt(undefined);
+    setEstimatedTimeMs(undefined);
     
     try {
       const result = await generateCoverImage({ 
@@ -104,6 +106,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
       if (result.success && result.variants) {
         setCoverVariants(result.variants);
         setGeneratedPrompt(result.imagePrompt);
+        setEstimatedTimeMs(result.estimatedTimeMs);
       } else {
         setToastMessage(result.error || 'Failed to generate cover images');
         setToastType('error');
@@ -285,6 +288,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
       appName={appPreview?.app.name || 'App'}
       appIconUrl={appPreview?.app.iconUrl || null}
       onGenerate={handleStartGeneration}
+      estimatedTimeMs={estimatedTimeMs}
     />
 
     <Toast

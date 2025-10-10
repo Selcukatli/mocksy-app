@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, Share, Sparkles, Edit3 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Share, Sparkles, Edit3, ImagePlus } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { Id } from '@convex/_generated/dataModel';
@@ -74,6 +74,25 @@ export default function AppStorePreviewCard({
   return (
     <>
       <div className="w-full rounded-2xl border bg-card shadow-sm overflow-hidden">
+        {/* Admin Banner for Missing Cover */}
+        {isAdmin && !app.coverImageUrl && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ImagePlus className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                No cover image
+              </p>
+            </div>
+            <button
+              onClick={onGenerateCover}
+              className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Generate
+            </button>
+          </div>
+        )}
+        
         <div className="p-6 md:p-8 space-y-6">
           {/* Card Header - Creator and Actions */}
           <div className="flex items-center justify-between gap-4">
@@ -132,7 +151,7 @@ export default function AppStorePreviewCard({
               {/* Admin Edit Overlay - Only show on hover when admin - covers entire card */}
               {isAdmin && (
                 <>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 z-10 pointer-events-none" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 z-10 pointer-events-none" />
                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
                       <div className="relative" ref={menuRef}>
                         {/* Popover Menu */}
@@ -195,21 +214,21 @@ export default function AppStorePreviewCard({
               </div>
               
               {/* App info positioned at card bottom */}
-              <div className="relative p-6 flex items-center gap-4 -mt-16">
+              <div className="relative p-6 md:p-8 flex items-center gap-5 -mt-16">
                 {/* App Icon - Larger size with border and elevation */}
-                <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30">
+                <div className="relative h-24 w-24 md:h-28 md:w-28 flex-shrink-0 rounded-[22%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30">
                   {hasIcon && app.iconUrl ? (
                     <Image
                       src={app.iconUrl}
                       alt="App icon"
                       fill
                       className="object-cover"
-                      sizes="80px"
+                      sizes="112px"
                       unoptimized
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/10">
-                      <span className="text-2xl font-bold text-primary">
+                      <span className="text-3xl md:text-4xl font-bold text-primary">
                         {app.name?.charAt(0).toUpperCase() || 'A'}
                       </span>
                     </div>
@@ -220,11 +239,11 @@ export default function AppStorePreviewCard({
                 <div className="flex-1 min-w-0">
                   {hasDetails ? (
                     <div className="space-y-1">
-                      <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg truncate">
+                      <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg truncate">
                         {app.name}
                       </h1>
                       {app.category && (
-                        <p className="text-sm md:text-base text-white/90 font-medium uppercase tracking-wide drop-shadow">
+                        <p className="text-base md:text-lg text-white/90 font-medium uppercase tracking-wide drop-shadow">
                           {app.category}
                         </p>
                       )}

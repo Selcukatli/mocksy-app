@@ -705,13 +705,15 @@ function GenerateAppCoverImagePrompt(
     4. **NOT an icon:** This is a large promotional banner, not a small icon
     5. **Device mockups:** Use a smartphone mockup ONLY if it genuinely helps demonstrate the app's UI or functionality. For abstract concepts, lifestyle imagery, or conceptual apps, consider pure visual storytelling without devices.
     
-    **CRITICAL: NO TEXT IN IMAGE**
-    - DO NOT include any text, labels, titles, or typography in the image prompt
-    - NO app name overlays, NO screen labels, NO UI text mockups
+    **CRITICAL: ABSOLUTELY NO TEXT IN IMAGE**
+    - DO NOT include any text, labels, titles, typography, letters, words, or numbers in the image prompt
+    - NO app name overlays, NO screen labels, NO UI text mockups, NO readable text of any kind
     - NO hex codes or color values (use "bright teal" instead of hex codes)
-    - The cover image should be purely visual - no readable text or codes
-    - Communicate the app through imagery, composition, and visual elements only
+    - NO UI elements with visible text (buttons with text, labels, captions, etc.)
+    - The cover image should be purely visual - no readable text, codes, or typography whatsoever
+    - Communicate the app through imagery, composition, colors, shapes, and visual elements only
     - Use color names (teal, violet, orange) NOT hex codes in the prompt
+    - When describing device mockups, specify "no visible text on screen" or "abstract UI elements without text"
     
     **DECISION FRAMEWORK - Use device mockup when:**
     - The app's UI is a key selling point (design tools, games, productivity apps with unique interfaces)
@@ -738,26 +740,27 @@ function GenerateAppCoverImagePrompt(
     **EXAMPLES OF GOOD PROMPTS (showing variety):**
     
     WITH device mockup (when it demonstrates the UI):
-    "Modern fitness app promotional banner. Dynamic composition with vibrant gradient background (purple to cyan). Central phone mockup showing colorful workout interface with stats and progress rings. Energetic diagonal layout with floating UI elements (achievement badges, graph lines, heart rate icons) around the phone. Depth and dimension with subtle shadows. Professional product photography style. Clean, motivational, high-energy aesthetic. NO text overlays or labels. 1920x1080."
+    "Modern fitness app promotional banner. Dynamic composition with vibrant gradient background (purple to cyan). Central phone mockup showing colorful workout interface with abstract stats and progress rings—no readable text or numbers on screen. Energetic diagonal layout with floating UI elements (achievement badges, graph lines, heart rate icons) around the phone. Depth and dimension with subtle shadows. Professional product photography style. Clean, motivational, high-energy aesthetic. Purely visual composition with no text overlays, labels, or readable typography anywhere. 1920x1080."
     
     WITHOUT device (when concept is more powerful abstractly):
-    "Serene meditation cover image. Abstract breathing visualization with expanding concentric circles pulsing from center. Soft blue-green gradient background with organic flowing waves and particles. Floating abstract elements: gentle ripples, soft orbs, calming geometric patterns in muted pastels (sage green, warm beige, soft blue). Generous whitespace. Dreamy, tranquil atmosphere with subtle glow effects. Minimal, zen aesthetic. Pure visual metaphor for mindfulness. Horizontal banner format. NO text."
+    "Serene meditation cover image. Abstract breathing visualization with expanding concentric circles pulsing from center. Soft blue-green gradient background with organic flowing waves and particles. Floating abstract elements: gentle ripples, soft orbs, calming geometric patterns in muted pastels (sage green, warm beige, soft blue). Generous whitespace. Dreamy, tranquil atmosphere with subtle glow effects. Minimal, zen aesthetic. Pure visual metaphor for mindfulness. Horizontal banner format. No text, numbers, letters, or typography of any kind."
     
     WITH device mockup (showcasing social features):
-    "Vibrant social networking app banner. Bright gradient background (yellow to pink). Angled phone mockup showing colorful chat interface. Floating emoji reactions, notification bubbles, and message icons creating depth around the device. Playful, energetic composition. Modern, fun, connected vibe. Bold colors and rounded UI elements. Product shot style. Pure visual composition without text overlays. 1920x1080."
+    "Vibrant social networking app banner. Bright gradient background (yellow to pink). Angled phone mockup showing colorful chat interface with abstract message bubbles—no visible text in the UI mockup. Floating emoji reactions, notification bubbles, and message icons creating depth around the device. Playful, energetic composition. Modern, fun, connected vibe. Bold colors and rounded UI elements. Product shot style. Pure visual composition without text overlays, readable words, or typography. 1920x1080."
     
     WITHOUT device (lifestyle/conceptual):
-    "Travel adventure app cover. Sweeping landscape with abstract location pins and route lines overlaid on mountain vista. Warm sunset gradient (orange to deep purple). Flowing path lines connecting floating compass icons, map markers, and destination badges. Sense of journey and exploration. Inspiring, wanderlust atmosphere. Dynamic composition suggesting movement and discovery. Clean, adventurous aesthetic without device mockup. 1920x1080."
+    "Travel adventure app cover. Sweeping landscape with abstract location pins and route lines overlaid on mountain vista. Warm sunset gradient (orange to deep purple). Flowing path lines connecting floating compass icons, map markers, and destination badges. Sense of journey and exploration. Inspiring, wanderlust atmosphere. Dynamic composition suggesting movement and discovery. Clean, adventurous aesthetic without device mockup. No text, labels, or readable typography. 1920x1080."
     
     **YOUR TASK:**
     Generate image_prompt (100-150 words) and style_notes (2-3 sentences) for {{ app_name }}.
     
-    **CRITICAL REMINDER:**
-    - DO NOT include text, titles, labels, or any readable typography in the image prompt
+    **CRITICAL REMINDER - REPEAT THESE IN YOUR OUTPUT:**
+    - DO NOT include text, titles, labels, numbers, letters, words, or any readable typography in the image prompt
     - DO NOT include hex codes or color values (use "bright teal" not hex codes)
     - Reference visual scenes and elements, but don't ask for text labels on them
-    - The image should communicate purely through visuals, colors, and composition
+    - The image should communicate purely through visuals, colors, shapes, and composition
     - Colors should be described as names/adjectives: "vibrant teal", "deep violet", "bright orange"
+    - END YOUR PROMPT with explicit instruction: "No text, words, letters, numbers, or readable typography anywhere in the image."
     
     {{ ctx.output_format }}
   "#

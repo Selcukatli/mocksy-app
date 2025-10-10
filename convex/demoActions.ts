@@ -530,6 +530,7 @@ export const generateAppCoverImage = action({
     }))),
     imagePrompt: v.optional(v.string()),
     styleNotes: v.optional(v.string()),
+    estimatedTimeMs: v.optional(v.number()),
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args): Promise<{
@@ -541,6 +542,7 @@ export const generateAppCoverImage = action({
     }>;
     imagePrompt?: string;
     styleNotes?: string;
+    estimatedTimeMs?: number;
     error?: string;
   }> => {
     // 1. Fetch app details
@@ -584,7 +586,13 @@ export const generateAppCoverImage = action({
       const height = args.height || 1080;
       const numVariants = Math.min(args.numVariants || 4, 6); // Max 6 variants
 
+      // Calculate estimated time: 7 seconds per image
+      const { FAL_IMAGE_GENERATION_TIMES, FAL_IMAGE_MODELS } = await import("../convex/utils/fal/clients/image/imageModels");
+      const timePerImage = FAL_IMAGE_GENERATION_TIMES[FAL_IMAGE_MODELS.SEED_DREAM_4] || 7000;
+      const estimatedTimeMs = timePerImage * numVariants;
+
       console.log(`🖼️  Generating ${numVariants} variants with Seed Dream 4 (${width}×${height})...`);
+      console.log(`⏱️  Estimated time: ${(estimatedTimeMs / 1000).toFixed(1)}s`);
       const imageResult: {
         images?: Array<{ url: string; width?: number; height?: number }>;
       } = await ctx.runAction(
@@ -614,6 +622,7 @@ export const generateAppCoverImage = action({
         variants,
         imagePrompt: promptResult.image_prompt,
         styleNotes: promptResult.style_notes,
+        estimatedTimeMs,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

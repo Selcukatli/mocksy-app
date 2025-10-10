@@ -302,19 +302,44 @@ export const FAL_IMAGE_COSTS: Record<string, number> = {
   [FAL_IMAGE_MODELS.SEED_DREAM_4]: 0.02, // Custom dimensions support
 };
 
+/**
+ * Estimated generation times (in milliseconds)
+ * Based on observed performance with typical parameters
+ * Times are per image - multiply by num_images for batch generation
+ */
+export const FAL_IMAGE_GENERATION_TIMES: Record<string, number> = {
+  [FAL_IMAGE_MODELS.FLUX_PRO_ULTRA]: 15000, // 15 seconds
+  [FAL_IMAGE_MODELS.FLUX_SRPO_TEXT]: 12000, // 12 seconds
+  [FAL_IMAGE_MODELS.FLUX_SRPO_IMAGE]: 10000, // 10 seconds
+  [FAL_IMAGE_MODELS.FLUX_DEV]: 8000, // 8 seconds
+  [FAL_IMAGE_MODELS.FLUX_SCHNELL]: 2000, // 2 seconds (very fast)
+  [FAL_IMAGE_MODELS.GPT_4O_TEXT_TO_IMAGE]: 10000, // 10 seconds
+  [FAL_IMAGE_MODELS.GPT_4O_EDIT]: 8000, // 8 seconds
+  [FAL_IMAGE_MODELS.IMAGEN4_PREVIEW]: 12000, // 12 seconds
+  [FAL_IMAGE_MODELS.KONTEXT_MAX]: 10000, // 10 seconds
+  [FAL_IMAGE_MODELS.KONTEXT_PRO]: 8000, // 8 seconds
+  [FAL_IMAGE_MODELS.GEMINI_FLASH]: 8000, // 8 seconds
+  [FAL_IMAGE_MODELS.GEMINI_FLASH_EDIT]: 7000, // 7 seconds
+  [FAL_IMAGE_MODELS.QWEN_TEXT]: 9000, // 9 seconds
+  [FAL_IMAGE_MODELS.QWEN_EDIT]: 8000, // 8 seconds
+  [FAL_IMAGE_MODELS.SEED_DREAM_4]: 7000, // 7 seconds per image (so 28s for 4 images)
+};
+
 export function getImageConfig(
   operation: "textToImage" | "imageToImage",
   tier: "quality" | "default" | "fast" = "default",
 ) {
   const config = IMAGE_MODELS[tier][operation];
 
-  // Get cost from our cost map
+  // Get cost and time from our maps
   const estimatedCost = FAL_IMAGE_COSTS[config.primary.model] || 0.02;
+  const estimatedTimeMs = FAL_IMAGE_GENERATION_TIMES[config.primary.model] || 8000;
 
   return {
     primary: config.primary,
     fallbacks: config.fallbacks,
     estimatedCost,
+    estimatedTimeMs,
   };
 }
 

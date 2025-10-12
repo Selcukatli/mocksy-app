@@ -15,6 +15,7 @@ Before implementing features, agents should consult the appropriate specialized 
 | **FAL CLI** | `docs/rules/fal-cli-integration.md` | Using FAL command-line tools |
 | **Clerk Auth** | `docs/rules/clerk-convex-setup.mdc` | Authentication, user management, webhooks |
 | **Route Patterns** | `docs/rules/route-navigation-patterns.mdc` | Navigation, routing, page transitions |
+| **Adaptive Colors** | `docs/rules/adaptive-color-system.md` | Image blending, dominant color extraction, adaptive text colors |
 | **Exa Search** | `docs/rules/exa-mcp-setup.md` | Search and context retrieval |
 
 #### Learning Resources
@@ -35,6 +36,8 @@ Agents should automatically check documentation based on these patterns:
    - Image generation → Check FAL documentation
    - Database operations → Check Convex documentation
    - Authentication → Check Clerk documentation
+   - Image cards/blending → Check Adaptive Color System documentation
+   - Featured carousels → Check Adaptive Color System documentation
 
 3. **Pre-Task Checklist**:
    ```bash
@@ -106,6 +109,14 @@ When agents work on navigation:
 - Use parallel/intercepting routes for overlays
 - Maintain page context with proper layouts
 - Full guide: `docs/rules/route-navigation-patterns.mdc`
+
+### Adaptive Color System
+When agents work with images and dynamic backgrounds:
+- Use `useDominantColor` hook for color extraction
+- Apply CSS masks for smooth image-to-color blending
+- Implement adaptive text colors based on background brightness
+- Ensure WCAG contrast compliance with threshold brightness > 180
+- Full guide: `docs/rules/adaptive-color-system.md`
 
 ## Agent Best Practices
 

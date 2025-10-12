@@ -637,46 +637,37 @@ export const getFeaturedApps = query({
   handler: async (ctx, args) => {
     const limit = args.limit ?? 10;
 
-    // Query published demo apps
-    const allDemoApps = await ctx.db
-      .query("apps")
-      .withIndex("by_is_demo", (q) => q.eq("isDemo", true))
-      .collect();
+    // Query featured apps, sorted by featuredAt (newest featured first)
+    const featuredAppEntries = await ctx.db
+      .query("featuredApps")
+      .withIndex("by_featured_at")
+      .order("desc")
+      .take(limit);
 
-    // Filter for published apps only
-    const publishedApps = allDemoApps.filter((app) => {
-      return app.status === "published" || app.status === undefined;
-    });
-
-    // Sort by: 1) apps with cover images first, 2) then by creation date (newest first)
-    const featuredApps = publishedApps
-      .sort((a, b) => {
-        // Prioritize apps with cover images
-        const aHasCover = a.coverImageStorageId ? 1 : 0;
-        const bHasCover = b.coverImageStorageId ? 1 : 0;
-        
-        if (aHasCover !== bHasCover) {
-          return bHasCover - aHasCover; // Apps with cover images first
-        }
-        
-        // If both have or both don't have cover images, sort by date
-        return b.createdAt - a.createdAt;
-      })
-      .slice(0, limit);
-
-    // Get icon URLs and cover image URLs
+    // Get the actual app details for each featured app
     const appsWithUrls = await Promise.all(
-      featuredApps.map(async (app) => {
+      featuredAppEntries.map(async (featuredEntry) => {
+        const app = await ctx.db.get(featuredEntry.appId);
+        
+        // Skip if app doesn't exist or isn't published
+        if (!app) return null;
+        const isPublished = app.status === "published" || app.status === undefined;
+        if (!isPublished) return null;
+
+        // Get icon URL
         let iconUrl: string | undefined = undefined;
         if (app.iconStorageId) {
           const url = await ctx.storage.getUrl(app.iconStorageId);
           iconUrl = url ?? undefined;
         }
+
+        // Get cover image URL
         let coverImageUrl: string | undefined = undefined;
         if (app.coverImageStorageId) {
           const url = await ctx.storage.getUrl(app.coverImageStorageId);
           coverImageUrl = url ?? undefined;
         }
+
         return {
           _id: app._id,
           name: app.name,
@@ -689,7 +680,9 @@ export const getFeaturedApps = query({
       })
     );
 
-    return appsWithUrls;
+    // Filter out null entries (unpublished or deleted apps)
+    // TypeScript knows the type after filter, but needs assertion for null removal
+    return appsWithUrls.filter((app): app is NonNullable<typeof app> => app !== null);
   },
 });
 

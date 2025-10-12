@@ -365,4 +365,13 @@ export default defineSchema({
     .index("by_featured", ["isFeatured"])
     .index("by_status", ["status"])
     .index("by_public_and_status", ["isPublic", "status"]),
+
+  featuredApps: defineTable({
+    appId: v.id("apps"), // App being featured
+    featuredBy: v.id("profiles"), // Admin who featured it
+    order: v.optional(v.number()), // For future manual ordering
+    featuredAt: v.number(), // Timestamp when featured
+  })
+    .index("by_app", ["appId"])
+    .index("by_featured_at", ["featuredAt"]),
 });

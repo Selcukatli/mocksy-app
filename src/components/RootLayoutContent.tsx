@@ -31,7 +31,7 @@ export function usePageHeader() {
 }
 
 // Define static (browse) pages - everything else defaults to overlay (dynamic)
-const staticRoutes = ['/create', '/appstore', '/settings', '/profile'];
+const staticRoutes = ['/create', '/appstore', '/settings', '/profile', '/admin'];
 const getDefaultMode = (path: string | null): SidebarMode => {
   return staticRoutes.includes(path || '') ? 'static' : 'overlay';
 };

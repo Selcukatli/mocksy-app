@@ -21,6 +21,7 @@ import {
   Settings,
   Pencil,
   Search,
+  ShieldCheck,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -35,13 +36,14 @@ export default function Sidebar({ mode, isExpanded }: SidebarProps) {
   const { theme, setTheme } = useTheme();
   const { isSignedIn, user } = useUser();
   const apps = useQuery(api.apps.getApps) || [];
+  const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
   const isAppActive = (appId: string) => pathname === `/app/${appId}`;
 
-  // Static mode: always expanded, animates on mode change
-  if (mode === 'static') {
+  // Render static mode
+  const renderStaticMode = () => {
     return (
       <>
         <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
@@ -176,6 +178,23 @@ export default function Sidebar({ mode, isExpanded }: SidebarProps) {
         <div className="p-2">
           {/* Divider */}
           <div className="mx-12 mb-2 border-t" />
+          
+          {/* Admin Link (only for admins) */}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={cn(
+                "w-full h-10 flex items-center gap-3 px-3 transition-colors rounded-lg",
+                isActive('/admin')
+                  ? "text-primary font-medium bg-primary/10"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              <ShieldCheck className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm">Admin</span>
+            </Link>
+          )}
+          
           {/* Settings */}
           <Link
             href="/settings"
@@ -286,10 +305,10 @@ export default function Sidebar({ mode, isExpanded }: SidebarProps) {
         </motion.div>
       </>
     );
-  }
+  };
 
-  // Overlay mode: collapsible with animation, pushes content
-  return (
+  // Render overlay mode
+  const renderOverlayMode = () => (
     <>
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <motion.div
@@ -449,6 +468,23 @@ export default function Sidebar({ mode, isExpanded }: SidebarProps) {
           >
             {/* Divider */}
             <div className="mx-12 mb-2 border-t" />
+            
+            {/* Admin Link (only for admins) */}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className={cn(
+                  "w-full h-10 flex items-center gap-3 px-3 transition-colors rounded-lg",
+                  isActive('/admin')
+                    ? "text-primary font-medium bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                <ShieldCheck className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">Admin</span>
+              </Link>
+            )}
+            
             {/* Settings */}
             <Link
               href="/settings"
@@ -561,4 +597,7 @@ export default function Sidebar({ mode, isExpanded }: SidebarProps) {
       </motion.div>
     </>
   );
+
+  // Return appropriate mode
+  return mode === 'static' ? renderStaticMode() : renderOverlayMode();
 }

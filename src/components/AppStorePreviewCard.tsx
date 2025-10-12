@@ -32,6 +32,7 @@ interface AppStorePreviewCardProps {
   onCreateYourOwn?: () => void;
   isAdmin?: boolean;
   onGenerateCover?: () => void;
+  adminActionsSlot?: React.ReactNode; // Slot for rendering admin actions
 }
 
 export default function AppStorePreviewCard({
@@ -44,6 +45,7 @@ export default function AppStorePreviewCard({
   onCreateYourOwn,
   isAdmin = false,
   onGenerateCover,
+  adminActionsSlot,
 }: AppStorePreviewCardProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
@@ -51,7 +53,7 @@ export default function AppStorePreviewCard({
   const menuRef = useRef<HTMLDivElement>(null);
   
   // Extract dominant color from cover image for dynamic blending
-  const { color: dominantColor } = useDominantColor(app.coverImageUrl);
+  const { color: dominantColor, isLight: isLightBackground } = useDominantColor(app.coverImageUrl);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -113,8 +115,9 @@ export default function AppStorePreviewCard({
             )}
 
             {/* Action Buttons */}
-            {(onShare || onCreateYourOwn) && (
+            {(onShare || onCreateYourOwn || adminActionsSlot) && (
               <div className="flex items-center gap-2">
+                {adminActionsSlot}
                 {onShare && (
                   <button
                     onClick={onShare}
@@ -182,7 +185,11 @@ export default function AppStorePreviewCard({
                         ) : (
                           <button
                             onClick={() => setShowCoverMenu(true)}
-                            className="flex items-center gap-2 px-3 py-2 bg-white/95 hover:bg-white text-gray-900 rounded-lg shadow-lg backdrop-blur-sm transition-colors"
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg backdrop-blur-sm transition-colors ${
+                              isLightBackground
+                                ? 'bg-gray-900/95 hover:bg-gray-900 text-white'
+                                : 'bg-white/95 hover:bg-white text-gray-900'
+                            }`}
                           >
                             <Sparkles className="h-4 w-4" />
                             <span className="text-sm font-medium">Edit with AI</span>
@@ -239,19 +246,19 @@ export default function AppStorePreviewCard({
                 <div className="flex-1 min-w-0">
                   {hasDetails ? (
                     <div className="space-y-1">
-                      <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg truncate">
+                      <h1 className={`text-3xl md:text-4xl font-bold drop-shadow-lg truncate ${isLightBackground ? 'text-gray-900' : 'text-white'}`}>
                         {app.name}
                       </h1>
                       {app.category && (
-                        <p className="text-base md:text-lg text-white/90 font-medium uppercase tracking-wide drop-shadow">
+                        <p className={`text-base md:text-lg font-medium uppercase tracking-wide drop-shadow ${isLightBackground ? 'text-gray-800' : 'text-white/90'}`}>
                           {app.category}
                         </p>
                       )}
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <div className="h-8 w-48 bg-white/20 rounded animate-pulse" />
-                      <div className="h-5 w-24 bg-white/20 rounded animate-pulse" />
+                      <div className={`h-8 w-48 rounded animate-pulse ${isLightBackground ? 'bg-gray-900/20' : 'bg-white/20'}`} />
+                      <div className={`h-5 w-24 rounded animate-pulse ${isLightBackground ? 'bg-gray-900/20' : 'bg-white/20'}`} />
                     </div>
                   )}
                 </div>

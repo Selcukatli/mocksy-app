@@ -1,0 +1,287 @@
+'use client';
+
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@convex/_generated/api';
+import { useState, useMemo } from 'react';
+import { Id } from '@convex/_generated/dataModel';
+import AppsTable from './_components/AppsTable';
+import Toast from '@/components/Toast';
+import { Search, Filter, ShieldAlert } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+
+export default function AdminPage() {
+  const router = useRouter();
+  const { isLoaded: isClerkLoaded } = useUser();
+  
+  // ALWAYS call all hooks - no conditional logic
+  const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [featuredFilter, setFeaturedFilter] = useState<'all' | 'featured' | 'not-featured'>('all');
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  // Only query apps after Clerk is loaded AND user is confirmed admin
+  const shouldQueryApps = isClerkLoaded && isAdmin === true;
+  const apps = useQuery(
+    api.adminActions.getAllAppsForAdmin,
+    shouldQueryApps
+      ? {
+          searchQuery: searchQuery || undefined,
+          category: categoryFilter !== 'all' ? categoryFilter : undefined,
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          featuredFilter: featuredFilter !== 'all' ? featuredFilter : undefined,
+        }
+      : "skip"
+  );
+  
+  const featureAppMutation = useMutation(api.adminActions.featureApp);
+  const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
+  const deleteAppMutation = useMutation(api.apps.deleteApp);
+  const updateAppStatusMutation = useMutation(api.adminActions.updateAppStatus);
+
+  // Get unique categories including from all apps (not just published)
+  const allCategories = useMemo(() => {
+    if (!apps) return [];
+    const categorySet = new Set<string>();
+    apps.forEach((app: typeof apps[number]) => {
+      if (app.category) categorySet.add(app.category);
+    });
+    return Array.from(categorySet).sort();
+  }, [apps]);
+
+
+  const handleFeature = async (appId: Id<'apps'>) => {
+    try {
+      const result = await featureAppMutation({ appId });
+      setToastMessage(result.message);
+      setToastType(result.success ? 'success' : 'error');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Error featuring app:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to feature app';
+      setToastMessage(errorMessage);
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
+  const handleUnfeature = async (appId: Id<'apps'>) => {
+    try {
+      const result = await unfeatureAppMutation({ appId });
+      setToastMessage(result.message);
+      setToastType(result.success ? 'success' : 'error');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Error unfeaturing app:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to unfeature app';
+      setToastMessage(errorMessage);
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
+  const handleDelete = async (appId: Id<'apps'>) => {
+    try {
+      await deleteAppMutation({ appId });
+      setToastMessage('App deleted successfully');
+      setToastType('success');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Error deleting app:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete app';
+      setToastMessage(errorMessage);
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
+  const handleView = (appId: Id<'apps'>) => {
+    window.open(`/appstore/${appId}`, '_blank');
+  };
+
+  const handleStatusChange = async (appId: Id<'apps'>, status: 'draft' | 'published') => {
+    try {
+      const result = await updateAppStatusMutation({ appId, status });
+      setToastMessage(result.message);
+      setToastType(result.success ? 'success' : 'error');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Error updating app status:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update app status';
+      setToastMessage(errorMessage);
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
+  // Show loading while Clerk is loading OR admin status is unknown OR (admin is confirmed but apps not loaded yet)
+  const isLoading = !isClerkLoaded || isAdmin === undefined || (isAdmin === true && apps === undefined);
+  const hasFilters = searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' || featuredFilter !== 'all';
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not admin state
+  if (isAdmin === false) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="text-center max-w-md space-y-6">
+          <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-10 h-10 text-red-600" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">Access Denied</h2>
+            <p className="text-muted-foreground">
+              You don&apos;t have permission to access the admin dashboard.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push('/')}
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Admin content
+  return (
+    <>
+      <div className="space-y-6">
+        {/* Stats */}
+        {apps && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-card rounded-xl border p-4">
+              <p className="text-sm text-muted-foreground">Total Apps</p>
+              <p className="text-2xl font-bold mt-1">{apps.length}</p>
+            </div>
+            <div className="bg-card rounded-xl border p-4">
+              <p className="text-sm text-muted-foreground">Featured Apps</p>
+              <p className="text-2xl font-bold mt-1">
+                {apps.filter((a: typeof apps[number]) => a.isFeatured).length}
+              </p>
+            </div>
+            <div className="bg-card rounded-xl border p-4">
+              <p className="text-sm text-muted-foreground">Published Apps</p>
+              <p className="text-2xl font-bold mt-1">
+                {apps.filter((a: typeof apps[number]) => a.status === 'published' || !a.status).length}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="bg-card rounded-xl border p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold">Filters</h2>
+            {hasFilters && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setCategoryFilter('all');
+                  setStatusFilter('all');
+                  setFeaturedFilter('all');
+                }}
+                className="ml-auto text-xs text-primary hover:underline"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search apps..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            {/* Category Filter */}
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-3 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="all">All Categories</option>
+              {allCategories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'published' | 'draft')}
+              className="px-3 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="all">All Statuses</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+
+            {/* Featured Filter */}
+            <select
+              value={featuredFilter}
+              onChange={(e) => setFeaturedFilter(e.target.value as 'all' | 'featured' | 'not-featured')}
+              className="px-3 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="all">All Apps</option>
+              <option value="featured">Featured Only</option>
+              <option value="not-featured">Not Featured</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Apps Table */}
+        {isLoading ? (
+          <div className="bg-card rounded-xl border p-12 text-center">
+            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading apps...</p>
+          </div>
+        ) : apps && apps.length > 0 ? (
+          <AppsTable
+            apps={apps}
+            onFeature={handleFeature}
+            onUnfeature={handleUnfeature}
+            onDelete={handleDelete}
+            onView={handleView}
+            onStatusChange={handleStatusChange}
+          />
+        ) : null}
+      </div>
+
+      <Toast
+        message={toastMessage}
+        type={toastType}
+        isOpen={showToast}
+        onClose={() => setShowToast(false)}
+        duration={3000}
+      />
+    </>
+  );
+}
+

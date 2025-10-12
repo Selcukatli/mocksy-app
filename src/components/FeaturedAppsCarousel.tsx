@@ -28,7 +28,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
   const currentApp = apps[currentIndex];
   
   // Get dominant color from cover image, or from icon if no cover
-  const { color: dominantColor } = useDominantColor(
+  const { color: dominantColor, isLight: isLightBackground } = useDominantColor(
     currentApp?.coverImageUrl || currentApp?.iconUrl
   );
 
@@ -58,7 +58,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
       {hasCoverImage ? (
         <>
           {/* Cover Image with fade to transparent at bottom */}
-          <div className="relative w-full h-[280px] md:h-[340px]">
+          <div className="relative w-full h-[360px] md:h-[440px]">
             <motion.div
               key={`${currentApp._id}-cover`}
               initial={{ opacity: 0, scale: 1.1 }}
@@ -83,80 +83,115 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
           </div>
           
           {/* App info section on solid color */}
-          <div className="relative p-8 md:p-10 -mt-12">
-            <div className="flex flex-row items-end gap-6 md:gap-8 w-full">
-              {/* App Icon */}
-              <motion.div
-                key={currentApp._id}
-                initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="relative h-28 w-28 md:h-32 md:w-32 flex-shrink-0 rounded-[28%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30"
-              >
-                {currentApp.iconUrl ? (
-                  <Image
-                    src={currentApp.iconUrl}
-                    alt={`${currentApp.name} icon`}
-                    fill
-                    className="object-cover"
-                    sizes="160px"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/30 to-primary/20">
-                    <span className="text-4xl font-bold text-primary">
-                      {currentApp.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-              </motion.div>
+          <div className="relative px-6 py-4 md:px-8 md:py-5 -mt-6">
+            <div className="flex flex-row items-end justify-between gap-4 md:gap-6 w-full">
+              {/* Left section: Icon + App Info */}
+              <div className="flex flex-row items-center gap-4 md:gap-6 flex-1 min-w-0">
+                {/* App Icon */}
+                <motion.div
+                  key={currentApp._id}
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="relative h-20 w-20 md:h-24 md:w-24 flex-shrink-0 rounded-[28%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30"
+                >
+                  {currentApp.iconUrl ? (
+                    <Image
+                      src={currentApp.iconUrl}
+                      alt={`${currentApp.name} icon`}
+                      fill
+                      className="object-cover"
+                      sizes="120px"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/30 to-primary/20">
+                      <span className="text-3xl font-bold text-primary">
+                        {currentApp.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
 
-              {/* App Info */}
-              <motion.div
-                key={`${currentApp._id}-info`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="flex-1 space-y-2 text-left max-w-3xl"
-              >
-                {/* App Name */}
-                <h2 className="text-3xl md:text-4xl font-bold text-white">
-                  {currentApp.name}
-                </h2>
-                
-                {/* Description - single line */}
-                {currentApp.description && (
-                  <p className="text-base md:text-lg line-clamp-1 text-white/90">
-                    {currentApp.description}
-                  </p>
-                )}
+                {/* App Info */}
+                <motion.div
+                  key={`${currentApp._id}-info`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="flex-1 min-w-0 space-y-1 text-left"
+                >
+                  {/* App Name */}
+                  <h2 className={`text-2xl md:text-3xl font-bold truncate ${isLightBackground ? 'text-gray-900' : 'text-white'}`}>
+                    {currentApp.name}
+                  </h2>
+                  
+                  {/* Description - two lines */}
+                  {currentApp.description && (
+                    <p className={`text-sm md:text-base line-clamp-2 ${isLightBackground ? 'text-gray-800' : 'text-white/90'}`}>
+                      {currentApp.description}
+                    </p>
+                  )}
+                </motion.div>
+              </div>
 
-                {/* Actions row */}
-                <div className="flex items-center gap-4 pt-2">
-                  <button
-                    onClick={() => router.push(`/appstore/${currentApp._id}`)}
-                    className="px-6 py-3 rounded-full font-semibold transition-colors shadow-lg hover:shadow-xl bg-white text-black hover:bg-white/90"
-                  >
-                    View Details
-                  </button>
+              {/* Right section: Actions */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <button
+                  onClick={() => router.push(`/appstore/${currentApp._id}`)}
+                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors shadow-lg hover:shadow-xl ${
+                    isLightBackground 
+                      ? 'bg-gray-900 text-white hover:bg-gray-800' 
+                      : 'bg-white text-black hover:bg-white/90'
+                  }`}
+                >
+                  View Details
+                </button>
 
-                  {/* Pagination dots */}
-                  <div className="flex items-center gap-2">
-                    {apps.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentIndex(index)}
-                        className={`h-2 rounded-full transition-all ${
-                          index === currentIndex
-                            ? 'w-6 bg-white'
-                            : 'w-2 bg-white/30 hover:bg-white/50'
-                        }`}
-                        aria-label={`Go to app ${index + 1}`}
-                      />
-                    ))}
-                  </div>
+                {/* Pagination dots */}
+                <div className="hidden md:flex items-center gap-2">
+                  {apps.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentIndex
+                          ? isLightBackground ? 'w-6 bg-gray-900' : 'w-6 bg-white'
+                          : isLightBackground ? 'w-2 bg-gray-900/30 hover:bg-gray-900/50' : 'w-2 bg-white/30 hover:bg-white/50'
+                      }`}
+                      aria-label={`Go to app ${index + 1}`}
+                    />
+                  ))}
                 </div>
-              </motion.div>
+
+                {/* Navigation Arrows */}
+                {apps.length > 1 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handlePrevious}
+                      className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
+                        isLightBackground 
+                          ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
+                          : hasCoverImage ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
+                      }`}
+                      aria-label="Previous app"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
+                        isLightBackground 
+                          ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
+                          : hasCoverImage ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
+                      }`}
+                      aria-label="Next app"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </>
@@ -164,7 +199,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
         /* Default layout when no cover image - use icon color */
         <>
           {/* Gradient background with patterns using icon's dominant color */}
-          <div className="relative w-full h-[280px] md:h-[340px] overflow-hidden">
+          <div className="relative w-full h-[360px] md:h-[440px] overflow-hidden">
             {/* Base subtle gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/0" />
             
@@ -208,108 +243,120 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
           </div>
           
           {/* App info section */}
-          <div className="relative p-8 md:p-10 -mt-12">
-            <div className="flex flex-row items-end gap-6 md:gap-8 w-full">
-              {/* App Icon */}
-              <motion.div
-                key={currentApp._id}
-                initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="relative h-28 w-28 md:h-32 md:w-32 flex-shrink-0 rounded-[28%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30"
-              >
-                {currentApp.iconUrl ? (
-                  <Image
-                    src={currentApp.iconUrl}
-                    alt={`${currentApp.name} icon`}
-                    fill
-                    className="object-cover"
-                    sizes="160px"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/30 to-primary/20">
-                    <span className="text-4xl font-bold text-primary">
-                      {currentApp.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-              </motion.div>
+          <div className="relative px-6 py-4 md:px-8 md:py-5 -mt-6">
+            <div className="flex flex-row items-end justify-between gap-4 md:gap-6 w-full">
+              {/* Left section: Icon + App Info */}
+              <div className="flex flex-row items-center gap-4 md:gap-6 flex-1 min-w-0">
+                {/* App Icon */}
+                <motion.div
+                  key={currentApp._id}
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="relative h-20 w-20 md:h-24 md:w-24 flex-shrink-0 rounded-[28%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30"
+                >
+                  {currentApp.iconUrl ? (
+                    <Image
+                      src={currentApp.iconUrl}
+                      alt={`${currentApp.name} icon`}
+                      fill
+                      className="object-cover"
+                      sizes="120px"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/30 to-primary/20">
+                      <span className="text-3xl font-bold text-primary">
+                        {currentApp.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
 
-              {/* App Info */}
-              <motion.div
-                key={`${currentApp._id}-info`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="flex-1 space-y-2 text-left max-w-3xl"
-              >
-                {/* App Name */}
-                <h2 className="text-3xl md:text-4xl font-bold text-white">
-                  {currentApp.name}
-                </h2>
-                
-                {/* Description - single line */}
-                {currentApp.description && (
-                  <p className="text-base md:text-lg line-clamp-1 text-white/90">
-                    {currentApp.description}
-                  </p>
-                )}
+                {/* App Info */}
+                <motion.div
+                  key={`${currentApp._id}-info`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="flex-1 min-w-0 space-y-1 text-left"
+                >
+                  {/* App Name */}
+                  <h2 className={`text-2xl md:text-3xl font-bold truncate ${isLightBackground ? 'text-gray-900' : 'text-white'}`}>
+                    {currentApp.name}
+                  </h2>
+                  
+                  {/* Description - two lines */}
+                  {currentApp.description && (
+                    <p className={`text-sm md:text-base line-clamp-2 ${isLightBackground ? 'text-gray-800' : 'text-white/90'}`}>
+                      {currentApp.description}
+                    </p>
+                  )}
+                </motion.div>
+              </div>
 
-                {/* Actions row */}
-                <div className="flex items-center gap-4 pt-2">
-                  <button
-                    onClick={() => router.push(`/appstore/${currentApp._id}`)}
-                    className="px-6 py-3 rounded-full font-semibold transition-colors shadow-lg hover:shadow-xl bg-white text-black hover:bg-white/90"
-                  >
-                    View Details
-                  </button>
+              {/* Right section: Actions */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <button
+                  onClick={() => router.push(`/appstore/${currentApp._id}`)}
+                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors shadow-lg hover:shadow-xl ${
+                    isLightBackground 
+                      ? 'bg-gray-900 text-white hover:bg-gray-800' 
+                      : 'bg-white text-black hover:bg-white/90'
+                  }`}
+                >
+                  View Details
+                </button>
 
-                  {/* Pagination dots */}
-                  <div className="flex items-center gap-2">
-                    {apps.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentIndex(index)}
-                        className={`h-2 rounded-full transition-all ${
-                          index === currentIndex
-                            ? 'w-6 bg-white'
-                            : 'w-2 bg-white/30 hover:bg-white/50'
-                        }`}
-                        aria-label={`Go to app ${index + 1}`}
-                      />
-                    ))}
-                  </div>
+                {/* Pagination dots */}
+                <div className="hidden md:flex items-center gap-2">
+                  {apps.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentIndex
+                          ? isLightBackground ? 'w-6 bg-gray-900' : 'w-6 bg-white'
+                          : isLightBackground ? 'w-2 bg-gray-900/30 hover:bg-gray-900/50' : 'w-2 bg-white/30 hover:bg-white/50'
+                      }`}
+                      aria-label={`Go to app ${index + 1}`}
+                    />
+                  ))}
                 </div>
-              </motion.div>
+
+                {/* Navigation Arrows */}
+                {apps.length > 1 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handlePrevious}
+                      className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
+                        isLightBackground 
+                          ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
+                          : hasCoverImage ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
+                      }`}
+                      aria-label="Previous app"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
+                        isLightBackground 
+                          ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
+                          : hasCoverImage ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
+                      }`}
+                      aria-label="Next app"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </>
       )}
 
-      {/* Navigation Arrows */}
-      {apps.length > 1 && (
-        <div className="absolute bottom-8 md:bottom-10 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-          <button
-            onClick={handlePrevious}
-            className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
-              hasCoverImage ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
-            }`}
-            aria-label="Previous app"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleNext}
-            className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
-              hasCoverImage ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
-            }`}
-            aria-label="Next app"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

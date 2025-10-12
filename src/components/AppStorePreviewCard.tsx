@@ -1,9 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, Share, Sparkles, Edit3, ImagePlus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Share, Sparkles, Edit3, ImagePlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Id } from '@convex/_generated/dataModel';
 import ScreenshotLightbox from '@/components/ScreenshotLightbox';
 import { useDominantColor } from '@/hooks/useDominantColor';
@@ -50,7 +50,15 @@ export default function AppStorePreviewCard({
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
   const [showCoverMenu, setShowCoverMenu] = useState(false);
+  const [currentScreenshotIndex, setCurrentScreenshotIndex] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  const screenUrls = screens.map(s => s.screenUrl).filter((url): url is string => !!url);
+  const hasIcon = !!app.iconUrl;
+  const hasDetails = !!app.name && app.name !== 'Generating...';
   
   // Extract dominant color from cover image for dynamic blending
   const { color: dominantColor, isLight: isLightBackground } = useDominantColor(app.coverImageUrl);
@@ -69,9 +77,52 @@ export default function AppStorePreviewCard({
     }
   }, [showCoverMenu]);
 
-  const screenUrls = screens.map(s => s.screenUrl).filter((url): url is string => !!url);
-  const hasIcon = !!app.iconUrl;
-  const hasDetails = !!app.name && app.name !== 'Generating...';
+  // Check scroll position and update chevron visibility
+  const checkScrollPosition = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  }, []);
+
+  // Function to scroll to a specific screenshot
+  const scrollToScreenshot = (index: number) => {
+    if (!scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    const screenshotWidth = container.scrollWidth / screenUrls.length;
+    container.scrollTo({
+      left: screenshotWidth * index,
+      behavior: 'smooth',
+    });
+    setCurrentScreenshotIndex(index);
+  };
+
+  // Navigate to previous screenshot
+  const handlePrevious = () => {
+    const newIndex = currentScreenshotIndex > 0 ? currentScreenshotIndex - 1 : 0;
+    scrollToScreenshot(newIndex);
+  };
+
+  // Navigate to next screenshot
+  const handleNext = () => {
+    const newIndex = currentScreenshotIndex < screenUrls.length - 1 ? currentScreenshotIndex + 1 : screenUrls.length - 1;
+    scrollToScreenshot(newIndex);
+  };
+
+  // Add scroll event listener to check position
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    checkScrollPosition();
+    container.addEventListener('scroll', checkScrollPosition);
+    
+    return () => {
+      container.removeEventListener('scroll', checkScrollPosition);
+    };
+  }, [screenUrls, checkScrollPosition]);
 
   return (
     <>
@@ -201,7 +252,7 @@ export default function AppStorePreviewCard({
               )}
               
               {/* Cover Image - fades to transparent at bottom */}
-              <div className="relative w-full aspect-video">
+              <div className="relative w-full aspect-[2/1]">
                 <div 
                   className="absolute inset-0"
                   style={{
@@ -221,44 +272,44 @@ export default function AppStorePreviewCard({
               </div>
               
               {/* App info positioned at card bottom */}
-              <div className="relative p-6 md:p-8 flex items-center gap-5 -mt-16">
-                {/* App Icon - Larger size with border and elevation */}
-                <div className="relative h-24 w-24 md:h-28 md:w-28 flex-shrink-0 rounded-[22%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30">
+              <div className="relative p-4 md:p-6 flex items-center gap-4 -mt-12">
+                {/* App Icon - Smaller size with border and elevation */}
+                <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30">
                   {hasIcon && app.iconUrl ? (
                     <Image
                       src={app.iconUrl}
                       alt="App icon"
                       fill
                       className="object-cover"
-                      sizes="112px"
+                      sizes="80px"
                       unoptimized
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/10">
-                      <span className="text-3xl md:text-4xl font-bold text-primary">
+                      <span className="text-2xl md:text-3xl font-bold text-primary">
                         {app.name?.charAt(0).toUpperCase() || 'A'}
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* App Title & Category - Larger text */}
+                {/* App Title & Category - Smaller text */}
                 <div className="flex-1 min-w-0">
                   {hasDetails ? (
-                    <div className="space-y-1">
-                      <h1 className={`text-3xl md:text-4xl font-bold drop-shadow-lg truncate ${isLightBackground ? 'text-gray-900' : 'text-white'}`}>
+                    <div className="space-y-0.5">
+                      <h1 className={`text-2xl md:text-3xl font-bold drop-shadow-lg truncate ${isLightBackground ? 'text-gray-900' : 'text-white'}`}>
                         {app.name}
                       </h1>
                       {app.category && (
-                        <p className={`text-base md:text-lg font-medium uppercase tracking-wide drop-shadow ${isLightBackground ? 'text-gray-800' : 'text-white/90'}`}>
+                        <p className={`text-sm md:text-base font-medium uppercase tracking-wide drop-shadow ${isLightBackground ? 'text-gray-800' : 'text-white/90'}`}>
                           {app.category}
                         </p>
                       )}
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <div className={`h-8 w-48 rounded animate-pulse ${isLightBackground ? 'bg-gray-900/20' : 'bg-white/20'}`} />
-                      <div className={`h-5 w-24 rounded animate-pulse ${isLightBackground ? 'bg-gray-900/20' : 'bg-white/20'}`} />
+                      <div className={`h-6 w-40 rounded animate-pulse ${isLightBackground ? 'bg-gray-900/20' : 'bg-white/20'}`} />
+                      <div className={`h-4 w-20 rounded animate-pulse ${isLightBackground ? 'bg-gray-900/20' : 'bg-white/20'}`} />
                     </div>
                   )}
                 </div>
@@ -390,33 +441,56 @@ export default function AppStorePreviewCard({
               </span>
             </div>
 
-            {/* Screenshot Carousel - Mobile friendly with 1.5 screens visible */}
-            <div className="relative sm:-mx-6 md:mx-0">
-              <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory">
-                <div className="flex gap-4 pb-4 sm:pl-6 lg:grid lg:grid-cols-5 lg:gap-4 lg:pl-0">
-                  {Array.from({ length: Math.max(totalScreens, screenUrls.length) }).map((_, index) => {
-                    const screenUrl = screenUrls[index];
-                    const colors = [
-                      'from-blue-500/20 via-purple-500/20 to-pink-500/20',
-                      'from-green-500/20 via-teal-500/20 to-cyan-500/20',
-                      'from-orange-500/20 via-red-500/20 to-rose-500/20',
-                      'from-violet-500/20 via-indigo-500/20 to-blue-500/20',
-                      'from-amber-500/20 via-yellow-500/20 to-lime-500/20',
-                    ];
-                    const gradientClass = colors[index % colors.length];
+            {/* Large Sticky Screenshot Carousel */}
+            <div className="sticky top-16 z-10">
+              <div className="relative">
+                {/* Previous Button */}
+                {screenUrls.length > 1 && canScrollLeft && (
+                  <button
+                    onClick={handlePrevious}
+                    className="absolute -left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-background/30 backdrop-blur-md border border-white/20 shadow-lg flex items-center justify-center hover:bg-background/50 hover:scale-105 transition-all"
+                    aria-label="Previous screenshot"
+                  >
+                    <ChevronLeft className="h-6 w-6 opacity-70" />
+                  </button>
+                )}
 
-                    return (
-                      <div
-                        key={index}
-                        className="relative aspect-[9/19.5] w-[60vw] flex-shrink-0 snap-center overflow-hidden rounded-xl border bg-background shadow-md hover:shadow-lg transition-shadow scroll-ml-6 sm:scroll-ml-6 lg:w-auto lg:flex-shrink"
-                      >
+                {/* Next Button */}
+                {screenUrls.length > 1 && canScrollRight && (
+                  <button
+                    onClick={handleNext}
+                    className="absolute -right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-background/30 backdrop-blur-md border border-white/20 shadow-lg flex items-center justify-center hover:bg-background/50 hover:scale-105 transition-all"
+                    aria-label="Next screenshot"
+                  >
+                    <ChevronRight className="h-6 w-6 opacity-70" />
+                  </button>
+                )}
+
+                <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+                  <div className="flex gap-6 pb-2">
+                    {Array.from({ length: Math.max(totalScreens, screenUrls.length) }).map((_, index) => {
+                      const screenUrl = screenUrls[index];
+                      const colors = [
+                        'from-blue-500/20 via-purple-500/20 to-pink-500/20',
+                        'from-green-500/20 via-teal-500/20 to-cyan-500/20',
+                        'from-orange-500/20 via-red-500/20 to-rose-500/20',
+                        'from-violet-500/20 via-indigo-500/20 to-blue-500/20',
+                        'from-amber-500/20 via-yellow-500/20 to-lime-500/20',
+                      ];
+                      const gradientClass = colors[index % colors.length];
+
+                      return (
+                        <div
+                          key={index}
+                          className="relative aspect-[9/19.5] w-[50vw] sm:w-[38vw] md:w-[200px] lg:w-[220px] flex-shrink-0 snap-center overflow-hidden rounded-2xl border-2 bg-background shadow-2xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-all duration-300 hover:scale-[1.02]"
+                        >
                         {screenUrl ? (
                           <motion.button
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.4 }}
                             style={{ position: 'relative' }}
-                            className="h-full w-full cursor-pointer hover:opacity-90 transition-opacity"
+                            className="h-full w-full cursor-pointer hover:opacity-95 transition-opacity"
                             onClick={() => {
                               const lightboxIndex = screenUrls.findIndex(url => url === screenUrl);
                               if (lightboxIndex === -1) return;
@@ -428,7 +502,7 @@ export default function AppStorePreviewCard({
                               alt={`Screenshot ${index + 1}`}
                               fill
                               className="object-cover"
-                              sizes="(max-width: 768px) 60vw, 15vw"
+                              sizes="(max-width: 640px) 50vw, (max-width: 768px) 38vw, 220px"
                               unoptimized
                             />
                           </motion.button>
@@ -498,6 +572,25 @@ export default function AppStorePreviewCard({
                   })}
                 </div>
               </div>
+              </div>
+              
+              {/* Interactive Scroll Indicator Dots */}
+              {screenUrls.length > 1 && (
+                <div className="flex justify-center gap-2 mt-4">
+                  {screenUrls.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => scrollToScreenshot(index)}
+                      className={`rounded-full transition-all ${
+                        currentScreenshotIndex === index
+                          ? 'w-8 h-2 bg-primary'
+                          : 'w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                      }`}
+                      aria-label={`Go to screenshot ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

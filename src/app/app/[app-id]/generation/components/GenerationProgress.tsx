@@ -35,7 +35,7 @@ interface AppStatus {
 type JobStatus = {
   _id: Id<'appGenerationJobs'>;
   appId: Id<'apps'>;
-  status: 'pending' | 'downloading_images' | 'generating_structure' | 'generating_concept' | 'generating_icon' | 'generating_screens' | 'completed' | 'failed' | 'partial';
+  status: 'pending' | 'downloading_images' | 'generating_structure' | 'preview_ready' | 'generating_concept' | 'generating_icon' | 'generating_screens' | 'completed' | 'failed' | 'partial';
   currentStep: string;
   screensGenerated: number;
   screensTotal: number;
@@ -72,6 +72,7 @@ export default function GenerationProgress({ appStatus, jobStatus, appId }: Gene
       }
       if (jobStatus.status === 'generating_structure') return 'designing'; // Planning app structure
       if (jobStatus.status === 'generating_icon') return 'designing';
+      if (jobStatus.status === 'preview_ready') return 'app_details'; // App created, waiting for screenshot generation
       if (jobStatus.status === 'downloading_images') return 'app_details'; // Downloading concept images
       if (jobStatus.status === 'generating_concept') return 'app_details';
       if (jobStatus.status === 'pending') return 'initializing';

@@ -2,10 +2,16 @@
 
 import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { PanelLeftClose } from 'lucide-react';
+import { PanelLeftClose, ChevronRight } from 'lucide-react';
+
+interface Breadcrumb {
+  label: string;
+  href?: string;
+}
 
 interface TopHeaderProps {
   title?: string;
+  breadcrumbs?: Breadcrumb[];
   actions?: ReactNode;
   onMenuClick: () => void;
   isSidebarExpanded: boolean;
@@ -13,6 +19,7 @@ interface TopHeaderProps {
 
 export default function TopHeader({
   title,
+  breadcrumbs,
   actions,
   onMenuClick,
   isSidebarExpanded
@@ -31,6 +38,12 @@ export default function TopHeader({
     const route = titleRouteMap[title || ''];
     if (route) {
       router.push(route);
+    }
+  };
+
+  const handleBreadcrumbClick = (href?: string) => {
+    if (href) {
+      router.push(href);
     }
   };
 
@@ -61,14 +74,36 @@ export default function TopHeader({
             )}
           </button>
 
-          {title && (
+          {breadcrumbs && breadcrumbs.length > 0 ? (
+            <div className="flex items-center gap-2 min-w-0">
+              {breadcrumbs.map((crumb, index) => (
+                <div key={index} className="flex items-center gap-2 min-w-0">
+                  {index > 0 && (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  )}
+                  {crumb.href ? (
+                    <button
+                      onClick={() => handleBreadcrumbClick(crumb.href)}
+                      className="text-lg font-semibold transition-colors hover:text-primary cursor-pointer truncate"
+                    >
+                      {crumb.label}
+                    </button>
+                  ) : (
+                    <span className="text-lg font-semibold text-foreground truncate">
+                      {crumb.label}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : title ? (
             <button
               onClick={handleTitleClick}
               className="text-lg font-semibold truncate transition-colors hover:text-primary cursor-pointer"
             >
               {title}
             </button>
-          )}
+          ) : null}
         </div>
 
         {/* Right: Actions */}

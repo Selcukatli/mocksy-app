@@ -5,7 +5,8 @@ import { useQuery, useAction, useMutation } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Star, StarOff, ImagePlus, ShieldCheck } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Sparkles, Star, StarOff, ImagePlus, ShieldCheck, Trash2, Settings, Eye, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
@@ -40,14 +41,22 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const [generatedPrompt, setGeneratedPrompt] = useState<string | undefined>(undefined);
   const [estimatedTimeMs, setEstimatedTimeMs] = useState<number | undefined>(undefined);
   const [showAdminPopover, setShowAdminPopover] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [showPublishSuccess, setShowPublishSuccess] = useState(false);
 
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
   const isFeatured = useQuery(api.adminActions.isFeatured, { appId: appId as Id<'apps'> });
+  const deletePermissions = useQuery(api.adminActions.canDeleteApp, { appId: appId as Id<'apps'> });
+  const generationJob = useQuery(api.appGenerationJobs.getAppGenerationJobByAppId, { appId: appId as Id<'apps'> });
   const generateCoverImage = useAction(api.appGenerationActions.generateAppCoverImage);
   const saveCoverImage = useAction(api.appGenerationActions.saveAppCoverImage);
   const featureAppMutation = useMutation(api.adminActions.featureApp);
   const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
+  const deleteAppMutation = useMutation(api.apps.deleteApp);
+  const updateAppMutation = useMutation(api.apps.updateApp);
 
   // Fetch reviews for this app (Convex queries are reactive and auto-update)
   const reviewsData = useQuery(api.mockReviews.getAppReviews, { appId: appId as Id<'apps'>, limit: 5 });
@@ -86,6 +95,27 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const handleCreateYourOwn = useCallback(() => {
     router.push('/create');
   }, [router]);
+
+  const handlePublishApp = useCallback(async () => {
+    if (!appPreview?.app) return;
+    
+    try {
+      setIsPublishing(true);
+      await updateAppMutation({
+        appId: appId as Id<"apps">,
+        status: "published",
+      });
+      setShowPublishSuccess(true);
+      setTimeout(() => setShowPublishSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to publish app:', error);
+      setToastMessage('Failed to publish app');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setIsPublishing(false);
+    }
+  }, [appPreview?.app, appId, updateAppMutation]);
 
   const handleGenerateCoverImage = useCallback(() => {
     if (!appId) return;
@@ -211,11 +241,67 @@ export default function PublicAppStorePage({ params }: PageProps) {
     handleGenerateCoverImage();
   }, [handleGenerateCoverImage]);
 
+  const handleDeleteApp = useCallback(async () => {
+    if (!appId || isDeleting) return;
+    
+    setIsDeleting(true);
+    setShowDeleteConfirm(false);
+    
+    try {
+      await deleteAppMutation({ appId: appId as Id<'apps'> });
+      
+      // Redirect immediately to avoid "app not found" errors from reactive queries
+      router.push('/create');
+    } catch (error) {
+      console.error('Error deleting app:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete app';
+      setToastMessage(errorMessage);
+      setToastType('error');
+      setShowToast(true);
+      setIsDeleting(false);
+    }
+  }, [appId, isDeleting, deleteAppMutation, router]);
+
+  const handleDeleteClick = useCallback(() => {
+    setShowAdminPopover(false);
+    setShowDeleteConfirm(true);
+  }, []);
+
   // Filter out current app from similar apps
   const filteredSimilarApps = useMemo(() => {
     if (!similarApps) return [];
     return similarApps.filter((app) => app._id !== appId);
   }, [similarApps, appId]);
+
+  // Check if app is currently generating
+  const isGenerating = useMemo(() => {
+    if (!generationJob) return false;
+    const activeStatuses = ['pending', 'downloading_images', 'generating_structure', 'generating_screens'];
+    return activeStatuses.includes(generationJob.status);
+  }, [generationJob]);
+
+  // Get generation status message and progress
+  const generationStatus = useMemo(() => {
+    if (!generationJob || !isGenerating) return null;
+    
+    const { status, screensGenerated, screensTotal, progressPercentage } = generationJob;
+    
+    let message = 'Starting generation...';
+    let progress = progressPercentage || 0;
+    
+    if (status === 'downloading_images') {
+      message = 'Preparing images...';
+      progress = progressPercentage || 10;
+    } else if (status === 'generating_structure') {
+      message = 'Planning app design...';
+      progress = progressPercentage || 30;
+    } else if (status === 'generating_screens') {
+      message = `Generating screenshots... ${screensGenerated}/${screensTotal}`;
+      progress = progressPercentage || (screensTotal > 0 ? (screensGenerated / screensTotal) * 100 : 0);
+    }
+    
+    return { message, progress };
+  }, [generationJob, isGenerating]);
 
   useEffect(() => {
     setTitle('Appstore');
@@ -256,7 +342,108 @@ export default function PublicAppStorePage({ params }: PageProps) {
 
   return (
     <>
+    {/* Sticky Generation Status Bar */}
+    {isGenerating && generationStatus && (
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl"
+      >
+        <div className="mx-auto max-w-4xl px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <p className="text-sm font-medium text-primary flex-1">
+              {generationStatus.message}
+            </p>
+            <span className="text-xs text-muted-foreground font-mono">
+              {Math.round(generationStatus.progress)}%
+            </span>
+          </div>
+          {/* Progress Bar */}
+          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-primary rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${generationStatus.progress}%` }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+            />
+          </div>
+        </div>
+      </motion.div>
+    )}
+
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 min-w-0">
+
+        {/* Draft Status Banner - Only show after app generation is complete */}
+        {appPreview?.app.isDemo && 
+         appPreview.app.status === "draft" && 
+         deletePermissions?.isOwner && 
+         !isGenerating && 
+         appPreview.totalScreens > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-6 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-md"
+          >
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-start gap-3 lg:items-center lg:gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-500/20 flex-shrink-0">
+                  <Eye className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold text-yellow-700 dark:text-yellow-400">
+                    Your app is ready to publish!
+                  </p>
+                  <p className="text-sm text-yellow-600/80 dark:text-yellow-400/80 mt-1">
+                    This app is currently in draft mode and only visible to you. Publish it to make it discoverable in the app store.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handlePublishApp}
+                disabled={isPublishing}
+                size="lg"
+                className={cn(
+                  "w-full lg:w-auto flex-shrink-0",
+                  isPublishing
+                    ? "bg-green-500/50 text-white cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700 text-white"
+                )}
+              >
+                <CheckCircle className="mr-2 h-5 w-5" />
+                {isPublishing ? "Publishing..." : "Publish to App Store"}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Published Success Banner */}
+        {showPublishSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-6 rounded-xl border border-green-500/20 bg-green-500/10 p-6 backdrop-blur-md"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-green-700 dark:text-green-400">
+                  Successfully published!
+                </p>
+                <p className="text-sm text-green-600/80 dark:text-green-400/80">
+                  Your app is now live and discoverable in the app store.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* App Store Preview Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -268,45 +455,64 @@ export default function PublicAppStorePage({ params }: PageProps) {
             creator={appPreview.creator}
             screens={appPreview.screens}
             totalScreens={appPreview.totalScreens}
-            isLoading={false}
+            isLoading={isGenerating}
             onShare={handleShareClick}
             onCreateYourOwn={handleCreateYourOwn}
             isAdmin={isAdmin}
             onGenerateCover={handleGenerateCoverImage}
             adminActionsSlot={
-              isAdmin ? (
+              deletePermissions?.canDelete ? (
                 <Popover open={showAdminPopover} onOpenChange={setShowAdminPopover}>
                   <PopoverTrigger asChild>
                     <button
                       className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
                     >
                       <ShieldCheck className="h-4 w-4" />
-                      <span className="font-medium">Admin Actions</span>
+                      <span className="font-medium">{deletePermissions.isAdmin && !deletePermissions.isOwner ? 'Admin Actions' : 'Manage'}</span>
                     </button>
                   </PopoverTrigger>
                   <PopoverContent side="bottom" align="end" className="w-56 p-1">
                     <div className="space-y-1">
-                      {/* Feature/Unfeature App */}
+                      {/* Navigate to App Management Dashboard */}
                       <button
-                        onClick={isFeatured ? handleUnfeatureApp : handleFeatureApp}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                          isFeatured
-                            ? 'hover:bg-yellow-500/10 text-yellow-600'
-                            : 'hover:bg-muted'
-                        }`}
+                        onClick={() => {
+                          setShowAdminPopover(false);
+                          router.push(`/app/${appId}`);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors font-medium"
                       >
-                        {isFeatured ? (
-                          <>
-                            <StarOff className="h-4 w-4" />
-                            <span>Remove from Featured</span>
-                          </>
-                        ) : (
-                          <>
-                            <Star className="h-4 w-4" />
-                            <span>Feature App</span>
-                          </>
-                        )}
+                        <Settings className="h-4 w-4" />
+                        <span>Manage App Dashboard</span>
                       </button>
+
+                      <div className="my-1 h-px bg-border" />
+
+                      {/* Admin-only actions */}
+                      {deletePermissions.isAdmin && (
+                        <>
+                          {/* Feature/Unfeature App */}
+                          <button
+                            onClick={isFeatured ? handleUnfeatureApp : handleFeatureApp}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                              isFeatured
+                                ? 'hover:bg-yellow-500/10 text-yellow-600'
+                                : 'hover:bg-muted'
+                            }`}
+                          >
+                            {isFeatured ? (
+                              <>
+                                <StarOff className="h-4 w-4" />
+                                <span>Remove from Featured</span>
+                              </>
+                            ) : (
+                              <>
+                                <Star className="h-4 w-4" />
+                                <span>Feature App</span>
+                              </>
+                            )}
+                          </button>
+                        </>
+                      )}
 
                       {/* Generate Cover Image */}
                       <button
@@ -315,6 +521,16 @@ export default function PublicAppStorePage({ params }: PageProps) {
                       >
                         <ImagePlus className="h-4 w-4" />
                         <span>Generate Cover Image</span>
+                      </button>
+
+                      {/* Delete App - Destructive Action */}
+                      <div className="my-1 h-px bg-border" />
+                      <button
+                        onClick={handleDeleteClick}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-destructive/10 text-destructive transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>Delete App</span>
                       </button>
                     </div>
                   </PopoverContent>
@@ -398,6 +614,56 @@ export default function PublicAppStorePage({ params }: PageProps) {
       onGenerate={handleStartGeneration}
       estimatedTimeMs={estimatedTimeMs}
     />
+
+    {/* Delete Confirmation Dialog */}
+    {showDeleteConfirm && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        onClick={() => !isDeleting && setShowDeleteConfirm(false)}
+      >
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          transition={{ type: 'spring', duration: 0.3 }}
+          className="mx-4 w-full max-w-md rounded-xl bg-card p-6 shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mb-4 flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+              <Trash2 className="h-5 w-5 text-destructive" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold">Delete App</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Are you sure you want to delete &quot;{appPreview?.app.name}&quot;? This will permanently delete all screenshots, reviews, and related data. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="flex-1"
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteApp}
+              className="flex-1"
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </div>
+        </motion.div>
+      </motion.div>
+    )}
 
     <Toast
       message={toastMessage}

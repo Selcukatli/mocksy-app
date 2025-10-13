@@ -45,7 +45,7 @@ export default function AppConceptCard({ concept, isSelected, onClick }: AppConc
     >
       {/* Cover Image Section */}
       <div
-        className={`relative rounded-t-xl overflow-hidden ${dominantColor ? '' : 'bg-muted-foreground/10'}`}
+        className={`relative ${dominantColor ? '' : 'bg-muted-foreground/10'}`}
         style={{
           background: dominantColor || undefined,
         }}
@@ -58,15 +58,9 @@ export default function AppConceptCard({ concept, isSelected, onClick }: AppConc
         )}
 
         {/* Layer 2-3: Cover Image (with gradient mask when loaded) */}
-        <div className="relative w-full aspect-[2/1] rounded-t-xl overflow-hidden">
+        <div className="relative w-full aspect-[2/1]">
           {concept.cover_url ? (
-            <div 
-              className="absolute inset-0"
-              style={{
-                maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-              }}
-            >
+            <div className="absolute inset-0 image-mask-fade">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={concept.cover_url}

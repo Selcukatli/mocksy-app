@@ -9,7 +9,9 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import OnboardingDialog from '@/components/OnboardingDialog';
+import Toast from '@/components/Toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { usePageHeader } from '@/components/RootLayoutContent';
 import {
   Download,
   Settings,
@@ -30,6 +32,8 @@ import {
   Trash2,
   Copy,
   ExternalLink,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 
 interface PageProps {
@@ -66,6 +70,7 @@ export default function AppDetailPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const appId = resolvedParams['app-id'];
   const router = useRouter();
+  const { setBreadcrumbs, setSidebarMode } = usePageHeader();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [deleteSetId, setDeleteSetId] = useState<string | null>(null);
@@ -75,6 +80,9 @@ export default function AppDetailPage({ params }: PageProps) {
   const [isDeletingApp, setIsDeletingApp] = useState(false);
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
   const [screenSearch, setScreenSearch] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isUnpublishing, setIsUnpublishing] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Store hooks for local data (sets, screenshots)
   // const { getScreenshotsForSet } = useAppStore();
@@ -82,6 +90,7 @@ export default function AppDetailPage({ params }: PageProps) {
   // Convex mutations
   const deleteSetMutation = useMutation(api.screenshotSets.deleteSet);
   const deleteAppMutation = useMutation(api.apps.deleteApp);
+  const updateAppMutation = useMutation(api.apps.updateApp);
 
   // Get app from Convex
   const app = useQuery(api.apps.getApp, { appId: appId as Id<"apps"> });
@@ -115,6 +124,14 @@ export default function AppDetailPage({ params }: PageProps) {
     // Sort by date (newest first) to match the preview lightbox default sort
     return [...filteredScreens].sort((a, b) => b.createdAt - a.createdAt);
   }, [filteredScreens]);
+
+  // Set up page context
+  useEffect(() => {
+    setSidebarMode('overlay');
+    setBreadcrumbs([
+      { label: 'Create', href: '/create' }
+    ]);
+  }, [setBreadcrumbs, setSidebarMode]);
 
   useEffect(() => {
     // Check if user has seen onboarding globally
@@ -188,6 +205,43 @@ export default function AppDetailPage({ params }: PageProps) {
     router.push('/dashboard/apps');
   };
 
+  const handlePublishApp = async () => {
+    if (!app) return;
+
+    try {
+      setIsPublishing(true);
+      await updateAppMutation({
+        appId: appId as Id<"apps">,
+        status: "published",
+      });
+      setToast({ message: 'App published to AppStore!', type: 'success' });
+    } catch (error) {
+      console.error('Failed to publish app:', error);
+      setToast({ message: 'Failed to publish app', type: 'error' });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleUnpublishApp = async () => {
+    if (!app) return;
+
+    try {
+      setIsUnpublishing(true);
+      setShowDeleteAppMenu(false);
+      await updateAppMutation({
+        appId: appId as Id<"apps">,
+        status: "draft",
+      });
+      setToast({ message: 'App unpublished from AppStore', type: 'success' });
+    } catch (error) {
+      console.error('Failed to unpublish app:', error);
+      setToast({ message: 'Failed to unpublish app', type: 'error' });
+    } finally {
+      setIsUnpublishing(false);
+    }
+  };
+
   // Helper to determine set status based on screenshots
   const getSetStatus = (set: typeof convexSets[0]) => {
     if (set.status) return set.status;
@@ -225,67 +279,98 @@ export default function AppDetailPage({ params }: PageProps) {
   return (
     <>
       <OnboardingDialog isOpen={showOnboarding} onClose={handleOnboardingClose} />
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
-        <div className="h-screen flex flex-col">
-          {/* Header */}
+      <div className="bg-gradient-to-b from-background to-secondary/10">
+        <div className="flex flex-col h-[calc(100vh-3rem)]">
+          {/* Header - fixed height */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="px-6 pt-6 pb-4 border-b"
+            className="px-6 pt-6 pb-4 border-b flex-shrink-0"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex items-center gap-4 min-w-0 flex-1">
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:text-foreground hover:border-muted-foreground/60"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:text-foreground hover:border-muted-foreground/60 flex-shrink-0"
                   aria-label="Back to apps"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 min-w-0 flex-1">
                   {/* App Icon */}
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {app?.iconUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={app.iconUrl} alt={app?.name} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-2xl font-bold text-primary">
+                      <span className="text-xl font-bold text-primary">
                         {app?.name?.charAt(0).toUpperCase() || 'A'}
                       </span>
                     )}
                   </div>
-                  <div className="max-w-lg">
-                    <h1 className="text-3xl font-bold">{app?.name || `App ${appId}`}</h1>
-                    <p className="text-muted-foreground mt-1 text-sm truncate">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h1 className="text-2xl font-bold truncate">{app?.name || `App ${appId}`}</h1>
+                      {app?.isDemo && (
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-full text-xs font-medium border flex-shrink-0",
+                          app.status === "published" || app.status === undefined
+                            ? "bg-green-500/10 text-green-600 border-green-500/20"
+                            : "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
+                        )}>
+                          {app.status === "published" || app.status === undefined ? "Published" : "Draft"}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground mt-0.5 text-sm line-clamp-1">
                       {app?.description || 'Manage your app store screenshots and source images'}
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleShowOnboarding}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-                >
-                  <HelpCircle className="w-4 h-4" />
-                  How It Works
-                </button>
-                <button
-                  onClick={() => window.open(`/appstore/${appId}`, '_blank')}
-                  className="px-4 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-2"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span className="text-sm">Preview</span>
-                </button>
-                <button
-                  onClick={() => router.push(`/app/${appId}/manage`)}
-                  className="px-4 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-2"
-                >
-                  <Settings className="w-4 h-4" />
-                  <span className="text-sm">App Details</span>
-                </button>
+              <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                    <button
+                      onClick={handleShowOnboarding}
+                      title="How It Works"
+                      className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      <HelpCircle className="w-4 h-4" />
+                      <span className="hidden xl:inline">How It Works</span>
+                    </button>
+                    <button
+                      onClick={() => router.push(`/app/${appId}/manage`)}
+                      title="App Details"
+                      className="px-3 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-1.5"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span className="text-sm hidden lg:inline">Details</span>
+                    </button>
+                    <button
+                      onClick={() => window.open(`/appstore/${appId}`, '_blank')}
+                      title="Preview in AppStore"
+                      className="px-3 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-1.5"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span className="text-sm hidden lg:inline">Preview</span>
+                    </button>
+                    {app?.isDemo && app.status === "draft" && appScreens.length > 0 && (
+                      <button
+                        onClick={handlePublishApp}
+                        disabled={isPublishing}
+                        title={isPublishing ? "Publishing..." : "Publish App"}
+                        className={cn(
+                          "px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5",
+                          isPublishing
+                            ? "bg-green-500/50 text-white cursor-not-allowed"
+                            : "bg-green-600 hover:bg-green-700 text-white"
+                        )}
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span className="text-sm hidden lg:inline">{isPublishing ? "Publishing..." : "Publish"}</span>
+                      </button>
+                    )}
                 <Popover open={showDeleteAppMenu} onOpenChange={setShowDeleteAppMenu}>
                   <PopoverTrigger asChild>
                     <button
@@ -297,7 +382,17 @@ export default function AppDetailPage({ params }: PageProps) {
                       ...
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent side="bottom" align="end" className="w-40 p-1">
+                  <PopoverContent side="bottom" align="end" className="w-56 p-1">
+                    {app?.isDemo && app.status === "published" && (
+                      <button
+                        onClick={handleUnpublishApp}
+                        disabled={isUnpublishing}
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-yellow-600 transition-colors hover:bg-yellow-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        {isUnpublishing ? "Unpublishing..." : "Unpublish from AppStore"}
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setShowDeleteAppMenu(false);
@@ -315,10 +410,10 @@ export default function AppDetailPage({ params }: PageProps) {
           </motion.div>
 
           {/* Main Content - 2 Column Layout */}
-          <div className="flex-1 flex gap-6 p-6 overflow-hidden">
+          <div className="flex-1 flex gap-6 p-6 overflow-hidden min-h-0">
             {/* Left Column - AppStore Sets */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <div className="bg-card border rounded-xl p-6 flex flex-col flex-1 min-h-0">
+            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+              <div className="bg-card border rounded-xl p-6 flex flex-col flex-1 overflow-hidden">
               {convexSets.length > 0 && (
                 <div className="mb-6">
                   <div className="mb-4">
@@ -655,28 +750,38 @@ export default function AppDetailPage({ params }: PageProps) {
             </div>
 
             {/* Right Column - Screens */}
-            <div className="w-96 flex flex-col overflow-hidden">
+            <div className="w-96 flex flex-col min-h-0">
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
-                className="bg-card border rounded-xl p-6 flex flex-col flex-1 min-h-0"
+                className="bg-card border rounded-xl flex flex-col h-full overflow-hidden"
               >
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <FileImage className="w-7 h-7 text-primary" />
-                    </div>
-                    <div className="flex-1 space-y-2">
+                {/* Cover Image Header */}
+                {app?.coverImageUrl && (
+                  <div className="relative w-full h-32 overflow-hidden bg-muted flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={app.coverImageUrl}
+                      alt={`${app.name} cover`}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Gradient mask at bottom */}
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+                  </div>
+                )}
+
+                <div className={cn("p-6 flex flex-col flex-1 min-h-0 relative z-10", app?.coverImageUrl && "-mt-8")}>
+                  <div className="flex flex-col gap-4">
+                  <div className="flex items-start gap-3">
+                    <FileImage className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <h3 className="font-semibold">App Screens</h3>
                         <span className="rounded-full bg-muted/20 px-3 py-1 text-xs font-medium text-muted-foreground whitespace-nowrap">
                           {sourceImagesCount === 1 ? '1 screen' : `${sourceImagesCount} screens`}
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Keep your latest screens ready for AI templates.
-                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -761,6 +866,7 @@ export default function AppDetailPage({ params }: PageProps) {
                       </div>
                     </div>
                   )}
+                </div>
                 </div>
               </motion.div>
             </div>
@@ -858,6 +964,14 @@ export default function AppDetailPage({ params }: PageProps) {
           </motion.div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast?.message || ''}
+        type={toast?.type || 'success'}
+        isOpen={!!toast}
+        onClose={() => setToast(null)}
+      />
     </>
   );
 }

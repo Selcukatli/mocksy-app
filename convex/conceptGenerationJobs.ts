@@ -43,6 +43,32 @@ export const updateConceptsText = internalMutation({
         style_description: v.string(),
         app_icon_prompt: v.string(),
         cover_image_prompt: v.string(),
+        // Structured design system fields
+        colors: v.optional(
+          v.object({
+            primary: v.string(),
+            background: v.string(),
+            text: v.string(),
+            accent: v.string(),
+          })
+        ),
+        typography: v.optional(
+          v.object({
+            headlineFont: v.string(),
+            headlineSize: v.string(),
+            headlineWeight: v.string(),
+            bodyFont: v.string(),
+            bodySize: v.string(),
+            bodyWeight: v.string(),
+          })
+        ),
+        effects: v.optional(
+          v.object({
+            cornerRadius: v.string(),
+            shadowStyle: v.string(),
+            designPhilosophy: v.string(),
+          })
+        ),
       })
     ),
     status: v.optional(
@@ -156,6 +182,32 @@ export const getConceptGenerationJob = query({
             cover_image_prompt: v.string(),
             icon_url: v.optional(v.string()),
             cover_url: v.optional(v.string()),
+            // Structured design system fields
+            colors: v.optional(
+              v.object({
+                primary: v.string(),
+                background: v.string(),
+                text: v.string(),
+                accent: v.string(),
+              })
+            ),
+            typography: v.optional(
+              v.object({
+                headlineFont: v.string(),
+                headlineSize: v.string(),
+                headlineWeight: v.string(),
+                bodyFont: v.string(),
+                bodySize: v.string(),
+                bodyWeight: v.string(),
+              })
+            ),
+            effects: v.optional(
+              v.object({
+                cornerRadius: v.string(),
+                shadowStyle: v.string(),
+                designPhilosophy: v.string(),
+              })
+            ),
           })
         )
       ),

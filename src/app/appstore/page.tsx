@@ -100,7 +100,7 @@ export default function AppStorePage() {
       <div className="max-w-7xl mx-auto p-6 md:p-8 space-y-8">
         {/* Featured Apps Carousel */}
         {isLoading ? (
-          <div className="w-full h-[360px] md:h-[440px] rounded-3xl border bg-muted/20 animate-pulse" />
+          <div className="w-full h-[400px] md:h-[500px] rounded-3xl border bg-muted/20 animate-pulse" />
         ) : featuredApps && featuredApps.length > 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

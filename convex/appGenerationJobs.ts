@@ -1,11 +1,11 @@
 import { v } from "convex/values";
 import { query, internalMutation } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
 
 const jobStatusValidator = v.union(
   v.literal("pending"),
   v.literal("downloading_images"), // Downloading icon/cover from concept
   v.literal("generating_structure"), // Generating app structure plan
+  v.literal("preview_ready"), // Concept saved, waiting for user to trigger screenshot generation
   v.literal("generating_concept"),
   v.literal("generating_icon"),
   v.literal("generating_screens"),
@@ -64,7 +64,16 @@ export const updateAppGenerationJob = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const updates: any = {
+    const updates: {
+      updatedAt: number;
+      status?: typeof args.status;
+      currentStep?: string;
+      progressPercentage?: number;
+      screensGenerated?: number;
+      screensTotal?: number;
+      failedScreens?: typeof args.failedScreens;
+      error?: string;
+    } = {
       updatedAt: Date.now(),
     };
 

@@ -52,6 +52,9 @@ export interface AppConcept {
   app_subtitle: string
   app_description: string
   app_category: string
+  colors: StyleColors
+  typography: StyleTypography
+  effects: StyleEffects
   style_description: string
   app_icon_prompt: string
   cover_image_prompt: string
@@ -337,6 +340,14 @@ export interface ScreenshotTreatment {
   
 }
 
+export interface StyleColors {
+  primary: string
+  background: string
+  text: string
+  accent: string
+  
+}
+
 export interface StyleConfig {
   background_color: string
   details: string
@@ -362,6 +373,13 @@ export interface StyleDemoScreenshotConfig {
   
 }
 
+export interface StyleEffects {
+  cornerRadius: string
+  shadowStyle: string
+  designPhilosophy: string
+  
+}
+
 export interface StyleGenerationOutput {
   style_name: string
   style_config: StyleConfig
@@ -373,6 +391,16 @@ export interface StyleGenerationOutput {
 export interface StyleRevisionOutput {
   revised_style: StyleGenerationOutput
   revision_summary: string
+  
+}
+
+export interface StyleTypography {
+  headlineFont: string
+  headlineSize: string
+  headlineWeight: string
+  bodyFont: string
+  bodySize: string
+  bodyWeight: string
   
 }
 
@@ -391,7 +419,10 @@ export interface TabStructure {
   inactive_tab_color: string
   active_icon_style: string
   inactive_icon_style: string
-  tab_styling: string
+  selection_indicator: string
+  tab_bar_height: number
+  icon_size: number
+  label_size: number
   
 }
 

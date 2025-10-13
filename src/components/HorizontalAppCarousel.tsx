@@ -85,7 +85,7 @@ export default function HorizontalAppCarousel({
       {/* Header */}
       <div className="flex items-center justify-between px-2">
         <h2 className="text-xl md:text-2xl font-semibold">{title}</h2>
-        {apps.length > 9 && (
+        {onSeeAll && (
           <button
             onClick={onSeeAll}
             className="text-primary hover:text-primary/80 font-medium text-sm transition-colors"

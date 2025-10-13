@@ -296,6 +296,7 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("downloading_images"), // Downloading icon/cover from concept
       v.literal("generating_structure"), // Generating app structure plan
+      v.literal("preview_ready"), // Concept saved, waiting for user to trigger screenshot generation
       v.literal("generating_concept"),
       v.literal("generating_icon"),
       v.literal("generating_screens"),
@@ -346,6 +347,32 @@ export default defineSchema({
           // Image URLs (null until generated)
           icon_url: v.optional(v.string()),
           cover_url: v.optional(v.string()),
+          // Structured design system fields
+          colors: v.optional(
+            v.object({
+              primary: v.string(),
+              background: v.string(),
+              text: v.string(),
+              accent: v.string(),
+            })
+          ),
+          typography: v.optional(
+            v.object({
+              headlineFont: v.string(),
+              headlineSize: v.string(),
+              headlineWeight: v.string(),
+              bodyFont: v.string(),
+              bodySize: v.string(),
+              bodyWeight: v.string(),
+            })
+          ),
+          effects: v.optional(
+            v.object({
+              cornerRadius: v.string(),
+              shadowStyle: v.string(),
+              designPhilosophy: v.string(),
+            })
+          ),
         })
       )
     ),

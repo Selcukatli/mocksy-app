@@ -11,9 +11,16 @@ interface RootLayoutContentProps {
 
 type SidebarMode = 'static' | 'overlay';
 
+interface Breadcrumb {
+  label: string;
+  href?: string;
+}
+
 interface PageContextValue {
   title: string;
   setTitle: (title: string) => void;
+  breadcrumbs: Breadcrumb[];
+  setBreadcrumbs: (breadcrumbs: Breadcrumb[]) => void;
   actions: ReactNode;
   setActions: (actions: ReactNode) => void;
   sidebarMode: SidebarMode;
@@ -41,6 +48,7 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
 
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [pageTitle, setPageTitle] = useState('');
+  const [pageBreadcrumbs, setPageBreadcrumbs] = useState<Breadcrumb[]>([]);
   const [pageActions, setPageActions] = useState<ReactNode>(null);
   const [pageSidebarMode, setPageSidebarMode] = useState<SidebarMode>(getDefaultMode(pathname));
 
@@ -74,6 +82,8 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
         value={{
           title: pageTitle,
           setTitle: setPageTitle,
+          breadcrumbs: pageBreadcrumbs,
+          setBreadcrumbs: setPageBreadcrumbs,
           actions: pageActions,
           setActions: setPageActions,
           sidebarMode: pageSidebarMode,
@@ -100,6 +110,8 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
       value={{
         title: pageTitle,
         setTitle: setPageTitle,
+        breadcrumbs: pageBreadcrumbs,
+        setBreadcrumbs: setPageBreadcrumbs,
         actions: pageActions,
         setActions: setPageActions,
         sidebarMode: pageSidebarMode,
@@ -116,6 +128,7 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
         <div className="flex-1 min-w-0">
           <TopHeader
             title={pageTitle}
+            breadcrumbs={pageBreadcrumbs}
             actions={pageActions}
             onMenuClick={toggleSidebar}
             isSidebarExpanded={isSidebarExpanded}

@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  AppConcept,  AppConceptsOutput,  AppScreenPromptsOutput,  AppStructure,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  CoverImagePrompt,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  ImprovedDescriptionOutput,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenDetail,  ScreenImagePrompt,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TabStructure,  TextConfig,  VisionTestResponse } from "./types"
+import type {  AppConcept,  AppConceptsOutput,  AppScreenPromptsOutput,  AppStructure,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  CoverImagePrompt,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  ImprovedDescriptionOutput,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenDetail,  ScreenImagePrompt,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleColors,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleEffects,  StyleGenerationOutput,  StyleRevisionOutput,  StyleTypography,  Subject,  TabStructure,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -41,6 +41,9 @@ export namespace partial_types {
       app_subtitle?: string | null
       app_description?: string | null
       app_category?: string | null
+      colors?: StyleColors | null
+      typography?: StyleTypography | null
+      effects?: StyleEffects | null
       style_description?: string | null
       app_icon_prompt?: string | null
       cover_image_prompt?: string | null
@@ -264,6 +267,12 @@ export namespace partial_types {
       preserve?: boolean | null
       forbidden: string[]
     }
+    export interface StyleColors {
+      primary?: string | null
+      background?: string | null
+      text?: string | null
+      accent?: string | null
+    }
     export interface StyleConfig {
       background_color?: string | null
       details?: string | null
@@ -283,6 +292,11 @@ export namespace partial_types {
       device_position?: string | null
       app_screen_prompt?: string | null
     }
+    export interface StyleEffects {
+      cornerRadius?: string | null
+      shadowStyle?: string | null
+      designPhilosophy?: string | null
+    }
     export interface StyleGenerationOutput {
       style_name?: string | null
       style_config?: StyleConfig | null
@@ -292,6 +306,14 @@ export namespace partial_types {
     export interface StyleRevisionOutput {
       revised_style?: StyleGenerationOutput | null
       revision_summary?: string | null
+    }
+    export interface StyleTypography {
+      headlineFont?: string | null
+      headlineSize?: string | null
+      headlineWeight?: string | null
+      bodyFont?: string | null
+      bodySize?: string | null
+      bodyWeight?: string | null
     }
     export interface Subject {
       description?: string | null
@@ -306,7 +328,10 @@ export namespace partial_types {
       inactive_tab_color?: string | null
       active_icon_style?: string | null
       inactive_icon_style?: string | null
-      tab_styling?: string | null
+      selection_indicator?: string | null
+      tab_bar_height?: number | null
+      icon_size?: number | null
+      label_size?: number | null
     }
     export interface TextConfig {
       header?: string | null

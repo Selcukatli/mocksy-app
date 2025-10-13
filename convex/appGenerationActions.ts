@@ -29,6 +29,32 @@ export const generateAppConcepts = action({
         style_description: v.string(),
         app_icon_prompt: v.string(),
         cover_image_prompt: v.string(),
+        // Structured design system fields
+        colors: v.optional(
+          v.object({
+            primary: v.string(),
+            background: v.string(),
+            text: v.string(),
+            accent: v.string(),
+          })
+        ),
+        typography: v.optional(
+          v.object({
+            headlineFont: v.string(),
+            headlineSize: v.string(),
+            headlineWeight: v.string(),
+            bodyFont: v.string(),
+            bodySize: v.string(),
+            bodyWeight: v.string(),
+          })
+        ),
+        effects: v.optional(
+          v.object({
+            cornerRadius: v.string(),
+            shadowStyle: v.string(),
+            designPhilosophy: v.string(),
+          })
+        ),
       })
     ),
   }),
@@ -42,6 +68,26 @@ export const generateAppConcepts = action({
       style_description: string;
       app_icon_prompt: string;
       cover_image_prompt: string;
+      // Structured design system fields
+      colors?: {
+        primary: string;
+        background: string;
+        text: string;
+        accent: string;
+      };
+      typography?: {
+        headlineFont: string;
+        headlineSize: string;
+        headlineWeight: string;
+        bodyFont: string;
+        bodySize: string;
+        bodyWeight: string;
+      };
+      effects?: {
+        cornerRadius: string;
+        shadowStyle: string;
+        designPhilosophy: string;
+      };
     }>;
   }> => {
     // Get user's profile
@@ -108,6 +154,32 @@ export const generateConceptImages = internalAction({
         style_description: v.string(),
         app_icon_prompt: v.string(),
         cover_image_prompt: v.string(),
+        // Structured design system fields
+        colors: v.optional(
+          v.object({
+            primary: v.string(),
+            background: v.string(),
+            text: v.string(),
+            accent: v.string(),
+          })
+        ),
+        typography: v.optional(
+          v.object({
+            headlineFont: v.string(),
+            headlineSize: v.string(),
+            headlineWeight: v.string(),
+            bodyFont: v.string(),
+            bodySize: v.string(),
+            bodyWeight: v.string(),
+          })
+        ),
+        effects: v.optional(
+          v.object({
+            cornerRadius: v.string(),
+            shadowStyle: v.string(),
+            designPhilosophy: v.string(),
+          })
+        ),
       })
     ),
   },
@@ -191,7 +263,34 @@ export const generateAppFromConcept = action({
       style_description: v.string(),
       icon_url: v.optional(v.string()),
       cover_url: v.optional(v.string()),
+      // Structured design system fields
+      colors: v.optional(
+        v.object({
+          primary: v.string(),
+          background: v.string(),
+          text: v.string(),
+          accent: v.string(),
+        })
+      ),
+      typography: v.optional(
+        v.object({
+          headlineFont: v.string(),
+          headlineSize: v.string(),
+          headlineWeight: v.string(),
+          bodyFont: v.string(),
+          bodySize: v.string(),
+          bodyWeight: v.string(),
+        })
+      ),
+      effects: v.optional(
+        v.object({
+          cornerRadius: v.string(),
+          shadowStyle: v.string(),
+          designPhilosophy: v.string(),
+        })
+      ),
     }),
+    skipScreenshots: v.optional(v.boolean()), // If true, only download images and create app, skip screenshot generation
     numScreens: v.optional(v.number()), // Default: 5
     screenshotSizeId: v.optional(v.id("screenshotSizes")),
   },
@@ -241,6 +340,7 @@ export const generateAppFromConcept = action({
       appId,
       jobId,
       concept: args.concept,
+      skipScreenshots: args.skipScreenshots || false,
       numScreens,
       screenshotSizeId: args.screenshotSizeId,
     });
@@ -272,7 +372,34 @@ export const generateAppFromConceptInternal = internalAction({
       style_description: v.string(),
       icon_url: v.optional(v.string()),
       cover_url: v.optional(v.string()),
+      // Structured design system fields
+      colors: v.optional(
+        v.object({
+          primary: v.string(),
+          background: v.string(),
+          text: v.string(),
+          accent: v.string(),
+        })
+      ),
+      typography: v.optional(
+        v.object({
+          headlineFont: v.string(),
+          headlineSize: v.string(),
+          headlineWeight: v.string(),
+          bodyFont: v.string(),
+          bodySize: v.string(),
+          bodyWeight: v.string(),
+        })
+      ),
+      effects: v.optional(
+        v.object({
+          cornerRadius: v.string(),
+          shadowStyle: v.string(),
+          designPhilosophy: v.string(),
+        })
+      ),
     }),
+    skipScreenshots: v.boolean(),
     numScreens: v.number(),
     screenshotSizeId: v.optional(v.id("screenshotSizes")),
   },
@@ -325,6 +452,19 @@ export const generateAppFromConceptInternal = internalAction({
       });
 
       console.log("✅ Phase 1 complete: Images downloaded and stored");
+
+      // If skipScreenshots is true, stop here and mark as preview_ready
+      if (args.skipScreenshots) {
+        console.log("⏸️  Skipping screenshot generation - preview mode");
+        await ctx.runMutation(internal.appGenerationJobs.updateAppGenerationJob, {
+          jobId: args.jobId,
+          status: "preview_ready",
+          currentStep: "Ready for screenshot generation",
+          progressPercentage: 100,
+        });
+        console.log("✅ App concept saved successfully - ready for preview");
+        return;
+      }
 
       // ===== PHASE 2: Generate app structure plan (30% progress) =====
       console.log("🏗️  Phase 2: Generating app structure plan...");

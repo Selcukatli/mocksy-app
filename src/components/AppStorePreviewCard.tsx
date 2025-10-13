@@ -437,7 +437,10 @@ export default function AppStorePreviewCard({
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-foreground">Preview</h2>
               <span className="text-sm text-muted-foreground">
-                {screenUrls.length} {screenUrls.length === 1 ? 'screenshot' : 'screenshots'}
+                {isLoading && screenUrls.length === 0 
+                  ? 'Generating screenshots...' 
+                  : `${screenUrls.length} ${screenUrls.length === 1 ? 'screenshot' : 'screenshots'}`
+                }
               </span>
             </div>
 
@@ -468,7 +471,7 @@ export default function AppStorePreviewCard({
 
                 <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-hide snap-x snap-mandatory">
                   <div className="flex gap-6 pb-2">
-                    {Array.from({ length: Math.max(totalScreens, screenUrls.length) }).map((_, index) => {
+                    {Array.from({ length: Math.max(totalScreens, screenUrls.length, isLoading ? 5 : 0) }).map((_, index) => {
                       const screenUrl = screenUrls[index];
                       const colors = [
                         'from-blue-500/20 via-purple-500/20 to-pink-500/20',

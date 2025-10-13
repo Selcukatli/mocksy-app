@@ -27,7 +27,7 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
-    AppConcept: ClassViewer<'AppConcept', "app_name" | "app_subtitle" | "app_description" | "app_category" | "style_description" | "app_icon_prompt" | "cover_image_prompt">;
+    AppConcept: ClassViewer<'AppConcept', "app_name" | "app_subtitle" | "app_description" | "app_category" | "colors" | "typography" | "effects" | "style_description" | "app_icon_prompt" | "cover_image_prompt">;
     
     AppConceptsOutput: ClassViewer<'AppConceptsOutput', "concepts">;
     
@@ -89,19 +89,25 @@ export default class TypeBuilder {
     
     ScreenshotTreatment: ClassViewer<'ScreenshotTreatment', "treatment" | "preserve" | "forbidden">;
     
+    StyleColors: ClassViewer<'StyleColors', "primary" | "background" | "text" | "accent">;
+    
     StyleConfig: ClassViewer<'StyleConfig', "background_color" | "details" | "text_style" | "device_style">;
     
     StyleDemoOutput: ClassViewer<'StyleDemoOutput', "app_concept" | "app_icon_prompt" | "screenshots">;
     
     StyleDemoScreenshotConfig: ClassViewer<'StyleDemoScreenshotConfig', "header_copy" | "subheader_copy" | "header_position" | "device_orientation" | "device_position" | "app_screen_prompt">;
     
+    StyleEffects: ClassViewer<'StyleEffects', "cornerRadius" | "shadowStyle" | "designPhilosophy">;
+    
     StyleGenerationOutput: ClassViewer<'StyleGenerationOutput', "style_name" | "style_config" | "device_reference_prompt" | "preview_image_prompt">;
     
     StyleRevisionOutput: ClassViewer<'StyleRevisionOutput', "revised_style" | "revision_summary">;
     
+    StyleTypography: ClassViewer<'StyleTypography', "headlineFont" | "headlineSize" | "headlineWeight" | "bodyFont" | "bodySize" | "bodyWeight">;
+    
     Subject: ClassViewer<'Subject', "description" | "action" | "position">;
     
-    TabStructure: ClassViewer<'TabStructure', "has_tabs" | "tab_names" | "tab_icon_descriptions" | "active_tab_color" | "inactive_tab_color" | "active_icon_style" | "inactive_icon_style" | "tab_styling">;
+    TabStructure: ClassViewer<'TabStructure', "has_tabs" | "tab_names" | "tab_icon_descriptions" | "active_tab_color" | "inactive_tab_color" | "active_icon_style" | "inactive_icon_style" | "selection_indicator" | "tab_bar_height" | "icon_size" | "label_size">;
     
     TextConfig: ClassViewer<'TextConfig', "header" | "subheader">;
     
@@ -112,7 +118,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "AppConcept","AppConceptsOutput","AppScreenPromptsOutput","AppStructure","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","CoverImagePrompt","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenDetail","ScreenImagePrompt","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TabStructure","TextConfig","VisionTestResponse",
+            "AppConcept","AppConceptsOutput","AppScreenPromptsOutput","AppStructure","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","CoverImagePrompt","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenDetail","ScreenImagePrompt","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleColors","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleEffects","StyleGenerationOutput","StyleRevisionOutput","StyleTypography","Subject","TabStructure","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -121,7 +127,7 @@ export default class TypeBuilder {
         });
         
         this.AppConcept = this.tb.classViewer("AppConcept", [
-          "app_name","app_subtitle","app_description","app_category","style_description","app_icon_prompt","cover_image_prompt",
+          "app_name","app_subtitle","app_description","app_category","colors","typography","effects","style_description","app_icon_prompt","cover_image_prompt",
         ]);
         
         this.AppConceptsOutput = this.tb.classViewer("AppConceptsOutput", [
@@ -244,6 +250,10 @@ export default class TypeBuilder {
           "treatment","preserve","forbidden",
         ]);
         
+        this.StyleColors = this.tb.classViewer("StyleColors", [
+          "primary","background","text","accent",
+        ]);
+        
         this.StyleConfig = this.tb.classViewer("StyleConfig", [
           "background_color","details","text_style","device_style",
         ]);
@@ -256,6 +266,10 @@ export default class TypeBuilder {
           "header_copy","subheader_copy","header_position","device_orientation","device_position","app_screen_prompt",
         ]);
         
+        this.StyleEffects = this.tb.classViewer("StyleEffects", [
+          "cornerRadius","shadowStyle","designPhilosophy",
+        ]);
+        
         this.StyleGenerationOutput = this.tb.classViewer("StyleGenerationOutput", [
           "style_name","style_config","device_reference_prompt","preview_image_prompt",
         ]);
@@ -264,12 +278,16 @@ export default class TypeBuilder {
           "revised_style","revision_summary",
         ]);
         
+        this.StyleTypography = this.tb.classViewer("StyleTypography", [
+          "headlineFont","headlineSize","headlineWeight","bodyFont","bodySize","bodyWeight",
+        ]);
+        
         this.Subject = this.tb.classViewer("Subject", [
           "description","action","position",
         ]);
         
         this.TabStructure = this.tb.classViewer("TabStructure", [
-          "has_tabs","tab_names","tab_icon_descriptions","active_tab_color","inactive_tab_color","active_icon_style","inactive_icon_style","tab_styling",
+          "has_tabs","tab_names","tab_icon_descriptions","active_tab_color","inactive_tab_color","active_icon_style","inactive_icon_style","selection_indicator","tab_bar_height","icon_size","label_size",
         ]);
         
         this.TextConfig = this.tb.classViewer("TextConfig", [

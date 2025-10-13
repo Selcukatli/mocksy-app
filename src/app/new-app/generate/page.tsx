@@ -175,7 +175,7 @@ export default function GenerateNewAppPage() {
     }
   };
 
-  const handleSelectConcept = async (index: number) => {
+  const handleSelectConcept = async (index: number, editedValues?: Partial<AppConcept>) => {
     if (isGeneratingApp) return;
     
     setSelectedConceptIndex(index);
@@ -196,21 +196,24 @@ export default function GenerateNewAppPage() {
 
     try {
       // Use new action to generate app from concept
-      const { appId, jobId } = await generateAppFromConcept({
+      // Start full generation immediately - no preview step
+      // Use edited values if provided, otherwise use original concept values
+      const { appId } = await generateAppFromConcept({
         concept: {
-          app_name: selectedConcept.app_name,
-          app_subtitle: selectedConcept.app_subtitle,
-          app_description: selectedConcept.app_description,
+          app_name: editedValues?.app_name ?? selectedConcept.app_name,
+          app_subtitle: editedValues?.app_subtitle ?? selectedConcept.app_subtitle,
+          app_description: editedValues?.app_description ?? selectedConcept.app_description,
           app_category: selectedConcept.app_category || 'Lifestyle', // Default category for backward compatibility
           style_description: selectedConcept.style_description,
           icon_url: selectedConcept.icon_url,
           cover_url: selectedConcept.cover_url,
         },
-        // numScreens: 5, // optional, defaults to 5
+        // No skipScreenshots - start full generation
+        numScreens: 5, // Generate 5 screenshots
       });
 
-      // Navigate to generation progress page
-      router.push(`/app/${appId}/generation?jobId=${jobId}`);
+      // Navigate directly to appstore view with progressive loading
+      router.push(`/appstore/${appId}`);
     } catch (error) {
       console.error('Failed to generate app from concept', error);
       setIsGeneratingApp(false);
@@ -243,8 +246,60 @@ export default function GenerateNewAppPage() {
 
   const disabled = !idea.trim() || isGeneratingConcepts;
 
+  // Calculate progress based on concept job status OR if actively generating
+  const conceptProgress = (() => {
+    // If we're generating but don't have a job yet, show initial progress
+    if (isGeneratingConcepts && !conceptJob) {
+      return { progress: 10, message: 'Starting generation...' };
+    }
+    
+    // If we have a job, show progress based on status
+    if (conceptJob) {
+      const status = conceptJob.status;
+      if (status === 'generating_concepts') return { progress: 30, message: 'Generating concepts...' };
+      if (status === 'generating_images') return { progress: 70, message: 'Generating images...' };
+      if (status === 'completed') return { progress: 100, message: 'Concepts ready!' };
+      return { progress: 10, message: 'Starting...' };
+    }
+    
+    return null;
+  })();
+
+  const showProgress = view === 'concepts' && (isGeneratingConcepts || (conceptJob && conceptJob.status !== 'completed' && conceptJob.status !== 'failed'));
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
+      {/* Sticky Progress Bar */}
+      {showProgress && conceptProgress && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl"
+        >
+          <div className="mx-auto max-w-6xl px-6 py-3 md:px-12">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              <p className="text-sm font-medium text-primary flex-1">
+                {conceptProgress.message}
+              </p>
+              <span className="text-xs text-muted-foreground font-mono">
+                {Math.round(conceptProgress.progress)}%
+              </span>
+            </div>
+            {/* Progress Bar */}
+            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-primary rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${conceptProgress.progress}%` }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+              />
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <Toast
         message={toast.message}
         type={toast.type}
@@ -396,10 +451,10 @@ export default function GenerateNewAppPage() {
                   <ArrowLeft className="h-4 w-4" />
                   Back to form
                 </button>
-                <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+                <h1 className="mt-4 text-center text-4xl font-bold tracking-tight sm:text-5xl">
                   {concepts.length > 0 ? 'Pick your favorite concept' : 'Generating concepts...'}
                 </h1>
-                <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+                <p className="mt-3 text-center text-base text-muted-foreground sm:text-lg">
                   {concepts.length > 0 
                     ? 'We generated 4 unique visual concepts. Select one to continue with full app generation.'
                     : 'Creating 4 unique app concepts tailored to your idea. This will take about 15-20 seconds.'
@@ -438,8 +493,14 @@ export default function GenerateNewAppPage() {
                       >
                         {/* Cover skeleton with overlaid icon/text */}
                         <div className="relative bg-muted-foreground/10">
-                          {/* Cover image skeleton */}
-                          <div className="aspect-[2/1] w-full animate-pulse bg-muted-foreground/15" />
+                          {/* Cover image skeleton with gradient mask */}
+                          <div 
+                            className="aspect-[2/1] w-full animate-pulse bg-muted-foreground/15"
+                            style={{
+                              maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                            }}
+                          />
                           
                           {/* Icon + Title skeleton (overlapping) */}
                           <div className="relative -mt-12 flex items-start gap-4 p-5">
@@ -490,8 +551,8 @@ export default function GenerateNewAppPage() {
           <AppConceptDetailModal
             concept={concepts[viewingConceptIndex]}
             isSelected={selectedConceptIndex === viewingConceptIndex}
-            onSelect={() => {
-              handleSelectConcept(viewingConceptIndex);
+            onSelect={(editedValues) => {
+              handleSelectConcept(viewingConceptIndex, editedValues);
               setViewingConceptIndex(null);
             }}
             onClose={() => setViewingConceptIndex(null)}

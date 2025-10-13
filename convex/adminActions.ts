@@ -180,6 +180,37 @@ export const isFeatured = query({
 });
 
 /**
+ * Query to check if the current user can delete an app (is owner OR is admin)
+ */
+export const canDeleteApp = query({
+  args: {
+    appId: v.id("apps"),
+  },
+  returns: v.object({
+    canDelete: v.boolean(),
+    isOwner: v.boolean(),
+    isAdmin: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const profile = await getCurrentUser(ctx);
+    if (!profile) {
+      return { canDelete: false, isOwner: false, isAdmin: false };
+    }
+
+    const app = await ctx.db.get(args.appId);
+    if (!app) {
+      return { canDelete: false, isOwner: false, isAdmin: false };
+    }
+
+    const isOwner = app.profileId === profile._id;
+    const isAdmin = profile.isAdmin === true;
+    const canDelete = isOwner || isAdmin;
+
+    return { canDelete, isOwner, isAdmin };
+  },
+});
+
+/**
  * Admin-only query to get all apps with their featured status
  */
 export const getAllAppsForAdmin = query({

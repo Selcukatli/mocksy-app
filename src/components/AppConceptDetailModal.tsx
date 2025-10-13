@@ -6,11 +6,40 @@ import { useState, useEffect } from 'react';
 import { useDominantColor } from '@/hooks/useDominantColor';
 import { Button } from '@/components/ui/button';
 
+type StyleColors = {
+  primary: string;
+  background: string;
+  text: string;
+  accent: string;
+};
+
+type StyleTypography = {
+  headlineFont: string;
+  headlineSize: string;
+  headlineWeight: string;
+  bodyFont: string;
+  bodySize: string;
+  bodyWeight: string;
+};
+
+type StyleEffects = {
+  cornerRadius: string;
+  shadowStyle: string;
+  designPhilosophy: string;
+};
+
 type AppConcept = {
   app_name: string;
   app_subtitle: string;
   app_description: string;
   app_category?: string; // Optional for backward compatibility
+  
+  // Structured design system
+  colors?: StyleColors;
+  typography?: StyleTypography;
+  effects?: StyleEffects;
+  
+  // Legacy text description (fallback)
   style_description: string;
   icon_url?: string;
   cover_url?: string;
@@ -19,7 +48,7 @@ type AppConcept = {
 interface AppConceptDetailModalProps {
   concept: AppConcept;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (editedConcept?: Partial<AppConcept>) => void;
   onClose: () => void;
 }
 
@@ -32,6 +61,7 @@ interface TypographyStyle {
   label: string;
   size: string;
   weight: string;
+  font?: string;
   sample: string;
 }
 
@@ -136,16 +166,49 @@ export default function AppConceptDetailModal({
   const [iconLoaded, setIconLoaded] = useState(false);
   const [coverLoaded, setCoverLoaded] = useState(false);
   
+  // Editable fields state
+  const [editedName, setEditedName] = useState(concept.app_name);
+  const [editedSubtitle, setEditedSubtitle] = useState(concept.app_subtitle);
+  const [editedDescription, setEditedDescription] = useState(concept.app_description);
+  
   // Extract dominant color from cover image
   const { color: dominantColor, isLight: isLightBackground } = useDominantColor(concept.cover_url);
   
   // Make the color fully opaque for modal (override 0.85 opacity from hook)
   const opaqueColor = dominantColor ? dominantColor.replace(/rgba\(([^)]+),\s*[\d.]+\)/, 'rgba($1, 1)') : undefined;
   
-  // Parse style guide
-  const colors = parseColors(concept.style_description);
-  const typography = parseTypography(concept.style_description);
-  const effects = parseDesignEffects(concept.style_description);
+  // Use structured data if available, otherwise parse from text (legacy support)
+  const colors = concept.colors 
+    ? [
+        { hex: concept.colors.primary, label: 'Primary' },
+        { hex: concept.colors.background, label: 'Background' },
+        { hex: concept.colors.text, label: 'Text' },
+        { hex: concept.colors.accent, label: 'Accent' },
+      ]
+    : parseColors(concept.style_description);
+  
+  const typography = concept.typography
+    ? [
+        {
+          label: 'Headline',
+          size: concept.typography.headlineSize,
+          weight: concept.typography.headlineWeight,
+          font: concept.typography.headlineFont,
+          sample: 'The quick brown fox',
+        },
+        {
+          label: 'Body',
+          size: concept.typography.bodySize,
+          weight: concept.typography.bodyWeight,
+          font: concept.typography.bodyFont,
+          sample: 'The quick brown fox jumps over the lazy dog',
+        },
+      ]
+    : parseTypography(concept.style_description).map(t => ({ ...t, font: undefined }));
+  
+  const effects = concept.effects
+    ? { corners: concept.effects.cornerRadius, shadows: concept.effects.shadowStyle }
+    : parseDesignEffects(concept.style_description);
   
   // Reset loaded states when URLs change
   useEffect(() => {
@@ -194,13 +257,7 @@ export default function AppConceptDetailModal({
           {/* Cover Image */}
           <div className="relative w-full aspect-[2/1]">
             {concept.cover_url ? (
-              <div 
-                className="absolute inset-0"
-                style={{
-                  maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-                }}
-              >
+              <div className="absolute inset-0 image-mask-fade">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={concept.cover_url}
@@ -238,35 +295,48 @@ export default function AppConceptDetailModal({
               )}
             </div>
             
-            {/* Name + Subtitle */}
-            <div className="flex-1 min-w-0 pt-2">
-              <h2 className={`text-3xl md:text-4xl font-bold drop-shadow-lg ${
-                dominantColor 
-                  ? (isLightBackground ? 'text-gray-900' : 'text-white')
-                  : 'text-foreground'
-              }`}>
-                {concept.app_name}
-              </h2>
-              <p className={`text-base md:text-lg font-medium drop-shadow mt-1 ${
-                dominantColor
-                  ? (isLightBackground ? 'text-gray-800' : 'text-gray-100')
-                  : 'text-muted-foreground'
-              }`}>
-                {concept.app_subtitle}
-              </p>
+            {/* Name + Subtitle (Editable on hover) */}
+            <div className="flex-1 min-w-0 pt-2 space-y-1">
+              <input
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                className={`w-full text-3xl md:text-4xl font-bold drop-shadow-lg bg-transparent hover:bg-white/10 focus:bg-white/15 outline-none rounded-lg px-3 py-2 -mx-3 -my-2 transition-all cursor-text ${
+                  dominantColor 
+                    ? (isLightBackground ? 'text-gray-900 placeholder:text-gray-400' : 'text-white placeholder:text-gray-300')
+                    : 'text-foreground'
+                }`}
+                placeholder="App name"
+              />
+              <input
+                type="text"
+                value={editedSubtitle}
+                onChange={(e) => setEditedSubtitle(e.target.value)}
+                className={`w-full text-base md:text-lg font-medium drop-shadow bg-transparent hover:bg-white/10 focus:bg-white/15 outline-none rounded-lg px-3 py-1.5 -mx-3 -my-1.5 transition-all cursor-text ${
+                  dominantColor
+                    ? (isLightBackground ? 'text-gray-800 placeholder:text-gray-400' : 'text-gray-100 placeholder:text-gray-300')
+                    : 'text-muted-foreground'
+                }`}
+                placeholder="App subtitle"
+                maxLength={30}
+              />
             </div>
           </div>
         </div>
         
-        {/* Description */}
+        {/* Description (Editable on hover) */}
         <div className="p-6">
-          <p className={`leading-relaxed ${
-            dominantColor 
-              ? (isLightBackground ? 'text-gray-900' : 'text-white')
-              : 'text-foreground'
-          }`}>
-            {concept.app_description}
-          </p>
+          <textarea
+            value={editedDescription}
+            onChange={(e) => setEditedDescription(e.target.value)}
+            rows={8}
+            className={`w-full leading-relaxed resize-none bg-transparent hover:bg-white/5 focus:bg-white/10 outline-none rounded-lg px-4 py-3 transition-all cursor-text ${
+              dominantColor 
+                ? (isLightBackground ? 'text-gray-900 placeholder:text-gray-500' : 'text-white placeholder:text-gray-400')
+                : 'text-foreground placeholder:text-muted-foreground'
+            }`}
+            placeholder="App description"
+          />
         </div>
         
         {/* Design System Section - Card */}
@@ -282,9 +352,9 @@ export default function AppConceptDetailModal({
                 : 'text-foreground'
             }`}>Design System</h3>
             
-            {/* Color Palette */}
+            {/* Color Palette - Full Width */}
             {colors.length > 0 && (
-              <div className="mb-6">
+              <div>
                 <h4 className={`text-sm font-medium mb-3 flex items-center gap-2 ${
                   dominantColor 
                     ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
@@ -293,15 +363,15 @@ export default function AppConceptDetailModal({
                   <Palette className="h-4 w-4" />
                   Color Palette
                 </h4>
-                <div className="flex flex-wrap gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {colors.map((color, index) => (
-                    <div key={index} className="flex flex-col items-center gap-2">
+                    <div key={index} className="flex flex-col items-stretch gap-2">
                       <div
-                        className="h-12 w-12 rounded-lg border-2 border-border shadow-sm"
+                        className="h-20 w-full rounded-lg shadow-md transition-transform hover:scale-105"
                         style={{ backgroundColor: color.hex }}
                       />
                       <div className="text-center">
-                        <div className={`text-xs font-medium ${
+                        <div className={`text-sm font-medium ${
                           dominantColor 
                             ? (isLightBackground ? 'text-gray-900' : 'text-white')
                             : 'text-foreground'
@@ -310,7 +380,7 @@ export default function AppConceptDetailModal({
                           dominantColor 
                             ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
                             : 'text-muted-foreground'
-                        }`}>{color.hex}</div>
+                        }`}>{color.hex.toUpperCase()}</div>
                       </div>
                     </div>
                   ))}
@@ -318,95 +388,145 @@ export default function AppConceptDetailModal({
               </div>
             )}
             
-            {/* Typography */}
-            {typography.length > 0 && (
-              <div className="mb-6">
-                <h4 className={`text-sm font-medium mb-3 flex items-center gap-2 ${
-                  dominantColor 
-                    ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
-                    : 'text-muted-foreground'
-                }`}>
-                  <Type className="h-4 w-4" />
-                  Typography
-                </h4>
-                <div className="space-y-3">
-                  {typography.map((typo, index) => (
-                    <div key={index} className={`rounded-lg border p-3 ${
-                      dominantColor 
-                        ? (isLightBackground ? 'bg-gray-50 border-gray-900/20' : 'bg-gray-800 border-white/20')
-                        : 'bg-muted/30 border-border'
-                    }`}>
-                      <div className="flex items-baseline justify-between mb-1">
-                        <span className={`text-xs font-medium ${
-                          dominantColor 
-                            ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
-                            : 'text-muted-foreground'
-                        }`}>{typo.label}</span>
-                        <span className={`text-xs ${
-                          dominantColor 
-                            ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
-                            : 'text-muted-foreground'
-                        }`}>{typo.size} / {typo.weight}</span>
+            {/* Two Column Layout for Typography and Effects */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Typography - Live Preview with actual fonts and colors */}
+              {typography.length > 0 && (
+                <div>
+                  <h4 className={`text-sm font-medium mb-3 flex items-center gap-2 ${
+                    dominantColor 
+                      ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
+                      : 'text-muted-foreground'
+                  }`}>
+                    <Type className="h-4 w-4" />
+                    Typography
+                  </h4>
+                  <div className="space-y-4">
+                    {typography.map((typo, index) => (
+                      <div key={index}>
+                        <div className="flex items-baseline justify-between mb-2">
+                          <span className={`text-xs font-medium ${
+                            dominantColor 
+                              ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
+                              : 'text-muted-foreground'
+                          }`}>{typo.label}</span>
+                          <span className={`text-xs font-mono ${
+                            dominantColor 
+                              ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
+                              : 'text-muted-foreground'
+                          }`}>
+                            {typo.font && `${typo.font}, `}{typo.size} / {typo.weight}
+                          </span>
+                        </div>
+                        {/* Live Preview Box with actual app colors */}
+                        <div 
+                          className="rounded-lg p-4 shadow-sm"
+                          style={{
+                            backgroundColor: concept.colors?.background || '#FFFFFF',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontFamily: typo.font || 'inherit',
+                              fontSize: typo.size,
+                              fontWeight: typo.weight,
+                              color: concept.colors?.text || '#000000',
+                            }}
+                          >
+                            {typo.sample}
+                          </div>
+                        </div>
                       </div>
-                      <div
-                        className={dominantColor 
-                          ? (isLightBackground ? 'text-gray-900' : 'text-white')
-                          : 'text-foreground'
-                        }
-                        style={{
-                          fontSize: typo.size,
-                          fontWeight: typo.weight,
-                        }}
-                      >
-                        {typo.sample}
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Design Effects - Live Preview */}
+              {(effects.corners || effects.shadows) && (
+                <div>
+                  <h4 className={`text-sm font-medium mb-3 flex items-center gap-2 ${
+                    dominantColor 
+                      ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
+                      : 'text-muted-foreground'
+                  }`}>
+                    <Box className="h-4 w-4" />
+                    Design Effects
+                  </h4>
+                  
+                  {/* Visual samples of effects */}
+                  <div className="space-y-4">
+                    {effects.corners && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`text-xs font-medium ${
+                            dominantColor 
+                              ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
+                              : 'text-muted-foreground'
+                          }`}>Corner Radius</span>
+                          <span className={`text-xs font-mono ${
+                            dominantColor 
+                              ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
+                              : 'text-muted-foreground'
+                          }`}>{effects.corners}</span>
+                        </div>
+                        {/* Sample element with corner radius */}
+                        <div 
+                          className="h-16 flex items-center justify-center text-sm font-medium"
+                          style={{
+                            backgroundColor: concept.colors?.primary || '#7EC8B8',
+                            color: '#FFFFFF',
+                            borderRadius: effects.corners,
+                          }}
+                        >
+                          Sample Button
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Design Effects */}
-            {(effects.corners || effects.shadows) && (
-              <div>
-                <h4 className={`text-sm font-medium mb-3 flex items-center gap-2 ${
-                  dominantColor 
-                    ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
-                    : 'text-muted-foreground'
-                }`}>
-                  <Box className="h-4 w-4" />
-                  Design Effects
-                </h4>
-                <div className="space-y-2 text-sm">
-                  {effects.corners && (
-                    <div className="flex items-center justify-between">
-                      <span className={dominantColor 
-                        ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
-                        : 'text-muted-foreground'
-                      }>Corner Radius:</span>
-                      <span className={`font-mono ${
+                    )}
+                    
+                    {effects.shadows && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`text-xs font-medium ${
+                            dominantColor 
+                              ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
+                              : 'text-muted-foreground'
+                          }`}>Shadow Style</span>
+                          <span className={`text-xs font-mono ${
+                            dominantColor 
+                              ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
+                              : 'text-muted-foreground'
+                          }`}>{effects.shadows}</span>
+                        </div>
+                        {/* Sample card with shadow */}
+                        <div 
+                          className="p-4 flex items-center justify-center text-sm font-medium"
+                          style={{
+                            backgroundColor: concept.colors?.background || '#FFFFFF',
+                            color: concept.colors?.text || '#000000',
+                            borderRadius: effects.corners || '12px',
+                            boxShadow: effects.shadows,
+                          }}
+                        >
+                          Sample Card
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Design Philosophy */}
+                    {concept.effects?.designPhilosophy && (
+                      <div className={`mt-3 p-3 rounded-lg text-xs leading-relaxed italic ${
                         dominantColor 
-                          ? (isLightBackground ? 'text-gray-900' : 'text-white')
-                          : 'text-foreground'
-                      }`}>{effects.corners}</span>
-                    </div>
-                  )}
-                  {effects.shadows && (
-                    <div className="flex items-start justify-between gap-4">
-                      <span className={dominantColor 
-                        ? (isLightBackground ? 'text-gray-600' : 'text-gray-300')
-                        : 'text-muted-foreground'
-                      }>Shadows:</span>
-                      <span className={`font-mono text-right flex-1 ${
-                        dominantColor 
-                          ? (isLightBackground ? 'text-gray-900' : 'text-white')
-                          : 'text-foreground'
-                      }`}>{effects.shadows}</span>
-                    </div>
-                  )}
+                          ? (isLightBackground ? 'bg-gray-50 text-gray-600' : 'bg-gray-800 text-gray-300')
+                          : 'bg-muted/30 text-muted-foreground'
+                      }`}>
+                        {concept.effects.designPhilosophy}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             
             {/* Full Style Description */}
             <div className={`mt-4 rounded-lg p-4 ${
@@ -434,13 +554,7 @@ export default function AppConceptDetailModal({
           }`}
         >
           {/* Blur layer with gradient mask */}
-          <div 
-            className="absolute inset-0 backdrop-blur-xl"
-            style={{
-              maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-            }}
-          />
+          <div className="absolute inset-0 backdrop-blur-xl mask-fade-top" />
           
           {/* Color gradient layer */}
           <div 
@@ -452,7 +566,11 @@ export default function AppConceptDetailModal({
             }}
           >
           <Button
-            onClick={onSelect}
+            onClick={() => onSelect({
+              app_name: editedName,
+              app_subtitle: editedSubtitle,
+              app_description: editedDescription,
+            })}
             size="lg"
             className="w-full"
             disabled={isSelected}

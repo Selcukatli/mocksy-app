@@ -5,11 +5,38 @@
 // APP CONCEPT CLASSES
 // ============================================
 
+class StyleColors {
+  primary string @description("Primary brand color as hex code (e.g., '#7EC8B8'). Used for buttons, CTAs, and key accents.")
+  background string @description("Background color as hex code (e.g., '#FFFFFF' for white, '#1A1A1A' for dark). Main canvas color.")
+  text string @description("Primary text color as hex code (e.g., '#2C3E50'). For body text and headlines.")
+  accent string @description("Secondary accent color as hex code (e.g., '#E8F5F2'). For cards, highlights, or secondary elements.")
+}
+
+class StyleTypography {
+  headlineFont string @description("Font family for headlines (e.g., 'SF Pro Display', 'Inter Bold', 'Poppins')")
+  headlineSize string @description("Font size for headlines (e.g., '28px', '32px', '24px')")
+  headlineWeight string @description("Font weight for headlines (e.g., '700', '600', 'bold')")
+  bodyFont string @description("Font family for body text (e.g., 'SF Pro Text', 'Inter', 'Roboto')")
+  bodySize string @description("Font size for body text (e.g., '16px', '14px', '15px')")
+  bodyWeight string @description("Font weight for body text (e.g., '400', '500', 'regular')")
+}
+
+class StyleEffects {
+  cornerRadius string @description("Border radius for UI elements (e.g., '12px', '8px', '16px'). Consistent rounding value.")
+  shadowStyle string @description("Shadow specification (e.g., '0px 2px 8px rgba(0,0,0,0.1)', 'none', '0px 4px 12px rgba(0,0,0,0.15)')")
+  designPhilosophy string @description("Overall aesthetic and mood in 1-2 sentences (e.g., 'Clean minimal interface with generous whitespace for a calm, approachable feel', 'Bold cyberpunk aesthetic with neon accents and futuristic vibes')")
+}
+
 class AppConcept {
   app_name string @description("Short, catchy app name (1-3 words max, e.g., 'FitQuest', 'ZenJournal', 'ShadowVault')")
   app_subtitle string @description("App Store subtitle (30 characters MAX, including spaces). A single punchy phrase that captures the app's core value.")
   app_description string @description("Full App Store description (150-250 words, 8-12 sentences). Structure like real App Store listings: (1) OPENING HOOK: Compelling first sentence that captures the core value proposition. (2) KEY FEATURES: 3-5 standout features with specific details about what users can do. (3) BENEFITS: How it improves users' lives or solves their problems. (4) USE CASES: Specific scenarios or moments when users would use this. (5) CLOSING: Engaging final sentence or call-to-action. Make it persuasive, professional, and detailed enough to understand the full app experience. Example: 'Transform your fitness journey into an epic adventure with FitQuest. Every workout becomes a quest, every rep earns you experience points, and every milestone unlocks new challenges and rewards. Track your workouts with intelligent logging that learns your routines and suggests progressive overload. Join guilds with friends to tackle group challenges, compete on leaderboards, and celebrate victories together. Earn achievements for consistency, personal records, and completing themed quest lines. Your avatar grows stronger as you do, unlocking new abilities and gear that reflect your real-world progress. Perfect for gym-goers who want accountability, gamers seeking active hobbies, or anyone who finds traditional fitness tracking boring. Whether you're lifting weights, running, or doing yoga, FitQuest turns every session into an adventure. Start your quest today and discover how fun fitness can be.'")
   app_category string @description("App Store category. Choose the single most appropriate category from: Games, Productivity, Lifestyle, Education, Health & Fitness, Business, Social Networking, Entertainment, Photo & Video, Travel, Food & Drink, Finance, News, Sports, Weather, Music, Shopping, Utilities, Medical, Reference. If user provided category_hint, use that as guidance but adjust if another category fits better based on the app's actual functionality.")
+  
+  colors StyleColors
+  typography StyleTypography
+  effects StyleEffects
+  
   style_description string @description("Complete visual style guide (3-5 sentences). MUST include specific design tokens: (1) COLORS: Provide exact hex codes for 2-4 key colors with usage context (e.g., 'Primary: #7EC8B8 (buttons, accents), Background: #FFFFFF, Text: #1A1A1A, Secondary: #E8F5F2 (cards)'). (2) TYPOGRAPHY: Font styles with sizes (e.g., 'Headlines: 28px/700 weight, Body: 16px/400'). (3) SPACING & EFFECTS: Corner radius (8-16px), shadows (e.g., '0px 2px 8px rgba(0,0,0,0.12)'), padding guidelines. (4) DESIGN PHILOSOPHY: Overall aesthetic and mood. Example: 'Clean minimal interface. Colors: Primary #7EC8B8 (CTAs), Background #FFFFFF, Text #2C3E50, Accent #E8F5F2 (cards). Typography: Bold sans-serif headlines 28px/700, body text 16px/400. Rounded corners 12px throughout, subtle shadows 0px 2px 8px rgba(0,0,0,0.1). Generous whitespace for calm, approachable feel.'")
   app_icon_prompt string @description("Complete text-to-image prompt for generating app icon (50-100 words). CRITICAL: Icon must be SIMPLE with LARGE, BOLD symbols recognizable at small sizes. FULL BLEED design extending to all edges with NO margins or padding. 1024x1024 square, iOS-style icon design.")
   cover_image_prompt string @description("Complete text-to-image prompt for generating promotional cover/hero image (100-150 words). Horizontal banner (1920×1080). Should capture app essence visually. CRITICAL: NO TEXT in the image - purely visual storytelling.")
@@ -93,19 +120,37 @@ function GenerateAppConcepts(
     - If category_hint was provided, use it as guidance but adjust if another category fits better based on the app's actual functionality
     - If no hint provided, infer from the app description and core features
 
-    ### 5. STYLE DESCRIPTION
-    - **CRITICAL: 3-5 sentence comprehensive style guide with specific design tokens**
-    - MUST include all of the following:
-      * **COLORS** (with hex codes): Primary, Background, Text, and 1-2 accent colors. Include usage context for each.
-      * **TYPOGRAPHY**: Headline and body text styles with specific sizes (px) and weights
-      * **SPACING & EFFECTS**: Corner radius values, shadow specifications, padding/spacing guidelines
-      * **DESIGN PHILOSOPHY**: Overall aesthetic and mood description
+    ### 5. STRUCTURED STYLE DESIGN SYSTEM
+    
+    **colors** object with exactly these fields:
+    - **primary**: Primary brand color hex code (e.g., '#7EC8B8'). Used for buttons, CTAs, key accents.
+    - **background**: Background/canvas color hex code (e.g., '#FFFFFF', '#1A1A1A').
+    - **text**: Primary text color hex code (e.g., '#2C3E50', '#FFFFFF').
+    - **accent**: Secondary accent color hex code (e.g., '#E8F5F2'). For cards, highlights, secondary elements.
+
+    **typography** object with exactly these fields:
+    - **headlineFont**: Font family for headlines (e.g., 'SF Pro Display', 'Inter Bold', 'Poppins')
+    - **headlineSize**: Size for headlines (e.g., '28px', '32px', '24px')
+    - **headlineWeight**: Weight for headlines (e.g., '700', '600', 'bold')
+    - **bodyFont**: Font family for body text (e.g., 'SF Pro Text', 'Inter', 'Roboto')
+    - **bodySize**: Size for body text (e.g., '16px', '14px', '15px')
+    - **bodyWeight**: Weight for body text (e.g., '400', '500', 'regular')
+
+    **effects** object with exactly these fields:
+    - **cornerRadius**: Consistent border radius (e.g., '12px', '8px', '16px', '4px')
+    - **shadowStyle**: Shadow CSS value (e.g., '0px 2px 8px rgba(0,0,0,0.1)', 'none', '0px 4px 12px rgba(0,0,0,0.15)')
+    - **designPhilosophy**: 1-2 sentence aesthetic/mood (e.g., 'Clean minimal interface with generous whitespace for calm feel', 'Bold cyberpunk with neon accents')
+
+    ### 6. STYLE DESCRIPTION (TEXT SUMMARY)
+    - **CRITICAL: 3-5 sentence comprehensive style guide combining all design tokens above**
+    - This should be a readable summary that incorporates the colors, typography, and effects
+    - Include usage context for colors and philosophy
     - Examples of COMPLETE style descriptions:
       * "Clean minimal interface. Colors: Primary #7EC8B8 (CTAs, links), Background #FFFFFF, Text #2C3E50, Accent #E8F5F2 (cards, sections). Typography: Bold sans-serif headlines 28px/700 weight, body text 16px/400. Rounded corners 12px throughout, subtle shadows 0px 2px 8px rgba(0,0,0,0.1). Generous whitespace for calm, approachable feel."
       * "Bold dark interface. Colors: Primary #8B3DFF (actions, highlights), Background #0A0E27, Text #FFFFFF, Secondary #FF006E (accents, warnings). Typography: Extra bold headlines 32px/800, medium body 18px/500. Sharp corners 4px, dramatic shadows 0px 4px 16px rgba(0,0,0,0.4). High contrast and energetic vibe."
       * "Warm earthy palette. Colors: Primary #D4704A (CTAs), Background #FFF8F0, Text #3D2817, Accent #8BA888 (highlights, success). Typography: Friendly rounded headlines 26px/700, readable body 16px/400. Soft corners 16px, gentle shadows 0px 2px 12px rgba(61,40,23,0.08). Organic shapes create approachable, natural aesthetic."
 
-    ### 6. APP ICON PROMPT
+    ### 7. APP ICON PROMPT
     - Text-to-image prompt for the app icon (50-100 words)
     - **CRITICAL: Keep it SIMPLE - use ONE large, bold central symbol**
     - **AVOID: Small details, thin lines, complex patterns, tiny text**
@@ -116,7 +161,7 @@ function GenerateAppConcepts(
       * "iOS app icon, full bleed design. Large bold shield symbol filling the frame, bright gradient (cyan to purple) edge to edge. Simple, clean design. Minimal details. No margins or borders. 1024x1024."
       * "iOS app icon, full bleed design. Big crescent moon symbol on deep purple gradient background filling entire frame. Soft glow effect. Simple and bold. No padding or borders. 1024x1024."
 
-    ### 7. COVER IMAGE PROMPT
+    ### 8. COVER IMAGE PROMPT
     - Text-to-image prompt for promotional banner (100-150 words)
     - Format: Horizontal/landscape banner (1920×1080)
     - Purpose: Promotional hero image for app store

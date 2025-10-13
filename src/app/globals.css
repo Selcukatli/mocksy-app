@@ -148,6 +148,18 @@ body {
   filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 20px currentColor);
 }
 
+/* Image mask utility for cover image blending */
+.image-mask-fade {
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 65%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black 65%, transparent 100%);
+}
+
+/* Mask utility for footer gradient (fades from bottom to top) */
+.mask-fade-top {
+  -webkit-mask-image: linear-gradient(to top, black 0%, transparent 100%);
+  mask-image: linear-gradient(to top, black 0%, transparent 100%);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

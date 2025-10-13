@@ -2,17 +2,26 @@
 
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@convex/_generated/api';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Id } from '@convex/_generated/dataModel';
 import AppsTable from './_components/AppsTable';
 import Toast from '@/components/Toast';
 import { Search, Filter, ShieldAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { usePageHeader } from '@/components/RootLayoutContent';
 
 export default function AdminPage() {
   const router = useRouter();
   const { isLoaded: isClerkLoaded } = useUser();
+  const { setBreadcrumbs, setSidebarMode } = usePageHeader();
+
+  useEffect(() => {
+    setSidebarMode('overlay');
+    setBreadcrumbs([
+      { label: 'Admin' }
+    ]);
+  }, [setBreadcrumbs, setSidebarMode]);
   
   // ALWAYS call all hooks - no conditional logic
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
@@ -163,6 +172,15 @@ export default function AdminPage() {
   return (
     <>
       <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
+            <ShieldAlert className="h-5 w-5 text-primary" />
+            <span className="text-sm font-semibold text-primary">Admin Dashboard</span>
+          </div>
+          <h1 className="text-2xl font-bold">Apps Management</h1>
+        </div>
+
         {/* Stats */}
         {apps && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

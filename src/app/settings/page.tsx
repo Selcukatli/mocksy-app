@@ -1,4 +1,19 @@
+'use client';
+
+import { useEffect } from 'react';
+import { usePageHeader } from '@/components/RootLayoutContent';
+
 export default function SettingsPage() {
+  const { setBreadcrumbs, setSidebarMode } = usePageHeader();
+
+  useEffect(() => {
+    setSidebarMode('overlay');
+    setBreadcrumbs([
+      { label: 'Profile', href: '/profile' },
+      { label: 'Settings' }
+    ]);
+  }, [setBreadcrumbs, setSidebarMode]);
+
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-3xl mx-auto">

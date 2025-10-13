@@ -26,7 +26,6 @@ import {
   FolderPlus,
   HelpCircle,
   ArrowRight,
-  ArrowLeft,
   FileImage,
   Palette,
   Trash2,
@@ -196,15 +195,6 @@ export default function AppDetailPage({ params }: PageProps) {
     );
   }
 
-  const handleBack = () => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
-      return;
-    }
-
-    router.push('/dashboard/apps');
-  };
-
   const handlePublishApp = async () => {
     if (!app) return;
 
@@ -286,18 +276,10 @@ export default function AppDetailPage({ params }: PageProps) {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="px-6 pt-6 pb-4 border-b flex-shrink-0"
+            className="px-6 pt-6 pb-4 flex-shrink-0"
           >
             <div className="flex items-center justify-between gap-6">
               <div className="flex items-center gap-4 min-w-0 flex-1">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:text-foreground hover:border-muted-foreground/60 flex-shrink-0"
-                  aria-label="Back to apps"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                   {/* App Icon */}
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -664,7 +646,7 @@ export default function AppDetailPage({ params }: PageProps) {
                         </div>
 
                         {/* Set Footer */}
-                        <div className="flex items-center justify-between pt-3 border-t">
+                        <div className="flex items-center justify-between pt-3">
                           <p className="text-xs text-muted-foreground">
                             {set.filledCount || 0} screenshots
                           </p>

@@ -48,7 +48,7 @@ export default function TopHeader({
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 h-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="fixed top-0 left-0 right-0 z-40 h-16 bg-background/80 backdrop-blur-md">
       <div className="flex h-full items-center justify-between px-6">
         {/* Left: Hamburger/Collapse + Title */}
         <div className="flex items-center gap-4 min-w-0">

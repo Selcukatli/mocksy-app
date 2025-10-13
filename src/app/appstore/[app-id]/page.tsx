@@ -6,9 +6,8 @@ import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Sparkles, Star, StarOff, ImagePlus, ShieldCheck, Trash2, Settings, Eye, CheckCircle } from 'lucide-react';
+import { Sparkles, Trash2, Settings, Eye, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
 import AppsInCategoryCarousel from '@/components/AppsInCategoryCarousel';
 import ReviewsSection from '@/components/ReviewsSection';
@@ -40,7 +39,6 @@ export default function PublicAppStorePage({ params }: PageProps) {
   }> | undefined>(undefined);
   const [generatedPrompt, setGeneratedPrompt] = useState<string | undefined>(undefined);
   const [estimatedTimeMs, setEstimatedTimeMs] = useState<number | undefined>(undefined);
-  const [showAdminPopover, setShowAdminPopover] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -48,13 +46,10 @@ export default function PublicAppStorePage({ params }: PageProps) {
 
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
-  const isFeatured = useQuery(api.adminActions.isFeatured, { appId: appId as Id<'apps'> });
   const deletePermissions = useQuery(api.adminActions.canDeleteApp, { appId: appId as Id<'apps'> });
   const generationJob = useQuery(api.appGenerationJobs.getAppGenerationJobByAppId, { appId: appId as Id<'apps'> });
   const generateCoverImage = useAction(api.appGenerationActions.generateAppCoverImage);
   const saveCoverImage = useAction(api.appGenerationActions.saveAppCoverImage);
-  const featureAppMutation = useMutation(api.adminActions.featureApp);
-  const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
   const deleteAppMutation = useMutation(api.apps.deleteApp);
   const updateAppMutation = useMutation(api.apps.updateApp);
 
@@ -186,61 +181,6 @@ export default function PublicAppStorePage({ params }: PageProps) {
     }
   }, [appId, saveCoverImage]);
 
-  const handleFeatureApp = useCallback(async () => {
-    if (!appId) return;
-    setShowAdminPopover(false);
-    
-    try {
-      const result = await featureAppMutation({ appId: appId as Id<'apps'> });
-      
-      if (result.success) {
-        setToastMessage(result.message);
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage(result.message);
-        setToastType('error');
-        setShowToast(true);
-      }
-    } catch (error) {
-      console.error('Error featuring app:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to feature app';
-      setToastMessage(errorMessage);
-      setToastType('error');
-      setShowToast(true);
-    }
-  }, [appId, featureAppMutation]);
-
-  const handleUnfeatureApp = useCallback(async () => {
-    if (!appId) return;
-    setShowAdminPopover(false);
-    
-    try {
-      const result = await unfeatureAppMutation({ appId: appId as Id<'apps'> });
-      
-      if (result.success) {
-        setToastMessage(result.message);
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        setToastMessage(result.message);
-        setToastType('error');
-        setShowToast(true);
-      }
-    } catch (error) {
-      console.error('Error unfeaturing app:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to unfeature app';
-      setToastMessage(errorMessage);
-      setToastType('error');
-      setShowToast(true);
-    }
-  }, [appId, unfeatureAppMutation]);
-
-  const handleGenerateCoverFromAdmin = useCallback(() => {
-    setShowAdminPopover(false);
-    handleGenerateCoverImage();
-  }, [handleGenerateCoverImage]);
-
   const handleDeleteApp = useCallback(async () => {
     if (!appId || isDeleting) return;
     
@@ -261,11 +201,6 @@ export default function PublicAppStorePage({ params }: PageProps) {
       setIsDeleting(false);
     }
   }, [appId, isDeleting, deleteAppMutation, router]);
-
-  const handleDeleteClick = useCallback(() => {
-    setShowAdminPopover(false);
-    setShowDeleteConfirm(true);
-  }, []);
 
   // Filter out current app from similar apps
   const filteredSimilarApps = useMemo(() => {
@@ -462,79 +397,13 @@ export default function PublicAppStorePage({ params }: PageProps) {
             onGenerateCover={handleGenerateCoverImage}
             adminActionsSlot={
               deletePermissions?.canDelete ? (
-                <Popover open={showAdminPopover} onOpenChange={setShowAdminPopover}>
-                  <PopoverTrigger asChild>
-                    <button
-                      className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
-                    >
-                      <ShieldCheck className="h-4 w-4" />
-                      <span className="font-medium">{deletePermissions.isAdmin && !deletePermissions.isOwner ? 'Admin Actions' : 'Manage'}</span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent side="bottom" align="end" className="w-56 p-1">
-                    <div className="space-y-1">
-                      {/* Navigate to App Management Dashboard */}
-                      <button
-                        onClick={() => {
-                          setShowAdminPopover(false);
-                          router.push(`/app/${appId}`);
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors font-medium"
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Manage App Dashboard</span>
-                      </button>
-
-                      <div className="my-1 h-px bg-border" />
-
-                      {/* Admin-only actions */}
-                      {deletePermissions.isAdmin && (
-                        <>
-                          {/* Feature/Unfeature App */}
-                          <button
-                            onClick={isFeatured ? handleUnfeatureApp : handleFeatureApp}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                              isFeatured
-                                ? 'hover:bg-yellow-500/10 text-yellow-600'
-                                : 'hover:bg-muted'
-                            }`}
-                          >
-                            {isFeatured ? (
-                              <>
-                                <StarOff className="h-4 w-4" />
-                                <span>Remove from Featured</span>
-                              </>
-                            ) : (
-                              <>
-                                <Star className="h-4 w-4" />
-                                <span>Feature App</span>
-                              </>
-                            )}
-                          </button>
-                        </>
-                      )}
-
-                      {/* Generate Cover Image */}
-                      <button
-                        onClick={handleGenerateCoverFromAdmin}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors"
-                      >
-                        <ImagePlus className="h-4 w-4" />
-                        <span>Generate Cover Image</span>
-                      </button>
-
-                      {/* Delete App - Destructive Action */}
-                      <div className="my-1 h-px bg-border" />
-                      <button
-                        onClick={handleDeleteClick}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-destructive/10 text-destructive transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span>Delete App</span>
-                      </button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <button
+                  onClick={() => window.open(`/app/${appId}`, '_blank')}
+                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="font-medium">Manage</span>
+                </button>
               ) : undefined
             }
           />

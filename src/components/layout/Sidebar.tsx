@@ -31,7 +31,7 @@ interface SidebarProps {
   onExpandedChange?: (_expanded: boolean) => void;
 }
 
-export default function Sidebar({ mode, isExpanded }: SidebarProps) {
+export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { isSignedIn, user } = useUser();
@@ -56,7 +56,7 @@ export default function Sidebar({ mode, isExpanded }: SidebarProps) {
             damping: 30,
             mass: 0.8
           }}
-          className="h-screen flex flex-col bg-background sticky top-0 flex-shrink-0"
+          className="hidden md:flex h-screen flex-col bg-background sticky top-0 flex-shrink-0"
         >
           {/* Header */}
           <Link href="/create" className="h-16 flex items-center px-4 justify-start transition-all duration-300">
@@ -311,9 +311,20 @@ export default function Sidebar({ mode, isExpanded }: SidebarProps) {
   const renderOverlayMode = () => (
     <>
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      
+      {/* Backdrop overlay for mobile */}
+      {isExpanded && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => onExpandedChange?.(false)}
+        />
+      )}
+      
       <motion.div
         initial={false}
-        animate={{ width: isExpanded ? 256 : 0 }}
+        animate={{ 
+          width: isExpanded ? 256 : 0,
+        }}
         transition={{
           type: "spring",
           stiffness: 300,
@@ -392,10 +403,10 @@ export default function Sidebar({ mode, isExpanded }: SidebarProps) {
             </nav>
 
             {/* Divider */}
-            <div className="mx-12 my-4 border-t flex-shrink-0" />
+            <div className="mx-12 my-4 border-t flex-shrink-0 hidden md:block" />
 
-            {/* My Apps Section */}
-            <div className="flex-1 min-h-0 flex flex-col px-2">
+            {/* My Apps Section - Hidden on mobile */}
+            <div className="flex-1 min-h-0 flex-col px-2 hidden md:flex">
               <div className="px-3 mb-2 flex-shrink-0">
                 <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   My Apps

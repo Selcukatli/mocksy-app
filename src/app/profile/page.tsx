@@ -4,7 +4,7 @@ import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import {
   User,
@@ -18,7 +18,6 @@ import {
   ChevronRight,
   Camera,
   Sparkles,
-  ArrowLeft,
   Palette,
   Globe,
   Sun,
@@ -41,6 +40,7 @@ export default function ProfilePage() {
   const [syncMessage, setSyncMessage] = useState('');
 
   const syncProfile = useMutation(api.profiles.syncMyProfileFromClerk);
+  const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -113,6 +113,12 @@ export default function ProfilePage() {
           description: 'Password and authentication',
           onClick: () => openUserProfile()
         },
+        ...(isAdmin ? [{
+          icon: Shield,
+          label: 'Admin',
+          description: 'Access admin dashboard',
+          onClick: () => router.push('/admin')
+        }] : []),
       ]
     },
     {
@@ -159,41 +165,18 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
-      <div className="max-w-7xl mx-auto p-8">
-        {/* Header with Back Button */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-8 flex items-start justify-between"
-        >
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors group"
-            >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              <span>Back</span>
-            </button>
-            <div className="h-6 w-px bg-border/50" />
-            <div>
-              <h1 className="text-2xl font-bold">Account Settings</h1>
-              <p className="text-sm text-muted-foreground">Manage your profile and preferences</p>
-            </div>
-          </div>
-        </motion.div>
-
+      <div className="max-w-7xl mx-auto px-4 py-4 pb-24 md:p-8">
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
           {/* Left Column - Profile Info */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="lg:col-span-1 space-y-6"
+            className="lg:col-span-1 space-y-4 md:space-y-6"
           >
             {/* Profile Card */}
-            <div className="bg-card rounded-xl border p-6">
+            <div className="bg-card rounded-xl border p-4 md:p-6">
               <div className="flex flex-col">
                 {/* Edit and Sync buttons in top right corner */}
                 <div className="flex justify-end gap-2 mb-2">
@@ -283,7 +266,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Plan Card */}
-            <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl border p-6">
+            <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl border p-4 md:p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-primary" />
@@ -307,11 +290,11 @@ export default function ProfilePage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.2 }}
-            className="lg:col-span-2 space-y-6"
+            className="lg:col-span-2 space-y-4 md:space-y-6"
           >
             {profileSections.filter(section => section.title !== 'Account').map((section) => (
               <div key={section.title} className="bg-card rounded-xl border">
-                <div className="px-6 py-3 border-b border-border/50 bg-muted/5">
+                <div className="px-4 py-3 md:px-6 border-b border-border/50 bg-muted/5">
                   <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{section.title}</h3>
                 </div>
                 <div className="divide-y divide-border/50">
@@ -319,41 +302,41 @@ export default function ProfilePage() {
                     // Special rendering for Appearance item
                     if (item.label === 'Appearance') {
                       return (
-                        <div key={itemIndex} className="px-6 py-4 flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                        <div key={itemIndex} className="px-4 py-4 md:px-6 flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                             <Palette className="w-5 h-5 text-muted-foreground" />
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <p className="font-medium">{item.label}</p>
                             <p className="text-sm text-muted-foreground">{item.description}</p>
                           </div>
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 flex-shrink-0">
                             <Button
                               variant={theme === 'light' ? 'secondary' : 'ghost'}
                               size="sm"
                               onClick={() => setTheme('light')}
-                              className={`h-8 ${theme === 'light' ? 'bg-foreground text-background hover:bg-foreground/90' : ''}`}
+                              className={`h-8 px-2 md:px-3 ${theme === 'light' ? 'bg-foreground text-background hover:bg-foreground/90' : ''}`}
                             >
-                              <Sun className="w-4 h-4 mr-1" />
-                              Light
+                              <Sun className="w-4 h-4 md:mr-1" />
+                              <span className="hidden md:inline">Light</span>
                             </Button>
                             <Button
                               variant={theme === 'dark' ? 'secondary' : 'ghost'}
                               size="sm"
                               onClick={() => setTheme('dark')}
-                              className={`h-8 ${theme === 'dark' ? 'bg-foreground text-background hover:bg-foreground/90' : ''}`}
+                              className={`h-8 px-2 md:px-3 ${theme === 'dark' ? 'bg-foreground text-background hover:bg-foreground/90' : ''}`}
                             >
-                              <Moon className="w-4 h-4 mr-1" />
-                              Dark
+                              <Moon className="w-4 h-4 md:mr-1" />
+                              <span className="hidden md:inline">Dark</span>
                             </Button>
                             <Button
                               variant={theme === 'system' ? 'secondary' : 'ghost'}
                               size="sm"
                               onClick={() => setTheme('system')}
-                              className={`h-8 ${theme === 'system' ? 'bg-foreground text-background hover:bg-foreground/90' : ''}`}
+                              className={`h-8 px-2 md:px-3 ${theme === 'system' ? 'bg-foreground text-background hover:bg-foreground/90' : ''}`}
                             >
-                              <Monitor className="w-4 h-4 mr-1" />
-                              System
+                              <Monitor className="w-4 h-4 md:mr-1" />
+                              <span className="hidden md:inline">System</span>
                             </Button>
                           </div>
                         </div>
@@ -365,7 +348,7 @@ export default function ProfilePage() {
                       <button
                         key={itemIndex}
                         onClick={item.onClick}
-                        className="w-full px-6 py-4 flex items-center gap-4 hover:bg-muted/50 transition-colors text-left group"
+                        className="w-full px-4 py-4 md:px-6 flex items-center gap-4 hover:bg-muted/50 transition-colors text-left group"
                       >
                         <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                           <item.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -383,7 +366,7 @@ export default function ProfilePage() {
             ))}
 
             {/* Danger Zone */}
-            <div className="p-6 rounded-xl border border-destructive/20 bg-destructive/5">
+            <div className="p-4 md:p-6 rounded-xl border border-destructive/20 bg-destructive/5">
               <h3 className="text-lg font-semibold mb-2 text-destructive">Danger Zone</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Permanently delete your account and all associated data.

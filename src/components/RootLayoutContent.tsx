@@ -4,6 +4,7 @@ import { ReactNode, useState, createContext, useContext, useEffect } from 'react
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import TopHeader from '@/components/layout/TopHeader';
+import BottomTabBar from '@/components/layout/BottomTabBar';
 
 interface RootLayoutContentProps {
   children: ReactNode;
@@ -38,9 +39,12 @@ export function usePageHeader() {
 }
 
 // Define static (browse) pages - everything else defaults to overlay (dynamic)
-const staticRoutes = ['/create', '/appstore', '/settings', '/profile', '/admin'];
+const staticRoutes = ['/create', '/appstore', '/profile'];
 const getDefaultMode = (path: string | null): SidebarMode => {
-  return staticRoutes.includes(path || '') ? 'static' : 'overlay';
+  if (!path) return 'overlay';
+  
+  // Check for exact match only (no sub-routes)
+  return staticRoutes.includes(path) ? 'static' : 'overlay';
 };
 
 export default function RootLayoutContent({ children }: RootLayoutContentProps) {
@@ -72,10 +76,15 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
   };
 
   if (!shouldShowSidebar) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <BottomTabBar />
+      </>
+    );
   }
 
-  // Static mode: sidebar always visible, no overlay
+  // Static mode: sidebar always visible on desktop, bottom tabs on mobile
   if (pageSidebarMode === 'static') {
     return (
       <PageContext.Provider
@@ -96,15 +105,17 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
             isExpanded={true}
             onExpandedChange={setIsSidebarExpanded}
           />
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pb-20 md:pb-0">
             {children}
           </div>
         </div>
+        {/* Show bottom tabs only on mobile for static pages */}
+        <BottomTabBar />
       </PageContext.Provider>
     );
   }
 
-  // Overlay mode: sidebar can collapse, has top header, pushes content
+  // Overlay mode: has top header + hamburger on mobile, collapsible sidebar on desktop
   return (
     <PageContext.Provider
       value={{
@@ -133,11 +144,12 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
             onMenuClick={toggleSidebar}
             isSidebarExpanded={isSidebarExpanded}
           />
-          <div className="pt-12">
+          <div className="pt-16">
             {children}
           </div>
         </div>
       </div>
+      {/* No bottom tabs on overlay mode pages */}
     </PageContext.Provider>
   );
 }

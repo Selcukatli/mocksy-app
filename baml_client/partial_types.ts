@@ -40,6 +40,7 @@ export namespace partial_types {
       app_name?: string | null
       app_subtitle?: string | null
       app_description?: string | null
+      app_category?: string | null
       style_description?: string | null
       app_icon_prompt?: string | null
       cover_image_prompt?: string | null

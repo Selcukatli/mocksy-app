@@ -313,7 +313,7 @@ When creating or viewing a style, users can:
 5. ✅ Created mutation: `setStyleDemo` (renamed from `updateStyleDemoLinks`)
 
 ### Phase 2: Demo App Generation ✅
-1. ✅ Created `baml_src/demo-apps.baml` file
+1. ✅ Created `baml_src/app-generation.baml` file (originally demo-apps.baml, renamed for clarity)
 2. ✅ Defined `DemoAppOutput` class (app_name, app_description, app_icon_prompt)
 3. ✅ Implemented `GenerateDemoAppFromStyle` BAML function
 4. ✅ Added test cases (Cyberpunk, Zen Minimalist, Pop Art, Description-based)

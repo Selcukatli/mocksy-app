@@ -10,6 +10,7 @@ type AppConcept = {
   app_name: string;
   app_subtitle: string;
   app_description: string;
+  app_category?: string; // Optional for backward compatibility
   style_description: string;
   icon_url?: string;
   cover_url?: string;

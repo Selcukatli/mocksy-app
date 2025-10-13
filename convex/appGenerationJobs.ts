@@ -4,6 +4,8 @@ import type { Id } from "./_generated/dataModel";
 
 const jobStatusValidator = v.union(
   v.literal("pending"),
+  v.literal("downloading_images"), // Downloading icon/cover from concept
+  v.literal("generating_structure"), // Generating app structure plan
   v.literal("generating_concept"),
   v.literal("generating_icon"),
   v.literal("generating_screens"),

@@ -43,6 +43,7 @@ type AppConcept = {
   app_name: string;
   app_subtitle: string;
   app_description: string;
+  app_category?: string; // Optional for backward compatibility with existing concepts
   style_description: string;
   app_icon_prompt: string;
   cover_image_prompt: string;
@@ -54,7 +55,7 @@ export default function GenerateNewAppPage() {
   const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const generateConcepts = useAction(api.appGenerationActions.generateAppConcepts);
-  const scheduleAppGeneration = useAction(api.appGenerationActions.scheduleAppGeneration);
+  const generateAppFromConcept = useAction(api.appGenerationActions.generateAppFromConcept);
 
   // Form state
   const [idea, setIdea] = useState('');
@@ -178,21 +179,40 @@ export default function GenerateNewAppPage() {
     if (isGeneratingApp) return;
     
     setSelectedConceptIndex(index);
+    const selectedConcept = concepts[index];
+    
+    // Check if concept has required images
+    if (!selectedConcept.icon_url || !selectedConcept.cover_url) {
+      setToast({
+        message: 'Concept images are still generating. Please wait.',
+        type: 'info',
+        isOpen: true
+      });
+      setSelectedConceptIndex(null);
+      return;
+    }
+    
     setIsGeneratingApp(true);
 
     try {
-      const selectedConcept = concepts[index];
-      
-      // Call scheduleAppGeneration with the selected concept data
-      const { appId } = await scheduleAppGeneration({
-        appDescriptionInput: `${selectedConcept.app_name}: ${selectedConcept.app_description}`,
-        uiStyle: selectedConcept.style_description,
+      // Use new action to generate app from concept
+      const { appId, jobId } = await generateAppFromConcept({
+        concept: {
+          app_name: selectedConcept.app_name,
+          app_subtitle: selectedConcept.app_subtitle,
+          app_description: selectedConcept.app_description,
+          app_category: selectedConcept.app_category || 'Lifestyle', // Default category for backward compatibility
+          style_description: selectedConcept.style_description,
+          icon_url: selectedConcept.icon_url,
+          cover_url: selectedConcept.cover_url,
+        },
+        // numScreens: 5, // optional, defaults to 5
       });
 
-      // Navigate to the generation progress page
-      router.push(`/app/${appId}/generation`);
+      // Navigate to generation progress page
+      router.push(`/app/${appId}/generation?jobId=${jobId}`);
     } catch (error) {
-      console.error('Failed to generate app', error);
+      console.error('Failed to generate app from concept', error);
       setIsGeneratingApp(false);
       setSelectedConceptIndex(null);
       setToast({

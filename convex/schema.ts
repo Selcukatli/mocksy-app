@@ -294,6 +294,8 @@ export default defineSchema({
     appId: v.id("apps"), // App being generated
     status: v.union(
       v.literal("pending"),
+      v.literal("downloading_images"), // Downloading icon/cover from concept
+      v.literal("generating_structure"), // Generating app structure plan
       v.literal("generating_concept"),
       v.literal("generating_icon"),
       v.literal("generating_screens"),
@@ -337,6 +339,7 @@ export default defineSchema({
           app_name: v.string(),
           app_subtitle: v.string(),
           app_description: v.string(),
+          app_category: v.optional(v.string()), // Optional for backward compatibility with existing data
           style_description: v.string(),
           app_icon_prompt: v.string(),
           cover_image_prompt: v.string(),

@@ -39,6 +39,7 @@ export const updateConceptsText = internalMutation({
         app_name: v.string(),
         app_subtitle: v.string(),
         app_description: v.string(),
+        app_category: v.optional(v.string()), // Optional for backward compatibility
         style_description: v.string(),
         app_icon_prompt: v.string(),
         cover_image_prompt: v.string(),
@@ -149,6 +150,7 @@ export const getConceptGenerationJob = query({
             app_name: v.string(),
             app_subtitle: v.string(),
             app_description: v.string(),
+            app_category: v.optional(v.string()), // Optional for backward compatibility
             style_description: v.string(),
             app_icon_prompt: v.string(),
             cover_image_prompt: v.string(),

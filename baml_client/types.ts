@@ -51,6 +51,7 @@ export interface AppConcept {
   app_name: string
   app_subtitle: string
   app_description: string
+  app_category: string
   style_description: string
   app_icon_prompt: string
   cover_image_prompt: string

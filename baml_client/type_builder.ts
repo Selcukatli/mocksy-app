@@ -27,7 +27,7 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
-    AppConcept: ClassViewer<'AppConcept', "app_name" | "app_subtitle" | "app_description" | "style_description" | "app_icon_prompt" | "cover_image_prompt">;
+    AppConcept: ClassViewer<'AppConcept', "app_name" | "app_subtitle" | "app_description" | "app_category" | "style_description" | "app_icon_prompt" | "cover_image_prompt">;
     
     AppConceptsOutput: ClassViewer<'AppConceptsOutput', "concepts">;
     
@@ -121,7 +121,7 @@ export default class TypeBuilder {
         });
         
         this.AppConcept = this.tb.classViewer("AppConcept", [
-          "app_name","app_subtitle","app_description","style_description","app_icon_prompt","cover_image_prompt",
+          "app_name","app_subtitle","app_description","app_category","style_description","app_icon_prompt","cover_image_prompt",
         ]);
         
         this.AppConceptsOutput = this.tb.classViewer("AppConceptsOutput", [

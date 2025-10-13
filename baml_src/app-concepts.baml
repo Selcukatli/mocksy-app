@@ -8,8 +8,8 @@
 class AppConcept {
   app_name string @description("Short, catchy app name (1-3 words max, e.g., 'FitQuest', 'ZenJournal', 'ShadowVault')")
   app_subtitle string @description("App Store subtitle (30 characters MAX, including spaces). A single punchy phrase that captures the app's core value.")
-  app_description string @description("App Store style description (3-5 sentences, 40-80 words). Explain what the app does, key features, and benefits.")
-  style_description string @description("2-3 sentence visual style guide describing the UI aesthetic, mood, colors, typography approach, and design philosophy.")
+  app_description string @description("Full App Store description (150-250 words, 8-12 sentences). Structure like real App Store listings: (1) OPENING HOOK: Compelling first sentence that captures the core value proposition. (2) KEY FEATURES: 3-5 standout features with specific details about what users can do. (3) BENEFITS: How it improves users' lives or solves their problems. (4) USE CASES: Specific scenarios or moments when users would use this. (5) CLOSING: Engaging final sentence or call-to-action. Make it persuasive, professional, and detailed enough to understand the full app experience. Example: 'Transform your fitness journey into an epic adventure with FitQuest. Every workout becomes a quest, every rep earns you experience points, and every milestone unlocks new challenges and rewards. Track your workouts with intelligent logging that learns your routines and suggests progressive overload. Join guilds with friends to tackle group challenges, compete on leaderboards, and celebrate victories together. Earn achievements for consistency, personal records, and completing themed quest lines. Your avatar grows stronger as you do, unlocking new abilities and gear that reflect your real-world progress. Perfect for gym-goers who want accountability, gamers seeking active hobbies, or anyone who finds traditional fitness tracking boring. Whether you're lifting weights, running, or doing yoga, FitQuest turns every session into an adventure. Start your quest today and discover how fun fitness can be.'")
+  style_description string @description("Complete visual style guide (3-5 sentences). MUST include specific design tokens: (1) COLORS: Provide exact hex codes for 2-4 key colors with usage context (e.g., 'Primary: #7EC8B8 (buttons, accents), Background: #FFFFFF, Text: #1A1A1A, Secondary: #E8F5F2 (cards)'). (2) TYPOGRAPHY: Font styles with sizes (e.g., 'Headlines: 28px/700 weight, Body: 16px/400'). (3) SPACING & EFFECTS: Corner radius (8-16px), shadows (e.g., '0px 2px 8px rgba(0,0,0,0.12)'), padding guidelines. (4) DESIGN PHILOSOPHY: Overall aesthetic and mood. Example: 'Clean minimal interface. Colors: Primary #7EC8B8 (CTAs), Background #FFFFFF, Text #2C3E50, Accent #E8F5F2 (cards). Typography: Bold sans-serif headlines 28px/700, body text 16px/400. Rounded corners 12px throughout, subtle shadows 0px 2px 8px rgba(0,0,0,0.1). Generous whitespace for calm, approachable feel.'")
   app_icon_prompt string @description("Complete text-to-image prompt for generating app icon (50-100 words). CRITICAL: Icon must be SIMPLE with LARGE, BOLD symbols recognizable at small sizes. FULL BLEED design extending to all edges with NO margins or padding. 1024x1024 square, iOS-style icon design.")
   cover_image_prompt string @description("Complete text-to-image prompt for generating promotional cover/hero image (100-150 words). Horizontal banner (1920×1080). Should capture app essence visually. CRITICAL: NO TEXT in the image - purely visual storytelling.")
 }
@@ -72,20 +72,32 @@ function GenerateAppConcepts(
     - Examples: "Fitness made fun" (18 chars), "Your mindful companion" (23 chars)
 
     ### 3. APP DESCRIPTION
-    - App Store style description (3-5 sentences, 40-80 words)
-    - Explain what the app does and core purpose
-    - List 2-3 key features or benefits
-    - Make it sound exciting and professional
+    - **CRITICAL: Full App Store description (150-250 words, 8-12 sentences)**
+    - Structure like real App Store listings:
+      * **OPENING HOOK**: Compelling first sentence capturing core value proposition
+      * **KEY FEATURES**: 3-5 standout features with specific details about what users can do
+      * **BENEFITS**: How it improves users' lives or solves their problems
+      * **USE CASES**: Specific scenarios or moments when users would use this
+      * **CLOSING**: Engaging final sentence or call-to-action
+    - Make it persuasive, professional, and detailed enough to understand the full app experience
     - Match the style's mood and target audience
+    - Example structure:
+      * "Transform your [problem] with [AppName]. [Opening hook explaining main benefit]."
+      * "[Feature 1 with details]. [Feature 2 with details]. [Feature 3 with details]."
+      * "[Who it's perfect for]. [Use case scenarios]."
+      * "[Closing call-to-action or inspirational statement]."
 
     ### 4. STYLE DESCRIPTION
-    - 2-3 sentence visual style guide
-    - Describe UI aesthetic, colors, typography, mood, design philosophy
-    - Be specific about colors (use color names or hex codes)
-    - Examples:
-      * "Clean minimal interface with soft blue-green (#7EC8B8) and white. Generous whitespace and subtle shadows. Rounded corners throughout for friendly feel."
-      * "Bold dark interface with vibrant purple (#8B3DFF) and cyan (#00F0FF) gradients. Strong typography with thick headlines. High contrast and dramatic shadows."
-      * "Warm earthy palette with terracotta (#D4704A) and sage green (#8BA888). Organic shapes and hand-drawn elements. Friendly, approachable, natural aesthetic."
+    - **CRITICAL: 3-5 sentence comprehensive style guide with specific design tokens**
+    - MUST include all of the following:
+      * **COLORS** (with hex codes): Primary, Background, Text, and 1-2 accent colors. Include usage context for each.
+      * **TYPOGRAPHY**: Headline and body text styles with specific sizes (px) and weights
+      * **SPACING & EFFECTS**: Corner radius values, shadow specifications, padding/spacing guidelines
+      * **DESIGN PHILOSOPHY**: Overall aesthetic and mood description
+    - Examples of COMPLETE style descriptions:
+      * "Clean minimal interface. Colors: Primary #7EC8B8 (CTAs, links), Background #FFFFFF, Text #2C3E50, Accent #E8F5F2 (cards, sections). Typography: Bold sans-serif headlines 28px/700 weight, body text 16px/400. Rounded corners 12px throughout, subtle shadows 0px 2px 8px rgba(0,0,0,0.1). Generous whitespace for calm, approachable feel."
+      * "Bold dark interface. Colors: Primary #8B3DFF (actions, highlights), Background #0A0E27, Text #FFFFFF, Secondary #FF006E (accents, warnings). Typography: Extra bold headlines 32px/800, medium body 18px/500. Sharp corners 4px, dramatic shadows 0px 4px 16px rgba(0,0,0,0.4). High contrast and energetic vibe."
+      * "Warm earthy palette. Colors: Primary #D4704A (CTAs), Background #FFF8F0, Text #3D2817, Accent #8BA888 (highlights, success). Typography: Friendly rounded headlines 26px/700, readable body 16px/400. Soft corners 16px, gentle shadows 0px 2px 12px rgba(61,40,23,0.08). Organic shapes create approachable, natural aesthetic."
 
     ### 5. APP ICON PROMPT
     - Text-to-image prompt for the app icon (50-100 words)

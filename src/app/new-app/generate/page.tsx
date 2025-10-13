@@ -16,6 +16,7 @@ import { api } from '@convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import Toast from '@/components/Toast';
 import AppConceptCard from '@/components/AppConceptCard';
+import AppConceptDetailModal from '@/components/AppConceptDetailModal';
 import type { Id } from '@convex/_generated/dataModel';
 
 const CATEGORIES = [
@@ -68,6 +69,7 @@ export default function GenerateNewAppPage() {
   const [conceptJobId, setConceptJobId] = useState<Id<'conceptGenerationJobs'> | null>(null);
   const [concepts, setConcepts] = useState<AppConcept[]>([]);
   const [selectedConceptIndex, setSelectedConceptIndex] = useState<number | null>(null);
+  const [viewingConceptIndex, setViewingConceptIndex] = useState<number | null>(null);
   const [isGeneratingApp, setIsGeneratingApp] = useState(false);
 
   // Toast state
@@ -399,7 +401,7 @@ export default function GenerateNewAppPage() {
                         <AppConceptCard
                           concept={concept}
                           isSelected={selectedConceptIndex === index}
-                          onClick={() => handleSelectConcept(index)}
+                          onClick={() => setViewingConceptIndex(index)}
                         />
                       </motion.div>
                     ))
@@ -422,7 +424,7 @@ export default function GenerateNewAppPage() {
                           {/* Icon + Title skeleton (overlapping) */}
                           <div className="relative -mt-12 flex items-start gap-4 p-5">
                             {/* Icon skeleton - larger */}
-                            <div className="h-20 w-20 flex-shrink-0 animate-pulse rounded-[18%] bg-muted-foreground/10 shadow-xl ring-2 ring-border" />
+                            <div className="h-20 w-20 flex-shrink-0 animate-pulse rounded-[18%] bg-gray-100 dark:bg-gray-800 shadow-xl ring-2 ring-border" />
                             
                             {/* Text content skeleton */}
                             <div className="flex-1 space-y-2 pt-1">
@@ -461,6 +463,21 @@ export default function GenerateNewAppPage() {
           )}
         </AnimatePresence>
       </div>
+      
+      {/* Concept Detail Modal */}
+      <AnimatePresence>
+        {viewingConceptIndex !== null && concepts[viewingConceptIndex] && (
+          <AppConceptDetailModal
+            concept={concepts[viewingConceptIndex]}
+            isSelected={selectedConceptIndex === viewingConceptIndex}
+            onSelect={() => {
+              handleSelectConcept(viewingConceptIndex);
+              setViewingConceptIndex(null);
+            }}
+            onClose={() => setViewingConceptIndex(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

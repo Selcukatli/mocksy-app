@@ -16,7 +16,7 @@ type AppConcept = {
 interface AppConceptCardProps {
   concept: AppConcept;
   isSelected: boolean;
-  onClick: () => void;
+  onClick: () => void; // Opens modal to view details
 }
 
 export default function AppConceptCard({ concept, isSelected, onClick }: AppConceptCardProps) {

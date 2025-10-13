@@ -44,8 +44,8 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
   const isFeatured = useQuery(api.adminActions.isFeatured, { appId: appId as Id<'apps'> });
-  const generateCoverImage = useAction(api.demoActions.generateAppCoverImage);
-  const saveCoverImage = useAction(api.demoActions.saveAppCoverImage);
+  const generateCoverImage = useAction(api.appGenerationActions.generateAppCoverImage);
+  const saveCoverImage = useAction(api.appGenerationActions.saveAppCoverImage);
   const featureAppMutation = useMutation(api.adminActions.featureApp);
   const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
 

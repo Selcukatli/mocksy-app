@@ -280,7 +280,7 @@ export const deleteAppScreen = mutation({
 });
 
 // Internal mutation to create a demo app screen (used by demoActions)
-export const createDemoAppScreen = internalMutation({
+export const createAIGeneratedAppScreen = internalMutation({
   args: {
     appId: v.id("apps"),
     profileId: v.id("profiles"),

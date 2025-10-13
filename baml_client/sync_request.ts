@@ -22,7 +22,7 @@ import type { BamlRuntime, BamlCtxManager, ClientRegistry, Image, Audio, Pdf, Vi
 import { toBamlError, HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
+import type {AppConcept, AppConceptsOutput, AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleGenerationOutput, StyleRevisionOutput, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 
 type BamlCallOptions = {
@@ -110,6 +110,56 @@ export class HttpRequest {
     }
   }
   
+  GenerateApp(
+      app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
+      __baml_options__?: BamlCallOptions
+  ): HTTPRequest {
+    try {
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.buildRequestSync(
+        "GenerateApp",
+        {
+          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"ui_style": ui_style?? null
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        false,
+        env,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  GenerateAppConcepts(
+      app_description_input: string,category_hint?: string | null,
+      __baml_options__?: BamlCallOptions
+  ): HTTPRequest {
+    try {
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.buildRequestSync(
+        "GenerateAppConcepts",
+        {
+          "app_description_input": app_description_input,"category_hint": category_hint?? null
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        false,
+        env,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
   GenerateAppCoverImagePrompt(
       app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],user_feedback?: string | null,
       __baml_options__?: BamlCallOptions
@@ -148,31 +198,6 @@ export class HttpRequest {
         "GenerateAppDesignPlan",
         {
           "app_name": app_name,"app_description": app_description,"app_category": app_category,"style_guide": style_guide,"num_screens": num_screens
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  GenerateDemoApp(
-      app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
-      __baml_options__?: BamlCallOptions
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateDemoApp",
-        {
-          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"ui_style": ui_style?? null
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -991,6 +1016,56 @@ export class HttpStreamRequest {
     }
   }
   
+  GenerateApp(
+      app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
+      __baml_options__?: BamlCallOptions
+  ): HTTPRequest {
+    try {
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.buildRequestSync(
+        "GenerateApp",
+        {
+          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"ui_style": ui_style?? null
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        true,
+        env,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  GenerateAppConcepts(
+      app_description_input: string,category_hint?: string | null,
+      __baml_options__?: BamlCallOptions
+  ): HTTPRequest {
+    try {
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.buildRequestSync(
+        "GenerateAppConcepts",
+        {
+          "app_description_input": app_description_input,"category_hint": category_hint?? null
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        true,
+        env,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
   GenerateAppCoverImagePrompt(
       app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],user_feedback?: string | null,
       __baml_options__?: BamlCallOptions
@@ -1029,31 +1104,6 @@ export class HttpStreamRequest {
         "GenerateAppDesignPlan",
         {
           "app_name": app_name,"app_description": app_description,"app_category": app_category,"style_guide": style_guide,"num_screens": num_screens
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  GenerateDemoApp(
-      app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
-      __baml_options__?: BamlCallOptions
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateDemoApp",
-        {
-          "app_description_input": app_description_input?? null,"category_hint": category_hint?? null,"ui_style": ui_style?? null
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),

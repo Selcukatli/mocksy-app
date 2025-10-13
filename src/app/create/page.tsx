@@ -495,7 +495,7 @@ export default function Home() {
                 <div className="flex flex-wrap items-center gap-3 pt-2">
                   <Link
                     href="/welcome?mode=sign-in&context=create-app"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-transform transition-colors hover:scale-[1.02] hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:scale-[1.02] hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
                     Sign In / Sign Up
                     <ArrowRight className="h-4 w-4" />

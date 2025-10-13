@@ -390,7 +390,7 @@ export const deleteApp = mutation({
 });
 
 // Internal mutation to create a demo app (used by demoActions)
-export const createDemoApp = internalMutation({
+export const createAIGeneratedApp = internalMutation({
   args: {
     profileId: v.id("profiles"),
     name: v.string(),
@@ -421,7 +421,7 @@ export const createDemoApp = internalMutation({
 });
 
 // Internal mutation to update a demo app (used by demoActions for progressive updates)
-export const updateDemoApp = internalMutation({
+export const updateAIGeneratedApp = internalMutation({
   args: {
     appId: v.id("apps"),
     name: v.optional(v.string()),

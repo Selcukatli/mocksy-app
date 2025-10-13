@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  AppScreenPromptsOutput,  AppStructure,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  CoverImagePrompt,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  ImprovedDescriptionOutput,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenDetail,  ScreenImagePrompt,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TabStructure,  TextConfig,  VisionTestResponse } from "./types"
+import type {  AppConcept,  AppConceptsOutput,  AppScreenPromptsOutput,  AppStructure,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  CoverImagePrompt,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  ImprovedDescriptionOutput,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenDetail,  ScreenImagePrompt,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleGenerationOutput,  StyleRevisionOutput,  Subject,  TabStructure,  TextConfig,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -36,6 +36,17 @@ export interface StreamState<T> {
 }
 
 export namespace partial_types {
+    export interface AppConcept {
+      app_name?: string | null
+      app_subtitle?: string | null
+      app_description?: string | null
+      style_description?: string | null
+      app_icon_prompt?: string | null
+      cover_image_prompt?: string | null
+    }
+    export interface AppConceptsOutput {
+      concepts: AppConcept[]
+    }
     export interface AppScreenPromptsOutput {
       app_screen_prompts: string[]
     }

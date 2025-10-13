@@ -5,6 +5,170 @@ import { v } from "convex/values";
 import { internal, api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
+// ============================================
+// CONCEPT GENERATION (Multi-variant preview)
+// ============================================
+
+/**
+ * Public: Generate 4 app concepts from user description
+ * Returns concepts with text immediately, then generates images in parallel
+ */
+export const generateAppConcepts = action({
+  args: {
+    appDescriptionInput: v.string(),
+    categoryHint: v.optional(v.string()),
+  },
+  returns: v.object({
+    jobId: v.id("conceptGenerationJobs"),
+    concepts: v.array(
+      v.object({
+        app_name: v.string(),
+        app_subtitle: v.string(),
+        app_description: v.string(),
+        style_description: v.string(),
+        app_icon_prompt: v.string(),
+        cover_image_prompt: v.string(),
+      })
+    ),
+  }),
+  handler: async (ctx, args): Promise<{
+    jobId: Id<"conceptGenerationJobs">;
+    concepts: Array<{
+      app_name: string;
+      app_subtitle: string;
+      app_description: string;
+      style_description: string;
+      app_icon_prompt: string;
+      cover_image_prompt: string;
+    }>;
+  }> => {
+    // Get user's profile
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Must be authenticated to generate concepts");
+    }
+
+    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    if (!profile) {
+      throw new Error("Failed to get user profile");
+    }
+
+    console.log("🎨 Generating 4 app concepts...");
+
+    // 1. Create job record
+    const jobId: Id<"conceptGenerationJobs"> = await ctx.runMutation(internal.conceptGenerationJobs.createConceptGenerationJob, {
+      profileId: profile._id,
+      status: "generating_concepts",
+    });
+
+    // 2. Generate text concepts with BAML
+    const { b } = await import("../baml_client");
+    const result = await b.GenerateAppConcepts(
+      args.appDescriptionInput,
+      args.categoryHint ?? null
+    );
+
+    console.log(`  ✓ Generated ${result.concepts.length} concepts`);
+
+    // 3. Update job with text concepts
+    await ctx.runMutation(internal.conceptGenerationJobs.updateConceptsText, {
+      jobId,
+      concepts: result.concepts,
+      status: "generating_images",
+    });
+
+    // 4. Schedule parallel image generation
+    await ctx.scheduler.runAfter(0, internal.appGenerationActions.generateConceptImages, {
+      jobId,
+      concepts: result.concepts,
+    });
+
+    // Return text concepts immediately (images will load progressively)
+    return {
+      jobId,
+      concepts: result.concepts,
+    };
+  },
+});
+
+/**
+ * Internal: Generate images for all concepts in parallel
+ */
+export const generateConceptImages = internalAction({
+  args: {
+    jobId: v.id("conceptGenerationJobs"),
+    concepts: v.array(
+      v.object({
+        app_name: v.string(),
+        app_subtitle: v.string(),
+        app_description: v.string(),
+        style_description: v.string(),
+        app_icon_prompt: v.string(),
+        cover_image_prompt: v.string(),
+      })
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    console.log(`🖼️  Generating images for ${args.concepts.length} concepts in parallel...`);
+
+    try {
+      // Generate all images in parallel (8 images: 4 icons + 4 covers)
+      await Promise.all(
+        args.concepts.map(async (concept, index) => {
+          try {
+            console.log(`  → [Concept ${index + 1}] Generating icon and cover...`);
+
+            // Generate icon and cover in parallel for this concept
+            const [iconResult, coverResult] = await Promise.all([
+              // Icon generation
+              ctx.runAction(internal.utils.fal.falImageActions.geminiFlashTextToImage, {
+                prompt: concept.app_icon_prompt,
+                num_images: 1,
+                output_format: "png",
+              }),
+              // Cover generation
+              ctx.runAction(internal.utils.fal.falImageActions.seedDream4TextToImage, {
+                prompt: concept.cover_image_prompt,
+                image_size: { width: 1920, height: 1080 },
+                num_images: 1,
+              }),
+            ]);
+
+            const iconUrl = iconResult.images?.[0]?.url;
+            const coverUrl = coverResult.images?.[0]?.url;
+
+            if (iconUrl && coverUrl) {
+              // Update concept with generated image URLs
+              await ctx.runMutation(internal.conceptGenerationJobs.updateConceptImages, {
+                jobId: args.jobId,
+                conceptIndex: index,
+                iconUrl,
+                coverUrl,
+              });
+              console.log(`  ✓ [Concept ${index + 1}] Images generated`);
+            } else {
+              console.log(`  ✗ [Concept ${index + 1}] Failed to generate images`);
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            console.log(`  ✗ [Concept ${index + 1}] Error: ${errorMsg}`);
+          }
+        })
+      );
+
+      console.log("✅ Concept image generation complete");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("❌ Error generating concept images:", errorMessage);
+      await ctx.runMutation(internal.conceptGenerationJobs.failConceptGenerationJob, {
+        jobId: args.jobId,
+        error: errorMessage,
+      });
+    }
+  },
+});
+
 /**
  * Progress point allocation:
  * - Generating concept: 15 points
@@ -51,11 +215,15 @@ async function fetchWithRetry(url: string, maxAttempts = 3): Promise<Response> {
   throw new Error(`Failed to download after ${maxAttempts} attempts: ${lastError}`);
 }
 
+// ============================================
+// APP GENERATION (Full generation)
+// ============================================
+
 /**
- * Public: Schedule demo app generation and return app ID + job ID
+ * Public: Schedule app generation and return app ID + job ID
  * Client can poll the job for progress and the app for results
  */
-export const scheduleDemoAppGeneration = action({
+export const scheduleAppGeneration = action({
   args: {
     appDescriptionInput: v.optional(v.string()),
     categoryHint: v.optional(v.string()),
@@ -79,7 +247,7 @@ export const scheduleDemoAppGeneration = action({
     }
 
     // Create placeholder app
-    const appId: Id<"apps"> = await ctx.runMutation(internal.apps.createDemoApp, {
+    const appId: Id<"apps"> = await ctx.runMutation(internal.apps.createAIGeneratedApp, {
       profileId: profile._id,
       name: "Generating...",
       description: "AI is generating your app. This will update in real-time.",
@@ -98,7 +266,7 @@ export const scheduleDemoAppGeneration = action({
     });
 
     // Schedule the actual generation in the background
-    await ctx.scheduler.runAfter(0, internal.demoActions.generateDemoApp, {
+    await ctx.scheduler.runAfter(0, internal.appGenerationActions.generateApp, {
       ...args,
       profileId: profile._id,
       appId,
@@ -110,10 +278,10 @@ export const scheduleDemoAppGeneration = action({
 });
 
 /**
- * Internal: Generate a demo app from user description using BAML
+ * Internal: Generate an app from user description using BAML
  * Uses parallel execution for icon + screen generation
  */
-export const generateDemoApp = internalAction({
+export const generateApp = internalAction({
   args: {
     profileId: v.optional(v.id("profiles")),
     appDescriptionInput: v.optional(v.string()),
@@ -129,7 +297,7 @@ export const generateDemoApp = internalAction({
       throw new Error("appDescriptionInput is required");
     }
 
-    console.log("🎬 Generating demo app...");
+    console.log("🎬 Generating app with AI...");
 
     if (!args.profileId) {
       throw new Error("profileId is required to create demo app");
@@ -144,7 +312,7 @@ export const generateDemoApp = internalAction({
         console.log(`✅ Using existing app: ${appId} (will update progressively)`);
       } else {
         console.log("💾 Creating app record with placeholder data...");
-        appId = await ctx.runMutation(internal.apps.createDemoApp, {
+        appId = await ctx.runMutation(internal.apps.createAIGeneratedApp, {
           profileId: args.profileId,
           name: "Generating...",
           description: "AI is generating your app. This will update in real-time.",
@@ -167,7 +335,7 @@ export const generateDemoApp = internalAction({
 
       console.log("🤖 Calling BAML to generate app concept...");
       const { b } = await import("../baml_client");
-      const appConcept = await b.GenerateDemoApp(
+      const appConcept = await b.GenerateApp(
         args.appDescriptionInput,
         args.categoryHint ?? null,
         args.uiStyle ?? null
@@ -188,7 +356,7 @@ export const generateDemoApp = internalAction({
       // 3. UPDATE APP with generated concept
       console.log("💾 Updating app with generated name, description, and category...");
       const fullDescription = `${appConcept.app_subtitle}. ${appConcept.app_description}`;
-      await ctx.runMutation(internal.apps.updateDemoApp, {
+      await ctx.runMutation(internal.apps.updateAIGeneratedApp, {
         appId,
         name: appConcept.app_name,
         description: fullDescription,
@@ -230,7 +398,7 @@ export const generateDemoApp = internalAction({
           console.log(`  ✓ [ICON] Uploaded: ${storageId}`);
 
           // Update app with icon
-          await ctx.runMutation(internal.apps.updateDemoApp, {
+          await ctx.runMutation(internal.apps.updateAIGeneratedApp, {
             appId,
             iconStorageId: storageId,
           });
@@ -327,7 +495,7 @@ export const generateDemoApp = internalAction({
           const firstScreenBlob = await firstScreenResponse.blob();
           const firstScreenStorageId = await ctx.storage.store(firstScreenBlob);
 
-          const firstScreenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
+          const firstScreenId = await ctx.runMutation(internal.appScreens.createAIGeneratedAppScreen, {
             appId,
             profileId: args.profileId!,
             name: firstScreenDetail.screen_name,
@@ -394,7 +562,7 @@ export const generateDemoApp = internalAction({
                 const screenBlob = await screenResponse.blob();
                 const screenStorageId = await ctx.storage.store(screenBlob);
 
-                const screenId = await ctx.runMutation(internal.appScreens.createDemoAppScreen, {
+                const screenId = await ctx.runMutation(internal.appScreens.createAIGeneratedAppScreen, {
                   appId,
                   profileId: args.profileId!,
                   name: screenDetail.screen_name,
@@ -449,7 +617,7 @@ export const generateDemoApp = internalAction({
         });
       }
 
-      console.log(`🎉 Demo app generation complete! Icon: ${iconStorageId}, Screens: ${totalSuccessful}/${totalScreens}`);
+      console.log(`🎉 App generation complete! Icon: ${iconStorageId}, Screens: ${totalSuccessful}/${totalScreens}`);
 
       return appId;
 
@@ -564,7 +732,7 @@ export const generateAppCoverImage = action({
 
     try {
       // 4. Prepare screen names
-      const screenNames: string[] = screens.map((s) => s.name);
+      const screenNames: string[] = screens.map((s: { name: string }) => s.name);
 
       // 5. Call BAML to generate image prompt
       console.log("🤖 Generating image prompt with BAML...");
@@ -582,8 +750,9 @@ export const generateAppCoverImage = action({
       console.log(`  Prompt preview: ${promptResult.image_prompt.substring(0, 100)}...`);
 
       // 6. Generate image variants with Seed Dream 4
+      // Using 2:1 aspect ratio to match AppStorePreviewCard display (aspect-[2/1])
       const width = args.width || 1920;
-      const height = args.height || 1080;
+      const height = args.height || 960;
       const numVariants = Math.min(args.numVariants || 4, 6); // Max 6 variants
 
       // Calculate estimated time: 7 seconds per image
@@ -675,7 +844,7 @@ export const saveAppCoverImage = action({
       console.log(`  ✓ Uploaded: ${storageId}`);
 
       // 4. Update app with cover image
-      await ctx.runMutation(internal.apps.updateDemoApp, {
+      await ctx.runMutation(internal.apps.updateAIGeneratedApp, {
         appId: args.appId,
         coverImageStorageId: storageId,
       });

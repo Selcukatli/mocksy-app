@@ -27,6 +27,10 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
+    AppConcept: ClassViewer<'AppConcept', "app_name" | "app_subtitle" | "app_description" | "style_description" | "app_icon_prompt" | "cover_image_prompt">;
+    
+    AppConceptsOutput: ClassViewer<'AppConceptsOutput', "concepts">;
+    
     AppScreenPromptsOutput: ClassViewer<'AppScreenPromptsOutput', "app_screen_prompts">;
     
     AppStructure: ClassViewer<'AppStructure', "tabs" | "common_layout_elements" | "screens">;
@@ -108,13 +112,21 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "AppScreenPromptsOutput","AppStructure","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","CoverImagePrompt","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenDetail","ScreenImagePrompt","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TabStructure","TextConfig","VisionTestResponse",
+            "AppConcept","AppConceptsOutput","AppScreenPromptsOutput","AppStructure","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","CoverImagePrompt","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenDetail","ScreenImagePrompt","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleGenerationOutput","StyleRevisionOutput","Subject","TabStructure","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
           ]),
           runtime: DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME
         });
+        
+        this.AppConcept = this.tb.classViewer("AppConcept", [
+          "app_name","app_subtitle","app_description","style_description","app_icon_prompt","cover_image_prompt",
+        ]);
+        
+        this.AppConceptsOutput = this.tb.classViewer("AppConceptsOutput", [
+          "concepts",
+        ]);
         
         this.AppScreenPromptsOutput = this.tb.classViewer("AppScreenPromptsOutput", [
           "app_screen_prompts",

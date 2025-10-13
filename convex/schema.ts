@@ -322,6 +322,37 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_profile_and_status", ["profileId", "status"]),
 
+  conceptGenerationJobs: defineTable({
+    profileId: v.id("profiles"), // Owner initiating the generation
+    status: v.union(
+      v.literal("generating_concepts"), // Generating text concepts with BAML
+      v.literal("generating_images"), // Generating images for concepts
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    // Text concepts (generated immediately)
+    concepts: v.optional(
+      v.array(
+        v.object({
+          app_name: v.string(),
+          app_subtitle: v.string(),
+          app_description: v.string(),
+          style_description: v.string(),
+          app_icon_prompt: v.string(),
+          cover_image_prompt: v.string(),
+          // Image URLs (null until generated)
+          icon_url: v.optional(v.string()),
+          cover_url: v.optional(v.string()),
+        })
+      )
+    ),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_profile", ["profileId"])
+    .index("by_status", ["status"]),
+
   styles: defineTable({
     // Identity
     name: v.string(), // e.g., "Snap Style", "Spooky Halloween", "Watercolor Zen"

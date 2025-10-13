@@ -67,8 +67,8 @@ class ScreenImagePrompt {
 // DEMO APP GENERATION
 // ============================================
 
-// Generate a demo app concept with name, description, category, icon prompt, and color theme
-function GenerateDemoApp(
+// Generate an app concept with name, description, category, icon prompt, and color theme
+function GenerateApp(
   app_description_input: string? @description("Optional user-provided app description/concept to generate from"),
   category_hint: string? @description("Optional category hint from user (e.g., 'Productivity', 'Health & Fitness'). Use this to inform the category choice, but you can adjust if another category fits better."),
   ui_style: string? @description("Optional UI style/aesthetic hint (e.g., 'Minimal & clean', 'Playful & vibrant', 'Dark mode with neon accents'). Use this to influence color palette, typography, and visual design.")
@@ -699,11 +699,22 @@ function GenerateAppCoverImagePrompt(
     
     **COVER IMAGE REQUIREMENTS:**
     
-    1. **Format:** Horizontal/landscape banner (works well at 1920×1080 or similar)
-    2. **Purpose:** Promotional hero image for app store listings - eye-catching, professional
+    1. **Format:** 2:1 aspect ratio landscape banner (1920×960 or 2048×1024)
+    2. **Purpose:** Promotional hero image for app store listings - eye-catching, professional, cinematic
     3. **Content:** Should showcase the app's personality and key features visually
     4. **NOT an icon:** This is a large promotional banner, not a small icon
-    5. **Device mockups:** Use a smartphone mockup ONLY if it genuinely helps demonstrate the app's UI or functionality. For abstract concepts, lifestyle imagery, or conceptual apps, consider pure visual storytelling without devices.
+    5. **Device mockups:** Use smartphone mockup(s) strategically - positioned in upper portion or angled to leave bottom area clear. For abstract concepts, consider pure visual storytelling without devices.
+    
+    **CRITICAL COMPOSITION REQUIREMENT - BOTTOM OVERLAY ZONE:**
+    The cover image will be displayed with:
+    - Bottom 35-40% fading to transparent with a gradient mask
+    - App icon and title overlaid at the bottom left
+    - Therefore: Keep the bottom 35% relatively clear or with subtle elements
+    - Primary focal points should be in the top 60-65% of the image
+    - Composition should naturally flow downward or leave breathing room at bottom
+    - Think: Hero shot with sky/top focus, angled devices pointing down, abstract elements rising from bottom
+    - Bad: Important content centered vertically (will be obscured by overlay)
+    - Good: Important content in upper 2/3, gradient backgrounds, devices angled to leave bottom clear
     
     **CRITICAL: ABSOLUTELY NO TEXT IN IMAGE**
     - DO NOT include any text, labels, titles, typography, letters, words, or numbers in the image prompt
@@ -737,30 +748,33 @@ function GenerateAppCoverImagePrompt(
     - Style (modern UI mockup, lifestyle shot, abstract concept, etc.)
     - **NO TEXT** - purely visual storytelling
     
-    **EXAMPLES OF GOOD PROMPTS (showing variety):**
+    **EXAMPLES OF GOOD PROMPTS (all follow 2:1 ratio with bottom-clear composition):**
     
-    WITH device mockup (when it demonstrates the UI):
-    "Modern fitness app promotional banner. Dynamic composition with vibrant gradient background (purple to cyan). Central phone mockup showing colorful workout interface with abstract stats and progress rings—no readable text or numbers on screen. Energetic diagonal layout with floating UI elements (achievement badges, graph lines, heart rate icons) around the phone. Depth and dimension with subtle shadows. Professional product photography style. Clean, motivational, high-energy aesthetic. Purely visual composition with no text overlays, labels, or readable typography anywhere. 1920x1080."
+    WITH device mockup (fitness app - devices positioned in upper portion):
+    "2:1 cinematic fitness app banner. Vibrant gradient background (deep purple at top flowing to electric cyan at bottom). Two iPhone mockups in upper-center area, slightly angled, showing colorful abstract workout interfaces with progress rings and stat visualizations—no readable text on screens. Floating 3D UI elements (achievement badges, heart rate icons, trophy symbols) scattered around devices in upper 60%. Bottom 40% has clean gradient fade for overlay space. Dynamic energy with diagonal composition pointing upward. Professional product photography with dramatic lighting. High-energy, motivational aesthetic. 1920×960. No text, labels, or typography anywhere."
     
-    WITHOUT device (when concept is more powerful abstractly):
-    "Serene meditation cover image. Abstract breathing visualization with expanding concentric circles pulsing from center. Soft blue-green gradient background with organic flowing waves and particles. Floating abstract elements: gentle ripples, soft orbs, calming geometric patterns in muted pastels (sage green, warm beige, soft blue). Generous whitespace. Dreamy, tranquil atmosphere with subtle glow effects. Minimal, zen aesthetic. Pure visual metaphor for mindfulness. Horizontal banner format. No text, numbers, letters, or typography of any kind."
+    WITHOUT device (meditation app - top-focused abstract concept):
+    "2:1 serene meditation banner. Ethereal abstract composition with expanding concentric ripples emanating from top-center. Soft gradient sky (pale lavender to warm peach to sage green flowing down). Floating organic elements in upper area: soft glowing orbs, gentle wave patterns, delicate particle effects in muted pastels. Bottom third fades to pure gradient for clean overlay space. Dreamy, tranquil atmosphere with subtle glow and depth. Minimal, zen aesthetic emphasizing negative space. Purely visual mindfulness metaphor. 1920×960. No text, numbers, or readable typography."
     
-    WITH device mockup (showcasing social features):
-    "Vibrant social networking app banner. Bright gradient background (yellow to pink). Angled phone mockup showing colorful chat interface with abstract message bubbles—no visible text in the UI mockup. Floating emoji reactions, notification bubbles, and message icons creating depth around the device. Playful, energetic composition. Modern, fun, connected vibe. Bold colors and rounded UI elements. Product shot style. Pure visual composition without text overlays, readable words, or typography. 1920x1080."
+    WITH device mockup (social app - angled composition):
+    "2:1 vibrant social networking banner. Bright gradient background (sunny yellow at top transitioning to hot pink at bottom). Single iPhone mockup positioned in upper-right, tilted 15 degrees, displaying colorful abstract chat bubbles and profile cards—no visible text on screen. Floating 3D emoji reactions, notification icons, and message bubbles creating depth around device in top 65%. Bottom area has breathing room with pure gradient for icon/title overlay. Playful, energetic composition with dynamic perspective. Modern, fun, connected vibe. 1920×960. No text overlays or readable words."
     
-    WITHOUT device (lifestyle/conceptual):
-    "Travel adventure app cover. Sweeping landscape with abstract location pins and route lines overlaid on mountain vista. Warm sunset gradient (orange to deep purple). Flowing path lines connecting floating compass icons, map markers, and destination badges. Sense of journey and exploration. Inspiring, wanderlust atmosphere. Dynamic composition suggesting movement and discovery. Clean, adventurous aesthetic without device mockup. No text, labels, or readable typography. 1920x1080."
+    WITHOUT device (travel app - landscape hero shot):
+    "2:1 epic travel adventure banner. Stunning mountain landscape hero shot with dramatic sky occupying top 70%. Warm golden hour lighting with orange-to-purple sunset gradient. Stylized abstract overlay elements in upper area: floating compass icons, subtle route lines, glowing location pins creating sense of journey. Lower 30% transitions to atmospheric haze and gradient for clean bottom space. Inspiring, wanderlust atmosphere with cinematic depth. Clean, adventurous aesthetic prioritizing the vista. 1920×960. No text, labels, or typography."
     
     **YOUR TASK:**
     Generate image_prompt (100-150 words) and style_notes (2-3 sentences) for {{ app_name }}.
     
     **CRITICAL REMINDER - REPEAT THESE IN YOUR OUTPUT:**
+    - USE 2:1 aspect ratio (1920×960 or 2048×1024) - this is wider than typical 16:9
+    - KEEP bottom 35-40% relatively clear - primary focal points in top 60-65%
     - DO NOT include text, titles, labels, numbers, letters, words, or any readable typography in the image prompt
     - DO NOT include hex codes or color values (use "bright teal" not hex codes)
     - Reference visual scenes and elements, but don't ask for text labels on them
     - The image should communicate purely through visuals, colors, shapes, and composition
     - Colors should be described as names/adjectives: "vibrant teal", "deep violet", "bright orange"
-    - END YOUR PROMPT with explicit instruction: "No text, words, letters, numbers, or readable typography anywhere in the image."
+    - When using device mockups, position them in upper portion or angle them to leave bottom clear
+    - END YOUR PROMPT with: "1920×960. Bottom third clear for overlay. No text, words, letters, numbers, or readable typography anywhere in the image."
     
     {{ ctx.output_format }}
   "#
@@ -771,8 +785,8 @@ function GenerateAppCoverImagePrompt(
 // DEMO APP TEST CASES
 // ============================================
 
-test DemoFromDescription {
-  functions [GenerateDemoApp]
+test AppFromDescription {
+  functions [GenerateApp]
   args {
     app_description_input "A meditation and mindfulness app for busy professionals. Helps users find calm moments throughout their day with 5-minute guided sessions, breathing exercises, and ambient soundscapes."
     style_config null
@@ -799,8 +813,8 @@ test BatSignalAppDesignPlan {
   }
 }
 
-test CyberpunkDemoApp {
-  functions [GenerateDemoApp]
+test CyberpunkApp {
+  functions [GenerateApp]
   args {
     app_description_input null
     style_config {
@@ -813,8 +827,8 @@ test CyberpunkDemoApp {
   }
 }
 
-test ZenMinimalistDemoApp {
-  functions [GenerateDemoApp]
+test ZenMinimalistApp {
+  functions [GenerateApp]
   args {
     app_description_input null
     style_config {
@@ -827,8 +841,8 @@ test ZenMinimalistDemoApp {
   }
 }
 
-test PlayfulPopArtDemoApp {
-  functions [GenerateDemoApp]
+test PlayfulPopArtApp {
+  functions [GenerateApp]
   args {
     app_description_input null
     style_config {

@@ -47,6 +47,21 @@ export function all_succeeded<CheckName extends string>(checks: Record<CheckName
 export function get_checks<CheckName extends string>(checks: Record<CheckName, Check>): Check[] {
     return Object.values(checks)
 }
+export interface AppConcept {
+  app_name: string
+  app_subtitle: string
+  app_description: string
+  style_description: string
+  app_icon_prompt: string
+  cover_image_prompt: string
+  
+}
+
+export interface AppConceptsOutput {
+  concepts: AppConcept[]
+  
+}
+
 export interface AppScreenPromptsOutput {
   app_screen_prompts: string[]
   

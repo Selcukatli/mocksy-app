@@ -3,27 +3,33 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
   ArrowRight,
-  Lightbulb,
-  RefreshCcw,
-  Palette,
-  Upload,
   Image as ImageIcon,
   X,
-  FolderOpen
+  ArrowLeft,
 } from 'lucide-react';
-import { useAction } from 'convex/react';
+import { useAction, useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import Toast from '@/components/Toast';
+import AppConceptCard from '@/components/AppConceptCard';
+import type { Id } from '@convex/_generated/dataModel';
 
-const AUTO_CATEGORY_OPTION = 'Automatically Inferred';
-const CATEGORY_OPTIONS = [AUTO_CATEGORY_OPTION, 'Productivity', 'Lifestyle', 'Education', 'Health & Fitness', 'Business', 'Games'];
+const CATEGORIES = [
+  'Productivity',
+  'Health & Fitness',
+  'Education',
+  'Games',
+  'Lifestyle',
+  'Business',
+  'Social',
+  'Entertainment',
+];
+
 const MAX_REFERENCE_IMAGES = 4;
-
 
 type ReferenceImage = {
   id: string;
@@ -32,33 +38,56 @@ type ReferenceImage = {
   name: string;
 };
 
+type AppConcept = {
+  app_name: string;
+  app_subtitle: string;
+  app_description: string;
+  style_description: string;
+  app_icon_prompt: string;
+  cover_image_prompt: string;
+  icon_url?: string;
+  cover_url?: string;
+};
+
 export default function GenerateNewAppPage() {
   const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
-  const scheduleDemoAppGeneration = useAction(api.demoActions.scheduleDemoAppGeneration);
-  const improveDescription = useAction(api.demoActions.improveAppDescription);
+  const generateConcepts = useAction(api.appGenerationActions.generateAppConcepts);
+  const scheduleAppGeneration = useAction(api.appGenerationActions.scheduleAppGeneration);
 
+  // Form state
   const [idea, setIdea] = useState('');
-  const [category, setCategory] = useState<string>(AUTO_CATEGORY_OPTION);
-  const [style, setStyle] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
   const referenceImagesRef = useRef<ReferenceImage[]>([]);
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isExpandingIdea, setIsExpandingIdea] = useState(false);
+
+  // Concept generation state
+  const [view, setView] = useState<'form' | 'concepts'>('form');
+  const [isGeneratingConcepts, setIsGeneratingConcepts] = useState(false);
+  const [conceptJobId, setConceptJobId] = useState<Id<'conceptGenerationJobs'> | null>(null);
+  const [concepts, setConcepts] = useState<AppConcept[]>([]);
+  const [selectedConceptIndex, setSelectedConceptIndex] = useState<number | null>(null);
+  const [isGeneratingApp, setIsGeneratingApp] = useState(false);
+
+  // Toast state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isOpen: boolean }>({
     message: '',
     type: 'success',
     isOpen: false
   });
 
+  // Poll for concept images
+  const conceptJob = useQuery(
+    api.conceptGenerationJobs.getConceptGenerationJob,
+    conceptJobId ? { jobId: conceptJobId } : 'skip'
+  );
+
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push('/welcome?mode=sign-in&context=new-app');
     }
   }, [isLoaded, isSignedIn, router]);
-
-  const disabled = !idea.trim() || isSubmitting || isExpandingIdea;
 
   useEffect(() => {
     referenceImagesRef.current = referenceImages;
@@ -69,6 +98,13 @@ export default function GenerateNewAppPage() {
       referenceImagesRef.current.forEach((image) => URL.revokeObjectURL(image.preview));
     };
   }, []);
+
+  // Update concepts when job data changes
+  useEffect(() => {
+    if (conceptJob?.concepts) {
+      setConcepts(conceptJob.concepts);
+    }
+  }, [conceptJob]);
 
   const handleReferenceSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -107,76 +143,69 @@ export default function GenerateNewAppPage() {
     referenceInputRef.current?.click();
   };
 
-  const handleExpandIdea = async () => {
-    if (!idea.trim() || isExpandingIdea) return;
-    setIsExpandingIdea(true);
+  const handleGenerateConcepts = async () => {
+    if (!idea.trim() || isGeneratingConcepts) return;
+    setIsGeneratingConcepts(true);
+    
+    // Switch to concepts view immediately with loading state
+    setView('concepts');
 
     try {
-      // Use style if provided, fallback to category
-      const uiStyleHint = style.trim()
-        ? style.trim()
-        : category !== AUTO_CATEGORY_OPTION
-          ? category
-          : undefined;
-
-      const result = await improveDescription({
-        draftDescription: idea,
-        uiStyleHint,
+      const result = await generateConcepts({
+        appDescriptionInput: idea,
+        categoryHint: selectedCategory || undefined,
       });
 
-      if (result.improvedDescription) {
-        setIdea(result.improvedDescription);
-      }
-      if (result.improvedStyle) {
-        setStyle(result.improvedStyle);
-      }
-      if (result.inferredCategory) {
-        setCategory(result.inferredCategory);
-      }
-
-      // Show toast notification
-      setToast({
-        message: 'AI expanded your idea and inferred category & style ✨',
-        type: 'success',
-        isOpen: true
-      });
+      setConceptJobId(result.jobId);
+      setConcepts(result.concepts);
     } catch (error) {
-      console.error('Failed to expand description', error);
+      console.error('Failed to generate concepts', error);
       setToast({
-        message: 'Failed to expand description. Please try again.',
+        message: 'Failed to generate concepts. Please try again.',
         type: 'error',
         isOpen: true
       });
+      // Go back to form on error
+      setView('form');
     } finally {
-      setIsExpandingIdea(false);
+      setIsGeneratingConcepts(false);
     }
   };
-  const handleGenerate = async () => {
-    if (disabled) return;
-    setIsSubmitting(true);
+
+  const handleSelectConcept = async (index: number) => {
+    if (isGeneratingApp) return;
+    
+    setSelectedConceptIndex(index);
+    setIsGeneratingApp(true);
 
     try {
-      const selectedCategory = category === AUTO_CATEGORY_OPTION ? undefined : category;
-      const selectedUIStyle = style.trim() || undefined;
-
-      // Call scheduleDemoAppGeneration which creates app + job and generates in background
-      const { appId } = await scheduleDemoAppGeneration({
-        appDescriptionInput: idea,
-        categoryHint: selectedCategory,
-        uiStyle: selectedUIStyle,
+      const selectedConcept = concepts[index];
+      
+      // Call scheduleAppGeneration with the selected concept data
+      const { appId } = await scheduleAppGeneration({
+        appDescriptionInput: `${selectedConcept.app_name}: ${selectedConcept.app_description}`,
+        uiStyle: selectedConcept.style_description,
       });
 
       // Navigate to the generation progress page
       router.push(`/app/${appId}/generation`);
     } catch (error) {
       console.error('Failed to generate app', error);
-      setIsSubmitting(false);
+      setIsGeneratingApp(false);
+      setSelectedConceptIndex(null);
       setToast({
         message: 'Failed to generate app. Please try again.',
         type: 'error',
         isOpen: true
       });
     }
+  };
+
+  const handleBackToForm = () => {
+    setView('form');
+    setConceptJobId(null);
+    setConcepts([]);
+    setSelectedConceptIndex(null);
   };
 
   if (!isLoaded || (isLoaded && !isSignedIn)) {
@@ -190,6 +219,8 @@ export default function GenerateNewAppPage() {
     );
   }
 
+  const disabled = !idea.trim() || isGeneratingConcepts;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
       <Toast
@@ -198,220 +229,237 @@ export default function GenerateNewAppPage() {
         isOpen={toast.isOpen}
         onClose={() => setToast({ ...toast, isOpen: false })}
       />
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-6 py-12 md:px-12">
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-        >
-          <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            AI-powered starter flow
-          </div>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
-            Describe your idea, we&apos;ll draft mockups
-          </h1>
-          <p className="mt-3 text-base text-muted-foreground sm:text-lg">
-            Share the pitch, pick a vibe, and we&apos;ll spin up a starter app entry and mockups you can refine.
-          </p>
-        </motion.div>
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-12 md:px-12">
+        <AnimatePresence mode="wait">
+          {view === 'form' ? (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+                className="text-center"
+              >
+                <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  AI-powered starter flow
+                </div>
+                <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+                  Describe your idea, we&apos;ll show you concepts
+                </h1>
+                <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+                  Tell us about your app and we&apos;ll generate 4 unique visual concepts to choose from.
+                </p>
+              </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }}
-          className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr,1fr]"
-        >
-          <div className="space-y-6">
-            <div className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Lightbulb className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold text-foreground">Describe your app idea</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Tell us what it does, who it&apos;s for, and the standout features. We&apos;ll draft around this brief.
-                  </p>
-                </div>
-              </div>
-              <div className="relative mt-4">
-                <textarea
-                  id="app-idea"
-                  value={idea}
-                  onChange={(event) => setIdea(event.target.value)}
-                  placeholder="Example: A wellness companion that turns daily journaling into affirmations, tracks mood trends, and nudges me with mindful breaks."
-                  rows={6}
-                  className="w-full rounded-xl border bg-background px-4 py-3 pr-36 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleExpandIdea}
-                  disabled={!idea.trim() || isExpandingIdea}
-                  aria-busy={isExpandingIdea}
-                  className="absolute bottom-3 right-3 flex items-center gap-2 rounded-lg border-muted-foreground/30 bg-background/90 px-3 text-xs font-semibold text-foreground shadow-sm backdrop-blur hover:border-muted-foreground/60 hover:bg-background disabled:opacity-70"
-                >
-                  {isExpandingIdea ? (
-                    <RefreshCcw className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  )}
-                  Expand with AI
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div className="rounded-2xl border bg-card p-6 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                    <Palette className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-semibold text-foreground">Visual style & vibe</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">Optional. Describe the look, feel, colors, and design aesthetic you want.</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <textarea
-                    id="style"
-                    value={style}
-                    onChange={(event) => setStyle(event.target.value)}
-                    placeholder="e.g. Minimal & clean with neutral palettes and crisp typography, or Playful & vibrant with bright colors and rounded shapes..."
-                    rows={3}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-2xl border bg-card p-6 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                    <ImageIcon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-semibold text-foreground">Reference images (optional)</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Add inspiration shots or existing screenshots. We&apos;ll surface them in future updates to guide layout and style.
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {Array.from({ length: MAX_REFERENCE_IMAGES }).map((_, index) => {
-                    const image = referenceImages[index];
-                    const isAddSlot = !image && index === referenceImages.length && referenceImages.length < MAX_REFERENCE_IMAGES;
-
-                    if (image) {
-                      return (
-                        <div key={image.id} className="relative h-24 w-full overflow-hidden rounded-lg border">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={image.preview} alt={image.name} className="h-full w-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveReferenceImage(image.id)}
-                            className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:text-foreground"
-                            aria-label="Remove reference"
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.1 }}
+                className="mt-8 space-y-8"
+              >
+                {/* App Idea Box with Integrated Actions */}
+                <div className="rounded-2xl border bg-card p-6 shadow-sm">
+                  {/* Reference Images Preview - At the top */}
+                  {referenceImages.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-3">
+                      {referenceImages.map((image, index) => {
+                        const rotations = ['rotate-[-2deg]', 'rotate-[1deg]', 'rotate-[-1.5deg]', 'rotate-[2deg]'];
+                        const rotation = rotations[index % rotations.length];
+                        return (
+                          <div 
+                            key={image.id} 
+                            className={`relative h-16 w-16 rounded-lg border shadow-md transition-transform hover:scale-105 ${rotation}`}
                           >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      );
-                    }
-
-                    if (isAddSlot) {
-                      const remaining = MAX_REFERENCE_IMAGES - referenceImages.length;
-                      return (
-                        <button
-                          key="reference-add"
-                          type="button"
-                          onClick={triggerReferenceUpload}
-                          className="flex h-24 w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/40 text-xs text-muted-foreground transition-colors hover:border-muted-foreground hover:bg-muted/40"
-                        >
-                          <Upload className="h-5 w-5" />
-                          Add image
-                          <span className="text-[10px] text-muted-foreground/80">{remaining} left</span>
-                        </button>
-                      );
-                    }
-
-                    return (
-                      <div
-                        key={`reference-ghost-${index}`}
-                        className="flex h-24 w-full items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/20 bg-muted/10 text-[10px] uppercase tracking-wide text-muted-foreground/70"
-                        aria-hidden="true"
-                      >
-                        Preview
-                      </div>
-                    );
-                  })}
-                </div>
-                <input
-                  ref={referenceInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  hidden
-                  onChange={handleReferenceSelect}
-                />
-              </div>
-            </div>
-
-            <div className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                  <FolderOpen className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-base font-semibold text-foreground">Category</h2>
-                      <p className="mt-1 text-xs text-muted-foreground">App Store category for discoverability.</p>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={image.preview} alt={image.name} className="h-full w-full rounded-lg object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveReferenceImage(image.id)}
+                              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground"
+                              aria-label="Remove reference"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <select
-                      id="category"
-                      value={category}
-                      onChange={(event) => setCategory(event.target.value)}
-                      className="w-[360px] rounded-lg border bg-background px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                  )}
+                  
+                  <textarea
+                    id="app-idea"
+                    value={idea}
+                    onChange={(event) => setIdea(event.target.value)}
+                    placeholder="Example: A wellness companion that turns daily journaling into affirmations, tracks mood trends, and nudges me with mindful breaks."
+                    rows={5}
+                    className="w-full resize-none bg-transparent text-base focus:outline-none placeholder:text-muted-foreground/60"
+                  />
+                  
+                  <input
+                    ref={referenceInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    hidden
+                    onChange={handleReferenceSelect}
+                  />
+                  
+                  {/* Action Buttons */}
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1">
+                      {/* Attach Reference Button */}
+                      <button
+                        type="button"
+                        onClick={triggerReferenceUpload}
+                        disabled={referenceImages.length >= MAX_REFERENCE_IMAGES}
+                        className="inline-flex items-center gap-2 rounded-lg bg-muted/50 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        <span>Attach reference</span>
+                      </button>
+                      
+                      {/* Category Dropdown */}
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="rounded-lg border border-border/40 bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-1 focus:ring-foreground/20"
+                      >
+                        <option value="">Category (optional)</option>
+                        {CATEGORIES.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Generate Button */}
+                    <Button
+                      type="button"
+                      size="lg"
+                      onClick={handleGenerateConcepts}
+                      disabled={disabled}
                     >
-                      {CATEGORY_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
+                      {isGeneratingConcepts ? 'Generating concepts…' : 'Generate concepts'}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="concepts"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+              >
+                <button
+                  type="button"
+                  onClick={handleBackToForm}
+                  className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to form
+                </button>
+                <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+                  {concepts.length > 0 ? 'Pick your favorite concept' : 'Generating concepts...'}
+                </h1>
+                <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+                  {concepts.length > 0 
+                    ? 'We generated 4 unique visual concepts. Select one to continue with full app generation.'
+                    : 'Creating 4 unique app concepts tailored to your idea. This will take about 15-20 seconds.'
+                  }
+                </p>
+              </motion.div>
 
-          <div className="flex h-fit flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm">
-            <div className="rounded-xl border border-dashed bg-background/80 p-4 text-sm text-muted-foreground">
-              <Sparkles className="mr-2 inline h-4 w-4 text-primary" />
-              Mocksy will generate your app with icon and 5 sample screenshots. This takes about 30-60 seconds.
-            </div>
-            <Button
-              type="button"
-              size="lg"
-              className="w-full"
-              onClick={handleGenerate}
-              disabled={disabled}
-            >
-              {isSubmitting ? 'Generating app with AI…' : 'Generate app' }
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => router.push('/new-app/setup-existing-app')}
-            >
-              Set up existing app instead
-            </Button>
-          </div>
-        </motion.div>
+              <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+                <AnimatePresence mode="popLayout">
+                  {concepts.length > 0 ? (
+                    concepts.map((concept, index) => (
+                      <motion.div
+                        key={`concept-${index}`}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                      >
+                        <AppConceptCard
+                          concept={concept}
+                          isSelected={selectedConceptIndex === index}
+                          onClick={() => handleSelectConcept(index)}
+                        />
+                      </motion.div>
+                    ))
+                  ) : (
+                    // Loading skeletons while concepts are being generated
+                    Array.from({ length: 4 }).map((_, index) => (
+                      <motion.div
+                        key={`skeleton-${index}`}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                        className="flex flex-col overflow-hidden rounded-2xl border-2 border-border bg-card shadow-sm"
+                      >
+                        {/* Cover skeleton with overlaid icon/text */}
+                        <div className="relative bg-muted-foreground/10">
+                          {/* Cover image skeleton */}
+                          <div className="aspect-[2/1] w-full animate-pulse bg-muted-foreground/15" />
+                          
+                          {/* Icon + Title skeleton (overlapping) */}
+                          <div className="relative -mt-12 flex items-start gap-4 p-5">
+                            {/* Icon skeleton - larger */}
+                            <div className="h-20 w-20 flex-shrink-0 animate-pulse rounded-[18%] bg-muted-foreground/10 shadow-xl ring-2 ring-border" />
+                            
+                            {/* Text content skeleton */}
+                            <div className="flex-1 space-y-2 pt-1">
+                              <div className="h-6 w-3/4 animate-pulse rounded bg-muted-foreground/20" />
+                              <div className="h-4 w-full animate-pulse rounded bg-muted-foreground/15" />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Description skeleton */}
+                        <div className="flex flex-1 flex-col gap-3 bg-muted-foreground/5 p-5">
+                          <div className="space-y-2">
+                            <div className="h-3 w-full animate-pulse rounded bg-muted-foreground/20" />
+                            <div className="h-3 w-full animate-pulse rounded bg-muted-foreground/20" />
+                            <div className="h-3 w-2/3 animate-pulse rounded bg-muted-foreground/20" />
+                          </div>
+                          
+                          <div className="mt-auto flex items-center justify-center gap-2 pt-2 text-sm text-muted-foreground">
+                            <Sparkles className="h-4 w-4 animate-pulse text-primary" />
+                            <span>Generating concept {index + 1}...</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {concepts.length > 0 && conceptJob?.status === 'generating_images' && (
+                <div className="mt-6 rounded-xl border border-dashed bg-background/80 p-4 text-center text-sm text-muted-foreground">
+                  <Sparkles className="mr-2 inline h-4 w-4 animate-pulse text-primary" />
+                  Images are still generating in the background. You can select a concept now or wait for images to load.
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

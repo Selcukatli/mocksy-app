@@ -58,7 +58,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
       {hasCoverImage ? (
         <>
           {/* Cover Image with fade to transparent at bottom */}
-          <div className="relative w-full h-[400px] md:h-[500px]">
+          <div className="relative w-full h-[280px] md:h-[350px]">
             <motion.div
               key={`${currentApp._id}-cover`}
               initial={{ opacity: 0, scale: 1.1 }}
@@ -199,7 +199,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
         /* Default layout when no cover image - use icon color */
         <>
           {/* Gradient background with patterns using icon's dominant color */}
-          <div className="relative w-full h-[400px] md:h-[500px] overflow-hidden">
+          <div className="relative w-full h-[280px] md:h-[350px] overflow-hidden">
             {/* Base subtle gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/0" />
             

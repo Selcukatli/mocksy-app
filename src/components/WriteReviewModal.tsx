@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
+import { useUser } from '@clerk/nextjs';
+import LoginDialog from './LoginDialog';
 
 interface WriteReviewModalProps {
   isOpen: boolean;
@@ -28,12 +30,20 @@ export default function WriteReviewModal({
   const [reviewText, setReviewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
+  const { isSignedIn } = useUser();
   const createReview = useMutation(api.mockReviews.createReview);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Check if user is signed in
+    if (!isSignedIn) {
+      setShowLoginDialog(true);
+      return;
+    }
 
     if (rating === 0) {
       setError('Please select a rating');
@@ -223,6 +233,14 @@ export default function WriteReviewModal({
               </div>
             </motion.div>
           </div>
+
+          {/* Login Dialog - shown over the review modal */}
+          <LoginDialog
+            isOpen={showLoginDialog}
+            onClose={() => setShowLoginDialog(false)}
+            title="Login to Write Review"
+            message="Please sign in to write a review and share your experience with the community."
+          />
         </>
       )}
     </AnimatePresence>

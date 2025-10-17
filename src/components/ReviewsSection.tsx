@@ -5,7 +5,9 @@ import { Star, Edit } from 'lucide-react';
 import ReviewCard from './ReviewCard';
 import WriteReviewModal from './WriteReviewModal';
 import InlineStarRating from './InlineStarRating';
+import LoginDialog from './LoginDialog';
 import { Id } from '@convex/_generated/dataModel';
+import { useUser } from '@clerk/nextjs';
 
 interface ReviewsSectionProps {
   appId: Id<'apps'>;
@@ -42,6 +44,16 @@ export default function ReviewsSection({
   totalReviews,
 }: ReviewsSectionProps) {
   const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const { isSignedIn } = useUser();
+
+  const handleWriteReviewClick = () => {
+    if (!isSignedIn) {
+      setShowLoginDialog(true);
+      return;
+    }
+    setIsWriteReviewOpen(true);
+  };
 
   // Filter out quick ratings (reviews with just "Rated X stars" text)
   const writtenReviews = reviews.filter(
@@ -64,7 +76,7 @@ export default function ReviewsSection({
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <InlineStarRating appId={appId} />
               <button
-                onClick={() => setIsWriteReviewOpen(true)}
+                onClick={handleWriteReviewClick}
                 className="px-6 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 shadow-sm text-sm font-medium"
               >
                 <Edit className="w-4 h-4" />
@@ -80,6 +92,13 @@ export default function ReviewsSection({
           appId={appId}
           appName={appName}
           onSuccess={() => setIsWriteReviewOpen(false)}
+        />
+
+        <LoginDialog
+          isOpen={showLoginDialog}
+          onClose={() => setShowLoginDialog(false)}
+          title="Login to Write Review"
+          message="Please sign in to write a review and share your experience with the community."
         />
       </>
     );
@@ -120,7 +139,7 @@ export default function ReviewsSection({
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <InlineStarRating appId={appId} />
               <button
-                onClick={() => setIsWriteReviewOpen(true)}
+                onClick={handleWriteReviewClick}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 shadow-sm text-sm font-medium"
               >
                 <Edit className="w-4 h-4" />
@@ -176,6 +195,13 @@ export default function ReviewsSection({
         appId={appId}
         appName={appName}
         onSuccess={() => setIsWriteReviewOpen(false)}
+      />
+
+      <LoginDialog
+        isOpen={showLoginDialog}
+        onClose={() => setShowLoginDialog(false)}
+        title="Login to Write Review"
+        message="Please sign in to write a review and share your experience with the community."
       />
     </>
   );

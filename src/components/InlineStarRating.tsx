@@ -5,6 +5,8 @@ import { Star } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
+import { useUser } from '@clerk/nextjs';
+import LoginDialog from './LoginDialog';
 
 interface InlineStarRatingProps {
   appId: Id<'apps'>;
@@ -17,7 +19,9 @@ export default function InlineStarRating({ appId }: InlineStarRatingProps) {
   const [selectedRating, setSelectedRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
+  const { isSignedIn } = useUser();
   const createReview = useMutation(api.mockReviews.createReview);
   const existingReview = useQuery(api.mockReviews.getUserReview, { appId });
 
@@ -29,6 +33,12 @@ export default function InlineStarRating({ appId }: InlineStarRatingProps) {
   }, [existingReview]);
 
   const handleRatingClick = async (rating: number) => {
+    // Check if user is signed in
+    if (!isSignedIn) {
+      setShowLoginDialog(true);
+      return;
+    }
+
     setError('');
     setIsSubmitting(true);
 
@@ -102,6 +112,13 @@ export default function InlineStarRating({ appId }: InlineStarRatingProps) {
           <span className="text-xs text-muted-foreground">Click to Rate</span>
         )}
       </div>
+
+      <LoginDialog
+        isOpen={showLoginDialog}
+        onClose={() => setShowLoginDialog(false)}
+        title="Login to Rate"
+        message="Please sign in to rate this app and share your experience with the community."
+      />
     </div>
   );
 }

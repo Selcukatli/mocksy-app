@@ -300,7 +300,32 @@ When refactoring existing code to follow this pattern:
 5. **Update imports** in affected files
 6. **Test navigation flow** with keyboard and mouse
 
-## 10. Checklist
+## 10. Sidebar Behavior in Overlay Mode
+
+### Push vs. Overlay
+The sidebar in overlay mode (dynamic pages) uses a **push** layout instead of overlaying on top of content:
+
+- When opened, the sidebar pushes page content to the right
+- Animates smoothly using width transitions (0 to 256px)
+- Includes a collapse button (X icon) in the top right
+- On mobile, still uses overlay with backdrop for space constraints
+
+### Implementation Details
+```tsx
+// Sidebar animates width instead of position
+animate={{ width: isExpanded ? 256 : 0 }}
+
+// Uses flex layout, not fixed positioning
+className="hidden md:flex h-screen flex-col bg-background border-r overflow-hidden flex-shrink-0 sticky top-0"
+```
+
+### Benefits
+- Better visual hierarchy and spatial awareness
+- Content is never obscured by the sidebar
+- Smooth transitions feel more integrated
+- Consistent with static sidebar behavior on browse pages
+
+## 11. Checklist
 
 When implementing a new route with overlay pattern:
 

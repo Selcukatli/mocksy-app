@@ -83,7 +83,7 @@ export default function MyAppsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/new-app/generate"
+            href="/generate"
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
           >
             <Sparkles className="h-4 w-4" />
@@ -131,7 +131,7 @@ export default function MyAppsPage() {
           className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           {apps.map((app) => (
-            <Link key={app._id} href={`/app/${app._id}`}>
+            <Link key={app._id} href={`/manage-app/${app._id}`}>
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 18 }}

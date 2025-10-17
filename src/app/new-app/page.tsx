@@ -11,7 +11,7 @@ const options = [
   {
     title: 'Generate with AI',
     description: 'Share a few details and let Mocksy draft the app profile, visuals, and copy for you.',
-    href: '/new-app/generate',
+    href: '/generate',
     icon: Wand2,
     accent: 'from-purple-500/80 via-purple-500/50 to-indigo-500/80',
     pill: 'Fastest',

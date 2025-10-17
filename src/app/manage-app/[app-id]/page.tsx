@@ -80,6 +80,7 @@ export default function AppDetailPage({ params }: PageProps) {
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
   const [screenSearch, setScreenSearch] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'sets' | 'screens'>('sets');
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -100,10 +101,10 @@ export default function AppDetailPage({ params }: PageProps) {
   // Fetch app screens from Convex
   const appScreensRaw = useQuery(api.appScreens.getAppScreens, { appId: appId as Id<'apps'> });
   const appScreens = useMemo(() => appScreensRaw ?? [], [appScreensRaw]);
-  const appScreensBasePath = `/app/${appId}/app-screens`;
-  const appScreensReturnTo = `${appScreensBasePath}?returnTo=${encodeURIComponent(`/app/${appId}`)}`;
+  const appScreensBasePath = `/manage-app/${appId}/app-screens`;
+  const appScreensReturnTo = `${appScreensBasePath}?returnTo=${encodeURIComponent(`/manage-app/${appId}`)}`;
   const buildPreviewUrl = (screenId: Id<'appScreens'>) =>
-    `${appScreensBasePath}/preview/${screenId}?returnTo=${encodeURIComponent(`/app/${appId}`)}`;
+    `${appScreensBasePath}/preview/${screenId}?returnTo=${encodeURIComponent(`/manage-app/${appId}`)}`;
 
   // Get data for current app
   const sourceImagesCount = appScreens.length;
@@ -312,19 +313,19 @@ export default function AppDetailPage({ params }: PageProps) {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+              <div className="flex items-center gap-1 md:gap-1.5 flex-shrink-0 flex-wrap justify-end">
                     <button
                       onClick={handleShowOnboarding}
                       title="How It Works"
-                      className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                      className="px-2.5 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 whitespace-nowrap"
                     >
                       <HelpCircle className="w-4 h-4" />
                       <span className="hidden xl:inline">How It Works</span>
                     </button>
                     <button
-                      onClick={() => router.push(`/app/${appId}/manage`)}
-                      title="App Details"
-                      className="px-3 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-1.5"
+                      onClick={() => router.push(`/manage-app/${appId}/edit`)}
+                      title="Edit App Details"
+                      className="px-2.5 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-1.5"
                     >
                       <Settings className="w-4 h-4" />
                       <span className="text-sm hidden lg:inline">Details</span>
@@ -332,7 +333,7 @@ export default function AppDetailPage({ params }: PageProps) {
                     <button
                       onClick={() => window.open(`/appstore/${appId}`, '_blank')}
                       title="Preview in AppStore"
-                      className="px-3 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-1.5"
+                      className="px-2.5 py-2 rounded-lg border hover:bg-muted/50 transition-colors flex items-center gap-1.5"
                     >
                       <ExternalLink className="w-4 h-4" />
                       <span className="text-sm hidden lg:inline">Preview</span>
@@ -343,7 +344,7 @@ export default function AppDetailPage({ params }: PageProps) {
                         disabled={isPublishing}
                         title={isPublishing ? "Publishing..." : "Publish App"}
                         className={cn(
-                          "px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5",
+                          "px-2.5 py-2 rounded-lg transition-colors flex items-center gap-1.5",
                           isPublishing
                             ? "bg-green-500/50 text-white cursor-not-allowed"
                             : "bg-green-600 hover:bg-green-700 text-white"
@@ -391,10 +392,55 @@ export default function AppDetailPage({ params }: PageProps) {
             </div>
           </motion.div>
 
+          {/* Mobile Tabs */}
+          <div className="md:hidden px-6 pt-4">
+            <div className="flex border-b border-border">
+              <button
+                onClick={() => setMobileTab('sets')}
+                className={cn(
+                  "flex-1 px-4 py-3 text-sm font-medium transition-colors relative",
+                  mobileTab === 'sets'
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Screenshot Sets
+                {mobileTab === 'sets' && (
+                  <motion.div
+                    layoutId="mobileTab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => setMobileTab('screens')}
+                className={cn(
+                  "flex-1 px-4 py-3 text-sm font-medium transition-colors relative",
+                  mobileTab === 'screens'
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                App Screens ({sourceImagesCount})
+                {mobileTab === 'screens' && (
+                  <motion.div
+                    layoutId="mobileTab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* Main Content - 2 Column Layout */}
           <div className="flex-1 flex gap-6 p-6 overflow-hidden min-h-0">
             {/* Left Column - AppStore Sets */}
-            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+            <div className={cn(
+              "flex-1 flex flex-col overflow-hidden min-h-0",
+              mobileTab === 'screens' && "hidden md:flex"
+            )}>
               <div className="bg-card border rounded-xl p-6 flex flex-col flex-1 overflow-hidden">
               {convexSets.length > 0 && (
                 <div className="mb-6">
@@ -420,11 +466,12 @@ export default function AppDetailPage({ params }: PageProps) {
                       />
                     </div>
                     <button
-                      onClick={() => router.push(`/app/${appId}/set/new`)}
+                      onClick={() => router.push(`/manage-app/${appId}/set/new`)}
                       className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
                     >
                       <FolderPlus className="w-4 h-4" />
-                      Create New Set
+                      <span className="hidden sm:inline">Create New Set</span>
+                      <span className="sm:hidden">New</span>
                     </button>
                   </div>
                 </div>
@@ -437,102 +484,102 @@ export default function AppDetailPage({ params }: PageProps) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="flex-1 flex items-center justify-center py-8"
+                    className="flex-1 flex items-center justify-center py-6 overflow-y-auto"
                   >
-                      <div className="text-center max-w-2xl px-4">
-                        <h3 className="text-3xl font-semibold mb-10">Get Started in 3 Steps</h3>
+                      <div className="text-center max-w-2xl px-4 w-full">
+                        <h3 className="text-2xl md:text-3xl font-semibold mb-6 md:mb-8">Get Started in 3 Steps</h3>
 
                       {/* Step by Step Guide */}
-                      <div className="space-y-3 mb-10">
+                      <div className="space-y-2.5 md:space-y-3 mb-6 md:mb-8">
                         {/* Step 1 */}
                         <div className={cn(
-                          "flex items-start gap-4 text-left p-5 border rounded-xl transition-all cursor-pointer group",
+                          "flex items-start gap-3 md:gap-4 text-left p-4 md:p-5 border rounded-xl transition-all cursor-pointer group",
                           appScreens.length > 0
                             ? "bg-card/50 hover:shadow-md"
                             : "bg-card hover:shadow-md"
                         )}
                             onClick={() => router.push(appScreensReturnTo)}>
                           <div className={cn(
-                            "w-10 h-10 rounded-full font-bold flex items-center justify-center flex-shrink-0 transition-colors",
+                            "w-9 h-9 md:w-10 md:h-10 rounded-full font-bold flex items-center justify-center flex-shrink-0 transition-colors text-sm md:text-base",
                             appScreens.length > 0
                               ? "bg-green-500/10 text-green-600"
                               : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
                           )}>
                             {appScreens.length > 0 ? '✓' : '1'}
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold mb-1 flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold mb-1 flex items-center gap-2 text-sm md:text-base">
                               Upload App Screens
-                              <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                               {appScreens.length > 0 && (
                                 <span className="text-xs text-green-600 font-normal">({appScreens.length} uploaded)</span>
                               )}
                             </h4>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs md:text-sm text-muted-foreground">
                               Add screenshots from your app to give AI context
                             </p>
                           </div>
-                          <Upload className="w-5 h-5 text-muted-foreground mt-0.5" />
+                          <Upload className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                         </div>
 
                         {/* Step 2 */}
                         <div className={cn(
-                          "flex items-start gap-4 text-left p-5 border rounded-xl transition-all",
+                          "flex items-start gap-3 md:gap-4 text-left p-4 md:p-5 border rounded-xl transition-all",
                           appScreens.length > 0
                             ? "bg-card hover:shadow-md cursor-pointer group"
                             : "bg-card/50 opacity-75"
                         )}
                              onClick={appScreens.length > 0 ? () => router.push('/browse-vibes') : undefined}>
                           <div className={cn(
-                            "w-10 h-10 rounded-full font-bold flex items-center justify-center flex-shrink-0 transition-colors",
+                            "w-9 h-9 md:w-10 md:h-10 rounded-full font-bold flex items-center justify-center flex-shrink-0 transition-colors text-sm md:text-base",
                             appScreens.length > 0
                               ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
                               : "bg-muted text-muted-foreground"
                           )}>
                             2
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold mb-1 flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold mb-1 flex items-center gap-2 text-sm md:text-base">
                               Choose a Vibe
                               {appScreens.length > 0 && (
-                                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                               )}
                             </h4>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs md:text-sm text-muted-foreground">
                               Select AI-powered templates for your brand
                             </p>
                           </div>
-                          <Palette className="w-5 h-5 text-muted-foreground mt-0.5" />
+                          <Palette className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                         </div>
 
                         {/* Step 3 */}
                         <div className={cn(
-                          "flex items-start gap-4 text-left p-5 border rounded-xl transition-all",
+                          "flex items-start gap-3 md:gap-4 text-left p-4 md:p-5 border rounded-xl transition-all",
                           appScreens.length > 0
                             ? "bg-card hover:shadow-md cursor-pointer group"
                             : "bg-card/50 opacity-75"
                         )}
-                             onClick={appScreens.length > 0 ? () => router.push(`/app/${appId}/set/new`) : undefined}>
+                             onClick={appScreens.length > 0 ? () => router.push(`/manage-app/${appId}/set/new`) : undefined}>
                           <div className={cn(
-                            "w-10 h-10 rounded-full font-bold flex items-center justify-center flex-shrink-0 transition-colors",
+                            "w-9 h-9 md:w-10 md:h-10 rounded-full font-bold flex items-center justify-center flex-shrink-0 transition-colors text-sm md:text-base",
                             appScreens.length > 0
                               ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
                               : "bg-muted text-muted-foreground"
                           )}>
                             3
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold mb-1 flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold mb-1 flex items-center gap-2 text-sm md:text-base">
                               Generate AppStore Screenshots
                               {appScreens.length > 0 && (
-                                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                               )}
                             </h4>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs md:text-sm text-muted-foreground">
                               AI creates beautiful screenshots ready for the App Store
                             </p>
                           </div>
-                          <Download className="w-5 h-5 text-muted-foreground mt-0.5" />
+                          <Download className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                         </div>
                       </div>
 
@@ -547,7 +594,7 @@ export default function AppDetailPage({ params }: PageProps) {
                               Start with Step 1: Upload App Screens
                             </button>
                             <button
-                              onClick={() => router.push(`/app/${appId}/set/new`)}
+                              onClick={() => router.push(`/manage-app/${appId}/set/new`)}
                               className="w-full px-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                             >
                               or skip and create a set directly →
@@ -556,7 +603,7 @@ export default function AppDetailPage({ params }: PageProps) {
                         ) : (
                           <>
                             <button
-                              onClick={() => router.push(`/app/${appId}/set/new`)}
+                              onClick={() => router.push(`/manage-app/${appId}/set/new`)}
                               className="w-full px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors flex items-center justify-center gap-2"
                             >
                               <FolderPlus className="w-5 h-5" />
@@ -584,7 +631,7 @@ export default function AppDetailPage({ params }: PageProps) {
                       <motion.div
                         key={set._id}
                         variants={itemAnimation}
-                        onClick={() => router.push(`/app/${appId}/set/${set._id}`)}
+                        onClick={() => router.push(`/manage-app/${appId}/set/${set._id}`)}
                         className="bg-card border rounded-xl p-4 cursor-pointer transition-all duration-200 border-border hover:border-muted-foreground/30 hover:shadow-md"
                       >
                         {/* Set Header */}
@@ -712,7 +759,7 @@ export default function AppDetailPage({ params }: PageProps) {
                     {/* Create New Set Card */}
                     <motion.div
                       variants={itemAnimation}
-                      onClick={() => router.push(`/app/${appId}/set/new`)}
+                      onClick={() => router.push(`/manage-app/${appId}/set/new`)}
                       className="bg-card/50 border-2 border-dashed border-border rounded-xl p-4 cursor-pointer hover:border-muted-foreground/30 hover:bg-muted/20 transition-all duration-200 flex flex-col"
                     >
                       <div className="flex-1 flex items-center justify-center">
@@ -732,7 +779,10 @@ export default function AppDetailPage({ params }: PageProps) {
             </div>
 
             {/* Right Column - Screens */}
-            <div className="w-96 flex flex-col min-h-0">
+            <div className={cn(
+              "w-full md:w-96 flex flex-col min-h-0",
+              mobileTab === 'sets' && "hidden md:flex"
+            )}>
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -791,7 +841,7 @@ export default function AppDetailPage({ params }: PageProps) {
                 <div className="mt-6 flex-1 overflow-y-auto pr-1">
                   {sourceImagesCount > 0 ? (
                     sortedScreens.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-4 pb-1">
+                      <div className="grid grid-cols-2 gap-3 md:gap-4 pb-1">
                         {sortedScreens.map((screen) => (
                           <div
                             key={screen._id}

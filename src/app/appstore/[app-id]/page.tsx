@@ -308,7 +308,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
       </motion.div>
     )}
 
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 min-w-0">
+    <div className="mx-auto max-w-4xl px-4 pt-4 pb-8 sm:px-6 min-w-0">
 
         {/* Draft Status Banner - Only show after app generation is complete */}
         {appPreview?.app.isDemo && 
@@ -398,7 +398,7 @@ export default function PublicAppStorePage({ params }: PageProps) {
             adminActionsSlot={
               deletePermissions?.canDelete ? (
                 <button
-                  onClick={() => window.open(`/app/${appId}`, '_blank')}
+                  onClick={() => window.open(`/manage-app/${appId}`, '_blank')}
                   className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
                 >
                   <Settings className="h-4 w-4" />

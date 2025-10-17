@@ -161,7 +161,7 @@ export default function SourceImagesPage({ params }: PageProps) {
       params.set('sort', sortBy);
 
       const queryString = params.toString();
-      const basePath = `/app/${appId}/app-screens/preview/${imageId}`;
+      const basePath = `/manage-app/${appId}/app-screens/preview/${imageId}`;
       const url = queryString ? `${basePath}?${queryString}` : basePath;
       router.push(url, { scroll: false });
     },
@@ -431,7 +431,7 @@ export default function SourceImagesPage({ params }: PageProps) {
         >
           <PageHeader
             className="px-6"
-            backHref={returnTo || `/app/${appId}`}
+            backHref={returnTo || `/manage-app/${appId}`}
             backLabel="Back to app"
             icon={
               app ? (

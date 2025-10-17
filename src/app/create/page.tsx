@@ -114,7 +114,7 @@ export default function Home() {
       });
 
       // Navigate to the newly created set
-      router.push(`/app/${selectedAppId}/set/${setId}`);
+      router.push(`/manage-app/${selectedAppId}/set/${setId}`);
 
       // Reset the dialog state
       setShowAppSelectionDialog(false);
@@ -180,11 +180,11 @@ export default function Home() {
       >
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link href="/new-app/generate" className="group">
+          <Link href="/generate" className="group">
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 p-6 transition-all duration-300 hover:shadow-xl shadow-lg"
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-400 to-blue-500 p-6 transition-all duration-300 hover:shadow-xl shadow-lg"
             >
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
               <div className="absolute top-6 right-6">
@@ -211,7 +211,7 @@ export default function Home() {
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 to-orange-500 p-6 transition-all duration-300 hover:shadow-xl shadow-lg"
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-400 p-6 transition-all duration-300 hover:shadow-xl shadow-lg"
             >
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
               <div className="absolute top-6 right-6">
@@ -283,7 +283,7 @@ export default function Home() {
             </Link>
 
             {visibleApps.map((app) => (
-              <Link key={app._id} href={`/app/${app._id}`}>
+              <Link key={app._id} href={`/manage-app/${app._id}`}>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
@@ -323,7 +323,7 @@ export default function Home() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Recent Screenshot Sets</h2>
             {apps.length > 0 && recentSets.length > 0 && (
-              <Link href={`/app/${recentSets[0]?.appId}`} className="text-primary hover:underline text-sm">
+              <Link href={`/manage-app/${recentSets[0]?.appId}`} className="text-primary hover:underline text-sm">
                 View All Sets →
               </Link>
             )}
@@ -354,7 +354,7 @@ export default function Home() {
                     whileHover={{ scale: 1.02 }}
                     transition={{ type: "spring", stiffness: 400, damping: 10 }}
                   >
-                    <Link href={`/app/${set.appId}/set/${set._id}`} className="block group">
+                    <Link href={`/manage-app/${set.appId}/set/${set._id}`} className="block group">
                       <div className="rounded-xl border bg-card/50 hover:bg-card hover:shadow-md transition-all duration-200">
                         {/* Screenshot Previews Row */}
                         <div className="flex gap-1.5 p-3 pb-2">

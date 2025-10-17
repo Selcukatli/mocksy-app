@@ -98,7 +98,7 @@ export default function ScreenshotSetPageContent({
   // Check if set exists
   useEffect(() => {
     if (!isNewSet && convexSet === null && setId !== 'new' && !isBackground) {
-      router.push(`/app/${appId}`);
+      router.push(`/manage-app/${appId}`);
     }
   }, [convexSet, isNewSet, setId, appId, router, isBackground]);
 
@@ -122,9 +122,9 @@ export default function ScreenshotSetPageContent({
           });
           setIsEditingName(true);
           // Replace URL with actual set ID
-          router.replace(`/app/${appId}/set/${newSetId}`);
+          router.replace(`/manage-app/${appId}/set/${newSetId}`);
         } catch {
-          router.push(`/app/${appId}`);
+          router.push(`/manage-app/${appId}`);
         }
       }
     }
@@ -184,10 +184,10 @@ export default function ScreenshotSetPageContent({
       // Navigate to the screenshot route
       if ('isPlaceholder' in slot && slot.isPlaceholder) {
         // For new slots, use the new route structure
-        router.push(`/app/${appId}/set/${setId}/screenshot/new/${slot.slotNumber}`);
+        router.push(`/manage-app/${appId}/set/${setId}/screenshot/new/${slot.slotNumber}`);
       } else {
         // For existing screenshots, use their ID
-        router.push(`/app/${appId}/set/${setId}/screenshot/${slot._id}`);
+        router.push(`/manage-app/${appId}/set/${setId}/screenshot/${slot._id}`);
       }
     }
   };
@@ -197,7 +197,7 @@ export default function ScreenshotSetPageContent({
 
     try {
       await deleteSetMutation({ setId: convexSet._id });
-      router.push(`/app/${appId}`);
+      router.push(`/manage-app/${appId}`);
     } catch {
     }
   };
@@ -235,7 +235,7 @@ export default function ScreenshotSetPageContent({
             {/* Left section with title */}
             <div className="flex items-center gap-4">
               <button
-                onClick={() => !isBackground && router.push(`/app/${appId}`)}
+                onClick={() => !isBackground && router.push(`/manage-app/${appId}`)}
                 className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
                 disabled={isBackground}
               >

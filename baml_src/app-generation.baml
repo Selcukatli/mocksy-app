@@ -295,7 +295,7 @@ function GenerateAppDesignPlan(
   style_guide: string @description("Complete visual style guide including colors, typography, mood, and design philosophy"),
   num_screens: int @description("Number of screens to plan (3-10)")
 ) -> AppStructure {
-  client ScreenshotGeneratorHigh
+  client ScreenshotGeneratorMed
   prompt #"
     {{ _.role("user") }}
 

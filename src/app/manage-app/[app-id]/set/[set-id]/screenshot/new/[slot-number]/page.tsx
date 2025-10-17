@@ -59,7 +59,7 @@ export default function NewScreenshotPage({ params }: PageProps) {
     const existingScreenshot = screenshots.find(s => s.slotNumber === slotNumber);
     if (existingScreenshot) {
       // Redirect to the existing screenshot's URL
-      router.replace(`/app/${appId}/set/${setId}/screenshot/${existingScreenshot._id}`);
+      router.replace(`/manage-app/${appId}/set/${setId}/screenshot/${existingScreenshot._id}`);
     } else {
       // Create a temporary placeholder
       setSelectedSlot({
@@ -122,7 +122,7 @@ export default function NewScreenshotPage({ params }: PageProps) {
               subtitle,
             });
             // Navigate to the newly created screenshot
-            router.replace(`/app/${appId}/set/${setId}/screenshot/${newScreenshotId}`);
+            router.replace(`/manage-app/${appId}/set/${setId}/screenshot/${newScreenshotId}`);
           } catch {
             // Error handling silently
           } finally {

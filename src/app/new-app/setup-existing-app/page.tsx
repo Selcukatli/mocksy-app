@@ -65,7 +65,7 @@ export default function SetupExistingAppPage() {
         languages: selectedLanguages,
       });
 
-      router.push(`/app/${appId}`);
+      router.push(`/manage-app/${appId}`);
     } catch {
       // TODO: surface error toast
       setIsSubmitting(false);

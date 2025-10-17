@@ -231,6 +231,7 @@ export const updateApp = mutation({
   args: {
     appId: v.id("apps"),
     name: v.optional(v.string()),
+    subtitle: v.optional(v.string()),
     description: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")),
     coverImageStorageId: v.optional(v.id("_storage")),

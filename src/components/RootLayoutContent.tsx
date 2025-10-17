@@ -129,14 +129,14 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
         setSidebarMode: setPageSidebarMode,
       }}
     >
-      <div className="min-h-screen flex">
+      <div className="min-h-screen flex overflow-hidden">
         <Sidebar
           mode="overlay"
           isExpanded={isSidebarExpanded}
           onExpandedChange={setIsSidebarExpanded}
         />
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col">
           <TopHeader
             title={pageTitle}
             breadcrumbs={pageBreadcrumbs}
@@ -144,7 +144,12 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
             onMenuClick={toggleSidebar}
             isSidebarExpanded={isSidebarExpanded}
           />
-          <div className="pt-16">
+          {/* 
+            Content area with pt-16 to offset the fixed header.
+            For pages that need full viewport height without scroll, use:
+            min-h-[calc(100vh-4rem)] instead of min-h-screen
+          */}
+          <div className="pt-16 flex-1 overflow-y-auto">
             {children}
           </div>
         </div>

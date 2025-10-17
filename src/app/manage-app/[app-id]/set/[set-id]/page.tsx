@@ -78,7 +78,7 @@ export default function SetPage({ params }: PageProps) {
   // Check if set exists
   useEffect(() => {
     if (!isNewSet && convexSet === null && setId !== 'new') {
-      router.push(`/app/${appId}`);
+      router.push(`/manage-app/${appId}`);
     }
   }, [convexSet, isNewSet, setId, appId, router]);
 
@@ -102,9 +102,9 @@ export default function SetPage({ params }: PageProps) {
           });
           setIsEditingName(true);
           // Replace URL with actual set ID
-          router.replace(`/app/${appId}/set/${newSetId}`);
+          router.replace(`/manage-app/${appId}/set/${newSetId}`);
         } catch {
-          router.push(`/app/${appId}`);
+          router.push(`/manage-app/${appId}`);
         }
       }
     }
@@ -179,10 +179,10 @@ export default function SetPage({ params }: PageProps) {
       // Navigate to the screenshot route
       if ('isPlaceholder' in slot && slot.isPlaceholder) {
         // For new slots, use the new route structure
-        router.push(`/app/${appId}/set/${setId}/screenshot/new/${slot.slotNumber}`);
+        router.push(`/manage-app/${appId}/set/${setId}/screenshot/new/${slot.slotNumber}`);
       } else {
         // For existing screenshots, use their ID
-        router.push(`/app/${appId}/set/${setId}/screenshot/${slot._id}`);
+        router.push(`/manage-app/${appId}/set/${setId}/screenshot/${slot._id}`);
       }
     }
   };
@@ -192,7 +192,7 @@ export default function SetPage({ params }: PageProps) {
 
     try {
       await deleteSetMutation({ setId: convexSet._id });
-      router.push(`/app/${appId}`);
+      router.push(`/manage-app/${appId}`);
     } catch {
     }
   };
@@ -227,7 +227,7 @@ export default function SetPage({ params }: PageProps) {
         >
           <PageHeader
             className="px-6 py-4 bg-card/50"
-            backHref={`/app/${appId}`}
+            backHref={`/manage-app/${appId}`}
             backLabel="Back to app"
             icon={
               convexApp

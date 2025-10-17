@@ -18,6 +18,7 @@ import Toast from '@/components/Toast';
 import AppConceptCard from '@/components/AppConceptCard';
 import AppConceptDetailModal from '@/components/AppConceptDetailModal';
 import type { Id } from '@convex/_generated/dataModel';
+import { usePageHeader } from '@/components/RootLayoutContent';
 
 const MAX_REFERENCE_IMAGES = 4;
 
@@ -100,12 +101,11 @@ type AppConcept = {
 };
 
 export default function GenerateNewAppPage() {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const generateConcepts = useAction(api.appGenerationActions.generateAppConcepts);
   const generateAppFromConcept = useAction(api.appGenerationActions.generateAppFromConcept);
-  
-  const firstName = user?.firstName || 'there';
+  const { setTitle } = usePageHeader();
 
   // Form state
   const [idea, setIdea] = useState('');
@@ -113,6 +113,10 @@ export default function GenerateNewAppPage() {
   const referenceImagesRef = useRef<ReferenceImage[]>([]);
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const [examplePrompts, setExamplePrompts] = useState(() => getRandomPrompts(3));
+  
+  // Scroll state for dynamic video sizing
+  const [scrollScale, setScrollScale] = useState(1);
+  const scrollSentinelRef = useRef<HTMLDivElement | null>(null);
   
   const refreshExamples = () => {
     setExamplePrompts(getRandomPrompts(3));
@@ -140,11 +144,55 @@ export default function GenerateNewAppPage() {
     conceptJobId ? { jobId: conceptJobId } : 'skip'
   );
 
+  // Set page title
+  useEffect(() => {
+    setTitle('Generate App Concept');
+  }, [setTitle]);
+
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push('/welcome?mode=sign-in&context=new-app');
     }
   }, [isLoaded, isSignedIn, router]);
+
+  // Handle scroll for dynamic video sizing using Intersection Observer
+  useEffect(() => {
+    const sentinel = scrollSentinelRef.current;
+    if (!sentinel) return;
+
+    // Find the scrolling container (parent with overflow-y-auto)
+    let scrollContainer: HTMLElement | null = sentinel.parentElement;
+    while (scrollContainer) {
+      const style = window.getComputedStyle(scrollContainer);
+      if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+        break;
+      }
+      scrollContainer = scrollContainer.parentElement;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // When the sentinel is fully visible, scale is 1
+          // As it scrolls out of view, scale decreases to 0.5
+          const visibility = entry.intersectionRatio;
+          const newScale = 0.5 + (visibility * 0.5); // Maps 0-1 to 0.5-1
+          setScrollScale(newScale);
+        });
+      },
+      {
+        root: scrollContainer, // Specify the scrolling container
+        threshold: Array.from({ length: 101 }, (_, i) => i / 100), // 0, 0.01, 0.02, ... 1.0
+        rootMargin: '0px',
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     referenceImagesRef.current = referenceImages;
@@ -331,23 +379,45 @@ export default function GenerateNewAppPage() {
           className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl"
         >
           <div className="mx-auto max-w-6xl px-6 py-3 md:px-12">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <p className="text-sm font-medium text-primary flex-1">
-                {conceptProgress.message}
-              </p>
-              <span className="text-xs text-muted-foreground font-mono">
-                {Math.round(conceptProgress.progress)}%
-              </span>
-            </div>
-            {/* Progress Bar */}
-            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+            <div className="flex items-center gap-5 md:gap-6">
+              {/* Mocksybot generating animation - breaks out of container */}
               <motion.div
-                className="h-full bg-primary rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${conceptProgress.progress}%` }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-              />
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="flex-shrink-0 relative -my-8 md:-my-12"
+              >
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-40 h-40 md:w-52 md:h-52"
+                >
+                  <source src="/mocksy-generating.webm" type="video/webm" />
+                </video>
+              </motion.div>
+              
+              {/* Progress content */}
+              <div className="flex-1 min-w-0 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm md:text-base font-medium text-primary">
+                    {conceptProgress.message}
+                  </p>
+                  <span className="text-xs md:text-sm text-muted-foreground font-mono flex-shrink-0">
+                    {Math.round(conceptProgress.progress)}%
+                  </span>
+                </div>
+                {/* Progress Bar */}
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-primary rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${conceptProgress.progress}%` }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -368,18 +438,60 @@ export default function GenerateNewAppPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-3xl text-center"
+              className="w-full max-w-3xl text-center pb-16"
             >
-              {/* Personalized Greeting */}
+              {/* Invisible scroll sentinel for tracking scroll position */}
+              <div ref={scrollSentinelRef} className="h-px w-full" aria-hidden="true" />
+              
+              {/* Mocksybot Video */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, type: "spring" }}
+                className="mb-2 h-48 overflow-hidden cursor-pointer"
+                style={{
+                  transform: `scale(${scrollScale})`,
+                  transition: 'transform 0.1s ease-out',
+                }}
+                whileHover={{ 
+                  scale: scrollScale * 1.05,
+                  rotate: 2,
+                  transition: { duration: 0.3, type: "spring", stiffness: 300 }
+                }}
+                whileTap={{ 
+                  scale: scrollScale * 0.95,
+                  rotate: -2,
+                  transition: { duration: 0.15 }
+                }}
+              >
+                <motion.div
+                  whileHover={{ 
+                    filter: "drop-shadow(0 0 20px rgba(99, 102, 241, 0.5))",
+                    transition: { duration: 0.3 }
+                  }}
+                >
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="mx-auto w-56 h-56 transition-all"
+                  >
+                    <source src="/mocksybot.webm" type="video/webm" />
+                  </video>
+                </motion.div>
+              </motion.div>
+
+              {/* Mocksy Introduction */}
               <motion.div
                 initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35 }}
+                transition={{ duration: 0.35, delay: 0.1 }}
               >
                 <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
-                  Hey, {firstName}
+                  Hey, I&apos;m Mocksy
                 </h1>
-                <p className="mt-4 text-lg text-muted-foreground sm:text-xl">
+                <p className="mt-3 text-lg text-muted-foreground sm:text-xl">
                   Describe your app idea, I&apos;ll show you concepts
                 </p>
               </motion.div>
@@ -389,7 +501,7 @@ export default function GenerateNewAppPage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.15 }}
-                className="mt-10 space-y-4"
+                className="mt-6 space-y-4"
               >
                 {/* Reference Images Preview */}
                 {referenceImages.length > 0 && (
@@ -425,7 +537,7 @@ export default function GenerateNewAppPage() {
                     value={idea}
                     onChange={(event) => setIdea(event.target.value)}
                     placeholder="Example: A wellness companion that turns daily journaling into affirmations, tracks mood trends, and nudges me with mindful breaks."
-                    rows={4}
+                    rows={3}
                     className="w-full resize-none rounded-t-2xl bg-transparent px-6 py-4 text-base focus:outline-none placeholder:text-muted-foreground/50"
                   />
                   <input
@@ -438,13 +550,13 @@ export default function GenerateNewAppPage() {
                   />
                   
                   {/* Action bar inside textarea */}
-                  <div className="flex items-center justify-between px-4 py-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 py-3">
                     {/* Attach Reference Button */}
                     <button
                       type="button"
                       onClick={triggerReferenceUpload}
                       disabled={referenceImages.length >= MAX_REFERENCE_IMAGES}
-                      className="inline-flex items-center gap-2 rounded-full bg-muted/60 px-4 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-muted/60 px-4 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <ImageIcon className="h-4 w-4" />
                       <span>Attach reference</span>
@@ -454,25 +566,23 @@ export default function GenerateNewAppPage() {
                         </span>
                       )}
                     </button>
+                    
+                    {/* Generate Button */}
+                    <button
+                      type="button"
+                      onClick={handleGenerateConcepts}
+                      disabled={disabled}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <span>{isGeneratingConcepts ? 'Generating concepts…' : 'Generate concepts'}</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Generate Button as CTA */}
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={handleGenerateConcepts}
-                    disabled={disabled}
-                    className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <span>{isGeneratingConcepts ? 'Generating concepts…' : 'Generate concepts'}</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
-
                 {/* Example Prompts */}
-                <div className="pt-10 text-center">
-                  <p className="mb-4 text-sm text-muted-foreground">Or try one of these examples:</p>
+                <div className="pt-4 text-center">
+                  <p className="mb-3 text-sm text-muted-foreground">Or try one of these examples:</p>
                   <div className="flex flex-col items-center gap-3">
                     <AnimatePresence mode="popLayout">
                       {examplePrompts.slice(0, -1).map((prompt, index) => (

@@ -31,6 +31,7 @@ export default function ManageAppPage({ params }: PageProps) {
   // State
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [appName, setAppName] = useState('');
+  const [appSubtitle, setAppSubtitle] = useState('');
   const [appDescription, setAppDescription] = useState('');
   const [category, setCategory] = useState('Productivity');
   const [platforms, setPlatforms] = useState({ ios: true, android: true });
@@ -47,6 +48,7 @@ export default function ManageAppPage({ params }: PageProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const [originalData, setOriginalData] = useState<{
     name: string;
+    subtitle: string;
     description: string;
     category: string;
     platforms: { ios: boolean; android: boolean };
@@ -71,6 +73,7 @@ export default function ManageAppPage({ params }: PageProps) {
     if (app) {
       const initialData = {
         name: app.name,
+        subtitle: app.subtitle || '',
         description: app.description || '',
         category: app.category || 'Productivity',
         platforms: app.platforms || { ios: true, android: true },
@@ -86,6 +89,7 @@ export default function ManageAppPage({ params }: PageProps) {
 
       setOriginalData(initialData);
       setAppName(initialData.name);
+      setAppSubtitle(initialData.subtitle);
       setAppDescription(initialData.description);
       setCategory(initialData.category);
       setPlatforms(initialData.platforms);
@@ -109,6 +113,7 @@ export default function ManageAppPage({ params }: PageProps) {
 
     const hasAnyChanges =
       appName !== originalData.name ||
+      appSubtitle !== originalData.subtitle ||
       appDescription !== originalData.description ||
       category !== originalData.category ||
       JSON.stringify(platforms) !== JSON.stringify(originalData.platforms) ||
@@ -122,7 +127,7 @@ export default function ManageAppPage({ params }: PageProps) {
       (iconPreview !== originalData.iconUrl && !!iconPreview?.startsWith('data:'));
 
     setHasChanges(hasAnyChanges);
-  }, [appName, appDescription, category, platforms, selectedLanguages, appStoreUrl,
+  }, [appName, appSubtitle, appDescription, category, platforms, selectedLanguages, appStoreUrl,
       playStoreUrl, websiteUrl, bundleId, keywords, ageRating, iconPreview, originalData]);
 
   // Redirect if app not found
@@ -161,6 +166,7 @@ export default function ManageAppPage({ params }: PageProps) {
       await updateApp({
         appId,
         name: appName,
+        subtitle: appSubtitle || undefined,
         description: appDescription,
         iconStorageId,
         category,
@@ -177,6 +183,7 @@ export default function ManageAppPage({ params }: PageProps) {
       // Reset original data to reflect saved state
       setOriginalData({
         name: appName,
+        subtitle: appSubtitle,
         description: appDescription,
         category,
         platforms,
@@ -232,7 +239,7 @@ export default function ManageAppPage({ params }: PageProps) {
         >
           <PageHeader
             className="px-6"
-            backHref={`/app/${appId}`}
+            backHref={`/manage-app/${appId}`}
             backLabel="Back to app"
             title="Manage App Details"
             subtitle="Configure your app settings and metadata"
@@ -312,6 +319,23 @@ export default function ManageAppPage({ params }: PageProps) {
                     value={appName}
                     onChange={(e) => setAppName(e.target.value)}
                   />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Subtitle
+                    <span className="text-xs text-muted-foreground font-normal ml-2">(Optional, max 30 characters)</span>
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={30}
+                    className="w-full px-3 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                    placeholder="Short promotional text"
+                    value={appSubtitle}
+                    onChange={(e) => setAppSubtitle(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {appSubtitle.length}/30 characters
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">App Description</label>

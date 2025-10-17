@@ -66,12 +66,12 @@ export default function AppScreenPreview({ appId, screenId }: AppScreenPreviewPr
 
   const activeScreen = currentIndex >= 0 ? sortedImages[currentIndex] : null;
 
-  const buildBasePath = useCallback(() => `/app/${appId}/app-screens`, [appId]);
+  const buildBasePath = useCallback(() => `/manage-app/${appId}/app-screens`, [appId]);
 
   const buildUrlForId = useCallback(
     (id: Id<'appScreens'>) => {
       const params = new URLSearchParams(searchParams.toString());
-      const basePath = `/app/${appId}/app-screens/preview/${id}`;
+      const basePath = `/manage-app/${appId}/app-screens/preview/${id}`;
       return params.toString() ? `${basePath}?${params.toString()}` : basePath;
     },
     [appId, searchParams],

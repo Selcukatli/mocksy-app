@@ -25,6 +25,7 @@ export default defineSchema({
   apps: defineTable({
     profileId: v.id("profiles"), // Owner of the app
     name: v.string(),
+    subtitle: v.optional(v.string()), // Short promotional text (App Store subtitle)
     description: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")), // App icon in file storage
     coverImageStorageId: v.optional(v.id("_storage")), // Cover/hero image for app listings

@@ -22,6 +22,7 @@ import {
   Pencil,
   Search,
   ShieldCheck,
+  X,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -40,7 +41,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
-  const isAppActive = (appId: string) => pathname === `/app/${appId}`;
+  const isAppActive = (appId: string) => pathname === `/manage-app/${appId}`;
 
   // Render static mode
   const renderStaticMode = () => {
@@ -139,7 +140,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
                     return (
                       <Link
                         key={app._id}
-                        href={`/app/${app._id}`}
+                        href={`/manage-app/${app._id}`}
                         className={cn(
                           "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
                           isAppActive(app._id)
@@ -331,28 +332,31 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
           damping: 30,
           mass: 0.8
         }}
-        className="h-screen flex flex-col bg-background border-r overflow-hidden flex-shrink-0"
+        className="hidden md:flex h-screen flex-col bg-background border-r overflow-hidden flex-shrink-0 sticky top-0"
       >
-      {/* Header */}
+      {/* Header with Collapse Button */}
       {isExpanded && (
-        <Link
-          href="/create"
-          className={cn(
-            "h-16 flex items-center transition-all duration-300",
-            isExpanded ? "px-4 justify-start" : "px-4 justify-center"
-          )}
-        >
-          <div className="relative w-36 h-9 flex-shrink-0">
-            <Image
-              src={theme === 'dark' ? '/mocksy-logo-dark-mode.png' : '/mocksy-logo-light-mode.png'}
-              alt="Mocksy"
-              fill
-              className="object-contain object-left"
-              sizes="144px"
-              priority
-            />
-          </div>
-        </Link>
+        <div className="h-16 flex items-center px-4 justify-between flex-shrink-0">
+          <Link href="/create" className="flex items-center">
+            <div className="relative w-36 h-9 flex-shrink-0">
+              <Image
+                src={theme === 'dark' ? '/mocksy-logo-dark-mode.png' : '/mocksy-logo-light-mode.png'}
+                alt="Mocksy"
+                fill
+                className="object-contain object-left"
+                sizes="144px"
+                priority
+              />
+            </div>
+          </Link>
+          <button
+            onClick={() => onExpandedChange?.(false)}
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
+            aria-label="Collapse sidebar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       )}
 
       {/* Navigation */}
@@ -430,7 +434,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
                         return (
                           <Link
                             key={app._id}
-                            href={`/app/${app._id}`}
+                            href={`/manage-app/${app._id}`}
                             className={cn(
                               "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
                               isAppActive(app._id)

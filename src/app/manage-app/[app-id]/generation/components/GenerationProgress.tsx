@@ -150,7 +150,7 @@ export default function GenerationProgress({ appStatus, jobStatus, appId }: Gene
   const statusMessage = getStatusMessage();
 
   const handleViewApp = () => {
-    router.push(`/app/${appId}`);
+    router.push(`/manage-app/${appId}`);
   };
 
   return (

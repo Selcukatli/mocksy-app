@@ -48,6 +48,7 @@ export default function TopHeader({
   };
 
   return (
+    // Fixed header with h-16 (4rem). Pages should account for this height using min-h-[calc(100vh-4rem)]
     <div className="fixed top-0 left-0 right-0 z-40 h-16 bg-background/80 backdrop-blur-md">
       <div className="flex h-full items-center justify-between px-6">
         {/* Left: Hamburger/Collapse + Title */}

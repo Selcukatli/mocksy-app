@@ -26,6 +26,8 @@ interface PageContextValue {
   setActions: (actions: ReactNode) => void;
   sidebarMode: SidebarMode;
   setSidebarMode: (mode: SidebarMode) => void;
+  showLogo: boolean;
+  setShowLogo: (showLogo: boolean) => void;
 }
 
 const PageContext = createContext<PageContextValue | null>(null);
@@ -39,7 +41,7 @@ export function usePageHeader() {
 }
 
 // Define static (browse) pages - everything else defaults to overlay (dynamic)
-const staticRoutes = ['/create', '/appstore', '/profile'];
+const staticRoutes = ['/appstore', '/profile'];
 const getDefaultMode = (path: string | null): SidebarMode => {
   if (!path) return 'overlay';
   
@@ -54,13 +56,16 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
   const [pageTitle, setPageTitle] = useState('');
   const [pageBreadcrumbs, setPageBreadcrumbs] = useState<Breadcrumb[]>([]);
   const [pageActions, setPageActions] = useState<ReactNode>(null);
-  const [pageSidebarMode, setPageSidebarMode] = useState<SidebarMode>(getDefaultMode(pathname));
+  const [pageSidebarMode, setPageSidebarMode] = useState<SidebarMode>('overlay'); // Start with overlay to avoid hydration mismatch
+  const [pageShowLogo, setPageShowLogo] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   // Don't show sidebar only on welcome page (onboarding)
   const shouldShowSidebar = !pathname?.startsWith('/welcome');
 
-  // Reset to default mode when pathname changes
+  // Set client state after mount (only runs on client, not during SSR)
   useEffect(() => {
+    setIsClient(true);
     setPageSidebarMode(getDefaultMode(pathname));
   }, [pathname]);
 
@@ -69,7 +74,7 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
     if (pageSidebarMode === 'overlay') {
       setIsSidebarExpanded(false);
     }
-  }, [pathname, pageSidebarMode]);
+  }, [pageSidebarMode]);
 
   const toggleSidebar = () => {
     setIsSidebarExpanded(!isSidebarExpanded);
@@ -84,8 +89,11 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
     );
   }
 
-  // Static mode: sidebar always visible on desktop, bottom tabs on mobile
-  if (pageSidebarMode === 'static') {
+  // Render static mode for browse pages (App Store, Profile)
+  // But only after hydration is complete to avoid SSR mismatch
+  const shouldRenderStatic = isClient && pageSidebarMode === 'static';
+  
+  if (shouldRenderStatic) {
     return (
       <PageContext.Provider
         value={{
@@ -97,15 +105,17 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
           setActions: setPageActions,
           sidebarMode: pageSidebarMode,
           setSidebarMode: setPageSidebarMode,
+          showLogo: pageShowLogo,
+          setShowLogo: setPageShowLogo,
         }}
       >
-        <div className="min-h-screen flex">
+        <div className="h-screen flex overflow-hidden" suppressHydrationWarning>
           <Sidebar
             mode="static"
             isExpanded={true}
             onExpandedChange={setIsSidebarExpanded}
           />
-          <div className="flex-1 min-w-0 pb-20 md:pb-0">
+          <div className="flex-1 min-w-0 overflow-y-auto pb-20 md:pb-0" suppressHydrationWarning>
             {children}
           </div>
         </div>
@@ -127,29 +137,32 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
         setActions: setPageActions,
         sidebarMode: pageSidebarMode,
         setSidebarMode: setPageSidebarMode,
+        showLogo: pageShowLogo,
+        setShowLogo: setPageShowLogo,
       }}
     >
-      <div className="min-h-screen flex overflow-hidden">
+      <div className="min-h-screen" suppressHydrationWarning>
         <Sidebar
           mode="overlay"
           isExpanded={isSidebarExpanded}
           onExpandedChange={setIsSidebarExpanded}
         />
 
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex flex-col min-h-screen" suppressHydrationWarning>
           <TopHeader
             title={pageTitle}
             breadcrumbs={pageBreadcrumbs}
             actions={pageActions}
             onMenuClick={toggleSidebar}
             isSidebarExpanded={isSidebarExpanded}
+            showLogo={pageShowLogo}
           />
           {/* 
             Content area with pt-16 to offset the fixed header.
             For pages that need full viewport height without scroll, use:
             min-h-[calc(100vh-4rem)] instead of min-h-screen
           */}
-          <div className="pt-16 flex-1 overflow-y-auto">
+          <div className="pt-16 flex-1" suppressHydrationWarning>
             {children}
           </div>
         </div>

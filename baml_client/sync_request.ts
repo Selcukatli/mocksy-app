@@ -24,11 +24,13 @@ import type { Checked, Check } from "./types"
 import type * as types from "./types"
 import type {AppConcept, AppConceptsOutput, AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleColors, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleEffects, StyleGenerationOutput, StyleRevisionOutput, StyleTypography, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
+import type * as events from "./events"
 
-type BamlCallOptions = {
+type BamlCallOptions<EventsT = never> = {
   tb?: TypeBuilder
   clientRegistry?: ClientRegistry
   env?: Record<string, string | undefined>
+  events?: EventsT
 }
 
 export class HttpRequest {
@@ -37,7 +39,7 @@ export class HttpRequest {
   
   AnalyzeAvatar(
       image: Image,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -62,7 +64,7 @@ export class HttpRequest {
   
   DetailedAnalysisGPT5(
       query: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -87,7 +89,7 @@ export class HttpRequest {
   
   DetailedAnalysisGPT5Nano(
       query: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -112,7 +114,7 @@ export class HttpRequest {
   
   GenerateApp(
       app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -137,7 +139,7 @@ export class HttpRequest {
   
   GenerateAppConcepts(
       app_description_input: string,category_hint?: string | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -162,7 +164,7 @@ export class HttpRequest {
   
   GenerateAppCoverImagePrompt(
       app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],user_feedback?: string | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -187,7 +189,7 @@ export class HttpRequest {
   
   GenerateAppDesignPlan(
       app_name: string,app_description: string,app_category: string,style_guide: string,num_screens: number,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -212,7 +214,7 @@ export class HttpRequest {
   
   GenerateFirstScreenImagePrompt(
       app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -237,7 +239,7 @@ export class HttpRequest {
   
   GenerateScene(
       scene_prompt: string,art_style: string,characters: types.Character[],
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -262,7 +264,7 @@ export class HttpRequest {
   
   GenerateScreenImagePromptWithReference(
       app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -287,7 +289,7 @@ export class HttpRequest {
   
   GenerateScreenshotPrompt(
       text: types.TextConfig,layout: types.LayoutConfig,style: types.StyleConfig,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -312,7 +314,7 @@ export class HttpRequest {
   
   GenerateScreenshotSet(
       input: types.ScreenshotSetInput,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -337,7 +339,7 @@ export class HttpRequest {
   
   GenerateStyleDemoScreenshots(
       style_config: types.StyleConfig,style_name: string,screenshot_count?: number | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -362,7 +364,7 @@ export class HttpRequest {
   
   GenerateStyleFromDescription(
       description: string,style_name?: string | null,reference_image?: Image | null,background_style?: string | null,text_style?: string | null,device_style?: string | null,decorative_elements?: string | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -387,7 +389,7 @@ export class HttpRequest {
   
   ImproveAppDescription(
       draft_description: string,vibe_hint?: string | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -412,7 +414,7 @@ export class HttpRequest {
   
   ListGeneratorGPT5(
       topic: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -437,7 +439,7 @@ export class HttpRequest {
   
   ListGeneratorGPT5Nano(
       topic: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -462,7 +464,7 @@ export class HttpRequest {
   
   ReviseStyle(
       current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -487,7 +489,7 @@ export class HttpRequest {
   
   ScoreDeviceReferenceImage(
       device_image: Image,expected_frame_style: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -512,7 +514,7 @@ export class HttpRequest {
   
   SimpleStringGPT5(
       input: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -537,7 +539,7 @@ export class HttpRequest {
   
   SimpleStringGPT5Nano(
       input: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -562,7 +564,7 @@ export class HttpRequest {
   
   StructuredResponseGPT5(
       question: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -587,7 +589,7 @@ export class HttpRequest {
   
   StructuredResponseGPT5Nano(
       question: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -612,7 +614,7 @@ export class HttpRequest {
   
   TestClaudeHaiku(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -637,7 +639,7 @@ export class HttpRequest {
   
   TestClaudeSonnet4(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -662,7 +664,7 @@ export class HttpRequest {
   
   TestGPT5(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -687,7 +689,7 @@ export class HttpRequest {
   
   TestGPT5Mini(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -712,7 +714,7 @@ export class HttpRequest {
   
   TestGPT5Nano(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -737,7 +739,7 @@ export class HttpRequest {
   
   TestGemini20FlashExp(
       image: Image,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -762,7 +764,7 @@ export class HttpRequest {
   
   TestGemini25Flash(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -787,7 +789,7 @@ export class HttpRequest {
   
   TestGemini25FlashLite(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -812,7 +814,7 @@ export class HttpRequest {
   
   TestGemini25Pro(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -837,7 +839,7 @@ export class HttpRequest {
   
   TestLlama32Vision(
       image: Image,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -862,7 +864,7 @@ export class HttpRequest {
   
   TestMistralLarge(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -887,7 +889,7 @@ export class HttpRequest {
   
   TestMistralSmall(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -912,7 +914,7 @@ export class HttpRequest {
   
   TestQwen25VL(
       image: Image,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -943,7 +945,7 @@ export class HttpStreamRequest {
   
   AnalyzeAvatar(
       image: Image,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -968,7 +970,7 @@ export class HttpStreamRequest {
   
   DetailedAnalysisGPT5(
       query: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -993,7 +995,7 @@ export class HttpStreamRequest {
   
   DetailedAnalysisGPT5Nano(
       query: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1018,7 +1020,7 @@ export class HttpStreamRequest {
   
   GenerateApp(
       app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1043,7 +1045,7 @@ export class HttpStreamRequest {
   
   GenerateAppConcepts(
       app_description_input: string,category_hint?: string | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1068,7 +1070,7 @@ export class HttpStreamRequest {
   
   GenerateAppCoverImagePrompt(
       app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],user_feedback?: string | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1093,7 +1095,7 @@ export class HttpStreamRequest {
   
   GenerateAppDesignPlan(
       app_name: string,app_description: string,app_category: string,style_guide: string,num_screens: number,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1118,7 +1120,7 @@ export class HttpStreamRequest {
   
   GenerateFirstScreenImagePrompt(
       app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1143,7 +1145,7 @@ export class HttpStreamRequest {
   
   GenerateScene(
       scene_prompt: string,art_style: string,characters: types.Character[],
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1168,7 +1170,7 @@ export class HttpStreamRequest {
   
   GenerateScreenImagePromptWithReference(
       app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1193,7 +1195,7 @@ export class HttpStreamRequest {
   
   GenerateScreenshotPrompt(
       text: types.TextConfig,layout: types.LayoutConfig,style: types.StyleConfig,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1218,7 +1220,7 @@ export class HttpStreamRequest {
   
   GenerateScreenshotSet(
       input: types.ScreenshotSetInput,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1243,7 +1245,7 @@ export class HttpStreamRequest {
   
   GenerateStyleDemoScreenshots(
       style_config: types.StyleConfig,style_name: string,screenshot_count?: number | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1268,7 +1270,7 @@ export class HttpStreamRequest {
   
   GenerateStyleFromDescription(
       description: string,style_name?: string | null,reference_image?: Image | null,background_style?: string | null,text_style?: string | null,device_style?: string | null,decorative_elements?: string | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1293,7 +1295,7 @@ export class HttpStreamRequest {
   
   ImproveAppDescription(
       draft_description: string,vibe_hint?: string | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1318,7 +1320,7 @@ export class HttpStreamRequest {
   
   ListGeneratorGPT5(
       topic: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1343,7 +1345,7 @@ export class HttpStreamRequest {
   
   ListGeneratorGPT5Nano(
       topic: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1368,7 +1370,7 @@ export class HttpStreamRequest {
   
   ReviseStyle(
       current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1393,7 +1395,7 @@ export class HttpStreamRequest {
   
   ScoreDeviceReferenceImage(
       device_image: Image,expected_frame_style: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1418,7 +1420,7 @@ export class HttpStreamRequest {
   
   SimpleStringGPT5(
       input: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1443,7 +1445,7 @@ export class HttpStreamRequest {
   
   SimpleStringGPT5Nano(
       input: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1468,7 +1470,7 @@ export class HttpStreamRequest {
   
   StructuredResponseGPT5(
       question: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1493,7 +1495,7 @@ export class HttpStreamRequest {
   
   StructuredResponseGPT5Nano(
       question: string,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1518,7 +1520,7 @@ export class HttpStreamRequest {
   
   TestClaudeHaiku(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1543,7 +1545,7 @@ export class HttpStreamRequest {
   
   TestClaudeSonnet4(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1568,7 +1570,7 @@ export class HttpStreamRequest {
   
   TestGPT5(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1593,7 +1595,7 @@ export class HttpStreamRequest {
   
   TestGPT5Mini(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1618,7 +1620,7 @@ export class HttpStreamRequest {
   
   TestGPT5Nano(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1643,7 +1645,7 @@ export class HttpStreamRequest {
   
   TestGemini20FlashExp(
       image: Image,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1668,7 +1670,7 @@ export class HttpStreamRequest {
   
   TestGemini25Flash(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1693,7 +1695,7 @@ export class HttpStreamRequest {
   
   TestGemini25FlashLite(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1718,7 +1720,7 @@ export class HttpStreamRequest {
   
   TestGemini25Pro(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1743,7 +1745,7 @@ export class HttpStreamRequest {
   
   TestLlama32Vision(
       image: Image,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1768,7 +1770,7 @@ export class HttpStreamRequest {
   
   TestMistralLarge(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1793,7 +1795,7 @@ export class HttpStreamRequest {
   
   TestMistralSmall(
       
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
@@ -1818,7 +1820,7 @@ export class HttpStreamRequest {
   
   TestQwen25VL(
       image: Image,
-      __baml_options__?: BamlCallOptions
+      __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
       const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };

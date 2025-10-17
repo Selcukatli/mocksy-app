@@ -22,7 +22,7 @@ import {
   Pencil,
   Search,
   ShieldCheck,
-  X,
+  ArrowLeftToLine,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -60,7 +60,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
           className="hidden md:flex h-screen flex-col bg-background sticky top-0 flex-shrink-0"
         >
           {/* Header */}
-          <Link href="/create" className="h-16 flex items-center px-4 justify-start transition-all duration-300">
+          <Link href="/generate" className="h-16 flex items-center px-4 justify-start transition-all duration-300">
             <div className="relative w-36 h-9 flex-shrink-0">
               <Image
                 src={theme === 'dark' ? '/mocksy-logo-dark-mode.png' : '/mocksy-logo-light-mode.png'}
@@ -78,10 +78,10 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
             {/* Main Navigation */}
             <nav className="pt-2 px-2 flex flex-col items-start gap-1 flex-shrink-0">
               <Link
-                href="/create"
+                href="/generate"
                 className={cn(
                   "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
-                  isActive('/create')
+                  isActive('/generate')
                     ? "text-foreground font-medium bg-muted shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 )}
@@ -332,12 +332,12 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
           damping: 30,
           mass: 0.8
         }}
-        className="hidden md:flex h-screen flex-col bg-background border-r overflow-hidden flex-shrink-0 sticky top-0"
+        className="hidden md:flex h-screen flex-col bg-background border-r overflow-hidden flex-shrink-0 fixed left-0 top-0 z-50"
       >
       {/* Header with Collapse Button */}
       {isExpanded && (
         <div className="h-16 flex items-center px-4 justify-between flex-shrink-0">
-          <Link href="/create" className="flex items-center">
+          <Link href="/generate" className="flex items-center">
             <div className="relative w-36 h-9 flex-shrink-0">
               <Image
                 src={theme === 'dark' ? '/mocksy-logo-dark-mode.png' : '/mocksy-logo-light-mode.png'}
@@ -354,7 +354,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
             className="p-2 hover:bg-muted rounded-lg transition-colors"
             aria-label="Collapse sidebar"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeftToLine className="w-5 h-5" />
           </button>
         </div>
       )}
@@ -372,10 +372,10 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
             {/* Main Navigation */}
             <nav className="pt-2 px-2 flex flex-col items-start gap-1 flex-shrink-0">
               <Link
-                href="/create"
+                href="/generate"
                 className={cn(
                   "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
-                  isActive('/create')
+                  isActive('/generate')
                     ? "text-foreground font-medium bg-muted shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 )}

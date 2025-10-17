@@ -51,3 +51,8 @@ convex/_generated/
 
 # playwright captures
 .playwright-mcp/
+
+# converted videos (output from conversion scripts)
+converted-videos/
+scripts/convert-mascots/input/
+scripts/convert-mascots/output/

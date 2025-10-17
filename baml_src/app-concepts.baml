@@ -154,12 +154,21 @@ function GenerateAppConcepts(
     - Text-to-image prompt for the app icon (50-100 words)
     - **CRITICAL: Keep it SIMPLE - use ONE large, bold central symbol**
     - **AVOID: Small details, thin lines, complex patterns, tiny text**
-    - Format: 1024x1024 square iOS icon (rounded square)
-    - **FULL BLEED: Design should extend to all edges with NO margins, NO padding, NO borders**
+    - Format: 1024x1024 perfect square with sharp 90-degree corners (NOT rounded)
+    - **ABSOLUTELY MANDATORY FULL BLEED REQUIREMENTS:**
+      * Color and imagery MUST extend completely to all four edges of the square
+      * NO vignetting effects (no dark/faded corners or edges)
+      * NO centered composition with fade-to-black around the edges
+      * NO letterboxing, NO margins, NO inner padding, NO frames, NO borders
+      * NO floating sticker effects, NO artificial rounded-corner cutouts
+      * Background color/gradient MUST fill corner pixels completely
+      * If using gradients, they must reach all corners without fading to empty space
+    - **STRICTLY forbid any words, letterforms, numbers, or store labels (e.g., 'App Store', initials). The symbol must be purely graphic.**
+    - **Prompt structure should explicitly state:** "flat square artwork filling entire 1024x1024 canvas edge to edge with no empty corners"
     - Match the style's color palette and mood
-    - Examples of GOOD icons:
-      * "iOS app icon, full bleed design. Large bold shield symbol filling the frame, bright gradient (cyan to purple) edge to edge. Simple, clean design. Minimal details. No margins or borders. 1024x1024."
-      * "iOS app icon, full bleed design. Big crescent moon symbol on deep purple gradient background filling entire frame. Soft glow effect. Simple and bold. No padding or borders. 1024x1024."
+    - Examples of GOOD full-bleed icon prompts:
+      * "Flat square app icon artwork, 1024x1024. Large bold shield symbol centered on solid gradient background (cyan to purple) that fills entire canvas edge to edge including all corners. Sharp 90-degree corners. No rounded edges, no vignette, no faded corners. Simple bold design. Purely graphic, no text."
+      * "Flat square app icon artwork, 1024x1024. Big crescent moon symbol on deep purple to magenta gradient background filling entire square from corner to corner. Sharp edges. Background extends to all four corners with full color saturation. No fade to black, no vignette. Simple and bold. Purely graphic, no text."
 
     ### 8. COVER IMAGE PROMPT
     - Text-to-image prompt for promotional banner (100-150 words)
@@ -169,8 +178,9 @@ function GenerateAppConcepts(
       * DO NOT include any text, labels, titles, typography, letters, words, or numbers
       * Use color names (teal, violet, orange) NOT hex codes in the prompt
       * Communicate through imagery, composition, colors, shapes only
+      * Command a true full-bleed composition: no letterboxing, no frames, no borders, no empty or faded margins, and no UI chrome surrounding the scene.
       * End prompt with: "No text, words, letters, numbers, or readable typography anywhere in the image."
-    - Decide whether to show device mockup or pure visual metaphor based on what's more effective
+    - Decide whether to show device mockup or pure visual metaphor based on what's more effective while keeping the scene full-bleed edge to edge
     - Match the visual style and mood of the concept
 
     ## STYLE VARIATION EXAMPLES

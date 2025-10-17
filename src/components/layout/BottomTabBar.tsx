@@ -16,8 +16,8 @@ export default function BottomTabBar() {
       id: 'create',
       label: 'Create',
       icon: Pencil,
-      href: '/create',
-      isActive: pathname === '/create',
+      href: '/generate',
+      isActive: pathname === '/generate',
     },
     {
       id: 'appstore',

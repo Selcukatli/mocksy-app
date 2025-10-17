@@ -43,6 +43,14 @@ export default function PublicAppStorePage({ params }: PageProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPublishSuccess, setShowPublishSuccess] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
+
+  // Detect Safari
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
+    setIsSafari(isSafariBrowser);
+  }, []);
 
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
@@ -286,23 +294,53 @@ export default function PublicAppStorePage({ params }: PageProps) {
         className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl"
       >
         <div className="mx-auto max-w-4xl px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <p className="text-sm font-medium text-primary flex-1">
-              {generationStatus.message}
-            </p>
-            <span className="text-xs text-muted-foreground font-mono">
-              {Math.round(generationStatus.progress)}%
-            </span>
-          </div>
-          {/* Progress Bar */}
-          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+          <div className="flex items-center gap-5 md:gap-6">
+            {/* Mocksybot generating animation - breaks out of container */}
             <motion.div
-              className="h-full bg-primary rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${generationStatus.progress}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-            />
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, type: "spring" }}
+              className="flex-shrink-0 relative -my-8 md:-my-12"
+            >
+              {isSafari ? (
+                <img
+                  src="/mocksy-study.gif"
+                  alt="Mocksy studying"
+                  className="w-32 h-32 md:w-40 md:h-40"
+                />
+              ) : (
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-32 h-32 md:w-40 md:h-40"
+                >
+                  <source src="/mocksy-study.webm" type="video/webm" />
+                </video>
+              )}
+            </motion.div>
+            
+            {/* Progress content */}
+            <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm md:text-base font-medium text-primary">
+                  {generationStatus.message}
+                </p>
+                <span className="text-xs md:text-sm text-muted-foreground font-mono flex-shrink-0">
+                  {Math.round(generationStatus.progress)}%
+                </span>
+              </div>
+              {/* Progress Bar */}
+              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-primary rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${generationStatus.progress}%` }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>

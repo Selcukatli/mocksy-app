@@ -3,6 +3,8 @@
 import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { PanelLeftClose, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
+import { useTheme } from '@/components/ThemeProvider';
 
 interface Breadcrumb {
   label: string;
@@ -15,6 +17,7 @@ interface TopHeaderProps {
   actions?: ReactNode;
   onMenuClick: () => void;
   isSidebarExpanded: boolean;
+  showLogo?: boolean;
 }
 
 export default function TopHeader({
@@ -22,14 +25,16 @@ export default function TopHeader({
   breadcrumbs,
   actions,
   onMenuClick,
-  isSidebarExpanded
+  isSidebarExpanded,
+  showLogo = false
 }: TopHeaderProps) {
   const router = useRouter();
+  const { theme } = useTheme();
 
   const handleTitleClick = () => {
     // Map title to route
     const titleRouteMap: Record<string, string> = {
-      'Create': '/create',
+      'Create': '/generate',
       'Appstore': '/appstore',
       'AppStore': '/appstore',
       'App Store': '/appstore',
@@ -75,7 +80,18 @@ export default function TopHeader({
             )}
           </button>
 
-          {breadcrumbs && breadcrumbs.length > 0 ? (
+          {showLogo ? (
+            <div className="relative w-32 h-8">
+              <Image
+                src={theme === 'dark' ? '/mocksy-logo-dark-mode.png' : '/mocksy-logo-light-mode.png'}
+                alt="Mocksy"
+                fill
+                className="object-contain object-left"
+                sizes="128px"
+                priority
+              />
+            </div>
+          ) : breadcrumbs && breadcrumbs.length > 0 ? (
             <div className="flex items-center gap-2 min-w-0">
               {breadcrumbs.map((crumb, index) => (
                 <div key={index} className="flex items-center gap-2 min-w-0">

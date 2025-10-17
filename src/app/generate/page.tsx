@@ -105,7 +105,7 @@ export default function GenerateNewAppPage() {
   const router = useRouter();
   const generateConcepts = useAction(api.appGenerationActions.generateAppConcepts);
   const generateAppFromConcept = useAction(api.appGenerationActions.generateAppFromConcept);
-  const { setTitle } = usePageHeader();
+  const { setShowLogo } = usePageHeader();
 
   // Form state
   const [idea, setIdea] = useState('');
@@ -144,10 +144,19 @@ export default function GenerateNewAppPage() {
     conceptJobId ? { jobId: conceptJobId } : 'skip'
   );
 
-  // Set page title
+  // Detect Safari
+  const [isSafari, setIsSafari] = useState(false);
   useEffect(() => {
-    setTitle('Generate App Concept');
-  }, [setTitle]);
+    const ua = navigator.userAgent;
+    const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
+    setIsSafari(isSafariBrowser);
+  }, []);
+
+  // Set page to show logo instead of title
+  useEffect(() => {
+    setShowLogo(true);
+    return () => setShowLogo(false); // Cleanup when unmounting
+  }, [setShowLogo]);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -387,15 +396,23 @@ export default function GenerateNewAppPage() {
                 transition={{ duration: 0.3, type: "spring" }}
                 className="flex-shrink-0 relative -my-8 md:-my-12"
               >
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-40 h-40 md:w-52 md:h-52"
-                >
-                  <source src="/mocksy-generating.webm" type="video/webm" />
-                </video>
+                {isSafari ? (
+                  <img
+                    src="/mocksy-generating.gif"
+                    alt="Mocksy generating"
+                    className="w-40 h-40 md:w-52 md:h-52"
+                  />
+                ) : (
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-40 h-40 md:w-52 md:h-52"
+                  >
+                    <source src="/mocksy-generating.webm" type="video/webm" />
+                  </video>
+                )}
               </motion.div>
               
               {/* Progress content */}
@@ -465,20 +482,30 @@ export default function GenerateNewAppPage() {
                 }}
               >
                 <motion.div
-                  whileHover={{ 
+                  initial={{ filter: "drop-shadow(0 0 0px rgba(99, 102, 241, 0))" }}
+                  animate={{ filter: "drop-shadow(0 0 0px rgba(99, 102, 241, 0))" }}
+                  whileHover={{
                     filter: "drop-shadow(0 0 20px rgba(99, 102, 241, 0.5))",
                     transition: { duration: 0.3 }
                   }}
                 >
-                  <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="mx-auto w-56 h-56 transition-all"
-                  >
-                    <source src="/mocksybot.webm" type="video/webm" />
-                  </video>
+                  {isSafari ? (
+                    <img
+                      src="/mocksybot.gif"
+                      alt="Mocksybot"
+                      className="mx-auto w-56 h-56 transition-all"
+                    />
+                  ) : (
+                    <video
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="mx-auto w-56 h-56 transition-all"
+                    >
+                      <source src="/mocksybot.webm" type="video/webm" />
+                    </video>
+                  )}
                 </motion.div>
               </motion.div>
 

@@ -65,15 +65,13 @@ export default function ProfilePage() {
   }) : 'Unknown';
 
   const handleSignOut = async () => {
-    await signOut();
-    router.push('/create');
+    await signOut({ redirectUrl: '/welcome?mode=sign-in' });
   };
 
   const handleDeleteAccount = async () => {
     // This would connect to your backend to delete the user account
     // For now, just sign out
-    await signOut();
-    router.push('/create');
+    await signOut({ redirectUrl: '/welcome?mode=sign-in' });
   };
 
   const handleSyncProfile = async () => {

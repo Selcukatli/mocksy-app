@@ -43,7 +43,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@boundaryml/baml": "^0.210.0",
+    "@boundaryml/baml": "^0.211.2",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

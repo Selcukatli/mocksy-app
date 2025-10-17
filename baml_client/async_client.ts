@@ -30,6 +30,7 @@ import { AsyncHttpRequest, AsyncHttpStreamRequest } from "./async_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
 import { DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_CTX,
 DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME } from "./globals"
+import type * as events from "./events"
 
 /**
 * @deprecated Use RecursivePartialNull from 'baml_client/types' instead.
@@ -38,7 +39,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
 
     type TickReason = "Unknown";
 
-    type BamlCallOptions = {
+    type BamlCallOptions<EventsT = never> = {
     tb?: TypeBuilder
     clientRegistry?: ClientRegistry
     collector?: Collector | Collector[]
@@ -46,6 +47,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
       tags?: Record<string, string>
         signal?: AbortSignal
         onTick?: (reason: TickReason, log: FunctionLog | null) => void
+        events?: EventsT
         }
 
         export class BamlAsyncClient {
@@ -96,7 +98,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
         
         async AnalyzeAvatar(
         image: Image,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.Avatar> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -134,6 +136,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.Avatar
             } catch (error) {
@@ -143,7 +146,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async DetailedAnalysisGPT5(
         query: string,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.DetailedResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -181,6 +184,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.DetailedResponse
             } catch (error) {
@@ -190,7 +194,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async DetailedAnalysisGPT5Nano(
         query: string,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.DetailedResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -228,6 +232,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.DetailedResponse
             } catch (error) {
@@ -237,7 +242,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateApp(
         app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.DemoAppOutput> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -275,6 +280,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.DemoAppOutput
             } catch (error) {
@@ -284,7 +290,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateAppConcepts(
         app_description_input: string,category_hint?: string | null,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.AppConceptsOutput> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -322,6 +328,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.AppConceptsOutput
             } catch (error) {
@@ -331,7 +338,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateAppCoverImagePrompt(
         app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],user_feedback?: string | null,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.CoverImagePrompt> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -369,6 +376,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.CoverImagePrompt
             } catch (error) {
@@ -378,7 +386,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateAppDesignPlan(
         app_name: string,app_description: string,app_category: string,style_guide: string,num_screens: number,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.AppStructure> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -416,6 +424,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.AppStructure
             } catch (error) {
@@ -425,7 +434,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateFirstScreenImagePrompt(
         app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ScreenImagePrompt> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -463,6 +472,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ScreenImagePrompt
             } catch (error) {
@@ -472,7 +482,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateScene(
         scene_prompt: string,art_style: string,characters: types.Character[],
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.Scene> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -510,6 +520,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.Scene
             } catch (error) {
@@ -519,7 +530,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateScreenImagePromptWithReference(
         app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ScreenImagePrompt> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -557,6 +568,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ScreenImagePrompt
             } catch (error) {
@@ -566,7 +578,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateScreenshotPrompt(
         text: types.TextConfig,layout: types.LayoutConfig,style: types.StyleConfig,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ScreenshotPromptStructured> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -604,6 +616,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ScreenshotPromptStructured
             } catch (error) {
@@ -613,7 +626,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateScreenshotSet(
         input: types.ScreenshotSetInput,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ScreenshotConfig[]> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -651,6 +664,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ScreenshotConfig[]
             } catch (error) {
@@ -660,7 +674,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateStyleDemoScreenshots(
         style_config: types.StyleConfig,style_name: string,screenshot_count?: number | null,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.StyleDemoOutput> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -698,6 +712,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.StyleDemoOutput
             } catch (error) {
@@ -707,7 +722,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async GenerateStyleFromDescription(
         description: string,style_name?: string | null,reference_image?: Image | null,background_style?: string | null,text_style?: string | null,device_style?: string | null,decorative_elements?: string | null,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.StyleGenerationOutput> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -745,6 +760,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.StyleGenerationOutput
             } catch (error) {
@@ -754,7 +770,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async ImproveAppDescription(
         draft_description: string,vibe_hint?: string | null,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ImprovedDescriptionOutput> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -792,6 +808,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ImprovedDescriptionOutput
             } catch (error) {
@@ -801,7 +818,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async ListGeneratorGPT5(
         topic: string,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<string[]> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -839,6 +856,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as string[]
             } catch (error) {
@@ -848,7 +866,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async ListGeneratorGPT5Nano(
         topic: string,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<string[]> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -886,6 +904,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as string[]
             } catch (error) {
@@ -895,7 +914,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async ReviseStyle(
         current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.StyleRevisionOutput> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -933,6 +952,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.StyleRevisionOutput
             } catch (error) {
@@ -942,7 +962,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async ScoreDeviceReferenceImage(
         device_image: Image,expected_frame_style: string,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.DeviceImageScore> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -980,6 +1000,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.DeviceImageScore
             } catch (error) {
@@ -989,7 +1010,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async SimpleStringGPT5(
         input: string,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<string> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1027,6 +1048,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as string
             } catch (error) {
@@ -1036,7 +1058,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async SimpleStringGPT5Nano(
         input: string,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<string> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1074,6 +1096,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as string
             } catch (error) {
@@ -1083,7 +1106,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async StructuredResponseGPT5(
         question: string,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.BasicResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1121,6 +1144,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.BasicResponse
             } catch (error) {
@@ -1130,7 +1154,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async StructuredResponseGPT5Nano(
         question: string,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.BasicResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1168,6 +1192,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.BasicResponse
             } catch (error) {
@@ -1177,7 +1202,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestClaudeHaiku(
         
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ModelTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1215,6 +1240,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ModelTestResponse
             } catch (error) {
@@ -1224,7 +1250,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestClaudeSonnet4(
         
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ModelTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1262,6 +1288,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ModelTestResponse
             } catch (error) {
@@ -1271,7 +1298,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestGPT5(
         
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ModelTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1309,6 +1336,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ModelTestResponse
             } catch (error) {
@@ -1318,7 +1346,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestGPT5Mini(
         
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ModelTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1356,6 +1384,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ModelTestResponse
             } catch (error) {
@@ -1365,7 +1394,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestGPT5Nano(
         
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ModelTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1403,6 +1432,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ModelTestResponse
             } catch (error) {
@@ -1412,7 +1442,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestGemini20FlashExp(
         image: Image,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.VisionTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1450,6 +1480,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.VisionTestResponse
             } catch (error) {
@@ -1459,7 +1490,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestGemini25Flash(
         
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ModelTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1497,6 +1528,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ModelTestResponse
             } catch (error) {
@@ -1506,7 +1538,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestGemini25FlashLite(
         
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ModelTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1544,6 +1576,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ModelTestResponse
             } catch (error) {
@@ -1553,7 +1586,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestGemini25Pro(
         
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ModelTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1591,6 +1624,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ModelTestResponse
             } catch (error) {
@@ -1600,7 +1634,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestLlama32Vision(
         image: Image,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.VisionTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1638,6 +1672,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.VisionTestResponse
             } catch (error) {
@@ -1647,7 +1682,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestMistralLarge(
         
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ModelTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1685,6 +1720,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ModelTestResponse
             } catch (error) {
@@ -1694,7 +1730,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestMistralSmall(
         
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ModelTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1732,6 +1768,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.ModelTestResponse
             } catch (error) {
@@ -1741,7 +1778,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
         async TestQwen25VL(
         image: Image,
-        __baml_options__?: BamlCallOptions
+        __baml_options__?: BamlCallOptions<never>
         ): Promise<types.VisionTestResponse> {
           try {
           const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
@@ -1779,6 +1816,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             options.tags || {},
             env,
             signal,
+            options.events,
             )
             return raw.parsed(false) as types.VisionTestResponse
             } catch (error) {
@@ -1802,7 +1840,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             
             AnalyzeAvatar(
             image: Image,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.Avatar, types.Avatar>
               {
               try {
@@ -1868,7 +1906,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             DetailedAnalysisGPT5(
             query: string,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.DetailedResponse, types.DetailedResponse>
               {
               try {
@@ -1934,7 +1972,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             DetailedAnalysisGPT5Nano(
             query: string,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.DetailedResponse, types.DetailedResponse>
               {
               try {
@@ -2000,7 +2038,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateApp(
             app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.DemoAppOutput, types.DemoAppOutput>
               {
               try {
@@ -2066,7 +2104,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateAppConcepts(
             app_description_input: string,category_hint?: string | null,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.AppConceptsOutput, types.AppConceptsOutput>
               {
               try {
@@ -2132,7 +2170,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateAppCoverImagePrompt(
             app_name: string,app_description: string,app_category?: string | null,style_guide?: string | null,screen_names: string[],user_feedback?: string | null,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.CoverImagePrompt, types.CoverImagePrompt>
               {
               try {
@@ -2198,7 +2236,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateAppDesignPlan(
             app_name: string,app_description: string,app_category: string,style_guide: string,num_screens: number,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.AppStructure, types.AppStructure>
               {
               try {
@@ -2264,7 +2302,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateFirstScreenImagePrompt(
             app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ScreenImagePrompt, types.ScreenImagePrompt>
               {
               try {
@@ -2330,7 +2368,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateScene(
             scene_prompt: string,art_style: string,characters: types.Character[],
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.Scene, types.Scene>
               {
               try {
@@ -2396,7 +2434,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateScreenImagePromptWithReference(
             app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ScreenImagePrompt, types.ScreenImagePrompt>
               {
               try {
@@ -2462,7 +2500,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateScreenshotPrompt(
             text: types.TextConfig,layout: types.LayoutConfig,style: types.StyleConfig,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ScreenshotPromptStructured, types.ScreenshotPromptStructured>
               {
               try {
@@ -2528,7 +2566,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateScreenshotSet(
             input: types.ScreenshotSetInput,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ScreenshotConfig[], types.ScreenshotConfig[]>
               {
               try {
@@ -2594,7 +2632,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateStyleDemoScreenshots(
             style_config: types.StyleConfig,style_name: string,screenshot_count?: number | null,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.StyleDemoOutput, types.StyleDemoOutput>
               {
               try {
@@ -2660,7 +2698,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             GenerateStyleFromDescription(
             description: string,style_name?: string | null,reference_image?: Image | null,background_style?: string | null,text_style?: string | null,device_style?: string | null,decorative_elements?: string | null,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.StyleGenerationOutput, types.StyleGenerationOutput>
               {
               try {
@@ -2726,7 +2764,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             ImproveAppDescription(
             draft_description: string,vibe_hint?: string | null,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ImprovedDescriptionOutput, types.ImprovedDescriptionOutput>
               {
               try {
@@ -2792,7 +2830,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             ListGeneratorGPT5(
             topic: string,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<string[], string[]>
               {
               try {
@@ -2858,7 +2896,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             ListGeneratorGPT5Nano(
             topic: string,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<string[], string[]>
               {
               try {
@@ -2924,7 +2962,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             ReviseStyle(
             current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.StyleRevisionOutput, types.StyleRevisionOutput>
               {
               try {
@@ -2990,7 +3028,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             ScoreDeviceReferenceImage(
             device_image: Image,expected_frame_style: string,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.DeviceImageScore, types.DeviceImageScore>
               {
               try {
@@ -3056,7 +3094,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             SimpleStringGPT5(
             input: string,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<string, string>
               {
               try {
@@ -3122,7 +3160,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             SimpleStringGPT5Nano(
             input: string,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<string, string>
               {
               try {
@@ -3188,7 +3226,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             StructuredResponseGPT5(
             question: string,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.BasicResponse, types.BasicResponse>
               {
               try {
@@ -3254,7 +3292,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             StructuredResponseGPT5Nano(
             question: string,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.BasicResponse, types.BasicResponse>
               {
               try {
@@ -3320,7 +3358,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestClaudeHaiku(
             
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ModelTestResponse, types.ModelTestResponse>
               {
               try {
@@ -3386,7 +3424,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestClaudeSonnet4(
             
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ModelTestResponse, types.ModelTestResponse>
               {
               try {
@@ -3452,7 +3490,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestGPT5(
             
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ModelTestResponse, types.ModelTestResponse>
               {
               try {
@@ -3518,7 +3556,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestGPT5Mini(
             
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ModelTestResponse, types.ModelTestResponse>
               {
               try {
@@ -3584,7 +3622,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestGPT5Nano(
             
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ModelTestResponse, types.ModelTestResponse>
               {
               try {
@@ -3650,7 +3688,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestGemini20FlashExp(
             image: Image,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.VisionTestResponse, types.VisionTestResponse>
               {
               try {
@@ -3716,7 +3754,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestGemini25Flash(
             
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ModelTestResponse, types.ModelTestResponse>
               {
               try {
@@ -3782,7 +3820,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestGemini25FlashLite(
             
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ModelTestResponse, types.ModelTestResponse>
               {
               try {
@@ -3848,7 +3886,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestGemini25Pro(
             
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ModelTestResponse, types.ModelTestResponse>
               {
               try {
@@ -3914,7 +3952,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestLlama32Vision(
             image: Image,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.VisionTestResponse, types.VisionTestResponse>
               {
               try {
@@ -3980,7 +4018,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestMistralLarge(
             
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ModelTestResponse, types.ModelTestResponse>
               {
               try {
@@ -4046,7 +4084,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestMistralSmall(
             
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ModelTestResponse, types.ModelTestResponse>
               {
               try {
@@ -4112,7 +4150,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   
             TestQwen25VL(
             image: Image,
-            __baml_options__?: BamlCallOptions
+            __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.VisionTestResponse, types.VisionTestResponse>
               {
               try {

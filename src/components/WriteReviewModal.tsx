@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Star, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation } from 'convex/react';
@@ -31,19 +31,28 @@ export default function WriteReviewModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [shouldSubmitAfterAuth, setShouldSubmitAfterAuth] = useState(false);
 
   const { isSignedIn } = useUser();
   const createReview = useMutation(api.mockReviews.createReview);
 
+  // Auto-submit review after authentication if user tried to submit while not logged in
+  useEffect(() => {
+    if (isSignedIn && showLoginDialog && shouldSubmitAfterAuth) {
+      // User just authenticated, close login dialog and submit review
+      setShowLoginDialog(false);
+      // Submit the review on next tick
+      setTimeout(() => {
+        handleSubmit(new Event('submit') as unknown as React.FormEvent);
+        setShouldSubmitAfterAuth(false);
+      }, 100);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, showLoginDialog, shouldSubmitAfterAuth]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    // Check if user is signed in
-    if (!isSignedIn) {
-      setShowLoginDialog(true);
-      return;
-    }
 
     if (rating === 0) {
       setError('Please select a rating');
@@ -52,6 +61,13 @@ export default function WriteReviewModal({
 
     if (reviewText.trim().length < 10) {
       setError('Review must be at least 10 characters');
+      return;
+    }
+
+    // Check if user is signed in
+    if (!isSignedIn) {
+      setShouldSubmitAfterAuth(true);
+      setShowLoginDialog(true);
       return;
     }
 

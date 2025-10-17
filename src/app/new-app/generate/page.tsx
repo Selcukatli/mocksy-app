@@ -113,6 +113,7 @@ export default function GenerateNewAppPage() {
   const referenceImagesRef = useRef<ReferenceImage[]>([]);
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const [examplePrompts, setExamplePrompts] = useState(() => getRandomPrompts(3));
+  const [isMac, setIsMac] = useState(true);
   
   const refreshExamples = () => {
     setExamplePrompts(getRandomPrompts(3));
@@ -139,6 +140,11 @@ export default function GenerateNewAppPage() {
     api.conceptGenerationJobs.getConceptGenerationJob,
     conceptJobId ? { jobId: conceptJobId } : 'skip'
   );
+
+  // Detect OS for keyboard shortcut display
+  useEffect(() => {
+    setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
+  }, []);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -286,6 +292,23 @@ export default function GenerateNewAppPage() {
     setSelectedConceptIndex(null);
   };
 
+  const disabled = !idea.trim() || isGeneratingConcepts;
+
+  // Handle Cmd+Enter / Ctrl+Enter to submit
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if (!disabled) {
+          handleGenerateConcepts();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [disabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!isLoaded || (isLoaded && !isSignedIn)) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center">
@@ -296,8 +319,6 @@ export default function GenerateNewAppPage() {
       </div>
     );
   }
-
-  const disabled = !idea.trim() || isGeneratingConcepts;
 
   // Calculate progress based on concept job status OR if actively generating
   const conceptProgress = (() => {
@@ -463,10 +484,16 @@ export default function GenerateNewAppPage() {
                     type="button"
                     onClick={handleGenerateConcepts}
                     disabled={disabled}
-                    className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-3 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <span>{isGeneratingConcepts ? 'Generating concepts…' : 'Generate concepts'}</span>
-                    <ArrowRight className="h-4 w-4" />
+                    {!isGeneratingConcepts && (
+                      <kbd className="hidden sm:inline-flex items-center gap-1 rounded bg-primary-foreground/20 px-2 py-0.5 text-xs font-mono text-primary-foreground/90">
+                        <span className="text-[10px]">{isMac ? '⌘' : 'Ctrl'}</span>
+                        <span>↵</span>
+                      </kbd>
+                    )}
+                    {!isGeneratingConcepts && <ArrowRight className="h-4 w-4" />}
                   </button>
                 </div>
 

@@ -18,6 +18,7 @@ import { api } from '@convex/_generated/api';
 import Toast from '@/components/Toast';
 import AppConceptCard from '@/components/AppConceptCard';
 import AppConceptDetailModal from '@/components/AppConceptDetailModal';
+import AuthModal from '@/components/AuthModal';
 import type { Id } from '@convex/_generated/dataModel';
 import { usePageHeader } from '@/components/RootLayoutContent';
 
@@ -114,6 +115,7 @@ export default function GenerateNewAppPage() {
   const referenceImagesRef = useRef<ReferenceImage[]>([]);
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const [examplePrompts, setExamplePrompts] = useState(() => getRandomPrompts(3));
+  const [isMac, setIsMac] = useState(true);
   
   // Scroll state for dynamic video sizing
   const [scrollScale, setScrollScale] = useState(1);
@@ -131,6 +133,7 @@ export default function GenerateNewAppPage() {
   const [selectedConceptIndex, setSelectedConceptIndex] = useState<number | null>(null);
   const [viewingConceptIndex, setViewingConceptIndex] = useState<number | null>(null);
   const [isGeneratingApp, setIsGeneratingApp] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isOpen: boolean }>({
@@ -153,17 +156,29 @@ export default function GenerateNewAppPage() {
     setIsSafari(isSafariBrowser);
   }, []);
 
+  // Detect OS for keyboard shortcut display
+  useEffect(() => {
+    setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
+  }, []);
+
   // Set page to show logo instead of title
   useEffect(() => {
     setShowLogo(true);
     return () => setShowLogo(false); // Cleanup when unmounting
   }, [setShowLogo]);
 
+  // Auto-trigger generation after authentication if auth modal was shown
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/welcome?mode=sign-in&context=new-app');
+    if (isLoaded && isSignedIn && showAuthModal && idea.trim()) {
+      // User just authenticated, close modal and trigger generation
+      setShowAuthModal(false);
+      // Trigger generation on next tick
+      setTimeout(() => {
+        handleGenerateConcepts();
+      }, 100);
     }
-  }, [isLoaded, isSignedIn, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, isSignedIn, showAuthModal]);
 
   // Handle scroll for dynamic video sizing using Intersection Observer
   useEffect(() => {
@@ -260,6 +275,14 @@ export default function GenerateNewAppPage() {
 
   const handleGenerateConcepts = async () => {
     if (!idea.trim() || isGeneratingConcepts) return;
+    
+    // Check if user is authenticated
+    if (!isSignedIn) {
+      // Show auth modal to sign in
+      setShowAuthModal(true);
+      return;
+    }
+    
     setIsGeneratingConcepts(true);
     
     // Switch to concepts view immediately with loading state
@@ -344,7 +367,25 @@ export default function GenerateNewAppPage() {
     setSelectedConceptIndex(null);
   };
 
-  if (!isLoaded || (isLoaded && !isSignedIn)) {
+  const disabled = !idea.trim() || isGeneratingConcepts;
+
+  // Handle Cmd+Enter / Ctrl+Enter to submit
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if (!disabled) {
+          handleGenerateConcepts();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [disabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Only show loading state while auth is loading, not if user is not signed in
+  if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center">
         <div className="text-center">
@@ -354,8 +395,6 @@ export default function GenerateNewAppPage() {
       </div>
     );
   }
-
-  const disabled = !idea.trim() || isGeneratingConcepts;
 
   // Calculate progress based on concept job status OR if actively generating
   const conceptProgress = (() => {
@@ -528,6 +567,11 @@ export default function GenerateNewAppPage() {
                 <p className="mt-3 text-lg text-muted-foreground sm:text-xl">
                   Describe your app idea, I&apos;ll show you concepts
                 </p>
+                {!isSignedIn && (
+                  <p className="mt-2 text-sm text-muted-foreground/70">
+                    No login required to start — sign in when you&apos;re ready to generate
+                  </p>
+                )}
               </motion.div>
 
               {/* Input Area */}
@@ -589,8 +633,9 @@ export default function GenerateNewAppPage() {
                     <button
                       type="button"
                       onClick={triggerReferenceUpload}
-                      disabled={referenceImages.length >= MAX_REFERENCE_IMAGES}
+                      disabled={referenceImages.length >= MAX_REFERENCE_IMAGES || !isSignedIn}
                       className="inline-flex items-center justify-center gap-2 rounded-full bg-muted/60 px-4 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                      title={!isSignedIn ? "Sign in to attach reference images" : ""}
                     >
                       <ImageIcon className="h-4 w-4" />
                       <span>Attach reference</span>
@@ -606,10 +651,24 @@ export default function GenerateNewAppPage() {
                       type="button"
                       onClick={handleGenerateConcepts}
                       disabled={disabled}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-3 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <span>{isGeneratingConcepts ? 'Generating concepts…' : 'Generate concepts'}</span>
-                      <ArrowRight className="h-4 w-4" />
+                      <div className="flex flex-col items-end gap-0">
+                        <span>
+                          {isGeneratingConcepts 
+                            ? 'Generating…' 
+                            : !isSignedIn 
+                              ? 'Sign in to Generate' 
+                              : 'Generate'
+                          }
+                        </span>
+                        {!isGeneratingConcepts && isSignedIn && (
+                          <span className="hidden sm:inline text-[10px] text-primary-foreground/60 leading-none">
+                            ({isMac ? 'Cmd' : 'Ctrl'} + Enter)
+                          </span>
+                        )}
+                      </div>
+                      {!isGeneratingConcepts && <ArrowRight className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
@@ -794,6 +853,15 @@ export default function GenerateNewAppPage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        mode="sign-in"
+        title="Sign in to generate concepts"
+        description="Create an account or sign in to start generating your app concepts with AI."
+      />
     </div>
   );
 }

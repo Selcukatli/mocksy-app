@@ -20,6 +20,7 @@ export default function InlineStarRating({ appId }: InlineStarRatingProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [pendingRating, setPendingRating] = useState<number | null>(null);
 
   const { isSignedIn } = useUser();
   const createReview = useMutation(api.mockReviews.createReview);
@@ -32,13 +33,21 @@ export default function InlineStarRating({ appId }: InlineStarRatingProps) {
     }
   }, [existingReview]);
 
-  const handleRatingClick = async (rating: number) => {
-    // Check if user is signed in
-    if (!isSignedIn) {
-      setShowLoginDialog(true);
-      return;
+  // Auto-submit rating after authentication if there's a pending rating
+  useEffect(() => {
+    if (isSignedIn && showLoginDialog && pendingRating !== null) {
+      // User just authenticated, close modal and submit rating
+      setShowLoginDialog(false);
+      // Submit the pending rating on next tick
+      setTimeout(() => {
+        submitRating(pendingRating);
+        setPendingRating(null);
+      }, 100);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, showLoginDialog, pendingRating]);
 
+  const submitRating = async (rating: number) => {
     setError('');
     setIsSubmitting(true);
 
@@ -64,6 +73,17 @@ export default function InlineStarRating({ appId }: InlineStarRatingProps) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleRatingClick = async (rating: number) => {
+    // Check if user is signed in
+    if (!isSignedIn) {
+      setPendingRating(rating);
+      setShowLoginDialog(true);
+      return;
+    }
+
+    await submitRating(rating);
   };
 
   const currentLabel = hoverRating > 0 ? ratingLabels[hoverRating - 1] : '';
@@ -116,7 +136,7 @@ export default function InlineStarRating({ appId }: InlineStarRatingProps) {
       <LoginDialog
         isOpen={showLoginDialog}
         onClose={() => setShowLoginDialog(false)}
-        title="Login to Rate"
+        title="Login to Review this App"
         message="Please sign in to rate this app and share your experience with the community."
       />
     </div>

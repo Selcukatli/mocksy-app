@@ -78,10 +78,10 @@ if [[ $BG_COLOR == "auto" ]]; then
     echo -e "${YELLOW}Auto-detecting background color...${NC}"
 
     # Extract first frame and sample corner pixels to find the most common color
-    # We sample 4 corners and the edges to determine background
-    DETECTED_COLOR=$(ffmpeg -i "$INPUT_FILE" -vframes 1 -vf "crop=20:20:0:0" -f rawvideo -pix_fmt rgb24 - 2>/dev/null | \
+    # We sample from slightly inward (10px from edge) to avoid edge artifacts
+    DETECTED_COLOR=$(ffmpeg -i "$INPUT_FILE" -vframes 1 -vf "crop=30:30:10:10" -f rawvideo -pix_fmt rgb24 - 2>/dev/null | \
         od -An -tuC | \
-        awk 'NR<=200 {r+=$1; g+=$2; b+=$3; n++} END {printf "0x%02X%02X%02X\n", r/n, g/n, b/n}')
+        awk 'NR<=300 {r+=$1; g+=$2; b+=$3; n++} END {printf "0x%02X%02X%02X\n", r/n, g/n, b/n}')
 
     BG_COLOR="$DETECTED_COLOR"
     echo -e "${GREEN}Detected background color: ${YELLOW}$BG_COLOR${NC}"

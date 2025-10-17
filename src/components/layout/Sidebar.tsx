@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '../ThemeProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useClerk } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { useState } from 'react';
@@ -23,6 +23,8 @@ import {
   Search,
   ShieldCheck,
   ArrowLeftToLine,
+  LogOut,
+  UserCircle,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -36,12 +38,17 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
   const apps = useQuery(api.apps.getApps) || [];
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
   const isAppActive = (appId: string) => pathname === `/manage-app/${appId}`;
+
+  const handleSignOut = async () => {
+    await signOut({ redirectUrl: '/welcome' });
+  };
 
   // Render static mode
   const renderStaticMode = () => {
@@ -271,24 +278,43 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
 
           {/* Profile */}
           {isSignedIn ? (
-            <Link
-              href="/profile"
-              className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground"
-            >
-              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-                {user?.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <User className="w-3 h-3" />
-                )}
-              </div>
-              <div className="min-w-0 overflow-hidden">
-                <p className="text-sm truncate">
-                  {user?.firstName || user?.username || 'User'}
-                </p>
-              </div>
-            </Link>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground">
+                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {user?.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-3 h-3" />
+                    )}
+                  </div>
+                  <div className="min-w-0 overflow-hidden">
+                    <p className="text-sm truncate">
+                      {user?.firstName || user?.username || 'User'}
+                    </p>
+                  </div>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="top" align="start" className="w-48 p-1">
+                <div className="space-y-1">
+                  <Link
+                    href="/profile"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted/50"
+                  >
+                    <UserCircle className="w-4 h-4" />
+                    <span className="flex-1 text-left">Profile Details</span>
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-destructive hover:bg-destructive/10"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="flex-1 text-left">Sign Out</span>
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           ) : (
             <Link
               href="/welcome?mode=sign-in&context=app-access"
@@ -575,24 +601,43 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
 
             {/* Profile */}
             {isSignedIn ? (
-              <Link
-                href="/profile"
-                className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground"
-              >
-                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {user?.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <User className="w-3 h-3" />
-                  )}
-                </div>
-                <div className="min-w-0 overflow-hidden">
-                  <p className="text-sm truncate">
-                    {user?.firstName || user?.username || 'User'}
-                  </p>
-                </div>
-              </Link>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground">
+                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {user?.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-3 h-3" />
+                      )}
+                    </div>
+                    <div className="min-w-0 overflow-hidden">
+                      <p className="text-sm truncate">
+                        {user?.firstName || user?.username || 'User'}
+                      </p>
+                    </div>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="start" className="w-48 p-1">
+                  <div className="space-y-1">
+                    <Link
+                      href="/profile"
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted/50"
+                    >
+                      <UserCircle className="w-4 h-4" />
+                      <span className="flex-1 text-left">Profile Details</span>
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-destructive hover:bg-destructive/10"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span className="flex-1 text-left">Sign Out</span>
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             ) : (
               <Link
                 href="/welcome?mode=sign-in&context=app-access"

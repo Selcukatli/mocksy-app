@@ -1,6 +1,9 @@
 /**
  * Setup script to generate canvas templates and upload them to Convex
- * Run with: npx tsx scripts/setupCanvases.ts
+ * Initializes the screenshotSizes table with standard device sizes
+ * 
+ * Run with: npx tsx scripts/setup-screenshot-sizes/setupScreenshotSizes.ts
+ * For production: CONVEX_URL=https://your-prod.convex.cloud npx tsx scripts/setup-screenshot-sizes/setupScreenshotSizes.ts
  */
 
 import "dotenv/config";
@@ -128,8 +131,24 @@ async function main() {
 
   console.log("\n📐 Creating screenshot sizes and generating canvases...\n");
 
+  let created = 0;
+  let skipped = 0;
+
   for (const size of SCREENSHOT_SIZES) {
     try {
+      console.log(`Processing: ${size.name} (${size.slug})`);
+
+      // Check if size already exists
+      const existingSize = await client.query(api.screenshotSizes.getSizeBySlug, {
+        slug: size.slug,
+      });
+
+      if (existingSize) {
+        console.log(`  ⏭️  Already exists - skipping\n`);
+        skipped++;
+        continue;
+      }
+
       // Generate canvas image
       const canvasBuffer = await generateCanvasImage(
         size.width,
@@ -164,7 +183,7 @@ async function main() {
       const { storageId } = await uploadResponse.json();
       console.log(`  ✓ Uploaded to storage: ${storageId}`);
 
-      // Create screenshot size record with canvas
+      // Create new screenshot size record with canvas
       console.log(`  📝 Creating size record with canvas...`);
       const sizeId = await client.mutation(api.screenshotSizes.createSize, {
         name: size.name,
@@ -182,16 +201,19 @@ async function main() {
         notes: size.notes,
         canvasStorageId: storageId,
       });
-
       console.log(`  ✅ Created size: ${size.name} (${sizeId})\n`);
+      created++;
     } catch (error) {
-      console.error(`  ❌ Error creating ${size.name}:`, error);
+      console.error(`  ❌ Error processing ${size.name}:`, error);
     }
   }
 
   console.log("\n✨ Setup complete!");
+  console.log(`\n📊 Summary:`);
+  console.log(`  ✅ Created: ${created}`);
+  console.log(`  ⏭️  Skipped: ${skipped}`);
+  console.log(`  📦 Total: ${SCREENSHOT_SIZES.length}`);
   console.log(`\nCanvas images saved to: ${canvasDir}`);
-  console.log("All canvases have been uploaded to Convex storage!");
 
   process.exit(0);
 }

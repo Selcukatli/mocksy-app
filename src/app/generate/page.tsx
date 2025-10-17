@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -397,9 +398,12 @@ export default function GenerateNewAppPage() {
                 className="flex-shrink-0 relative -my-8 md:-my-12"
               >
                 {isSafari ? (
-                  <img
+                  <Image
                     src="/mocksy-generating.gif"
                     alt="Mocksy generating"
+                    width={208}
+                    height={208}
+                    unoptimized
                     className="w-40 h-40 md:w-52 md:h-52"
                   />
                 ) : (
@@ -490,9 +494,12 @@ export default function GenerateNewAppPage() {
                   }}
                 >
                   {isSafari ? (
-                    <img
+                    <Image
                       src="/mocksybot.gif"
                       alt="Mocksybot"
+                      width={224}
+                      height={224}
+                      unoptimized
                       className="mx-auto w-56 h-56 transition-all"
                     />
                   ) : (

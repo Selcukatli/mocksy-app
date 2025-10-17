@@ -504,13 +504,18 @@ export const generateAppFromConceptInternal = internalAction({
       });
 
       // Fetch canvas
-      const IPHONE_16_PRO_MAX_SIZE_ID = "kh74jsbefpsc7wn9pjqfqfa0sd7rn4ct" as Id<"screenshotSizes">;
-      const sizeId = args.screenshotSizeId || IPHONE_16_PRO_MAX_SIZE_ID;
-
       console.log(`📐 Fetching canvas...`);
-      const size = await ctx.runQuery(api.screenshotSizes.getSizeById, { sizeId });
+      let size;
+      if (args.screenshotSizeId) {
+        // Use provided size ID
+        size = await ctx.runQuery(api.screenshotSizes.getSizeById, { sizeId: args.screenshotSizeId });
+      } else {
+        // Use default iPhone 16 Pro Max by slug (stable across environments)
+        size = await ctx.runQuery(api.screenshotSizes.getSizeBySlug, { slug: "iphone-6-9" });
+      }
+      
       if (!size?.canvasStorageId) {
-        throw new Error(`Screenshot size not found: ${sizeId}`);
+        throw new Error(`Screenshot size not found`);
       }
 
       const canvasUrl = await ctx.runQuery(api.fileStorage.files.getFileUrl, {
@@ -895,9 +900,6 @@ export const generateApp = internalAction({
       // PARALLEL EXECUTION: Icon generation + Screen generation
       console.log("🚀 Starting parallel generation: Icon + Screens...");
 
-      const IPHONE_16_PRO_MAX_SIZE_ID = "kh74jsbefpsc7wn9pjqfqfa0sd7rn4ct" as Id<"screenshotSizes">;
-      const sizeId = args.screenshotSizeId || IPHONE_16_PRO_MAX_SIZE_ID;
-
       const [iconStorageId, screenResults] = await Promise.all([
         // ===== PARALLEL BRANCH 1: Icon Generation =====
         (async () => {
@@ -967,9 +969,17 @@ export const generateApp = internalAction({
 
           // Fetch canvas
           console.log(`📐 [SCREENS] Fetching canvas...`);
-          const size = await ctx.runQuery(api.screenshotSizes.getSizeById, { sizeId });
+          let size;
+          if (args.screenshotSizeId) {
+            // Use provided size ID
+            size = await ctx.runQuery(api.screenshotSizes.getSizeById, { sizeId: args.screenshotSizeId });
+          } else {
+            // Use default iPhone 16 Pro Max by slug (stable across environments)
+            size = await ctx.runQuery(api.screenshotSizes.getSizeBySlug, { slug: "iphone-6-9" });
+          }
+          
           if (!size?.canvasStorageId) {
-            throw new Error(`Screenshot size not found: ${sizeId}`);
+            throw new Error(`Screenshot size not found`);
           }
 
           const canvasUrl = await ctx.runQuery(api.fileStorage.files.getFileUrl, {

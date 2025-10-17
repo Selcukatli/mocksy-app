@@ -5,6 +5,7 @@ import { useQuery, useAction, useMutation } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Sparkles, Trash2, Settings, Eye, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -303,9 +304,12 @@ export default function PublicAppStorePage({ params }: PageProps) {
               className="flex-shrink-0 relative -my-8 md:-my-12"
             >
               {isSafari ? (
-                <img
+                <Image
                   src="/mocksy-study.gif"
                   alt="Mocksy studying"
+                  width={160}
+                  height={160}
+                  unoptimized
                   className="w-32 h-32 md:w-40 md:h-40"
                 />
               ) : (

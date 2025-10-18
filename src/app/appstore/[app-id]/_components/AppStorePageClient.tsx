@@ -16,6 +16,7 @@ import CoverImageSelectionModal from '@/components/CoverImageSelectionModal';
 import { motion } from 'framer-motion';
 import { usePageHeader } from '@/components/RootLayoutContent';
 import Toast from '@/components/Toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PageProps {
   params: Promise<{
@@ -254,10 +255,161 @@ export default function AppStorePageClient({ params }: PageProps) {
   // Loading state
   if (appPreview === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.16))] py-12">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading app preview...</p>
+      <div className="mx-auto max-w-4xl px-4 pt-4 pb-8 sm:px-6 min-w-0">
+        {/* App Store Preview Card Skeleton */}
+        <div className="w-full rounded-2xl border bg-card shadow-sm overflow-hidden">
+          <div className="p-6 md:p-8 space-y-6">
+            {/* Card Header - Creator and Actions */}
+            <div className="flex items-center justify-between gap-4">
+              {/* Creator Info Skeleton */}
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                <div className="space-y-1">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+
+              {/* Action Buttons Skeleton */}
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-9 w-20" />
+              </div>
+            </div>
+
+            {/* Cover Image with App Header Skeleton */}
+            <div className="rounded-xl overflow-hidden shadow-md">
+              {/* Cover Image */}
+              <div className="relative w-full aspect-[2/1]">
+                <Skeleton className="w-full h-full" />
+              </div>
+              
+              {/* App info positioned at bottom */}
+              <div className="relative p-4 md:p-6 flex items-center gap-4 -mt-12 bg-gradient-to-t from-muted/80 to-transparent">
+                <Skeleton className="h-16 w-16 md:h-20 md:w-20 rounded-[22%] flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-8 w-48" />
+                  <Skeleton className="h-5 w-32" />
+                </div>
+              </div>
+            </div>
+
+            {/* Description Skeleton */}
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+
+            {/* Preview Section */}
+            <div className="pt-4 border-t">
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-5 w-32" />
+              </div>
+
+              {/* Screenshot Carousel Skeleton */}
+              <div className="sticky top-16 z-10">
+                <div className="flex gap-6 pb-2 overflow-x-hidden">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Skeleton
+                      key={i}
+                      className="aspect-[9/19.5] w-[50vw] sm:w-[38vw] md:w-[200px] lg:w-[220px] flex-shrink-0 rounded-2xl"
+                    />
+                  ))}
+                </div>
+                
+                {/* Dots Skeleton */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Skeleton key={i} className="w-2 h-2 rounded-full" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Reviews Section Skeleton */}
+        <div className="mt-6 rounded-2xl border bg-card p-6">
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+
+            {/* Rating Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col items-center justify-center gap-2">
+                <Skeleton className="h-16 w-24" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-2 flex-1" />
+                    <Skeleton className="h-4 w-8" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Individual Reviews */}
+            <div className="space-y-4 pt-4 border-t">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Similar Apps Carousel Skeleton */}
+        <div className="mt-6 space-y-4">
+          <Skeleton className="h-7 w-48" />
+          <div className="flex gap-4 overflow-hidden">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="w-64 flex-shrink-0 rounded-2xl border bg-card overflow-hidden"
+              >
+                <Skeleton className="w-full h-40" />
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-12 rounded-xl" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer CTA Skeleton */}
+        <div className="mt-6 rounded-2xl border bg-card p-8">
+          <div className="flex flex-col items-center space-y-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-4 w-96 max-w-full" />
+            <Skeleton className="h-11 w-48" />
+          </div>
         </div>
       </div>
     );

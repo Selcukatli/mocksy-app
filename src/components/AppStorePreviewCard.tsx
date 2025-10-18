@@ -253,7 +253,28 @@ export default function AppStorePreviewCard({
               
               {/* Cover Image - fades to transparent at bottom */}
               <div className="relative w-full aspect-[2/1]">
-                <div 
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ 
+                    opacity: 1,
+                    scale: [1, 1.15, 1],
+                    x: [0, 20, 0],
+                  }}
+                  transition={{ 
+                    opacity: { duration: 0.6 },
+                    scale: { 
+                      duration: 25, 
+                      repeat: Infinity, 
+                      ease: "linear",
+                      delay: 0.6 
+                    },
+                    x: { 
+                      duration: 25, 
+                      repeat: Infinity, 
+                      ease: "linear",
+                      delay: 0.6 
+                    },
+                  }}
                   className="absolute inset-0"
                   style={{
                     maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
@@ -268,7 +289,7 @@ export default function AppStorePreviewCard({
                     sizes="(max-width: 768px) 100vw, 896px"
                     unoptimized
                   />
-                </div>
+                </motion.div>
               </div>
               
               {/* App info positioned at card bottom */}

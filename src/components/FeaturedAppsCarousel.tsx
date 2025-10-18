@@ -61,9 +61,27 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
           <div className="relative w-full h-[280px] md:h-[350px]">
             <motion.div
               key={`${currentApp._id}-cover`}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6 }}
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: 1,
+                scale: [1, 1.15, 1],
+                x: [0, 20, 0],
+              }}
+              transition={{ 
+                opacity: { duration: 0.6 },
+                scale: { 
+                  duration: 25, 
+                  repeat: Infinity, 
+                  ease: "linear",
+                  delay: 0.6 
+                },
+                x: { 
+                  duration: 25, 
+                  repeat: Infinity, 
+                  ease: "linear",
+                  delay: 0.6 
+                },
+              }}
               className="absolute inset-0"
               style={{
                 maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',

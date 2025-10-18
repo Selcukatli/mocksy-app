@@ -44,7 +44,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
-  const isAppActive = (appId: string) => pathname === `/manage-app/${appId}`;
+  const isAppActive = (appId: string) => pathname === `/appstore/${appId}`;
 
   const handleSignOut = async () => {
     await signOut({ redirectUrl: '/welcome' });
@@ -147,7 +147,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
                     return (
                       <Link
                         key={app._id}
-                        href={`/manage-app/${app._id}`}
+                        href={`/appstore/${app._id}`}
                         className={cn(
                           "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
                           isAppActive(app._id)
@@ -460,7 +460,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
                         return (
                           <Link
                             key={app._id}
-                            href={`/manage-app/${app._id}`}
+                            href={`/appstore/${app._id}`}
                             className={cn(
                               "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full",
                               isAppActive(app._id)

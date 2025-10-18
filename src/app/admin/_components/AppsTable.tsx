@@ -1,7 +1,7 @@
 'use client';
 
 import { Id } from '@convex/_generated/dataModel';
-import { Star, StarOff, Eye, Trash2, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Star, StarOff, Eye, Trash2, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, CloudUpload, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageLightbox from '@/components/ImageLightbox';
@@ -10,6 +10,25 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+
+// Helper function to format compact time ago
+const formatCompactTimeAgo = (timestamp: number): string => {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+
+  if (years > 0) return `${years}y ago`;
+  if (months > 0) return `${months}mo ago`;
+  if (days > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (minutes > 0) return `${minutes}m ago`;
+  return 'just now';
+};
 
 interface App {
   _id: Id<'apps'>;
@@ -23,6 +42,8 @@ interface App {
   isFeatured: boolean;
   featuredAt?: number;
   createdAt: number;
+  prodAppId?: string;
+  lastPublishedToProdAt?: number;
 }
 
 type SortField = 'name' | 'status' | 'featured' | 'created';
@@ -35,6 +56,7 @@ interface AppsTableProps {
   onDelete: (appId: Id<'apps'>) => Promise<void>;
   onView: (appId: Id<'apps'>) => void;
   onStatusChange: (appId: Id<'apps'>, status: 'draft' | 'published') => Promise<void>;
+  onPublishToProd?: (appId: Id<'apps'>) => Promise<void>; // Optional - only on dev
 }
 
 export default function AppsTable({
@@ -44,6 +66,7 @@ export default function AppsTable({
   onDelete,
   onView,
   onStatusChange,
+  onPublishToProd,
 }: AppsTableProps) {
   const [deleteConfirmId, setDeleteConfirmId] = useState<Id<'apps'> | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<Id<'apps'> | null>(null);
@@ -197,6 +220,11 @@ export default function AppsTable({
                     <SortIcon field="featured" />
                   </button>
                 </th>
+                {onPublishToProd && (
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Prod
+                  </th>
+                )}
                 <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Actions
                 </th>
@@ -381,6 +409,59 @@ export default function AppsTable({
                       </PopoverContent>
                     </Popover>
                   </td>
+
+                  {/* Prod Status (only on dev deployment) */}
+                  {onPublishToProd && (
+                    <td className="px-4 py-4">
+                      {app.isDemo ? (
+                        app.lastPublishedToProdAt ? (
+                          // Already published - show status
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-1.5 text-xs text-emerald-600">
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                              <span className="font-medium">
+                                Published {formatCompactTimeAgo(app.lastPublishedToProdAt)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {app.prodAppId && (
+                                <a
+                                  href={`https://mocksy.app/appstore/${app.prodAppId}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-xs text-primary hover:underline w-fit"
+                                >
+                                  <span>View in Prod</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                              <button
+                                onClick={() => onPublishToProd(app._id)}
+                                disabled={actionLoadingId === app._id}
+                                className="p-1 rounded text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                                title="Re-publish to Production"
+                              >
+                                <CloudUpload className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          // Not published yet - show publish button
+                          <button
+                            onClick={() => onPublishToProd(app._id)}
+                            disabled={actionLoadingId === app._id}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium text-primary border border-primary/20 hover:bg-primary/10 transition-colors disabled:opacity-50"
+                            title="Publish to Production"
+                          >
+                            <CloudUpload className="w-3.5 h-3.5" />
+                            <span>Publish</span>
+                          </button>
+                        )
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  )}
 
                   {/* Actions */}
                   <td className="px-4 py-4">

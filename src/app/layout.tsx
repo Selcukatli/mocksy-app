@@ -15,8 +15,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mocksy - App Store Screenshot Generator",
-  description: "Generate, edit and translate app store screenshots with AI",
+  title: "Mocksy - Idea to concept in seconds",
+  description: "Turn your app or game idea into visual concepts instantly. AI-powered mockups, icons, and screenshots.",
+  openGraph: {
+    title: "Mocksy - Idea to concept in seconds",
+    description: "Turn your app or game idea into visual concepts instantly. AI-powered mockups, icons, and screenshots.",
+    images: [
+      {
+        url: "/mocksy_cover.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Mocksy - Idea to concept in seconds",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mocksy - Idea to concept in seconds",
+    description: "Turn your app or game idea into visual concepts instantly. AI-powered mockups, icons, and screenshots.",
+    images: ["/mocksy_cover.jpg"],
+  },
   icons: {
     icon: "/mocksy-app-icon.png",
   },

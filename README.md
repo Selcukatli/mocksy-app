@@ -1,37 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mocksy - Idea to concept in seconds
+
+Transform your app or game idea into visual concepts instantly with AI-powered design generation.
+
+## What is Mocksy?
+
+Mocksy is an AI-powered platform that helps creators visualize their app and game ideas in seconds. Describe your concept, and Mocksy generates professional mockups, app icons, and screenshots - turning abstract ideas into tangible designs you can share, iterate on, and bring to life.
+
+## Key Features
+
+- **AI-Powered Generation**: Describe your app or game idea, and get visual concepts in seconds
+- **Professional Mockups**: Generate app icons, screenshots, and UI designs instantly
+- **Multiple Variations**: Explore different visual directions for your concept
+- **Fast Iteration**: Refine and regenerate concepts based on feedback
+
+## Tech Stack
+
+- **Frontend**: Next.js 15.5.3 with App Router, TypeScript, Tailwind CSS v4
+- **Backend**: Convex (real-time database and serverless functions)
+- **AI/ML**: 
+  - BAML (type-safe LLM function framework)
+  - FAL AI (image generation models)
+  - OpenAI (concept generation)
+- **Authentication**: Clerk
+- **Bundler**: Turbopack (dev and production builds)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ and npm
+- Convex account (for backend)
+- Clerk account (for authentication)
+- OpenAI API key
+- FAL AI API key
+
+### Installation
 
 ```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+# Add your API keys to .env.local
+
+# Start the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Development Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Start development server with Turbopack
+npm run dev
+
+# Build for production with Turbopack
+npm run build
+
+# Start production server
+npm run start
+
+# Run linter
+npm run lint
+
+# Generate BAML types
+npm run baml:generate
+```
+
+## Project Structure
+
+```
+mocksy/
+├── src/
+│   ├── app/              # Next.js App Router pages
+│   ├── components/       # React components
+│   ├── hooks/            # Custom React hooks
+│   ├── lib/              # Utility functions
+│   └── providers/        # React context providers
+├── convex/               # Convex backend functions
+├── baml_src/             # BAML AI function definitions
+├── docs/                 # Project documentation
+│   ├── rules/           # Development guidelines
+│   ├── features/        # Feature documentation
+│   └── learnings/       # Lessons learned
+└── public/              # Static assets
+```
+
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- **Technology Guidelines**: `docs/rules/` - Best practices for Convex, BAML, FAL AI, Clerk, and more
+- **Feature Documentation**: `docs/features/` - Implementation details and architecture decisions
+- **Learning Resources**: `docs/learnings/` - Lessons learned and integration patterns
+
+### For AI Agents
+
+- See `AGENTS.md` for repository-wide guidelines and documentation triggers
+- See `CLAUDE.md` for Claude-specific development instructions
+
+## Contributing
+
+1. Check the relevant documentation in `docs/rules/` before starting work
+2. Follow the code style and naming conventions outlined in `AGENTS.md`
+3. Run `npm run lint` before committing
+4. Write clear commit messages using imperative mood ("Add feature" not "Added feature")
+5. Test your changes with `npm run build && npm run start`
+
+## License
+
+[Add your license here]
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-- Overlay: Press `Esc` or click the darkened backdrop (outside the preview card, navigation arrows, or close button) to dismiss. `Left`/`Right` arrow keys still cycle between screens.
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Convex Documentation](https://docs.convex.dev)
+- [BAML Documentation](https://docs.boundaryml.com)
+- [FAL AI Documentation](https://fal.ai/docs)

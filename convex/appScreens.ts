@@ -13,6 +13,39 @@ export const getScreensByAppId = internalQuery({
   },
 });
 
+// Internal mutation: Create app screen for migration (no auth check)
+export const createAppScreenForMigration = internalMutation({
+  args: {
+    appId: v.id("apps"),
+    profileId: v.id("profiles"),
+    name: v.string(),
+    storageId: v.id("_storage"),
+    dimensions: v.object({
+      width: v.number(),
+      height: v.number(),
+    }),
+    size: v.number(),
+  },
+  returns: v.id("appScreens"),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    const screenId = await ctx.db.insert("appScreens", {
+      appId: args.appId,
+      profileId: args.profileId,
+      name: args.name,
+      storageId: args.storageId,
+      dimensions: args.dimensions,
+      size: args.size,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return screenId;
+  },
+});
+
+
 // Upload an app screen
 export const uploadAppScreen = mutation({
   args: {

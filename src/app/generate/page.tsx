@@ -24,6 +24,12 @@ import { usePageHeader } from '@/components/RootLayoutContent';
 
 const MAX_REFERENCE_IMAGES = 4;
 
+const TYPEWRITER_MESSAGES = [
+  "Hey, I'm Mocksy",
+  "Tell me your app or game idea",
+  "I'll generate designs in seconds!"
+];
+
 const ALL_EXAMPLE_PROMPTS = [
   // Wellness & Health
   "A wellness companion that tracks mood trends and provides mindful break reminders",
@@ -116,6 +122,12 @@ export default function GenerateNewAppPage() {
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const [examplePrompts, setExamplePrompts] = useState(() => getRandomPrompts(3));
   const [isMac, setIsMac] = useState(true);
+  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
+  
+  // Typewriter effect state
+  const [typewriterText, setTypewriterText] = useState('');
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Scroll state for dynamic video sizing
   const [scrollScale, setScrollScale] = useState(1);
@@ -160,6 +172,45 @@ export default function GenerateNewAppPage() {
   useEffect(() => {
     setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
   }, []);
+
+  // Typewriter effect - cycles through messages
+  useEffect(() => {
+    // If textarea is focused, show "What's the idea?" and stop cycling
+    if (isTextareaFocused) {
+      const focusedMessage = "What's the idea?";
+      if (typewriterText !== focusedMessage) {
+        setTypewriterText(focusedMessage);
+        setIsDeleting(false);
+      }
+      return; // Don't continue with cycling logic
+    }
+    
+    const currentMessage = TYPEWRITER_MESSAGES[messageIndex];
+    const typingSpeed = isDeleting ? 15 : 60; // Much faster deletion
+    
+    const timeout = setTimeout(() => {
+      if (!isDeleting) {
+        // Typing forward
+        if (typewriterText.length < currentMessage.length) {
+          setTypewriterText(currentMessage.slice(0, typewriterText.length + 1));
+        } else {
+          // Finished typing, wait then start deleting
+          setTimeout(() => setIsDeleting(true), 1500); // Shorter pause
+        }
+      } else {
+        // Deleting backward
+        if (typewriterText.length > 0) {
+          setTypewriterText(typewriterText.slice(0, -1));
+        } else {
+          // Finished deleting, move to next message
+          setIsDeleting(false);
+          setMessageIndex((prev) => (prev + 1) % TYPEWRITER_MESSAGES.length);
+        }
+      }
+    }, typingSpeed);
+    
+    return () => clearTimeout(timeout);
+  }, [typewriterText, messageIndex, isDeleting, isTextareaFocused]);
 
   // Set page to show logo instead of title
   useEffect(() => {
@@ -384,13 +435,76 @@ export default function GenerateNewAppPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [disabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Only show loading state while auth is loading, not if user is not signed in
+  // Ghost/skeleton loading state while auth is loading
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+      <div className="bg-background">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col items-center justify-center px-6">
+          <div className="w-full max-w-3xl text-center pb-16">
+            {/* Ghost Mocksybot - simple round shape */}
+            <div className="mb-2 h-48 overflow-hidden flex items-center justify-center">
+              <div className="w-40 h-40 rounded-full bg-muted animate-pulse" />
+            </div>
+
+            {/* Ghost "Hey, I'm Mocksy" Title */}
+            <div className="space-y-3">
+              {/* Single block for entire title */}
+              <div className="mx-auto h-14 w-[420px] max-w-[90%] rounded-xl bg-muted animate-pulse" />
+            </div>
+
+            {/* Ghost Input Area */}
+            <div className="mt-6 space-y-4">
+              <div className="relative max-w-2xl mx-auto rounded-2xl border border-border/60 bg-background">
+                {/* Textarea ghost - simulates placeholder text */}
+                <div className="space-y-2.5 px-6 py-4">
+                  <div className="h-3.5 w-full rounded bg-muted animate-pulse" />
+                  <div className="h-3.5 w-[95%] rounded bg-muted/80 animate-pulse" />
+                  <div className="h-3.5 w-[88%] rounded bg-muted/80 animate-pulse" />
+                </div>
+                
+                {/* Action bar with buttons */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 py-3">
+                  {/* "Attach reference" button ghost */}
+                  <div className="flex items-center gap-2 h-10 w-[160px] rounded-full bg-muted animate-pulse px-4">
+                    <div className="w-4 h-4 rounded bg-muted-foreground/20" />
+                    <div className="h-3 flex-1 rounded bg-muted-foreground/20" />
+                  </div>
+                  {/* "Generate" button ghost */}
+                  <div className="flex items-center justify-center gap-3 h-12 w-[180px] rounded-full bg-primary/30 animate-pulse px-6">
+                    <div className="h-3.5 w-20 rounded bg-primary-foreground/30" />
+                    <div className="w-4 h-4 rounded-full bg-primary-foreground/30" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Ghost Example Prompts */}
+              <div className="pt-4 text-center">
+                {/* "Or try one of these examples:" text */}
+                <div className="mx-auto mb-3 h-4 w-[240px] rounded bg-muted/80 animate-pulse" />
+                
+                {/* Example pills with refresh icon */}
+                <div className="flex flex-col items-center gap-3">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div 
+                      key={i} 
+                      className="h-11 rounded-full bg-muted/80 animate-pulse"
+                      style={{ 
+                        width: i === 0 ? '540px' : '500px',
+                        maxWidth: '95%'
+                      }}
+                    />
+                  ))}
+                  {/* Last pill with refresh button */}
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="h-11 w-[480px] max-w-[80%] rounded-full bg-muted/80 animate-pulse"
+                    />
+                    <div className="w-11 h-11 rounded-full bg-muted/80 animate-pulse flex-shrink-0" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -498,7 +612,7 @@ export default function GenerateNewAppPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-3xl text-center pb-16"
+              className="w-full max-w-4xl text-center pb-16"
             >
               {/* Invisible scroll sentinel for tracking scroll position */}
               <div ref={scrollSentinelRef} className="h-px w-full" aria-hidden="true" />
@@ -534,7 +648,7 @@ export default function GenerateNewAppPage() {
                 >
                   {isSafari ? (
                     <Image
-                      src="/mocksybot.gif"
+                      src={isTextareaFocused ? "/mocksy-dancing.gif" : "/mocksybot.gif"}
                       alt="Mocksybot"
                       width={224}
                       height={224}
@@ -543,13 +657,14 @@ export default function GenerateNewAppPage() {
                     />
                   ) : (
                     <video
+                      key={isTextareaFocused ? "dancing" : "idle"}
                       autoPlay
                       loop
                       muted
                       playsInline
                       className="mx-auto w-56 h-56 transition-all"
                     >
-                      <source src="/mocksybot.webm" type="video/webm" />
+                      <source src={isTextareaFocused ? "/mocksy-dancing.webm" : "/mocksybot.webm"} type="video/webm" />
                     </video>
                   )}
                 </motion.div>
@@ -561,14 +676,12 @@ export default function GenerateNewAppPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.1 }}
               >
-                <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
-                  Hey, I&apos;m Mocksy
+                <h1 className="text-4xl font-bold tracking-tight sm:text-5xl min-h-[3rem] sm:min-h-[3.5rem]">
+                  {typewriterText}
+                  <span className="animate-pulse">|</span>
                 </h1>
-                <p className="mt-3 text-lg text-muted-foreground sm:text-xl">
-                  Describe your app idea, I&apos;ll show you concepts
-                </p>
                 {!isSignedIn && (
-                  <p className="mt-2 text-sm text-muted-foreground/70">
+                  <p className="mt-4 text-sm text-muted-foreground/70">
                     No login required to start — sign in when you&apos;re ready to generate
                   </p>
                 )}
@@ -609,11 +722,13 @@ export default function GenerateNewAppPage() {
                 )}
 
                 {/* Textarea with integrated action bar */}
-                <div className="relative rounded-2xl border border-border/60 bg-background focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                <div className="relative max-w-2xl mx-auto rounded-2xl border border-border/60 bg-background focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                   <textarea
                     id="app-idea"
                     value={idea}
                     onChange={(event) => setIdea(event.target.value)}
+                    onFocus={() => setIsTextareaFocused(true)}
+                    onBlur={() => setIsTextareaFocused(false)}
                     placeholder="Example: A wellness companion that turns daily journaling into affirmations, tracks mood trends, and nudges me with mindful breaks."
                     rows={3}
                     className="w-full resize-none rounded-t-2xl bg-transparent px-6 py-4 text-base focus:outline-none placeholder:text-muted-foreground/50"

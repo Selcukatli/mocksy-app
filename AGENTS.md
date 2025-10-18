@@ -68,7 +68,7 @@ Write short imperative commit subjects (`Add screenshot editor`). Every PR shoul
 Secrets belong in `.env.local` (gitignored) and should be read through `process.env`. Document required keys in the PR description and never commit real credentials or API tokens.
 
 ## Architecture & Tooling Notes
-The stack is Next.js 15.5.3 with Turbopack for dev and build, Tailwind CSS v4 plus PostCSS, and TypeScript. Dark mode derives from CSS variables defined in `globals.css`, so adjust shared tokens instead of hard-coding colours. Mocksy's product goal is AI-assisted app-store screenshot generation; when introducing new agents or external services, annotate their purpose in code comments and PR notes to keep future integrations predictable.
+The stack is Next.js 15.5.3 with Turbopack for dev and build, Tailwind CSS v4 plus PostCSS, and TypeScript. Dark mode derives from CSS variables defined in `globals.css`, so adjust shared tokens instead of hard-coding colours. Mocksy's product goal is AI-powered app and game concept design generation - turning ideas into visual concepts in seconds; when introducing new agents or external services, annotate their purpose in code comments and PR notes to keep future integrations predictable.
 
 ## Technology-Specific Agent Guidelines
 

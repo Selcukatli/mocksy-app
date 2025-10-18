@@ -51,6 +51,9 @@ export default defineSchema({
     status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
     // Style guide for UI consistency
     styleGuide: v.optional(v.string()), // Complete design guide including colors, typography, mood, philosophy
+    // Production publish tracking (dev deployment only)
+    prodAppId: v.optional(v.string()), // ID of published app in prod (string, not Id<"apps"> since it's a different deployment)
+    lastPublishedToProdAt: v.optional(v.number()), // Timestamp when app was last published to production
     createdAt: v.number(),
     updatedAt: v.number(),
   })

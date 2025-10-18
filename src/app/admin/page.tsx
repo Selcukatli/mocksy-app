@@ -1,10 +1,11 @@
 'use client';
 
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { useState, useMemo, useEffect } from 'react';
 import { Id } from '@convex/_generated/dataModel';
 import AppsTable from './_components/AppsTable';
+import PublishToProdModal from './_components/PublishToProdModal';
 import Toast from '@/components/Toast';
 import { Search, Filter, ShieldAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -15,6 +16,17 @@ export default function AdminPage() {
   const router = useRouter();
   const { isLoaded: isClerkLoaded } = useUser();
   const { setBreadcrumbs, setSidebarMode } = usePageHeader();
+
+  // Check if we're on dev deployment (only dev needs to publish to prod)
+  // We can check if NEXT_PUBLIC_CONVEX_URL exists and doesn't match prod URL
+  const isDevDeployment = useMemo(() => {
+    const currentUrl = process.env.NEXT_PUBLIC_CONVEX_URL || '';
+    // If URL contains 'localhost' or 'dev' or doesn't match prod pattern, it's dev
+    // Prod deployments typically have stable deployment names
+    return currentUrl.includes('localhost') || 
+           currentUrl.includes('squid') || // Dev pattern (e.g., fantastic-squid-750)
+           !currentUrl.includes('orca'); // Prod pattern (e.g., energized-orca-703)
+  }, []);
 
   useEffect(() => {
     setSidebarMode('overlay');
@@ -32,6 +44,8 @@ export default function AdminPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [appToPublish, setAppToPublish] = useState<Id<'apps'> | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Only query apps after Clerk is loaded AND user is confirmed admin
   const shouldQueryApps = isClerkLoaded && isAdmin === true;
@@ -51,6 +65,7 @@ export default function AdminPage() {
   const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
   const deleteAppMutation = useMutation(api.apps.deleteApp);
   const updateAppStatusMutation = useMutation(api.adminActions.updateAppStatus);
+  const publishToProdAction = useAction(api.adminActions.publishAppToProd);
 
   // Get unique categories including from all apps (not just published)
   const allCategories = useMemo(() => {
@@ -124,6 +139,32 @@ export default function AdminPage() {
       setToastMessage(errorMessage);
       setToastType('error');
       setShowToast(true);
+    }
+  };
+
+  const handlePublishToProd = async (appId: Id<'apps'>) => {
+    // Show the confirmation modal
+    setAppToPublish(appId);
+  };
+
+  const confirmPublishToProd = async () => {
+    if (!appToPublish) return;
+
+    setIsPublishing(true);
+    try {
+      const result = await publishToProdAction({ appId: appToPublish });
+      setToastMessage(result.message);
+      setToastType(result.success ? 'success' : 'error');
+      setShowToast(true);
+      setAppToPublish(null);
+    } catch (error) {
+      console.error('Error publishing to prod:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to publish to production';
+      setToastMessage(errorMessage);
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -288,6 +329,7 @@ export default function AdminPage() {
             onDelete={handleDelete}
             onView={handleView}
             onStatusChange={handleStatusChange}
+            onPublishToProd={isDevDeployment ? handlePublishToProd : undefined}
           />
         ) : null}
       </div>
@@ -298,6 +340,14 @@ export default function AdminPage() {
         isOpen={showToast}
         onClose={() => setShowToast(false)}
         duration={3000}
+      />
+
+      <PublishToProdModal
+        isOpen={appToPublish !== null}
+        app={appToPublish ? apps?.find((a: { _id: Id<'apps'> }) => a._id === appToPublish) || null : null}
+        onConfirm={confirmPublishToProd}
+        onClose={() => setAppToPublish(null)}
+        isPublishing={isPublishing}
       />
     </>
   );

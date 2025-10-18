@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Mocksy is a Next.js application for generating, editing, and translating app store screenshots using AI. Built with Next.js 15.5.3, TypeScript, and Tailwind CSS v4.
+Mocksy is a Next.js application that turns app and game ideas into visual concepts in seconds using AI. The platform helps creators generate professional mockups, icons, and screenshots instantly. Built with Next.js 15.5.3, TypeScript, and Tailwind CSS v4.
 
 ## Development Commands
 

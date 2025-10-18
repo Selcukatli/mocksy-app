@@ -257,3 +257,72 @@ export const setAdminStatus = internalMutation({
     return null;
   },
 });
+
+// Internal query to find any admin profile (for migrations/system operations)
+export const getAnyAdminProfile = query({
+  args: {},
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("profiles"),
+      _creationTime: v.number(),
+      userId: v.string(),
+      username: v.optional(v.string()),
+      usernameUpdatedAt: v.optional(v.number()),
+      firstName: v.optional(v.string()),
+      lastName: v.optional(v.string()),
+      imageUrl: v.optional(v.string()),
+      imageUrlUpdatedAt: v.optional(v.number()),
+      isAdmin: v.optional(v.boolean()),
+      preferences: v.optional(v.object({})),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+  ),
+  handler: async (ctx) => {
+    const adminProfile = await ctx.db
+      .query("profiles")
+      .filter((q) => q.eq(q.field("isAdmin"), true))
+      .first();
+
+    return adminProfile;
+  },
+});
+
+// Internal query to find admin profile by userId (for matching across deployments)
+export const getAdminProfileByUserId = query({
+  args: {
+    userId: v.string(),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("profiles"),
+      _creationTime: v.number(),
+      userId: v.string(),
+      username: v.optional(v.string()),
+      usernameUpdatedAt: v.optional(v.number()),
+      firstName: v.optional(v.string()),
+      lastName: v.optional(v.string()),
+      imageUrl: v.optional(v.string()),
+      imageUrlUpdatedAt: v.optional(v.number()),
+      isAdmin: v.optional(v.boolean()),
+      preferences: v.optional(v.object({})),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .first();
+
+    // Only return if the profile is an admin
+    if (profile?.isAdmin === true) {
+      return profile;
+    }
+
+    return null;
+  },
+});

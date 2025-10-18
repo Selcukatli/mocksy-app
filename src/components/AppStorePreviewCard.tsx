@@ -58,16 +58,8 @@ export default function AppStorePreviewCard({
   const [currentScreenshotIndex, setCurrentScreenshotIndex] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
-  const [isSafari, setIsSafari] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // Detect Safari
-  useEffect(() => {
-    const ua = navigator.userAgent;
-    const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
-    setIsSafari(isSafariBrowser);
-  }, []);
   
   const screenUrls = screens.map(s => s.screenUrl).filter((url): url is string => !!url);
   const hasIcon = !!app.iconUrl;
@@ -206,70 +198,6 @@ export default function AppStorePreviewCard({
                 background: dominantColor || 'rgba(0, 0, 0, 0.85)',
               }}
             >
-              {/* Video Generation Loading Overlay - covers entire card except app info stays on top */}
-              {isGeneratingVideo && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 backdrop-blur-sm bg-black/5 z-40 rounded-xl"
-                >
-                  {/* Mocksy studying animation - centered */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-0 -mt-8">
-                    {isSafari ? (
-                      <Image
-                        src="/mocksy-study.gif"
-                        alt="Mocksy generating"
-                        width={160}
-                        height={160}
-                        unoptimized
-                        className="w-32 h-32 md:w-40 md:h-40"
-                      />
-                    ) : (
-                      <video
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        className="w-32 h-32 md:w-40 md:h-40"
-                      >
-                        <source src="/mocksy-study.webm" type="video/webm" />
-                      </video>
-                    )}
-                    <div className="text-center -mt-4 hidden md:block">
-                      <p 
-                        className="text-lg font-semibold"
-                        style={{ 
-                          color: isLightBackground ? '#1f2937' : '#ffffff'
-                        }}
-                      >
-                        Generating video{' '}
-                        <span className="inline-flex">
-                          <motion.span
-                            animate={{ opacity: [0, 1, 0] }}
-                            transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
-                          >
-                            .
-                          </motion.span>
-                          <motion.span
-                            animate={{ opacity: [0, 1, 0] }}
-                            transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
-                          >
-                            .
-                          </motion.span>
-                          <motion.span
-                            animate={{ opacity: [0, 1, 0] }}
-                            transition={{ duration: 1.5, repeat: Infinity, delay: 0.6 }}
-                          >
-                            .
-                          </motion.span>
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-              
               {/* Admin Edit Overlay - Only show on hover when admin and not generating video */}
               {isAdmin && !isGeneratingVideo && (
                 <>

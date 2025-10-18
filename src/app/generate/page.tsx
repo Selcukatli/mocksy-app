@@ -682,7 +682,7 @@ export default function GenerateNewAppPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.1 }}
               >
-                <h1 className="text-4xl font-bold tracking-tight sm:text-5xl min-h-[3rem] sm:min-h-[3.5rem]">
+                <h1 className="text-3xl font-bold tracking-tight sm:text-5xl min-h-[2.5rem] sm:min-h-[3.5rem]">
                   {typewriterText}
                   <span className="animate-pulse">|</span>
                 </h1>

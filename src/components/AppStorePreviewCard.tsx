@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, Share, Sparkles, Edit3, ImagePlus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, Share, Sparkles, Edit3, ImagePlus, ChevronLeft, ChevronRight, Video, Loader2, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Id } from '@convex/_generated/dataModel';
@@ -30,9 +30,11 @@ interface AppStorePreviewCardProps {
   totalScreens: number;
   isLoading?: boolean;
   onShare?: () => void;
-  onCreateYourOwn?: () => void;
   isAdmin?: boolean;
   onGenerateCover?: () => void;
+  onGenerateVideo?: () => void;
+  onRemoveVideo?: () => void;
+  isGeneratingVideo?: boolean;
   adminActionsSlot?: React.ReactNode; // Slot for rendering admin actions
 }
 
@@ -43,9 +45,11 @@ export default function AppStorePreviewCard({
   totalScreens,
   isLoading = false,
   onShare,
-  onCreateYourOwn,
   isAdmin = false,
   onGenerateCover,
+  onGenerateVideo,
+  onRemoveVideo,
+  isGeneratingVideo = false,
   adminActionsSlot,
 }: AppStorePreviewCardProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -54,8 +58,16 @@ export default function AppStorePreviewCard({
   const [currentScreenshotIndex, setCurrentScreenshotIndex] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [isSafari, setIsSafari] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Detect Safari
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
+    setIsSafari(isSafariBrowser);
+  }, []);
   
   const screenUrls = screens.map(s => s.screenUrl).filter((url): url is string => !!url);
   const hasIcon = !!app.iconUrl;
@@ -167,7 +179,7 @@ export default function AppStorePreviewCard({
             )}
 
             {/* Action Buttons */}
-            {(onShare || onCreateYourOwn || adminActionsSlot) && (
+            {(onShare || adminActionsSlot) && (
               <div className="flex items-center gap-2">
                 {adminActionsSlot}
                 {onShare && (
@@ -177,15 +189,6 @@ export default function AppStorePreviewCard({
                   >
                     <Share className="h-3.5 w-3.5" />
                     Share
-                  </button>
-                )}
-                {onCreateYourOwn && (
-                  <button
-                    onClick={onCreateYourOwn}
-                    className="px-3 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5"
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Remix
                   </button>
                 )}
               </div>
@@ -203,8 +206,72 @@ export default function AppStorePreviewCard({
                 background: dominantColor || 'rgba(0, 0, 0, 0.85)',
               }}
             >
-              {/* Admin Edit Overlay - Only show on hover when admin - covers entire card */}
-              {isAdmin && (
+              {/* Video Generation Loading Overlay - covers entire card except app info stays on top */}
+              {isGeneratingVideo && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 backdrop-blur-sm bg-black/5 z-40 rounded-xl"
+                >
+                  {/* Mocksy studying animation - centered */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-0 -mt-8">
+                    {isSafari ? (
+                      <Image
+                        src="/mocksy-study.gif"
+                        alt="Mocksy generating"
+                        width={160}
+                        height={160}
+                        unoptimized
+                        className="w-32 h-32 md:w-40 md:h-40"
+                      />
+                    ) : (
+                      <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-32 h-32 md:w-40 md:h-40"
+                      >
+                        <source src="/mocksy-study.webm" type="video/webm" />
+                      </video>
+                    )}
+                    <div className="text-center -mt-4 hidden md:block">
+                      <p 
+                        className="text-lg font-semibold"
+                        style={{ 
+                          color: isLightBackground ? '#1f2937' : '#ffffff'
+                        }}
+                      >
+                        Generating video{' '}
+                        <span className="inline-flex">
+                          <motion.span
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
+                          >
+                            .
+                          </motion.span>
+                          <motion.span
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
+                          >
+                            .
+                          </motion.span>
+                          <motion.span
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: 0.6 }}
+                          >
+                            .
+                          </motion.span>
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              
+              {/* Admin Edit Overlay - Only show on hover when admin and not generating video */}
+              {isAdmin && !isGeneratingVideo && (
                 <>
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 z-10 pointer-events-none" />
                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
@@ -222,6 +289,37 @@ export default function AppStorePreviewCard({
                               <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Generate New Cover</span>
                             </button>
+                            {app.coverImageUrl && (
+                              <button
+                                onClick={() => {
+                                  setShowCoverMenu(false);
+                                  onGenerateVideo?.();
+                                }}
+                                disabled={isGeneratingVideo}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {isGeneratingVideo ? (
+                                  <Loader2 className="h-4 w-4 text-cyan-600 dark:text-cyan-400 animate-spin" />
+                                ) : (
+                                  <Video className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                                )}
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                  {isGeneratingVideo ? 'Generating...' : app.coverVideoUrl ? 'Regenerate Cover Video' : 'Generate Cover Video'}
+                                </span>
+                              </button>
+                            )}
+                            {app.coverVideoUrl && (
+                              <button
+                                onClick={() => {
+                                  setShowCoverMenu(false);
+                                  onRemoveVideo?.();
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Remove Cover Video</span>
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setShowCoverMenu(false);
@@ -318,8 +416,8 @@ export default function AppStorePreviewCard({
                 )}
               </div>
               
-              {/* App info positioned at card bottom */}
-              <div className="relative p-4 md:p-6 flex items-center gap-4 -mt-12">
+              {/* App info positioned at card bottom - higher z-index to stay above loading overlay */}
+              <div className="relative p-4 md:p-6 flex items-center gap-4 -mt-12 z-50">
                 {/* App Icon - Smaller size with border and elevation */}
                 <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30">
                   {hasIcon && app.iconUrl ? (

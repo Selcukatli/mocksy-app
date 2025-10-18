@@ -16,6 +16,7 @@ export const FAL_VIDEO_MODELS = {
   KLING_IMAGE_TO_VIDEO: "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
   LUCY_IMAGE_TO_VIDEO: "decart/lucy-14b/image-to-video",
   SEEDANCE_IMAGE_TO_VIDEO: "fal-ai/bytedance/seedance/v1/lite/image-to-video",
+  HAILUO_IMAGE_TO_VIDEO: "fal-ai/minimax/hailuo-02-fast/image-to-video",
 } as const;
 
 /**
@@ -31,6 +32,7 @@ export const VIDEO_MODELS = {
   KLING_IMAGE: "klingImageToVideo",
   SEEDANCE_IMAGE: "seeDanceImageToVideo",
   LUCY_IMAGE: "lucyImageToVideo",
+  HAILUO_IMAGE: "hailuoImageToVideo",
 } as const;
 
 // Type exports for type safety
@@ -172,13 +174,20 @@ export const VIDEO_MODEL_CONFIG = {
     },
     imageToVideo: {
       primary: {
-        model: VIDEO_MODELS.LUCY_IMAGE,
+        model: VIDEO_MODELS.HAILUO_IMAGE,
         params: {
-          sync_mode: true, // Base64 for faster response
-          aspect_ratio: "16:9",
+          duration: "6", // Hailuo default
+          prompt_optimizer: true,
         },
       },
       fallbacks: [
+        {
+          model: VIDEO_MODELS.LUCY_IMAGE,
+          params: {
+            sync_mode: true, // Base64 for faster response
+            aspect_ratio: "16:9",
+          },
+        },
         {
           model: VIDEO_MODELS.SEEDANCE_IMAGE,
           params: {
@@ -252,6 +261,10 @@ export const VIDEO_COSTS = {
   seedance_5s_720p: 0.18, // Confirmed
   seedance_5s_1080p: 0.25, // Estimated
   seedance_10s_720p: 0.36, // Estimated
+
+  // Hailuo-02 Fast (Most economical)
+  hailuo_6s: 0.1, // 6s × $0.017/s
+  hailuo_10s: 0.17, // 10s × $0.017/s
 };
 
 /**
@@ -275,6 +288,13 @@ export const VIDEO_SPEEDS = {
   // SeeDance: Fast and versatile
   seedance: {
     min: 10,
+    max: 30,
+    typical: 20,
+  },
+
+  // Hailuo-02 Fast: Very fast and economical
+  hailuo: {
+    min: 15,
     max: 30,
     typical: 20,
   },
@@ -321,7 +341,9 @@ export function getVideoConfig(
     ? "kling"
     : primaryModel.includes("lucy")
       ? "lucy"
-      : "seedance";
+      : primaryModel.includes("hailuo")
+        ? "hailuo"
+        : "seedance";
   const speed = VIDEO_SPEEDS[modelType];
 
   return {
@@ -400,6 +422,11 @@ export function calculateVideoCost(
   // Lucy pricing (per second)
   if (model.includes("lucy")) {
     return duration * 0.08;
+  }
+
+  // Hailuo pricing (per second, most economical)
+  if (model.includes("hailuo")) {
+    return duration * 0.017;
   }
 
   // SeeDance pricing (complex based on resolution and duration)

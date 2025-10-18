@@ -113,7 +113,7 @@ export default function GenerateNewAppPage() {
   const router = useRouter();
   const generateConcepts = useAction(api.appGenerationActions.generateAppConcepts);
   const generateAppFromConcept = useAction(api.appGenerationActions.generateAppFromConcept);
-  const { setShowLogo } = usePageHeader();
+  const { setShowLogo, setCenterInFullViewport } = usePageHeader();
 
   // Form state
   const [idea, setIdea] = useState('');
@@ -214,9 +214,15 @@ export default function GenerateNewAppPage() {
 
   // Set page to show logo instead of title
   useEffect(() => {
-    setShowLogo(true);
+    setShowLogo(false);
     return () => setShowLogo(false); // Cleanup when unmounting
   }, [setShowLogo]);
+
+  // Enable full viewport centering
+  useEffect(() => {
+    setCenterInFullViewport(true);
+    return () => setCenterInFullViewport(false); // Cleanup when unmounting
+  }, [setCenterInFullViewport]);
 
   // Auto-trigger generation after authentication if auth modal was shown
   useEffect(() => {
@@ -438,9 +444,9 @@ export default function GenerateNewAppPage() {
   // Ghost/skeleton loading state while auth is loading
   if (!isLoaded) {
     return (
-      <div className="bg-background">
-        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col items-center justify-center px-6">
-          <div className="w-full max-w-3xl text-center pb-16">
+      <div className="bg-background min-h-full">
+        <div className="mx-auto max-w-6xl px-6 py-8">
+          <div className="w-full max-w-3xl text-center mx-auto">
             {/* Ghost Mocksybot - simple round shape */}
             <div className="mb-2 h-48 overflow-hidden flex items-center justify-center">
               <div className="w-40 h-40 rounded-full bg-muted animate-pulse" />
@@ -532,7 +538,7 @@ export default function GenerateNewAppPage() {
   const showProgress = view === 'concepts' && (isGeneratingConcepts || (conceptJob && conceptJob.status !== 'completed' && conceptJob.status !== 'failed'));
 
   return (
-    <div className="bg-background">
+    <div className="bg-background min-h-full">
       {/* Sticky Progress Bar */}
       {showProgress && conceptProgress && (
         <motion.div
@@ -603,7 +609,7 @@ export default function GenerateNewAppPage() {
         isOpen={toast.isOpen}
         onClose={() => setToast({ ...toast, isOpen: false })}
       />
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col items-center justify-center px-6">
+      <div className="mx-auto max-w-6xl px-6 py-8">
         <AnimatePresence mode="wait">
           {view === 'form' ? (
             <motion.div
@@ -612,7 +618,7 @@ export default function GenerateNewAppPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-4xl text-center pb-16"
+              className="w-full max-w-4xl text-center mx-auto"
             >
               {/* Invisible scroll sentinel for tracking scroll position */}
               <div ref={scrollSentinelRef} className="h-px w-full" aria-hidden="true" />
@@ -680,11 +686,6 @@ export default function GenerateNewAppPage() {
                   {typewriterText}
                   <span className="animate-pulse">|</span>
                 </h1>
-                {!isSignedIn && (
-                  <p className="mt-4 text-sm text-muted-foreground/70">
-                    No login required to start — sign in when you&apos;re ready to generate
-                  </p>
-                )}
               </motion.div>
 
               {/* Input Area */}

@@ -22,7 +22,7 @@ import type { BamlRuntime, FunctionResult, BamlCtxManager, Image, Audio, Pdf, Vi
 import { toBamlError, BamlAbortError, type HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type * as types from "./types"
-import type {AppConcept, AppConceptsOutput, AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleColors, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleEffects, StyleGenerationOutput, StyleRevisionOutput, StyleTypography, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
+import type {AppConcept, AppConceptsOutput, AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, CoverVideoPrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleColors, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleEffects, StyleGenerationOutput, StyleRevisionOutput, StyleTypography, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 import { HttpRequest, HttpStreamRequest } from "./sync_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -385,6 +385,48 @@ export class BamlSyncClient {
         options.events,
       )
       return raw.parsed(false) as types.AppStructure
+    } catch (error: any) {
+      throw toBamlError(error);
+    }
+  }
+  
+  GenerateCoverVideoPrompt(
+      cover_image_url: string,app_name: string,app_description: string,
+      __baml_options__?: BamlCallOptions<never>
+  ): types.CoverVideoPrompt {
+    try {
+      const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+      const signal = options.signal;
+
+      if (signal?.aborted) {
+        throw new BamlAbortError('Operation was aborted', signal.reason);
+      }
+
+      // Check if onTick is provided and reject for sync operations
+      if (options.onTick) {
+        throw new Error("onTick is not supported for synchronous functions. Please use the async client instead.");
+      }
+
+      const collector = options.collector ? (Array.isArray(options.collector) ? options.collector : [options.collector]) : [];
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      const raw = this.runtime.callFunctionSync(
+        "GenerateCoverVideoPrompt",
+        {
+          "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description
+        },
+        this.ctxManager.cloneContext(),
+        options.tb?.__tb(),
+        options.clientRegistry,
+        collector,
+        options.tags || {},
+        env,
+        signal,
+        options.events,
+      )
+      return raw.parsed(false) as types.CoverVideoPrompt
     } catch (error: any) {
       throw toBamlError(error);
     }

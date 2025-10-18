@@ -49,6 +49,8 @@ export default class TypeBuilder {
     
     CoverImagePrompt: ClassViewer<'CoverImagePrompt', "image_prompt" | "style_notes">;
     
+    CoverVideoPrompt: ClassViewer<'CoverVideoPrompt', "video_prompt">;
+    
     DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_subtitle" | "app_description" | "app_category" | "app_icon_prompt" | "style_guide">;
     
     DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
@@ -118,7 +120,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "AppConcept","AppConceptsOutput","AppScreenPromptsOutput","AppStructure","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","CoverImagePrompt","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenDetail","ScreenImagePrompt","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleColors","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleEffects","StyleGenerationOutput","StyleRevisionOutput","StyleTypography","Subject","TabStructure","TextConfig","VisionTestResponse",
+            "AppConcept","AppConceptsOutput","AppScreenPromptsOutput","AppStructure","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","CoverImagePrompt","CoverVideoPrompt","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenDetail","ScreenImagePrompt","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleColors","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleEffects","StyleGenerationOutput","StyleRevisionOutput","StyleTypography","Subject","TabStructure","TextConfig","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -168,6 +170,10 @@ export default class TypeBuilder {
         
         this.CoverImagePrompt = this.tb.classViewer("CoverImagePrompt", [
           "image_prompt","style_notes",
+        ]);
+        
+        this.CoverVideoPrompt = this.tb.classViewer("CoverVideoPrompt", [
+          "video_prompt",
         ]);
         
         this.DemoAppOutput = this.tb.classViewer("DemoAppOutput", [

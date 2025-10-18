@@ -675,6 +675,10 @@ class CoverImagePrompt {
   style_notes string @description("Visual style guidance: composition, color palette, mood, and design approach for the cover image")
 }
 
+class CoverVideoPrompt {
+  video_prompt string @description("Image-to-video prompt for Hailuo (max 2000 chars). Describes subtle motion, camera movement, and animation that creates a seamless loop from the cover image.")
+}
+
 function GenerateAppCoverImagePrompt(
   app_name: string @description("Name of the app"),
   app_description: string @description("App description and subtitle"),
@@ -786,6 +790,135 @@ function GenerateAppCoverImagePrompt(
     - Colors should be described as names/adjectives: "vibrant teal", "deep violet", "bright orange"
     - When using device mockups, position them in upper portion or angle them to leave bottom clear
     - END YOUR PROMPT with: "1920×960. Bottom third clear for overlay. No text, words, letters, numbers, or readable typography anywhere in the image."
+    
+    {{ ctx.output_format }}
+  "#
+}
+
+// ============================================
+// COVER VIDEO GENERATION
+// ============================================
+
+// Generate image-to-video prompt for converting cover image to seamless looping video
+function GenerateCoverVideoPrompt(
+  cover_image_url: string @description("URL of the cover image to animate"),
+  app_name: string @description("Name of the app"),
+  app_description: string @description("App description")
+) -> CoverVideoPrompt {
+  client ScreenshotGeneratorMed
+  prompt #"
+    {{ _.role("user") }}
+    
+    You are creating an image-to-video prompt for Minimax Hailuo-02 Fast model.
+    This will animate a static cover image into a seamless 6-second looping video.
+    
+    **APP CONTEXT:**
+    - App Name: {{ app_name }}
+    - Description: {{ app_description }}
+    - Cover Image URL: {{ cover_image_url }}
+    
+    **VIDEO REQUIREMENTS:**
+    
+    1. **Duration**: 6 seconds (perfect for seamless loops)
+    2. **Purpose**: Add SUBTLE life to the cover - not dominate it
+    3. **Loop Quality**: ⚠️ ABSOLUTELY CRITICAL ⚠️ - PERFECT SEAMLESS LOOP - start and end frames MUST be IDENTICAL
+    4. **Style**: Professional, elegant, understated - background enhancement only
+    5. **Distraction Level**: MINIMAL - viewers should barely notice motion at first glance
+    6. **Animation Quality**: SMOOTH only - NO abrupt movements, NO sudden changes, NO jarring transitions
+    
+    **MOTION PHILOSOPHY:**
+    
+    The video should feel like the cover image is "breathing" or has ambient life, NOT like an animation.
+    Motion should be so subtle that it takes 2-3 seconds of viewing to even notice it's moving.
+    Think: living wallpaper, not animated ad. Ambient, not active. Atmospheric, not theatrical.
+    ABSOLUTELY NO abrupt, sudden, or jerky movements - everything must be butter smooth.
+    
+    **🚨 CRITICAL - PERFECT SEAMLESS LOOP 🚨:**
+    
+    THIS IS THE MOST IMPORTANT REQUIREMENT - THE VIDEO MUST LOOP PERFECTLY:
+    - The motion MUST start and end at the EXACT same position/state/frame
+    - Use ONLY cyclical movements: breathing effects, gentle oscillations, returning movements
+    - NEVER EVER use linear movements (pans, tilts, zooms) unless they reverse completely and smoothly
+    - Think: expand-contract, rotate-return, float-up-float-down, pulse-fade-pulse
+    - The loop restart should be COMPLETELY INVISIBLE - no "jump", no "reset", no discontinuity
+    - Every element that moves MUST return to its exact starting position
+    - Test mentally: "If I watch this loop 100 times, will I see any jump or reset?" Answer MUST be NO
+    
+    **Motion Quality (NO ABRUPT MOVEMENTS):**
+    - **Smoothness**: BUTTER SMOOTH only - use easing, not linear motion
+    - **Acceleration**: Gradual acceleration and deceleration - NEVER sudden starts or stops
+    - **Transitions**: Seamless, flowing, continuous - NO snaps, NO pops, NO jerks
+    - **Speed consistency**: Maintain consistent gentle speed throughout
+    - **Keywords**: "smooth", "flowing", "gradual", "seamless", "continuous", "eased"
+    
+    **Motion Intensity (KEEP IT MINIMAL):**
+    - **Maximum movement**: 2-3% of total size/position (reduced from 3-5%)
+    - **Speed**: VERY slow - full cycle over 6 seconds with smooth easing
+    - **Subtlety**: Motion should be barely perceptible
+    - **Professional**: Enhances elegance, doesn't demand attention
+    - **Keywords**: "extremely subtle", "barely noticeable", "gentle", "soft", "minimal", "smooth"
+    
+    **Common Cover Image Compositions:**
+    
+    **With Device Mockups:**
+    - Parallax: Devices in foreground, background moves slower
+    - Screen glow: Subtle pulsing light from screens
+    - Float: Devices gently rise and fall
+    - Rotation: Slight 3D rotation showing depth
+    
+    **Abstract/Gradient Backgrounds:**
+    - Gradient flow: Colors slowly shift and blend
+    - Particle float: Bokeh or light particles drift
+    - Breathing: Entire comp gently scales in/out
+    - Shimmer: Light sweep across surface
+    
+    **Landscape/Scene Imagery:**
+    - Camera push: Very subtle zoom in/out (returning to start)
+    - Atmospheric: Clouds, fog, or haze drift slowly
+    - Light shift: Lighting subtly changes and returns
+    - Parallax: Foreground and background depths
+    
+    **PROMPT STRUCTURE:**
+    
+    Your video_prompt should describe:
+    1. **Starting description**: What the image shows (briefly)
+    2. **Motion description**: Specific movements and their character
+    3. **Loop instruction**: Explicitly state it must loop seamlessly
+    4. **Technical notes**: Camera, lighting, atmosphere changes
+    5. **Pacing**: "Slow", "smooth", "subtle", "gentle"
+    
+    **EXAMPLE PROMPTS (all loop seamlessly with smooth motion):**
+    
+    Device mockup cover:
+    "The promotional banner shows iPhone mockups displaying a colorful fitness app interface against a vibrant purple-to-cyan gradient. Extremely subtle parallax motion with smooth easing: background gradient barely shifts 2% deeper into purple then gradually, smoothly returns to exact original state. iPhone mockups float upward less than 3% with smooth acceleration and deceleration, then return to exact starting position. Screen interfaces have minimal glow pulse, brightness changing only 3-4% with gradual transitions. All motion is barely perceptible and butter smooth. Perfect seamless loop - exact start/end match with zero discontinuity. Very slow, smooth, atmospheric. Camera completely static. Professional living wallpaper feel. 6-second invisible loop with absolutely no jump or reset."
+    
+    Abstract gradient:
+    "Abstract promotional banner with flowing purple, cyan, and pink gradients. Gradient colors breathe extremely gently with smooth easing - colors shift 2-3% warmer/cooler creating barely noticeable ambient flow, gradually cycling back to exact original state. Soft bokeh particles drift very slowly upward with consistent gentle speed, motion almost imperceptible, seamlessly wrapping around. Entire composition subtly pulses scale 98% to 101% and smoothly back over 6 seconds with gradual acceleration/deceleration. Minimal motion - atmospheric background feel. Perfect seamless invisible loop with zero discontinuity. Extremely smooth, barely noticeable, no abrupt movements. Living wallpaper aesthetic. 6 seconds, flawless loop."
+    
+    Landscape hero:
+    "Epic mountain landscape at golden hour with warm orange-to-purple gradient sky. Almost imperceptible camera push with smooth easing - extremely slowly, gradually zooms from 100% to 102% scale then smoothly back to exact 100%. Atmospheric haze drifts subtly with consistent gentle motion, barely visible movement, seamlessly wrapping. Light intensity changes 5% over 6 seconds with gradual transitions then smoothly returns to exact original state. All motion minimal, atmospheric, and butter smooth with no sudden changes. Perfect seamless invisible loop with zero jump. Slow, elegant, understated, flowing. Living cover feel, not animation. 6-second flawless loop."
+    
+    **YOUR TASK:**
+    
+    Generate a video_prompt (max 2000 characters) for {{ app_name }}.
+    
+    **CRITICAL REQUIREMENTS:**
+    
+    🚨 LOOP QUALITY IS PARAMOUNT 🚨
+    
+    - Describe WHAT the image shows (briefly - device mockup? abstract? landscape?)
+    - Describe MINIMAL motion (barely noticeable parallax? gentle breathing? soft float?)
+    - **EMPHASIZE PERFECT SEAMLESS LOOP** - movements must return to EXACT start position/state
+    - **EMPHASIZE SMOOTH MOTION** - gradual easing, no abrupt changes, butter smooth
+    - Use "extremely subtle", "barely noticeable", "minimal", "gentle", "soft", "smooth", "gradual" language
+    - Keep motion ATMOSPHERIC and non-distracting - living wallpaper feel
+    - Perfect invisible 6-second loop with ZERO discontinuity
+    - NO dramatic movements - everything 2-3% maximum
+    - NO abrupt starts, stops, or transitions - gradual acceleration/deceleration only
+    - NO camera pans/tilts unless they smoothly return to exact start
+    - Motion should be AMBIENT background enhancement, not a feature
+    - Test: "If looped 100 times, is there ANY visible jump/reset?" Answer MUST be NO
+    - Goal: Viewers should think "is this even moving?" AND "this loops perfectly!"
     
     {{ ctx.output_format }}
   "#

@@ -151,6 +151,11 @@ export interface CoverImagePrompt {
   
 }
 
+export interface CoverVideoPrompt {
+  video_prompt: string
+  
+}
+
 export interface DemoAppOutput {
   app_name: string
   app_subtitle: string

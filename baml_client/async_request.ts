@@ -23,7 +23,7 @@ import type { BamlRuntime, BamlCtxManager, ClientRegistry, Image, Audio, Pdf, Vi
 import { toBamlError, HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {AppConcept, AppConceptsOutput, AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleColors, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleEffects, StyleGenerationOutput, StyleRevisionOutput, StyleTypography, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
+import type {AppConcept, AppConceptsOutput, AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, CoverVideoPrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleColors, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleEffects, StyleGenerationOutput, StyleRevisionOutput, StyleTypography, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 import type * as events from "./events"
 
@@ -204,6 +204,31 @@ env?: Record<string, string | undefined>
       "GenerateAppDesignPlan",
       {
       "app_name": app_name,"app_description": app_description,"app_category": app_category,"style_guide": style_guide,"num_screens": num_screens
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __baml_options__?.clientRegistry,
+      false,
+      env
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async GenerateCoverVideoPrompt(
+  cover_image_url: string,app_name: string,app_description: string,
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const env: Record<string, string> = Object.fromEntries(
+      Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return await this.runtime.buildRequest(
+      "GenerateCoverVideoPrompt",
+      {
+      "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description
       },
       this.ctxManager.cloneContext(),
       __baml_options__?.tb?.__tb(),
@@ -1110,6 +1135,31 @@ env?: Record<string, string | undefined>
           "GenerateAppDesignPlan",
           {
           "app_name": app_name,"app_description": app_description,"app_category": app_category,"style_guide": style_guide,"num_screens": num_screens
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __baml_options__?.clientRegistry,
+          true,
+          env
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async GenerateCoverVideoPrompt(
+      cover_image_url: string,app_name: string,app_description: string,
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const env: Record<string, string> = Object.fromEntries(
+          Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+          return await this.runtime.buildRequest(
+          "GenerateCoverVideoPrompt",
+          {
+          "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description
           },
           this.ctxManager.cloneContext(),
           __baml_options__?.tb?.__tb(),

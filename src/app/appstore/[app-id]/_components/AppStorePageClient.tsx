@@ -7,8 +7,9 @@ import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { Sparkles, Trash2, Settings, Eye, CheckCircle } from 'lucide-react';
+import { Sparkles, Trash2, Settings, Eye, CheckCircle, Star, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
 import AppsInCategoryCarousel from '@/components/AppsInCategoryCarousel';
 import ReviewsSection from '@/components/ReviewsSection';
@@ -57,11 +58,18 @@ export default function AppStorePageClient({ params }: PageProps) {
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
   const deletePermissions = useQuery(api.adminActions.canDeleteApp, { appId: appId as Id<'apps'> });
+  const isFeatured = useQuery(api.adminActions.isFeatured, { appId: appId as Id<'apps'> });
   const generationJob = useQuery(api.appGenerationJobs.getAppGenerationJobByAppId, { appId: appId as Id<'apps'> });
+  const coverGenerationJob = useQuery(api.generationJobs.getActiveGenerationJob, { appId: appId as Id<'apps'>, type: "coverImage" });
+  const videoGenerationJob = useQuery(api.generationJobs.getActiveGenerationJob, { appId: appId as Id<'apps'>, type: "coverVideo" });
   const generateCoverImage = useAction(api.appGenerationActions.generateAppCoverImage);
   const saveCoverImage = useAction(api.appGenerationActions.saveAppCoverImage);
+  const generateCoverVideo = useAction(api.appGenerationActions.generateAppCoverVideo);
+  const removeCoverVideoMutation = useMutation(api.apps.removeCoverVideo);
   const deleteAppMutation = useMutation(api.apps.deleteApp);
   const updateAppMutation = useMutation(api.apps.updateApp);
+  const featureAppMutation = useMutation(api.adminActions.featureApp);
+  const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
 
   // Fetch reviews for this app (Convex queries are reactive and auto-update)
   const reviewsData = useQuery(api.mockReviews.getAppReviews, { appId: appId as Id<'apps'>, limit: 5 });
@@ -96,10 +104,6 @@ export default function AppStorePageClient({ params }: PageProps) {
       }
     }
   }, [appPreview?.app.name]);
-
-  const handleCreateYourOwn = useCallback(() => {
-    router.push('/create');
-  }, [router]);
 
   const handlePublishApp = useCallback(async () => {
     if (!appPreview?.app) return;
@@ -143,12 +147,15 @@ export default function AppStorePageClient({ params }: PageProps) {
         userFeedback: feedback || undefined,
       });
       
-      if (result.success && result.variants) {
-        setCoverVariants(result.variants);
-        setGeneratedPrompt(result.imagePrompt);
-        setEstimatedTimeMs(result.estimatedTimeMs);
+      if (result.success && result.jobId) {
+        // Job created successfully - close modal and show inline loading
+        setIsModalOpen(false);
+        setToastMessage('Generating cover images...');
+        setToastType('success');
+        setShowToast(true);
+        // The coverGenerationJob query will update reactively when job completes
       } else {
-        setToastMessage(result.error || 'Failed to generate cover images');
+        setToastMessage(result.error || 'Failed to start cover image generation');
         setToastType('error');
         setShowToast(true);
         setIsModalOpen(false);
@@ -191,6 +198,51 @@ export default function AppStorePageClient({ params }: PageProps) {
     }
   }, [appId, saveCoverImage]);
 
+  const handleGenerateCoverVideo = useCallback(async () => {
+    if (!appId || !appPreview?.app.coverImageUrl) return;
+    
+    setToastMessage('Starting cover video generation...');
+    setToastType('success');
+    setShowToast(true);
+    
+    try {
+      const result = await generateCoverVideo({ appId: appId as Id<'apps'> });
+      
+      if (result.success && result.jobId) {
+        // Job created successfully - show toast, isVideoGenerating will update reactively
+        setToastMessage('Generating cover video...');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        setToastMessage(result.error || 'Failed to start cover video generation');
+        setToastType('error');
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Error generating cover video:', error);
+      setToastMessage('Failed to generate cover video');
+      setToastType('error');
+      setShowToast(true);
+    }
+  }, [appId, appPreview?.app.coverImageUrl, generateCoverVideo]);
+
+  const handleRemoveCoverVideo = useCallback(async () => {
+    if (!appId) return;
+    
+    try {
+      await removeCoverVideoMutation({ appId: appId as Id<'apps'> });
+      setToastMessage('Cover video removed successfully!');
+      setToastType('success');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Error removing cover video:', error);
+      setToastMessage('Failed to remove cover video');
+      setToastType('error');
+      setShowToast(true);
+    }
+  }, [appId, removeCoverVideoMutation]);
+
+
   const handleDeleteApp = useCallback(async () => {
     if (!appId || isDeleting) return;
     
@@ -212,6 +264,40 @@ export default function AppStorePageClient({ params }: PageProps) {
     }
   }, [appId, isDeleting, deleteAppMutation, router]);
 
+  const handleFeatureApp = useCallback(async () => {
+    if (!appId) return;
+    
+    try {
+      await featureAppMutation({ appId: appId as Id<'apps'> });
+      setToastMessage('App featured successfully!');
+      setToastType('success');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Error featuring app:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to feature app';
+      setToastMessage(errorMessage);
+      setToastType('error');
+      setShowToast(true);
+    }
+  }, [appId, featureAppMutation]);
+
+  const handleUnfeatureApp = useCallback(async () => {
+    if (!appId) return;
+    
+    try {
+      await unfeatureAppMutation({ appId: appId as Id<'apps'> });
+      setToastMessage('App removed from featured!');
+      setToastType('success');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Error unfeaturing app:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to unfeature app';
+      setToastMessage(errorMessage);
+      setToastType('error');
+      setShowToast(true);
+    }
+  }, [appId, unfeatureAppMutation]);
+
   // Filter out current app from similar apps
   const filteredSimilarApps = useMemo(() => {
     if (!similarApps) return [];
@@ -224,6 +310,18 @@ export default function AppStorePageClient({ params }: PageProps) {
     const activeStatuses = ['pending', 'downloading_images', 'generating_structure', 'generating_screens'];
     return activeStatuses.includes(generationJob.status);
   }, [generationJob]);
+
+  // Check if cover generation is active
+  const isCoverGenerating = useMemo(() => {
+    if (!coverGenerationJob) return false;
+    return ['pending', 'generating'].includes(coverGenerationJob.status);
+  }, [coverGenerationJob]);
+
+  // Check if video generation is active
+  const isVideoGenerating = useMemo(() => {
+    if (!videoGenerationJob) return false;
+    return ['pending', 'generating'].includes(videoGenerationJob.status);
+  }, [videoGenerationJob]);
 
   // Get generation status message and progress
   const generationStatus = useMemo(() => {
@@ -422,15 +520,8 @@ export default function AppStorePageClient({ params }: PageProps) {
         <div className="max-w-md w-full text-center space-y-4">
           <h1 className="text-2xl font-semibold">App Not Found</h1>
           <p className="text-sm text-muted-foreground">
-            This app doesn&apos;t exist or is no longer available. Try creating your own amazing app!
+            This app doesn&apos;t exist or is no longer available.
           </p>
-          <button
-            type="button"
-            onClick={handleCreateYourOwn}
-            className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
-          >
-            Create Your Own App
-          </button>
         </div>
       </div>
     );
@@ -586,18 +677,48 @@ export default function AppStorePageClient({ params }: PageProps) {
             totalScreens={appPreview.totalScreens}
             isLoading={isGenerating}
             onShare={handleShareClick}
-            onCreateYourOwn={handleCreateYourOwn}
             isAdmin={isAdmin}
             onGenerateCover={handleGenerateCoverImage}
+            onGenerateVideo={handleGenerateCoverVideo}
+            onRemoveVideo={handleRemoveCoverVideo}
+            isGeneratingVideo={isVideoGenerating}
             adminActionsSlot={
               deletePermissions?.canDelete ? (
-                <button
-                  onClick={() => window.open(`/manage-app/${appId}`, '_blank')}
-                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
-                >
-                  <Settings className="h-4 w-4" />
-                  <span className="font-medium">Manage</span>
-                </button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span className="font-medium">Manage</span>
+                      <MoreVertical className="h-3.5 w-3.5" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-56 p-1">
+                    <div className="space-y-1">
+                      {/* Feature/Unfeature App */}
+                      {isAdmin && (
+                        <button
+                          onClick={isFeatured ? handleUnfeatureApp : handleFeatureApp}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted/50 text-left"
+                        >
+                          <Star className={cn("h-4 w-4", isFeatured && "fill-yellow-500 text-yellow-500")} />
+                          <span className="flex-1">{isFeatured ? 'Remove from Featured' : 'Feature This App'}</span>
+                        </button>
+                      )}
+                      
+                      {/* Delete App */}
+                      {isAdmin && <div className="h-px bg-border my-1" />}
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-destructive/10 text-destructive text-left"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="flex-1">Delete App</span>
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               ) : undefined
             }
           />
@@ -654,7 +775,7 @@ export default function AppStorePageClient({ params }: PageProps) {
               Generate stunning App Store screenshots with AI in minutes. No design skills needed.
             </p>
             <Button
-              onClick={handleCreateYourOwn}
+              onClick={() => router.push('/generate')}
               size="lg"
               className="flex items-center gap-2 mx-auto shadow-lg"
             >

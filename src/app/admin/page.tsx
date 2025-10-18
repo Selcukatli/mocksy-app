@@ -33,7 +33,8 @@ export default function AdminPage() {
     setBreadcrumbs([
       { label: 'Admin' }
     ]);
-  }, [setBreadcrumbs, setSidebarMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount - setting static values
   
   // ALWAYS call all hooks - no conditional logic
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);

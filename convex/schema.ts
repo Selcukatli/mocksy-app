@@ -388,6 +388,32 @@ export default defineSchema({
     .index("by_profile", ["profileId"])
     .index("by_status", ["status"]),
 
+  // Universal generation jobs table for simple media generation tasks
+  generationJobs: defineTable({
+    type: v.union(
+      v.literal("coverImage"),
+      v.literal("coverVideo"),
+      v.literal("icon")
+    ),
+    appId: v.id("apps"),
+    profileId: v.id("profiles"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("generating"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    metadata: v.any(), // Flexible: { prompt, variantCount, selectedVariant, variants, etc. }
+    result: v.optional(v.string()), // Final storageId or URL
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_app", ["appId"])
+    .index("by_profile", ["profileId"])
+    .index("by_app_and_type", ["appId", "type"])
+    .index("by_status", ["status"]),
+
   styles: defineTable({
     // Identity
     name: v.string(), // e.g., "Snap Style", "Spooky Halloween", "Watercolor Zen"

@@ -30,6 +30,7 @@ import {
   generateSeeDanceImageToVideo,
   generateSeeDanceTextToVideo,
 } from "./clients/video/seeDanceVideoClient";
+import { generateHailuoImageToVideo } from "./clients/video/hailuoVideoClient";
 
 // Convex validators for Kling Video enums
 const klingVideoAspectRatioValidator = v.union(
@@ -545,6 +546,94 @@ export const seeDanceTextToVideo = internalAction({
   },
 });
 
+/**
+ * Generate a video using Minimax Hailuo-02 Fast (FAST & ECONOMICAL)
+ *
+ * Features:
+ * - Blazing fast generation
+ * - Most economical pricing ($0.017/second)
+ * - 512p resolution
+ * - Prompt optimizer for better results
+ *
+ * Pricing:
+ * - 6 seconds: ~$0.10
+ * - 10 seconds: ~$0.17
+ *
+ * @example
+ * await ctx.runAction(api.utils.fal.falVideoActions.hailuoImageToVideo, {
+ *   prompt: "Extremely realistic movement. The scene comes alive",
+ *   image_url: "https://example.com/image.jpg",
+ *   duration: "6"
+ * });
+ */
+export const hailuoImageToVideo = internalAction({
+  args: {
+    prompt: v.string(), // Max 2000 characters
+    image_url: v.string(), // Required - source image
+    duration: v.optional(v.union(v.literal("6"), v.literal("10"))), // Default: "6"
+    prompt_optimizer: v.optional(v.boolean()), // Default: true
+    apiKey: v.optional(v.string()), // Optional API key override
+  },
+  returns: v.object({
+    success: v.boolean(),
+    videoUrl: v.optional(v.string()),
+    duration: v.optional(v.number()),
+    width: v.optional(v.number()),
+    height: v.optional(v.number()),
+    error: v.optional(v.string()),
+    errorType: v.optional(v.string()),
+  }),
+  handler: async (_ctx, args) => {
+    console.log("⚡ Hailuo-02 Fast Image-to-Video (ECONOMICAL)");
+    console.log(`Prompt: "${args.prompt}"`);
+    console.log(`Source Image: ${args.image_url}`);
+    console.log(`Duration: ${args.duration || "6"}s`);
+
+    try {
+      const result = await generateHailuoImageToVideo(
+        {
+          prompt: args.prompt,
+          image_url: args.image_url,
+          duration: args.duration,
+          prompt_optimizer: args.prompt_optimizer,
+        },
+        args.apiKey,
+      );
+
+      if (result.success && result.data) {
+        console.log("✅ Video generated successfully!");
+        console.log(`Video URL: ${result.data.video.url}`);
+
+        return {
+          success: true,
+          videoUrl: result.data.video.url,
+          duration: result.data.video.duration,
+          width: result.data.video.width,
+          height: result.data.video.height,
+        };
+      } else {
+        const errorResult = result as FalErrorResponse;
+        console.error("❌ Video generation failed:", errorResult.error);
+
+        return {
+          success: false,
+          error: errorResult.error?.message || "Failed to generate video",
+          errorType: errorResult.error?.type,
+        };
+      }
+    } catch (error) {
+      console.error("❌ Unexpected error in hailuoImageToVideo:", error);
+
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Unexpected error occurred",
+        errorType: "unexpected_error",
+      };
+    }
+  },
+});
+
 // Define the return validator separately so we can export its type
 const generateVideoReturns = v.object({
   success: v.boolean(),
@@ -706,21 +795,18 @@ export const generateVideo = internalAction({
         resolution?: string;
         aspect_ratio?: string;
         cfg_scale?: number;
+        prompt_optimizer?: boolean;
         [key: string]: string | number | boolean | undefined;
       };
       const result = await executeVideoModel(ctx, modelName, {
         prompt: args.prompt,
         imageUrl: args.imageUrl,
-        duration:
-          args.duration ||
-          (primaryParams.duration as string | number | undefined),
-        resolution:
-          args.resolution || (primaryParams.resolution as string | undefined),
-        aspectRatio:
-          args.aspectRatio ||
-          (primaryParams.aspect_ratio as string | undefined),
         apiKey: args.apiKey,
-        ...config.primary.params,
+        ...config.primary.params, // Spread all params first
+        // Then override with explicit args if provided
+        ...(args.duration !== undefined && { duration: args.duration }),
+        ...(args.resolution !== undefined && { resolution: args.resolution }),
+        ...(args.aspectRatio !== undefined && { aspectRatio: args.aspectRatio }),
       });
 
       if (result.success) {
@@ -773,22 +859,18 @@ export const generateVideo = internalAction({
           resolution?: string;
           aspect_ratio?: string;
           cfg_scale?: number;
+          prompt_optimizer?: boolean;
           [key: string]: string | number | boolean | undefined;
         };
         const result = await executeVideoModel(ctx, modelName, {
           prompt: args.prompt,
           imageUrl: args.imageUrl,
-          duration:
-            args.duration ||
-            (fallbackParams.duration as string | number | undefined),
-          resolution:
-            args.resolution ||
-            (fallbackParams.resolution as string | undefined),
-          aspectRatio:
-            args.aspectRatio ||
-            (fallbackParams.aspect_ratio as string | undefined),
           apiKey: args.apiKey,
-          ...fallback.params,
+          ...fallback.params, // Spread all params first
+          // Then override with explicit args if provided
+          ...(args.duration !== undefined && { duration: args.duration }),
+          ...(args.resolution !== undefined && { resolution: args.resolution }),
+          ...(args.aspectRatio !== undefined && { aspectRatio: args.aspectRatio }),
         });
 
         if (result.success) {
@@ -963,6 +1045,18 @@ async function executeVideoModel(
             params.aspect_ratio ||
             "16:9") as "16:9" | "9:16",
           sync_mode: params.sync_mode === true, // Default false for URLs
+          apiKey: params.apiKey,
+        },
+      );
+
+    case VIDEO_MODELS.HAILUO_IMAGE:
+      return await ctx.runAction(
+        internal.utils.fal.falVideoActions.hailuoImageToVideo,
+        {
+          prompt: params.prompt || "",
+          image_url: params.imageUrl || "",
+          duration: String(params.duration || 6) as "6" | "10",
+          prompt_optimizer: typeof params.prompt_optimizer === "boolean" ? params.prompt_optimizer : undefined,
           apiKey: params.apiKey,
         },
       );

@@ -339,14 +339,252 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
     <>
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       
-      {/* Backdrop overlay for mobile */}
+      {/* Mobile overlay sidebar */}
       {isExpanded && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => onExpandedChange?.(false)}
-        />
+        <>
+          {/* Backdrop overlay for mobile */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => onExpandedChange?.(false)}
+          />
+          
+          {/* Mobile sidebar panel */}
+          <motion.div
+            initial={{ x: -256 }}
+            animate={{ x: 0 }}
+            exit={{ x: -256 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+              mass: 0.8
+            }}
+            className="fixed left-0 top-0 h-screen w-64 flex flex-col bg-background border-r z-50 md:hidden"
+          >
+            {/* Mobile Header with Collapse Button */}
+            <div className="h-16 flex items-center px-4 justify-between flex-shrink-0">
+              <Link href="/generate" className="flex items-center">
+                <div className="relative w-36 h-9 flex-shrink-0">
+                  <Image
+                    src={theme === 'dark' ? '/mocksy-logo-dark-mode.png' : '/mocksy-logo-light-mode.png'}
+                    alt="Mocksy"
+                    fill
+                    className="object-contain object-left"
+                    sizes="144px"
+                    priority
+                  />
+                </div>
+              </Link>
+              <button
+                onClick={() => onExpandedChange?.(false)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                aria-label="Collapse sidebar"
+              >
+                <ArrowLeftToLine className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Mobile Navigation */}
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+              {/* Main Navigation */}
+              <nav className="pt-2 px-2 flex flex-col items-start gap-1 flex-shrink-0">
+                <Link
+                  href="/generate"
+                  onClick={() => onExpandedChange?.(false)}
+                  className={cn(
+                    "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full w-full",
+                    isActive('/generate')
+                      ? "text-foreground font-medium bg-muted shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  <Pencil className="w-5 h-5 flex-shrink-0" />
+                  <span>Create</span>
+                </Link>
+
+                <Link
+                  href="/appstore"
+                  onClick={() => onExpandedChange?.(false)}
+                  className={cn(
+                    "inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full w-full",
+                    isActive('/appstore')
+                      ? "text-foreground font-medium bg-muted shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  <Compass className="w-5 h-5 flex-shrink-0" />
+                  <span>App Store</span>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setIsSearchOpen(true);
+                    onExpandedChange?.(false);
+                  }}
+                  className="inline-flex items-center gap-3 px-4 h-10 transition-all rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full"
+                >
+                  <Search className="w-5 h-5 flex-shrink-0" />
+                  <span>Search</span>
+                </button>
+              </nav>
+            </div>
+
+            {/* Mobile Bottom Section */}
+            <div className="p-2 flex-shrink-0">
+              {/* Divider */}
+              <div className="mx-12 mb-2 border-t" />
+              
+              {/* Admin Link (only for admins) */}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => onExpandedChange?.(false)}
+                  className={cn(
+                    "w-full h-10 flex items-center gap-3 px-3 transition-colors rounded-lg",
+                    isActive('/admin')
+                      ? "text-primary font-medium bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  <ShieldCheck className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">Admin</span>
+                </Link>
+              )}
+              
+              {/* Settings */}
+              <Link
+                href="/settings"
+                onClick={() => onExpandedChange?.(false)}
+                className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <Settings className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">Settings</span>
+              </Link>
+
+              {/* Theme Toggle */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground"
+                    aria-label="Toggle theme"
+                  >
+                    {theme === 'system' ? (
+                      <Monitor className="w-5 h-5 flex-shrink-0" />
+                    ) : theme === 'dark' ? (
+                      <Moon className="w-5 h-5 flex-shrink-0" />
+                    ) : (
+                      <Sun className="w-5 h-5 flex-shrink-0" />
+                    )}
+                    <span className="text-sm">
+                      {theme === 'system' ? 'System' : theme === 'dark' ? 'Dark' : 'Light'}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="right" align="end" className="w-48 p-1">
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => setTheme('light')}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                        theme === 'light'
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-muted/50"
+                      )}
+                    >
+                      <Sun className="w-4 h-4" />
+                      <span className="flex-1 text-left">Light</span>
+                      {theme === 'light' && <Check className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => setTheme('dark')}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                        theme === 'dark'
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-muted/50"
+                      )}
+                    >
+                      <Moon className="w-4 h-4" />
+                      <span className="flex-1 text-left">Dark</span>
+                      {theme === 'dark' && <Check className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => setTheme('system')}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                        theme === 'system'
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-muted/50"
+                      )}
+                    >
+                      <Monitor className="w-4 h-4" />
+                      <span className="flex-1 text-left">System</span>
+                      {theme === 'system' && <Check className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Profile */}
+              {isSignedIn ? (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground">
+                      <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {user?.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-3 h-3" />
+                        )}
+                      </div>
+                      <div className="min-w-0 overflow-hidden">
+                        <p className="text-sm truncate">
+                          {user?.firstName || user?.username || 'User'}
+                        </p>
+                      </div>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" align="start" className="w-48 p-1">
+                    <div className="space-y-1">
+                      <Link
+                        href="/profile"
+                        onClick={() => onExpandedChange?.(false)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted/50"
+                      >
+                        <UserCircle className="w-4 h-4" />
+                        <span className="flex-1 text-left">Profile Details</span>
+                      </Link>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-destructive hover:bg-destructive/10"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span className="flex-1 text-left">Sign Out</span>
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Link
+                  href="/welcome?mode=sign-in&context=app-access"
+                  onClick={() => onExpandedChange?.(false)}
+                  className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground"
+                >
+                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <User className="w-3 h-3" />
+                  </div>
+                  <div className="min-w-0 overflow-hidden">
+                    <p className="text-sm truncate">Sign In</p>
+                  </div>
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        </>
       )}
       
+      {/* Desktop sidebar - only visible on md+ screens */}
       <motion.div
         initial={false}
         animate={{ 

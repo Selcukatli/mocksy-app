@@ -220,6 +220,8 @@ export const getApp = query({
       iconUrl: v.optional(v.union(v.string(), v.null())),
       coverImageStorageId: v.optional(v.id("_storage")),
       coverImageUrl: v.optional(v.union(v.string(), v.null())),
+      coverVideoStorageId: v.optional(v.id("_storage")),
+      coverVideoUrl: v.optional(v.union(v.string(), v.null())),
       category: v.optional(v.string()),
       platforms: v.optional(
         v.object({
@@ -280,10 +282,17 @@ export const getApp = query({
       coverImageUrl = await ctx.storage.getUrl(app.coverImageStorageId);
     }
 
+    // Get cover video URL if exists
+    let coverVideoUrl: string | null = null;
+    if (app.coverVideoStorageId) {
+      coverVideoUrl = await ctx.storage.getUrl(app.coverVideoStorageId);
+    }
+
     return {
       ...app,
       iconUrl: iconUrl ?? undefined,
       coverImageUrl: coverImageUrl ?? undefined,
+      coverVideoUrl: coverVideoUrl ?? undefined,
     };
   },
 });
@@ -626,6 +635,7 @@ export const updateAIGeneratedApp = internalMutation({
     category: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")),
     coverImageStorageId: v.optional(v.id("_storage")),
+    coverVideoStorageId: v.optional(v.id("_storage")),
     styleGuide: v.optional(v.string()),
   },
   returns: v.null(),
@@ -941,6 +951,47 @@ export const updateCoverVideo = mutation({
     return null;
   },
 });
+
+// Mutation: Remove cover video from an app
+export const removeCoverVideo = mutation({
+  args: {
+    appId: v.id("apps"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Check authentication
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get the app
+    const app = await ctx.db.get(args.appId);
+    
+    if (!app) {
+      throw new Error("App not found");
+    }
+
+    // Check ownership
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
+      .unique();
+
+    if (!profile || app.profileId !== profile._id) {
+      throw new Error("Not authorized to modify this app");
+    }
+
+    // Remove the cover video
+    await ctx.db.patch(args.appId, {
+      coverVideoStorageId: undefined,
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
 
 // Public query to get app preview (no authentication required)
 export const getPublicAppPreview = query({

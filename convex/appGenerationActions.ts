@@ -1228,26 +1228,12 @@ export const generateAppCoverImage = action({
   },
   returns: v.object({
     success: v.boolean(),
-    variants: v.optional(v.array(v.object({
-      imageUrl: v.string(),
-      width: v.optional(v.number()),
-      height: v.optional(v.number()),
-    }))),
-    imagePrompt: v.optional(v.string()),
-    styleNotes: v.optional(v.string()),
-    estimatedTimeMs: v.optional(v.number()),
+    jobId: v.optional(v.id("generationJobs")),
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args): Promise<{
     success: boolean;
-    variants?: Array<{
-      imageUrl: string;
-      width?: number;
-      height?: number;
-    }>;
-    imagePrompt?: string;
-    styleNotes?: string;
-    estimatedTimeMs?: number;
+    jobId?: Id<"generationJobs">;
     error?: string;
   }> => {
     // 1. Fetch app details
@@ -1258,20 +1244,50 @@ export const generateAppCoverImage = action({
       throw new Error("App not found or access denied");
     }
 
-    // 2. Fetch app screens
-    const screens = await ctx.runQuery(api.appScreens.getAppScreens, {
-      appId: args.appId,
-    });
+    // 2. Get profile
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
 
-    console.log(`🎨 Generating cover image for app: ${app.name}`);
-    console.log(`  Description: ${app.description?.substring(0, 60)}...`);
-    console.log(`  Screens: ${screens.length}`);
+    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    console.log(`🎨 Starting cover image generation for app: ${app.name}`);
 
     try {
-      // 4. Prepare screen names
+      // 3. Create job with status "pending"
+      const numVariants = Math.min(args.numVariants || 4, 6);
+      const jobId = await ctx.runMutation(internal.generationJobs.createGenerationJob, {
+        type: "coverImage",
+        appId: args.appId,
+        profileId: profile._id,
+        metadata: {
+          numVariants,
+          width: args.width || 1920,
+          height: args.height || 960,
+          userFeedback: args.userFeedback,
+        },
+      });
+
+      console.log(`  ✓ Created job: ${jobId}`);
+
+      // 4. Update to "generating"
+      await ctx.runMutation(internal.generationJobs.updateGenerationJobStatus, {
+        jobId,
+        status: "generating",
+      });
+
+      // 5. Fetch app screens
+      const screens = await ctx.runQuery(api.appScreens.getAppScreens, {
+        appId: args.appId,
+      });
+
       const screenNames: string[] = screens.map((s: { name: string }) => s.name);
 
-      // 5. Call BAML to generate image prompt
+      // 6. Call BAML to generate image prompt
       console.log("🤖 Generating image prompt with BAML...");
       const { b } = await import("../baml_client");
       const promptResult = await b.GenerateAppCoverImagePrompt(
@@ -1284,21 +1300,12 @@ export const generateAppCoverImage = action({
       );
 
       console.log(`  ✓ Image prompt generated (${promptResult.image_prompt.length} chars)`);
-      console.log(`  Prompt preview: ${promptResult.image_prompt.substring(0, 100)}...`);
 
-      // 6. Generate image variants with Seed Dream 4
-      // Using 2:1 aspect ratio to match AppStorePreviewCard display (aspect-[2/1])
+      // 7. Generate image variants with Seed Dream 4
       const width = args.width || 1920;
       const height = args.height || 960;
-      const numVariants = Math.min(args.numVariants || 4, 6); // Max 6 variants
-
-      // Calculate estimated time: 7 seconds per image
-      const { FAL_IMAGE_GENERATION_TIMES, FAL_IMAGE_MODELS } = await import("../convex/utils/fal/clients/image/imageModels");
-      const timePerImage = FAL_IMAGE_GENERATION_TIMES[FAL_IMAGE_MODELS.SEED_DREAM_4] || 7000;
-      const estimatedTimeMs = timePerImage * numVariants;
 
       console.log(`🖼️  Generating ${numVariants} variants with Seed Dream 4 (${width}×${height})...`);
-      console.log(`⏱️  Estimated time: ${(estimatedTimeMs / 1000).toFixed(1)}s`);
       const imageResult: {
         images?: Array<{ url: string; width?: number; height?: number }>;
       } = await ctx.runAction(
@@ -1316,23 +1323,38 @@ export const generateAppCoverImage = action({
 
       console.log(`  ✅ Generated ${imageResult.images.length} cover image variants`);
 
-      // Return all variants without saving
+      // 8. Update job to "completed" with variants in metadata
       const variants = imageResult.images.map((img) => ({
         imageUrl: img.url,
         width: img.width ?? undefined,
         height: img.height ?? undefined,
       }));
 
+      await ctx.runMutation(internal.generationJobs.updateGenerationJobStatus, {
+        jobId,
+        status: "completed",
+        metadata: {
+          ...args,
+          numVariants,
+          variants,
+          imagePrompt: promptResult.image_prompt,
+          styleNotes: promptResult.style_notes,
+        },
+      });
+
+      console.log("🎉 Cover image generation complete!");
+
       return {
         success: true,
-        variants,
-        imagePrompt: promptResult.image_prompt,
-        styleNotes: promptResult.style_notes,
-        estimatedTimeMs,
+        jobId,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("❌ Error generating cover image:", errorMessage);
+      
+      // Update job to failed if we have a jobId
+      // Note: jobId might not exist if error happened before job creation
+      
       return {
         success: false,
         error: errorMessage,
@@ -1387,6 +1409,10 @@ export const saveAppCoverImage = action({
       });
       console.log(`  ✅ App updated with cover image`);
 
+      // 5. Mark any cover image jobs for this app as completed
+      // (User has selected a variant and saved it)
+      // This is handled by creating a new job when user wants to regenerate
+
       return {
         success: true,
         storageId,
@@ -1394,6 +1420,157 @@ export const saveAppCoverImage = action({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("❌ Error saving cover image:", errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  },
+});
+
+/**
+ * Generate cover video from existing cover image
+ * Converts app's cover image into a seamless 6-second looping video using Hailuo
+ */
+export const generateAppCoverVideo = action({
+  args: {
+    appId: v.id("apps"),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    jobId: v.optional(v.id("generationJobs")),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    jobId?: Id<"generationJobs">;
+    error?: string;
+  }> => {
+    try {
+      // 1. Check ownership and fetch app
+      const app = await ctx.runQuery(api.apps.getApp, { appId: args.appId });
+      if (!app) {
+        throw new Error("App not found or access denied");
+      }
+
+      // 2. Verify cover image exists
+      if (!app.coverImageStorageId) {
+        return {
+          success: false,
+          error: "App must have a cover image before generating video",
+        };
+      }
+
+      // 3. Get profile
+      const identity = await ctx.auth.getUserIdentity();
+      if (!identity) {
+        throw new Error("Not authenticated");
+      }
+
+      const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+      if (!profile) {
+        throw new Error("Profile not found");
+      }
+
+      console.log(`🎬 Starting cover video generation for app: ${app.name}`);
+
+      // 4. Create job with status "pending"
+      const jobId = await ctx.runMutation(internal.generationJobs.createGenerationJob, {
+        type: "coverVideo",
+        appId: args.appId,
+        profileId: profile._id,
+        metadata: {
+          coverImageStorageId: app.coverImageStorageId,
+        },
+      });
+
+      console.log(`  ✓ Created job: ${jobId}`);
+
+      // 5. Update to "generating"
+      await ctx.runMutation(internal.generationJobs.updateGenerationJobStatus, {
+        jobId,
+        status: "generating",
+      });
+
+      // 6. Get cover image URL
+      const coverImageUrl = await ctx.runQuery(api.fileStorage.files.getFileUrl, {
+        storageId: app.coverImageStorageId,
+      });
+      if (!coverImageUrl) {
+        throw new Error("Could not get cover image URL");
+      }
+
+      console.log(`📸 Cover image URL: ${coverImageUrl.substring(0, 60)}...`);
+
+      // 7. Generate video prompt with BAML
+      console.log("🤖 Generating video motion prompt with BAML...");
+      const { b } = await import("../baml_client");
+      const promptResult = await b.GenerateCoverVideoPrompt(
+        coverImageUrl,
+        app.name,
+        app.description || ""
+      );
+
+      console.log(`  ✓ Video prompt generated (${promptResult.video_prompt.length} chars)`);
+
+      // 8. Generate video with Hailuo
+      console.log("🎥 Generating video with Hailuo-02 Fast...");
+      console.log("⏱️  Duration: 6 seconds");
+
+      const videoResult = await ctx.runAction(
+        internal.utils.fal.falVideoActions.hailuoImageToVideo,
+        {
+          prompt: promptResult.video_prompt,
+          image_url: coverImageUrl,
+          duration: "6",
+          prompt_optimizer: true,
+        }
+      );
+
+      if (!videoResult.success || !videoResult.videoUrl) {
+        throw new Error(videoResult.error || "Failed to generate video");
+      }
+
+      console.log(`  ✓ Video generated: ${videoResult.videoUrl.substring(0, 60)}...`);
+
+      // 9. Download video from URL
+      console.log("📥 Downloading video...");
+      const videoResponse = await fetchWithRetry(videoResult.videoUrl);
+      const videoBlob = await videoResponse.blob();
+      console.log(`  ✓ Downloaded (${videoBlob.size} bytes)`);
+
+      // 10. Upload to Convex storage
+      console.log("📤 Uploading to storage...");
+      const storageId = await ctx.storage.store(videoBlob);
+      console.log(`  ✓ Uploaded: ${storageId}`);
+
+      // 11. Update app with cover video
+      await ctx.runMutation(internal.apps.updateAIGeneratedApp, {
+        appId: args.appId,
+        coverVideoStorageId: storageId,
+      });
+      console.log(`  ✅ App updated with cover video`);
+
+      // 12. Update job to "completed"
+      await ctx.runMutation(internal.generationJobs.updateGenerationJobStatus, {
+        jobId,
+        status: "completed",
+        result: storageId,
+        metadata: {
+          coverImageStorageId: app.coverImageStorageId,
+          videoPrompt: promptResult.video_prompt,
+        },
+      });
+
+      console.log("🎉 Cover video generation complete!");
+
+      return {
+        success: true,
+        jobId,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("❌ Error generating cover video:", errorMessage);
       return {
         success: false,
         error: errorMessage,

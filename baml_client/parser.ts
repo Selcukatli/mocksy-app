@@ -23,7 +23,7 @@ import { toBamlError } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {AppConcept, AppConceptsOutput, AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleColors, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleEffects, StyleGenerationOutput, StyleRevisionOutput, StyleTypography, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
+import type {AppConcept, AppConceptsOutput, AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, CoverVideoPrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleColors, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleEffects, StyleGenerationOutput, StyleRevisionOutput, StyleTypography, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 
 export class LlmResponseParser {
@@ -186,6 +186,29 @@ export class LlmResponseParser {
         __baml_options__?.clientRegistry,
         env,
       ) as types.AppStructure
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  GenerateCoverVideoPrompt(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): types.CoverVideoPrompt {
+    try {
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "GenerateCoverVideoPrompt",
+        llmResponse,
+        false,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        env,
+      ) as types.CoverVideoPrompt
     } catch (error) {
       throw toBamlError(error);
     }
@@ -1020,6 +1043,29 @@ export class LlmStreamParser {
         __baml_options__?.clientRegistry,
         env,
       ) as partial_types.AppStructure
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  GenerateCoverVideoPrompt(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): partial_types.CoverVideoPrompt {
+    try {
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "GenerateCoverVideoPrompt",
+        llmResponse,
+        true,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        env,
+      ) as partial_types.CoverVideoPrompt
     } catch (error) {
       throw toBamlError(error);
     }

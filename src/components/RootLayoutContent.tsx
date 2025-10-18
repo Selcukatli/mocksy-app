@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import TopHeader from '@/components/layout/TopHeader';
 import BottomTabBar from '@/components/layout/BottomTabBar';
+import { cn } from '@/lib/utils';
 
 interface RootLayoutContentProps {
   children: ReactNode;
@@ -28,6 +29,8 @@ interface PageContextValue {
   setSidebarMode: (mode: SidebarMode) => void;
   showLogo: boolean;
   setShowLogo: (showLogo: boolean) => void;
+  centerInFullViewport: boolean;
+  setCenterInFullViewport: (center: boolean) => void;
 }
 
 const PageContext = createContext<PageContextValue | null>(null);
@@ -41,7 +44,7 @@ export function usePageHeader() {
 }
 
 // Define static (browse) pages - everything else defaults to overlay (dynamic)
-const staticRoutes = ['/appstore', '/profile'];
+const staticRoutes = ['/generate', '/appstore', '/profile'];
 const getDefaultMode = (path: string | null): SidebarMode => {
   if (!path) return 'overlay';
   
@@ -59,6 +62,7 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
   // Set initial mode based on pathname to avoid hydration mismatch
   const [pageSidebarMode, setPageSidebarMode] = useState<SidebarMode>(() => getDefaultMode(pathname));
   const [pageShowLogo, setPageShowLogo] = useState(false);
+  const [pageCenterInFullViewport, setPageCenterInFullViewport] = useState(false);
 
   // Don't show sidebar only on welcome page (onboarding)
   const shouldShowSidebar = !pathname?.startsWith('/welcome');
@@ -103,6 +107,8 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
           setSidebarMode: setPageSidebarMode,
           showLogo: pageShowLogo,
           setShowLogo: setPageShowLogo,
+          centerInFullViewport: pageCenterInFullViewport,
+          setCenterInFullViewport: setPageCenterInFullViewport,
         }}
       >
         <div className="h-screen flex overflow-hidden" suppressHydrationWarning>
@@ -111,7 +117,13 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
             isExpanded={true}
             onExpandedChange={setIsSidebarExpanded}
           />
-          <div className="flex-1 min-w-0 overflow-y-auto pb-20 md:pb-0" suppressHydrationWarning>
+          <div 
+            className={cn(
+              "flex-1 min-w-0 overflow-y-auto pb-20 md:pb-0",
+              pageCenterInFullViewport && "md:pr-64"
+            )}
+            suppressHydrationWarning
+          >
             {children}
           </div>
         </div>
@@ -135,6 +147,8 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
         setSidebarMode: setPageSidebarMode,
         showLogo: pageShowLogo,
         setShowLogo: setPageShowLogo,
+        centerInFullViewport: pageCenterInFullViewport,
+        setCenterInFullViewport: setPageCenterInFullViewport,
       }}
     >
       <div className="min-h-screen" suppressHydrationWarning>

@@ -56,16 +56,15 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
   const [pageTitle, setPageTitle] = useState('');
   const [pageBreadcrumbs, setPageBreadcrumbs] = useState<Breadcrumb[]>([]);
   const [pageActions, setPageActions] = useState<ReactNode>(null);
-  const [pageSidebarMode, setPageSidebarMode] = useState<SidebarMode>('overlay'); // Start with overlay to avoid hydration mismatch
+  // Set initial mode based on pathname to avoid hydration mismatch
+  const [pageSidebarMode, setPageSidebarMode] = useState<SidebarMode>(() => getDefaultMode(pathname));
   const [pageShowLogo, setPageShowLogo] = useState(false);
-  const [isClient, setIsClient] = useState(false);
 
   // Don't show sidebar only on welcome page (onboarding)
   const shouldShowSidebar = !pathname?.startsWith('/welcome');
 
-  // Set client state after mount (only runs on client, not during SSR)
+  // Update mode when pathname changes
   useEffect(() => {
-    setIsClient(true);
     setPageSidebarMode(getDefaultMode(pathname));
   }, [pathname]);
 
@@ -90,10 +89,7 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
   }
 
   // Render static mode for browse pages (App Store, Profile)
-  // But only after hydration is complete to avoid SSR mismatch
-  const shouldRenderStatic = isClient && pageSidebarMode === 'static';
-  
-  if (shouldRenderStatic) {
+  if (pageSidebarMode === 'static') {
     return (
       <PageContext.Provider
         value={{

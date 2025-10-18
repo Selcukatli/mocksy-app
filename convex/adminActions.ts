@@ -383,7 +383,7 @@ export const publishAppToProd = action({
 
     try {
       // Step 1: Read app data from CURRENT (dev) deployment
-      const app = await ctx.runQuery(internal.apps.getAppById, {
+      const app = await ctx.runQuery(internal.apps.getAppByIdInternal, {
         appId: args.appId,
       });
       

@@ -25,10 +25,10 @@ export default function AppListItem({ app, index = 0 }: AppListItemProps) {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
       onClick={() => router.push(`/appstore/${app._id}`)}
-      className="group w-full flex items-center gap-4 p-4 rounded-xl hover:bg-muted/50 transition-all text-left"
+      className="group w-full flex items-center gap-4 p-4 rounded-xl hover:bg-muted/30 dark:hover:bg-muted/10 transition-all text-left"
     >
       {/* App Icon */}
-      <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] overflow-hidden bg-muted/15 shadow-md">
+      <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] overflow-hidden bg-muted/15 dark:bg-muted/5 shadow-md">
         {app.iconUrl ? (
           <Image
             src={app.iconUrl}
@@ -61,7 +61,7 @@ export default function AppListItem({ app, index = 0 }: AppListItemProps) {
 
       {/* View Button */}
       <div className="flex-shrink-0">
-        <div className="px-6 py-2 rounded-full bg-muted/50 border text-sm font-semibold text-primary hover:bg-muted transition-colors">
+        <div className="px-6 py-2 rounded-full bg-muted/50 dark:bg-muted/20 border dark:border-muted/20 text-sm font-semibold text-primary hover:bg-muted dark:hover:bg-muted/30 transition-colors">
           View
         </div>
       </div>

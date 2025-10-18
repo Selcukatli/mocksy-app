@@ -107,14 +107,14 @@ export default function HorizontalAppCarousel({
               key={`ghost-lg-${index}`}
               className="hidden lg:block xl:hidden pointer-events-none"
             >
-              <div className="w-full flex items-center gap-4 p-4 rounded-xl bg-muted/20">
-                <div className="h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] bg-muted-foreground/8" />
+              <div className="w-full flex items-center gap-4 p-4 rounded-xl bg-muted/20 dark:bg-muted/5">
+                <div className="h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] bg-muted-foreground/8 dark:bg-muted-foreground/3" />
                 <div className="flex-1 min-w-0 space-y-2 mr-2">
-                  <div className="h-5 w-32 max-w-full bg-muted-foreground/12 rounded" />
-                  <div className="h-4 w-48 max-w-full bg-muted-foreground/6 rounded" />
+                  <div className="h-5 w-32 max-w-full bg-muted-foreground/12 dark:bg-muted-foreground/4 rounded" />
+                  <div className="h-4 w-48 max-w-full bg-muted-foreground/6 dark:bg-muted-foreground/2 rounded" />
                 </div>
                 <div className="flex-shrink-0">
-                  <div className="h-9 w-20 rounded-full bg-muted-foreground/8" />
+                  <div className="h-9 w-20 rounded-full bg-muted-foreground/8 dark:bg-muted-foreground/3" />
                 </div>
               </div>
             </div>
@@ -125,14 +125,14 @@ export default function HorizontalAppCarousel({
               key={`ghost-xl-${index}`}
               className="hidden xl:block pointer-events-none"
             >
-              <div className="w-full flex items-center gap-4 p-4 rounded-xl bg-muted/20">
-                <div className="h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] bg-muted-foreground/8" />
+              <div className="w-full flex items-center gap-4 p-4 rounded-xl bg-muted/20 dark:bg-muted/5">
+                <div className="h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] bg-muted-foreground/8 dark:bg-muted-foreground/3" />
                 <div className="flex-1 min-w-0 space-y-2 mr-2">
-                  <div className="h-5 w-32 max-w-full bg-muted-foreground/12 rounded" />
-                  <div className="h-4 w-48 max-w-full bg-muted-foreground/6 rounded" />
+                  <div className="h-5 w-32 max-w-full bg-muted-foreground/12 dark:bg-muted-foreground/4 rounded" />
+                  <div className="h-4 w-48 max-w-full bg-muted-foreground/6 dark:bg-muted-foreground/2 rounded" />
                 </div>
                 <div className="flex-shrink-0">
-                  <div className="h-9 w-20 rounded-full bg-muted-foreground/8" />
+                  <div className="h-9 w-20 rounded-full bg-muted-foreground/8 dark:bg-muted-foreground/3" />
                 </div>
               </div>
             </div>

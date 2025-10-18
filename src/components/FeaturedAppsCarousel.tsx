@@ -15,6 +15,7 @@ interface FeaturedApp {
   category?: string;
   iconUrl?: string;
   coverImageUrl?: string;
+  coverVideoUrl?: string;
 }
 
 interface FeaturedAppsCarouselProps {
@@ -44,8 +45,8 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
     setCurrentIndex((prev) => (prev === apps.length - 1 ? 0 : prev + 1));
   };
 
-  // Determine layout based on cover image availability
-  const hasCoverImage = !!currentApp.coverImageUrl;
+  // Determine layout based on cover media availability
+  const hasCoverMedia = !!currentApp.coverVideoUrl || !!currentApp.coverImageUrl;
 
   return (
     <div 
@@ -54,50 +55,77 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
         background: dominantColor || 'rgba(0, 0, 0, 0.85)',
       }}
     >
-      {/* Background - either cover image or gradient */}
-      {hasCoverImage ? (
+      {/* Background - either cover media or gradient */}
+      {hasCoverMedia ? (
         <>
-          {/* Cover Image with fade to transparent at bottom */}
+          {/* Cover Media (Video or Image) with fade to transparent at bottom */}
           <div className="relative w-full h-[280px] md:h-[350px]">
-            <motion.div
-              key={`${currentApp._id}-cover`}
-              initial={{ opacity: 0 }}
-              animate={{ 
-                opacity: 1,
-                scale: [1, 1.15, 1],
-                x: [0, 20, 0],
-              }}
-              transition={{ 
-                opacity: { duration: 0.6 },
-                scale: { 
-                  duration: 25, 
-                  repeat: Infinity, 
-                  ease: "linear",
-                  delay: 0.6 
-                },
-                x: { 
-                  duration: 25, 
-                  repeat: Infinity, 
-                  ease: "linear",
-                  delay: 0.6 
-                },
-              }}
-              className="absolute inset-0"
-              style={{
-                maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-              }}
-            >
-              <Image
-                src={currentApp.coverImageUrl!}
-                alt={`${currentApp.name} cover`}
-                fill
-                className="object-cover object-[right_center]"
-                sizes="(max-width: 768px) 100vw, 1200px"
-                unoptimized
-                priority
-              />
-            </motion.div>
+            {currentApp.coverVideoUrl ? (
+              /* Cover Video */
+              <motion.div
+                key={`${currentApp._id}-cover-video`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ opacity: { duration: 0.6 } }}
+                className="absolute inset-0"
+                style={{
+                  maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                }}
+              >
+                <video
+                  key={currentApp._id}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover object-[right_center]"
+                >
+                  <source src={currentApp.coverVideoUrl} type="video/mp4" />
+                </video>
+              </motion.div>
+            ) : (
+              /* Cover Image */
+              <motion.div
+                key={`${currentApp._id}-cover`}
+                initial={{ opacity: 0 }}
+                animate={{ 
+                  opacity: 1,
+                  scale: [1, 1.15, 1],
+                  x: [0, 20, 0],
+                }}
+                transition={{ 
+                  opacity: { duration: 0.6 },
+                  scale: { 
+                    duration: 25, 
+                    repeat: Infinity, 
+                    ease: "linear",
+                    delay: 0.6 
+                  },
+                  x: { 
+                    duration: 25, 
+                    repeat: Infinity, 
+                    ease: "linear",
+                    delay: 0.6 
+                  },
+                }}
+                className="absolute inset-0"
+                style={{
+                  maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                }}
+              >
+                <Image
+                  src={currentApp.coverImageUrl!}
+                  alt={`${currentApp.name} cover`}
+                  fill
+                  className="object-cover object-[right_center]"
+                  sizes="(max-width: 768px) 100vw, 1200px"
+                  unoptimized
+                  priority
+                />
+              </motion.div>
+            )}
           </div>
           
           {/* App info section on solid color */}
@@ -190,7 +218,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                       className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
                         isLightBackground 
                           ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
-                          : hasCoverImage ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
+                          : hasCoverMedia ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
                       }`}
                       aria-label="Previous app"
                     >
@@ -201,7 +229,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                       className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
                         isLightBackground 
                           ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
-                          : hasCoverImage ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
+                          : hasCoverMedia ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
                       }`}
                       aria-label="Next app"
                     >
@@ -350,7 +378,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                       className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
                         isLightBackground 
                           ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
-                          : hasCoverImage ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
+                          : hasCoverMedia ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
                       }`}
                       aria-label="Previous app"
                     >
@@ -361,7 +389,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                       className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
                         isLightBackground 
                           ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
-                          : hasCoverImage ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
+                          : hasCoverMedia ? 'bg-white/90 hover:bg-white' : 'bg-background/90 hover:bg-background'
                       }`}
                       aria-label="Next app"
                     >

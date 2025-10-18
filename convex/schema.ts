@@ -29,6 +29,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     iconStorageId: v.optional(v.id("_storage")), // App icon in file storage
     coverImageStorageId: v.optional(v.id("_storage")), // Cover/hero image for app listings
+    coverVideoStorageId: v.optional(v.id("_storage")), // Cover video for app listings
     category: v.optional(v.string()),
     platforms: v.optional(
       v.object({

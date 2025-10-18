@@ -1,8 +1,17 @@
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
+// Query: Get any app by ID (public, no auth check - for migration scripts)
+export const getAppById = query({
+  args: { appId: v.id("apps") },
+  returns: v.union(v.any(), v.null()), // Returns full app document or null
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.appId);
+  },
+});
+
 // Internal query: Get any app by ID (no auth check)
-export const getAppById = internalQuery({
+export const getAppByIdInternal = internalQuery({
   args: { appId: v.id("apps") },
   returns: v.any(), // Returns full app document or null
   handler: async (ctx, args) => {
@@ -119,6 +128,8 @@ export const getApps = query({
       iconUrl: v.optional(v.union(v.string(), v.null())),
       coverImageStorageId: v.optional(v.id("_storage")),
       coverImageUrl: v.optional(v.union(v.string(), v.null())),
+      coverVideoStorageId: v.optional(v.id("_storage")),
+      coverVideoUrl: v.optional(v.union(v.string(), v.null())),
       category: v.optional(v.string()),
       platforms: v.optional(
         v.object({
@@ -178,10 +189,15 @@ export const getApps = query({
         if (app.coverImageStorageId) {
           coverImageUrl = await ctx.storage.getUrl(app.coverImageStorageId);
         }
+        let coverVideoUrl: string | null = null;
+        if (app.coverVideoStorageId) {
+          coverVideoUrl = await ctx.storage.getUrl(app.coverVideoStorageId);
+        }
         return {
           ...app,
           iconUrl: iconUrl ?? undefined,
           coverImageUrl: coverImageUrl ?? undefined,
+          coverVideoUrl: coverVideoUrl ?? undefined,
         };
       }),
     );
@@ -812,6 +828,7 @@ export const getFeaturedApps = query({
       category: v.optional(v.string()),
       iconUrl: v.optional(v.string()),
       coverImageUrl: v.optional(v.string()),
+      coverVideoUrl: v.optional(v.string()),
       createdAt: v.number(),
     })
   ),
@@ -849,6 +866,13 @@ export const getFeaturedApps = query({
           coverImageUrl = url ?? undefined;
         }
 
+        // Get cover video URL
+        let coverVideoUrl: string | undefined = undefined;
+        if (app.coverVideoStorageId) {
+          const url = await ctx.storage.getUrl(app.coverVideoStorageId);
+          coverVideoUrl = url ?? undefined;
+        }
+
         return {
           _id: app._id,
           name: app.name,
@@ -856,6 +880,7 @@ export const getFeaturedApps = query({
           category: app.category,
           iconUrl,
           coverImageUrl,
+          coverVideoUrl,
           createdAt: app.createdAt,
         };
       })
@@ -892,6 +917,31 @@ export const getAppCategories = query({
   },
 });
 
+// Mutation to update cover video (no authentication required for migration script)
+export const updateCoverVideo = mutation({
+  args: {
+    appId: v.id("apps"),
+    coverVideoStorageId: v.id("_storage"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Get the app
+    const app = await ctx.db.get(args.appId);
+    
+    if (!app) {
+      throw new Error("App not found");
+    }
+
+    // Update the app with the cover video
+    await ctx.db.patch(args.appId, {
+      coverVideoStorageId: args.coverVideoStorageId,
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
 // Public query to get app preview (no authentication required)
 export const getPublicAppPreview = query({
   args: { appId: v.id("apps") },
@@ -904,6 +954,8 @@ export const getPublicAppPreview = query({
         category: v.optional(v.string()),
         iconUrl: v.optional(v.string()),
         coverImageUrl: v.optional(v.string()),
+        coverVideoUrl: v.optional(v.string()),
+        coverVideoStorageId: v.optional(v.id("_storage")),
         isDemo: v.optional(v.boolean()),
         status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
       }),
@@ -945,6 +997,13 @@ export const getPublicAppPreview = query({
     if (app.coverImageStorageId) {
       const url = await ctx.storage.getUrl(app.coverImageStorageId);
       coverImageUrl = url ?? undefined;
+    }
+
+    // Get cover video URL if exists
+    let coverVideoUrl: string | undefined = undefined;
+    if (app.coverVideoStorageId) {
+      const url = await ctx.storage.getUrl(app.coverVideoStorageId);
+      coverVideoUrl = url ?? undefined;
     }
 
     // Get creator profile
@@ -992,6 +1051,8 @@ export const getPublicAppPreview = query({
         category: app.category,
         iconUrl,
         coverImageUrl,
+        coverVideoUrl,
+        coverVideoStorageId: app.coverVideoStorageId,
         isDemo: app.isDemo,
         status: app.status,
       },

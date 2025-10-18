@@ -56,3 +56,6 @@ convex/_generated/
 converted-videos/
 scripts/convert-mascots/input/
 scripts/convert-mascots/output/
+
+# attach cover video script input files
+scripts/attach-cover-video/input/

@@ -16,6 +16,7 @@ interface AppStorePreviewCardProps {
     category?: string;
     iconUrl?: string;
     coverImageUrl?: string;
+    coverVideoUrl?: string;
   };
   creator?: {
     username?: string;
@@ -128,7 +129,7 @@ export default function AppStorePreviewCard({
     <>
       <div className="w-full rounded-2xl border bg-card shadow-sm overflow-hidden">
         {/* Admin Banner for Missing Cover */}
-        {isAdmin && !app.coverImageUrl && (
+        {isAdmin && !app.coverVideoUrl && !app.coverImageUrl && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ImagePlus className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -192,7 +193,7 @@ export default function AppStorePreviewCard({
           </div>
 
           {/* Cover Image with Integrated App Header */}
-          {app.coverImageUrl ? (
+          {(app.coverVideoUrl || app.coverImageUrl) ? (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -251,45 +252,70 @@ export default function AppStorePreviewCard({
                 </>
               )}
               
-              {/* Cover Image - fades to transparent at bottom */}
+              {/* Cover Media (Video or Image) - fades to transparent at bottom */}
               <div className="relative w-full aspect-[2/1]">
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ 
-                    opacity: 1,
-                    scale: [1, 1.15, 1],
-                    x: [0, 20, 0],
-                  }}
-                  transition={{ 
-                    opacity: { duration: 0.6 },
-                    scale: { 
-                      duration: 25, 
-                      repeat: Infinity, 
-                      ease: "linear",
-                      delay: 0.6 
-                    },
-                    x: { 
-                      duration: 25, 
-                      repeat: Infinity, 
-                      ease: "linear",
-                      delay: 0.6 
-                    },
-                  }}
-                  className="absolute inset-0"
-                  style={{
-                    maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-                  }}
-                >
-                  <Image
-                    src={app.coverImageUrl}
-                    alt={`${app.name} cover image`}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 896px"
-                    unoptimized
-                  />
-                </motion.div>
+                {app.coverVideoUrl ? (
+                  /* Cover Video */
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ opacity: { duration: 0.6 } }}
+                    className="absolute inset-0"
+                    style={{
+                      maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                      WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                    }}
+                  >
+                    <video
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    >
+                      <source src={app.coverVideoUrl} type="video/mp4" />
+                    </video>
+                  </motion.div>
+                ) : (
+                  /* Cover Image */
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ 
+                      opacity: 1,
+                      scale: [1, 1.15, 1],
+                      x: [0, 20, 0],
+                    }}
+                    transition={{ 
+                      opacity: { duration: 0.6 },
+                      scale: { 
+                        duration: 25, 
+                        repeat: Infinity, 
+                        ease: "linear",
+                        delay: 0.6 
+                      },
+                      x: { 
+                        duration: 25, 
+                        repeat: Infinity, 
+                        ease: "linear",
+                        delay: 0.6 
+                      },
+                    }}
+                    className="absolute inset-0"
+                    style={{
+                      maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                      WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                    }}
+                  >
+                    <Image
+                      src={app.coverImageUrl!}
+                      alt={`${app.name} cover image`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 896px"
+                      unoptimized
+                    />
+                  </motion.div>
+                )}
               </div>
               
               {/* App info positioned at card bottom */}

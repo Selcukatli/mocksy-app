@@ -58,7 +58,7 @@ export default function AppListCarousel({ title, apps, headerAction }: AppListCa
   if (apps.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border bg-card shadow-sm overflow-hidden p-6 space-y-4">
+    <div className="rounded-2xl border border-border/50 dark:border-border/20 bg-card dark:bg-card/20 shadow-sm overflow-hidden p-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl md:text-2xl font-semibold">{title}</h2>

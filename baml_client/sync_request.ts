@@ -213,7 +213,7 @@ export class HttpRequest {
   }
   
   GenerateCoverVideoPrompt(
-      cover_image_url: string,app_name: string,app_description: string,
+      cover_image_url: string,app_name: string,app_description: string,user_motion_prompt?: string | null,
       __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
@@ -224,7 +224,7 @@ export class HttpRequest {
       return this.runtime.buildRequestSync(
         "GenerateCoverVideoPrompt",
         {
-          "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description
+          "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description,"user_motion_prompt": user_motion_prompt?? null
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -1144,7 +1144,7 @@ export class HttpStreamRequest {
   }
   
   GenerateCoverVideoPrompt(
-      cover_image_url: string,app_name: string,app_description: string,
+      cover_image_url: string,app_name: string,app_description: string,user_motion_prompt?: string | null,
       __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
@@ -1155,7 +1155,7 @@ export class HttpStreamRequest {
       return this.runtime.buildRequestSync(
         "GenerateCoverVideoPrompt",
         {
-          "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description
+          "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description,"user_motion_prompt": user_motion_prompt?? null
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),

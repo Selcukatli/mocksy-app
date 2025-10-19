@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '@convex/_generated/api';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Id } from '@convex/_generated/dataModel';
 import AppsTable from './_components/AppsTable';
 import PublishToProdModal from './_components/PublishToProdModal';
@@ -11,6 +11,8 @@ import { Search, Filter, ShieldAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { usePageHeader } from '@/components/RootLayoutContent';
+import AdminSkeleton from './_components/AdminSkeleton';
+import TableSkeleton from './_components/TableSkeleton';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -18,11 +20,8 @@ export default function AdminPage() {
   const { setBreadcrumbs, setSidebarMode } = usePageHeader();
 
   // Check if we're on dev deployment (only dev needs to publish to prod)
-  // We can check if NEXT_PUBLIC_CONVEX_URL exists and doesn't match prod URL
   const isDevDeployment = useMemo(() => {
     const currentUrl = process.env.NEXT_PUBLIC_CONVEX_URL || '';
-    // If URL contains 'localhost' or 'dev' or doesn't match prod pattern, it's dev
-    // Prod deployments typically have stable deployment names
     return currentUrl.includes('localhost') || 
            currentUrl.includes('squid') || // Dev pattern (e.g., fantastic-squid-750)
            !currentUrl.includes('orca'); // Prod pattern (e.g., energized-orca-703)
@@ -30,15 +29,14 @@ export default function AdminPage() {
 
   useEffect(() => {
     setSidebarMode('overlay');
-    setBreadcrumbs([
-      { label: 'Admin' }
-    ]);
+    setBreadcrumbs([{ label: 'Admin' }]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount - setting static values
   
   // ALWAYS call all hooks - no conditional logic
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
   const [featuredFilter, setFeaturedFilter] = useState<'all' | 'featured' | 'not-featured'>('all');
@@ -48,19 +46,42 @@ export default function AdminPage() {
   const [appToPublish, setAppToPublish] = useState<Id<'apps'> | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
 
+  // Debounce search query to avoid excessive queries
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Only query apps after Clerk is loaded AND user is confirmed admin
   const shouldQueryApps = isClerkLoaded && isAdmin === true;
-  const apps = useQuery(
-    api.adminActions.getAllAppsForAdmin,
-    shouldQueryApps
-      ? {
-          searchQuery: searchQuery || undefined,
-          category: categoryFilter !== 'all' ? categoryFilter : undefined,
-          status: statusFilter !== 'all' ? statusFilter : undefined,
-          featuredFilter: featuredFilter !== 'all' ? featuredFilter : undefined,
-        }
-      : "skip"
-  );
+  
+  // Memoize query args to prevent unnecessary re-queries
+  const queryArgs = useMemo(() => {
+    if (!shouldQueryApps) return "skip" as const;
+    
+    return {
+      searchQuery: debouncedSearchQuery || undefined,
+      category: categoryFilter !== 'all' ? categoryFilter : undefined,
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      featuredFilter: featuredFilter !== 'all' ? featuredFilter : undefined,
+    };
+  }, [shouldQueryApps, debouncedSearchQuery, categoryFilter, statusFilter, featuredFilter]);
+  
+  const apps = useQuery(api.adminActions.getAllAppsForAdmin, queryArgs);
+  
+  // Keep track of the last successful data to avoid showing skeleton on refetch
+  const [lastApps, setLastApps] = useState<typeof apps>(undefined);
+  
+  useEffect(() => {
+    if (apps !== undefined) {
+      setLastApps(apps);
+    }
+  }, [apps]);
+  
+  // Use lastApps to display while refetching to avoid flickering
+  const displayApps = apps !== undefined ? apps : lastApps;
   
   const featureAppMutation = useMutation(api.adminActions.featureApp);
   const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
@@ -70,16 +91,16 @@ export default function AdminPage() {
 
   // Get unique categories including from all apps (not just published)
   const allCategories = useMemo(() => {
-    if (!apps) return [];
+    if (!displayApps) return [];
     const categorySet = new Set<string>();
-    apps.forEach((app: typeof apps[number]) => {
+    displayApps.forEach((app: typeof displayApps[number]) => {
       if (app.category) categorySet.add(app.category);
     });
     return Array.from(categorySet).sort();
-  }, [apps]);
+  }, [displayApps]);
 
 
-  const handleFeature = async (appId: Id<'apps'>) => {
+  const handleFeature = useCallback(async (appId: Id<'apps'>) => {
     try {
       const result = await featureAppMutation({ appId });
       setToastMessage(result.message);
@@ -92,9 +113,9 @@ export default function AdminPage() {
       setToastType('error');
       setShowToast(true);
     }
-  };
+  }, [featureAppMutation]);
 
-  const handleUnfeature = async (appId: Id<'apps'>) => {
+  const handleUnfeature = useCallback(async (appId: Id<'apps'>) => {
     try {
       const result = await unfeatureAppMutation({ appId });
       setToastMessage(result.message);
@@ -107,9 +128,9 @@ export default function AdminPage() {
       setToastType('error');
       setShowToast(true);
     }
-  };
+  }, [unfeatureAppMutation]);
 
-  const handleDelete = async (appId: Id<'apps'>) => {
+  const handleDelete = useCallback(async (appId: Id<'apps'>) => {
     try {
       await deleteAppMutation({ appId });
       setToastMessage('App deleted successfully');
@@ -122,13 +143,13 @@ export default function AdminPage() {
       setToastType('error');
       setShowToast(true);
     }
-  };
+  }, [deleteAppMutation]);
 
-  const handleView = (appId: Id<'apps'>) => {
+  const handleView = useCallback((appId: Id<'apps'>) => {
     window.open(`/appstore/${appId}`, '_blank');
-  };
+  }, []);
 
-  const handleStatusChange = async (appId: Id<'apps'>, status: 'draft' | 'published') => {
+  const handleStatusChange = useCallback(async (appId: Id<'apps'>, status: 'draft' | 'published') => {
     try {
       const result = await updateAppStatusMutation({ appId, status });
       setToastMessage(result.message);
@@ -141,14 +162,14 @@ export default function AdminPage() {
       setToastType('error');
       setShowToast(true);
     }
-  };
+  }, [updateAppStatusMutation]);
 
-  const handlePublishToProd = async (appId: Id<'apps'>) => {
+  const handlePublishToProd = useCallback(async (appId: Id<'apps'>) => {
     // Show the confirmation modal
     setAppToPublish(appId);
-  };
+  }, []);
 
-  const confirmPublishToProd = async () => {
+  const confirmPublishToProd = useCallback(async () => {
     if (!appToPublish) return;
 
     setIsPublishing(true);
@@ -167,22 +188,16 @@ export default function AdminPage() {
     } finally {
       setIsPublishing(false);
     }
-  };
+  }, [appToPublish, publishToProdAction]);
 
-  // Show loading while Clerk is loading OR admin status is unknown OR (admin is confirmed but apps not loaded yet)
-  const isLoading = !isClerkLoaded || isAdmin === undefined || (isAdmin === true && apps === undefined);
+  // Show initial loading only when we don't know if user is admin yet
+  // Don't unmount the component when refetching data (filter changes)
+  const isInitialLoading = !isClerkLoaded || isAdmin === undefined;
   const hasFilters = searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' || featuredFilter !== 'all';
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
+  // Initial loading state - show full skeleton
+  if (isInitialLoading) {
+    return <AdminSkeleton />;
   }
 
   // Not admin state
@@ -224,22 +239,22 @@ export default function AdminPage() {
         </div>
 
         {/* Stats */}
-        {apps && (
+        {displayApps && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-card rounded-xl border p-4">
               <p className="text-sm text-muted-foreground">Total Apps</p>
-              <p className="text-2xl font-bold mt-1">{apps.length}</p>
+              <p className="text-2xl font-bold mt-1">{displayApps.length}</p>
             </div>
             <div className="bg-card rounded-xl border p-4">
               <p className="text-sm text-muted-foreground">Featured Apps</p>
               <p className="text-2xl font-bold mt-1">
-                {apps.filter((a: typeof apps[number]) => a.isFeatured).length}
+                {displayApps.filter((a: typeof displayApps[number]) => a.isFeatured).length}
               </p>
             </div>
             <div className="bg-card rounded-xl border p-4">
               <p className="text-sm text-muted-foreground">Published Apps</p>
               <p className="text-2xl font-bold mt-1">
-                {apps.filter((a: typeof apps[number]) => a.status === 'published' || !a.status).length}
+                {displayApps.filter((a: typeof displayApps[number]) => a.status === 'published' || !a.status).length}
               </p>
             </div>
           </div>
@@ -317,14 +332,11 @@ export default function AdminPage() {
         </div>
 
         {/* Apps Table */}
-        {isLoading ? (
-          <div className="bg-card rounded-xl border p-12 text-center">
-            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading apps...</p>
-          </div>
-        ) : apps && apps.length > 0 ? (
+        {displayApps === undefined ? (
+          <TableSkeleton />
+        ) : displayApps.length > 0 ? (
           <AppsTable
-            apps={apps}
+            apps={displayApps}
             onFeature={handleFeature}
             onUnfeature={handleUnfeature}
             onDelete={handleDelete}
@@ -332,7 +344,13 @@ export default function AdminPage() {
             onStatusChange={handleStatusChange}
             onPublishToProd={isDevDeployment ? handlePublishToProd : undefined}
           />
-        ) : null}
+        ) : (
+          <div className="bg-card rounded-xl border p-12 text-center">
+            <p className="text-muted-foreground">
+              {hasFilters ? 'No apps found matching your filters.' : 'No apps yet.'}
+            </p>
+          </div>
+        )}
       </div>
 
       <Toast
@@ -345,7 +363,7 @@ export default function AdminPage() {
 
       <PublishToProdModal
         isOpen={appToPublish !== null}
-        app={appToPublish ? apps?.find((a: { _id: Id<'apps'> }) => a._id === appToPublish) || null : null}
+        app={appToPublish ? displayApps?.find((a: { _id: Id<'apps'> }) => a._id === appToPublish) || null : null}
         onConfirm={confirmPublishToProd}
         onClose={() => setAppToPublish(null)}
         isPublishing={isPublishing}
@@ -353,4 +371,3 @@ export default function AdminPage() {
     </>
   );
 }
-

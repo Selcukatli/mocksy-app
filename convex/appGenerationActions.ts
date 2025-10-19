@@ -1429,12 +1429,165 @@ export const saveAppCoverImage = action({
 });
 
 /**
+ * Generate and automatically save a single cover image
+ * Used for admin panel quick generation - generates 1 image and immediately saves it
+ */
+export const generateAndSaveCoverImage = action({
+  args: {
+    appId: v.id("apps"),
+    width: v.optional(v.number()),
+    height: v.optional(v.number()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    jobId: v.optional(v.id("generationJobs")),
+    storageId: v.optional(v.id("_storage")),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    jobId?: Id<"generationJobs">;
+    storageId?: Id<"_storage">;
+    error?: string;
+  }> => {
+    // 1. Fetch app details
+    const app = await ctx.runQuery(api.apps.getApp, {
+      appId: args.appId,
+    });
+    if (!app) {
+      throw new Error("App not found or access denied");
+    }
+
+    // 2. Get profile
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    console.log(`🎨 [Auto-save] Starting cover image generation for app: ${app.name}`);
+
+    try {
+      // 3. Create job
+      const jobId = await ctx.runMutation(internal.generationJobs.createGenerationJob, {
+        type: "coverImage",
+        appId: args.appId,
+        profileId: profile._id,
+        metadata: {
+          numVariants: 1,
+          width: args.width || 1920,
+          height: args.height || 960,
+          autoSave: true, // Mark this as auto-save mode
+        },
+      });
+
+      // 4. Update to "generating"
+      await ctx.runMutation(internal.generationJobs.updateGenerationJobStatus, {
+        jobId,
+        status: "generating",
+      });
+
+      // 5. Fetch app screens
+      const screens = await ctx.runQuery(api.appScreens.getAppScreens, {
+        appId: args.appId,
+      });
+      const screenNames: string[] = screens.map((s: { name: string }) => s.name);
+
+      // 6. Generate image prompt with BAML
+      console.log("🤖 Generating image prompt with BAML...");
+      const { b } = await import("../baml_client");
+      const promptResult = await b.GenerateAppCoverImagePrompt(
+        app.name,
+        app.description || "",
+        app.category ?? null,
+        app.styleGuide ?? null,
+        screenNames,
+        null // no userFeedback
+      );
+
+      // 7. Generate single image with Seed Dream 4
+      const width = args.width || 1920;
+      const height = args.height || 960;
+      console.log(`🖼️  Generating 1 image with Seed Dream 4 (${width}×${height})...`);
+      
+      const imageResult: {
+        images?: Array<{ url: string; width?: number; height?: number }>;
+      } = await ctx.runAction(
+        internal.utils.fal.falImageActions.seedDream4TextToImage,
+        {
+          prompt: promptResult.image_prompt,
+          image_size: { width, height },
+          num_images: 1,
+        }
+      );
+
+      if (!imageResult.images || imageResult.images.length === 0) {
+        throw new Error("No images generated");
+      }
+
+      const imageUrl = imageResult.images[0].url;
+      console.log(`  ✅ Generated cover image: ${imageUrl}`);
+
+      // 8. Download and save to storage
+      console.log("📥 Downloading and saving to storage...");
+      const response = await fetchWithRetry(imageUrl);
+      const blob = await response.blob();
+      
+      const storageId = await ctx.storage.store(blob);
+      console.log(`  ✅ Saved to storage: ${storageId}`);
+
+      // 9. Update app with the new cover image
+      await ctx.runMutation(internal.apps.updateAIGeneratedApp, {
+        appId: args.appId,
+        name: app.name,
+        coverImageStorageId: storageId,
+      });
+
+      // 10. Update job to completed
+      await ctx.runMutation(internal.generationJobs.updateGenerationJobStatus, {
+        jobId,
+        status: "completed",
+        result: storageId,
+        metadata: {
+          numVariants: 1,
+          width,
+          height,
+          autoSave: true,
+          imagePrompt: promptResult.image_prompt,
+          imageUrl,
+        },
+      });
+
+      console.log("🎉 Cover image generated and saved!");
+
+      return {
+        success: true,
+        jobId,
+        storageId,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("❌ Error in generateAndSaveCoverImage:", errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  },
+});
+
+/**
  * Generate cover video from existing cover image
  * Converts app's cover image into a seamless 6-second looping video using Hailuo
  */
 export const generateAppCoverVideo = action({
   args: {
     appId: v.id("apps"),
+    customPrompt: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -1508,7 +1661,8 @@ export const generateAppCoverVideo = action({
       const promptResult = await b.GenerateCoverVideoPrompt(
         coverImageUrl,
         app.name,
-        app.description || ""
+        app.description || "",
+        args.customPrompt ?? null
       );
 
       console.log(`  ✓ Video prompt generated (${promptResult.video_prompt.length} chars)`);
@@ -1559,6 +1713,7 @@ export const generateAppCoverVideo = action({
         metadata: {
           coverImageStorageId: app.coverImageStorageId,
           videoPrompt: promptResult.video_prompt,
+          customPrompt: args.customPrompt,
         },
       });
 

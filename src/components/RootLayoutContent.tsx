@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, createContext, useContext, useEffect } from 'react';
+import { ReactNode, useState, createContext, useContext, useEffect, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import TopHeader from '@/components/layout/TopHeader';
@@ -83,6 +83,45 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
     setIsSidebarExpanded(!isSidebarExpanded);
   };
 
+  // Memoize all setter functions to prevent unnecessary re-renders
+  const stableSetTitle = useCallback((title: string) => setPageTitle(title), []);
+  const stableSetBreadcrumbs = useCallback((breadcrumbs: Breadcrumb[]) => setPageBreadcrumbs(breadcrumbs), []);
+  const stableSetActions = useCallback((actions: ReactNode) => setPageActions(actions), []);
+  const stableSetSidebarMode = useCallback((mode: SidebarMode) => setPageSidebarMode(mode), []);
+  const stableSetShowLogo = useCallback((showLogo: boolean) => setPageShowLogo(showLogo), []);
+  const stableSetCenterInFullViewport = useCallback((center: boolean) => setPageCenterInFullViewport(center), []);
+
+  // Memoize the entire context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => {
+    return {
+      title: pageTitle,
+      setTitle: stableSetTitle,
+      breadcrumbs: pageBreadcrumbs,
+      setBreadcrumbs: stableSetBreadcrumbs,
+      actions: pageActions,
+      setActions: stableSetActions,
+      sidebarMode: pageSidebarMode,
+      setSidebarMode: stableSetSidebarMode,
+      showLogo: pageShowLogo,
+      setShowLogo: stableSetShowLogo,
+      centerInFullViewport: pageCenterInFullViewport,
+      setCenterInFullViewport: stableSetCenterInFullViewport,
+    };
+  }, [
+    pageTitle,
+    stableSetTitle,
+    pageBreadcrumbs,
+    stableSetBreadcrumbs,
+    pageActions,
+    stableSetActions,
+    pageSidebarMode,
+    stableSetSidebarMode,
+    pageShowLogo,
+    stableSetShowLogo,
+    pageCenterInFullViewport,
+    stableSetCenterInFullViewport,
+  ]);
+
   if (!shouldShowSidebar) {
     return (
       <>
@@ -95,22 +134,7 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
   // Render static mode for browse pages (App Store, Profile)
   if (pageSidebarMode === 'static') {
     return (
-      <PageContext.Provider
-        value={{
-          title: pageTitle,
-          setTitle: setPageTitle,
-          breadcrumbs: pageBreadcrumbs,
-          setBreadcrumbs: setPageBreadcrumbs,
-          actions: pageActions,
-          setActions: setPageActions,
-          sidebarMode: pageSidebarMode,
-          setSidebarMode: setPageSidebarMode,
-          showLogo: pageShowLogo,
-          setShowLogo: setPageShowLogo,
-          centerInFullViewport: pageCenterInFullViewport,
-          setCenterInFullViewport: setPageCenterInFullViewport,
-        }}
-      >
+      <PageContext.Provider value={contextValue}>
         <div className="h-screen flex overflow-hidden" suppressHydrationWarning>
           <Sidebar
             mode="static"
@@ -135,22 +159,7 @@ export default function RootLayoutContent({ children }: RootLayoutContentProps) 
 
   // Overlay mode: has top header + hamburger on mobile, collapsible sidebar on desktop
   return (
-    <PageContext.Provider
-      value={{
-        title: pageTitle,
-        setTitle: setPageTitle,
-        breadcrumbs: pageBreadcrumbs,
-        setBreadcrumbs: setPageBreadcrumbs,
-        actions: pageActions,
-        setActions: setPageActions,
-        sidebarMode: pageSidebarMode,
-        setSidebarMode: setPageSidebarMode,
-        showLogo: pageShowLogo,
-        setShowLogo: setPageShowLogo,
-        centerInFullViewport: pageCenterInFullViewport,
-        setCenterInFullViewport: setPageCenterInFullViewport,
-      }}
-    >
+    <PageContext.Provider value={contextValue}>
       <div className="min-h-screen" suppressHydrationWarning>
         <Sidebar
           mode="overlay"

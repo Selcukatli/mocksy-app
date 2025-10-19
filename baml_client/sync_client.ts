@@ -391,7 +391,7 @@ export class BamlSyncClient {
   }
   
   GenerateCoverVideoPrompt(
-      cover_image_url: string,app_name: string,app_description: string,
+      cover_image_url: string,app_name: string,app_description: string,user_motion_prompt?: string | null,
       __baml_options__?: BamlCallOptions<never>
   ): types.CoverVideoPrompt {
     try {
@@ -415,7 +415,7 @@ export class BamlSyncClient {
       const raw = this.runtime.callFunctionSync(
         "GenerateCoverVideoPrompt",
         {
-          "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description
+          "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description,"user_motion_prompt": user_motion_prompt?? null
         },
         this.ctxManager.cloneContext(),
         options.tb?.__tb(),

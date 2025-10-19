@@ -230,6 +230,7 @@ export const getAllAppsForAdmin = query({
       category: v.optional(v.string()),
       iconUrl: v.optional(v.string()),
       coverImageUrl: v.optional(v.string()),
+      coverVideoUrl: v.optional(v.string()),
       status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
       isDemo: v.optional(v.boolean()),
       isFeatured: v.boolean(),
@@ -282,6 +283,13 @@ export const getAllAppsForAdmin = query({
           coverImageUrl = url ?? undefined;
         }
 
+        // Get cover video URL
+        let coverVideoUrl: string | undefined = undefined;
+        if (app.coverVideoStorageId) {
+          const url = await ctx.storage.getUrl(app.coverVideoStorageId);
+          coverVideoUrl = url ?? undefined;
+        }
+
         const isFeatured = featuredMap.has(app._id);
         const featuredAt = featuredMap.get(app._id);
 
@@ -292,6 +300,7 @@ export const getAllAppsForAdmin = query({
           category: app.category,
           iconUrl,
           coverImageUrl,
+          coverVideoUrl,
           status: app.status,
           isDemo: app.isDemo,
           isFeatured,

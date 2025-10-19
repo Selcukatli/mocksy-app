@@ -14,6 +14,7 @@ import AppStorePreviewCard from '@/components/AppStorePreviewCard';
 import AppsInCategoryCarousel from '@/components/AppsInCategoryCarousel';
 import ReviewsSection from '@/components/ReviewsSection';
 import CoverImageSelectionModal from '@/components/CoverImageSelectionModal';
+import GenerateVideoModal from '@/components/GenerateVideoModal';
 import { motion } from 'framer-motion';
 import { usePageHeader } from '@/components/RootLayoutContent';
 import Toast from '@/components/Toast';
@@ -47,6 +48,7 @@ export default function AppStorePageClient({ params }: PageProps) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPublishSuccess, setShowPublishSuccess] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   // Detect Safari
   useEffect(() => {
@@ -198,7 +200,7 @@ export default function AppStorePageClient({ params }: PageProps) {
     }
   }, [appId, saveCoverImage]);
 
-  const handleGenerateCoverVideo = useCallback(async () => {
+  const handleGenerateCoverVideo = useCallback(async (customPrompt?: string) => {
     if (!appId || !appPreview?.app.coverImageUrl) return;
     
     setToastMessage('Starting cover video generation...');
@@ -206,7 +208,10 @@ export default function AppStorePageClient({ params }: PageProps) {
     setShowToast(true);
     
     try {
-      const result = await generateCoverVideo({ appId: appId as Id<'apps'> });
+      const result = await generateCoverVideo({ 
+        appId: appId as Id<'apps'>,
+        customPrompt,
+      });
       
       if (result.success && result.jobId) {
         // Job created successfully - show toast, isVideoGenerating will update reactively
@@ -323,7 +328,7 @@ export default function AppStorePageClient({ params }: PageProps) {
     return ['pending', 'generating'].includes(videoGenerationJob.status);
   }, [videoGenerationJob]);
 
-  // Calculate smart progress for cover generation (assumes 40s, slows down if longer)
+  // Calculate smart progress for cover generation (different durations for image vs video)
   const [coverGenerationProgress, setCoverGenerationProgress] = useState(0);
 
   useEffect(() => {
@@ -336,16 +341,18 @@ export default function AppStorePageClient({ params }: PageProps) {
     if (!activeJob) return;
 
     const startTime = activeJob.createdAt;
-    const targetDuration = 40000; // 40 seconds in ms
+    // Video takes longer than image generation
+    const targetDuration = isVideoGenerating ? 90000 : 40000; // 90s for video, 40s for image
 
     const updateProgress = () => {
       const elapsed = Date.now() - startTime;
       const timeRatio = elapsed / targetDuration;
       
-      // Asymptotic formula: quickly reaches 95% at 40s, then slows down
-      // Formula: 100 * (1 - e^(-3*t/targetTime))
-      // At 40s: ~95%, at 60s: ~98%, at 80s: ~99%
-      const progress = 100 * (1 - Math.exp(-3 * timeRatio));
+      // Asymptotic formula: reaches ~87% at target time, then slows down
+      // Formula: 100 * (1 - e^(-2*t/targetTime))
+      // For video (90s): At 45s: ~63%, at 90s: ~87%, at 135s: ~95%
+      // For image (40s): At 20s: ~63%, at 40s: ~87%, at 60s: ~95%
+      const progress = 100 * (1 - Math.exp(-2 * timeRatio));
       
       setCoverGenerationProgress(Math.min(progress, 99)); // Cap at 99% until complete
     };
@@ -776,7 +783,7 @@ export default function AppStorePageClient({ params }: PageProps) {
             onShare={handleShareClick}
             isAdmin={isAdmin}
             onGenerateCover={handleGenerateCoverImage}
-            onGenerateVideo={handleGenerateCoverVideo}
+            onGenerateVideo={() => setIsVideoModalOpen(true)}
             onRemoveVideo={handleRemoveCoverVideo}
             isGeneratingVideo={isVideoGenerating}
             adminActionsSlot={
@@ -952,6 +959,14 @@ export default function AppStorePageClient({ params }: PageProps) {
       isOpen={showToast}
       onClose={() => setShowToast(false)}
       duration={2000}
+    />
+
+    <GenerateVideoModal
+      isOpen={isVideoModalOpen}
+      onClose={() => setIsVideoModalOpen(false)}
+      onGenerate={handleGenerateCoverVideo}
+      isRegenerating={!!appPreview?.app.coverVideoUrl}
+      isGenerating={isVideoGenerating}
     />
     </>
   );

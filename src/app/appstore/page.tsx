@@ -121,7 +121,7 @@ export default function AppStorePage() {
         {/* Featured Apps Carousel */}
         {isLoading ? (
           // Skeleton while loading - matches actual carousel height
-          <div className="w-full h-[380px] md:h-[450px] rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-900/40 animate-pulse">
+          <div className="w-full h-[450px] md:h-[550px] rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-900/40 animate-pulse">
             <div className="w-full h-full flex items-end p-8 md:p-12">
               <div className="space-y-4 w-full max-w-2xl">
                 <div className="h-10 w-3/4 bg-gray-300 dark:bg-gray-800/60 rounded-lg" />

@@ -8,6 +8,13 @@
 // Note: StyleConfig is defined in screenshots.baml and reused here
 
 // ============================================
+// HELPER MACROS
+// ============================================
+
+// Macro to convert hex color codes to natural language color names
+// This prevents hex codes from appearing as visible text on generated screens
+
+// ============================================
 // DEMO APP CLASSES
 // ============================================
 
@@ -328,6 +335,7 @@ function GenerateAppDesignPlan(
     - **CRITICAL: Extract EXACT colors as hex codes:**
       * **active_tab_color**: EXACT hex code for active tab icon and label (e.g., '#7B68EE', '#D4704A', '#FF6B6B'). Extract from style_guide colors.
       * **inactive_tab_color**: EXACT hex code for inactive tabs (e.g., '#999999', '#CCCCCC', '#888888'). Usually a muted gray.
+      * **IMPORTANT NOTE**: These hex codes are for INTERNAL STRUCTURE USE ONLY. They will be converted to natural language descriptions when generating image prompts to prevent them from appearing as visible text on screens.
       * **active_icon_style**: Either "filled" or "outline" - which looks better for the active tab?
       * **inactive_icon_style**: Either "filled" or "outline" - usually opposite of active (if active is filled, inactive is outline)
     - **CRITICAL: Define selection indicator (SIMPLE):**
@@ -485,13 +493,15 @@ function GenerateFirstScreenImagePrompt(
     - Tab {{ loop.index0 }}: "{{ tab_name }}" ({{ tabs.tab_icon_descriptions[loop.index0] }})
     {% endfor %}
 
-    **TAB STYLING (USE EXACT HEX CODES):**
-    - Active tab: {{ tabs.active_icon_style }} {{ tabs.icon_size }}px icon + {{ tabs.active_tab_color }} {{ tabs.label_size }}px label
-    - Inactive tabs: {{ tabs.inactive_icon_style }} {{ tabs.icon_size }}px icon + {{ tabs.inactive_tab_color }} {{ tabs.label_size }}px label
-    - Selection indicator: {{ tabs.selection_indicator }}{% if tabs.selection_indicator == 'underline_2px' %} (2px line under active tab in {{ tabs.active_tab_color }}){% endif %}{% if tabs.selection_indicator == 'pill_background' %} (rounded pill behind active tab in {{ tabs.active_tab_color }} at 15% opacity){% endif %}
-    - Tab bar: {{ tabs.tab_bar_height }}px height, icons above labels with 4px gap, evenly spaced
+    **TAB STYLING:**
+    - Active tab color: Use the primary accent color from style guide (based on {{ tabs.active_tab_color }})
+    - Active tab icons: {{ tabs.active_icon_style }} style
+    - Inactive tab color: Light gray (based on {{ tabs.inactive_tab_color }})
+    - Inactive tab icons: {{ tabs.inactive_icon_style }} style
+    - Selection indicator: {{ tabs.selection_indicator }}{% if tabs.selection_indicator == 'underline_2px' %} (thin line under active tab){% endif %}{% if tabs.selection_indicator == 'pill_background' %} (rounded background behind active tab){% endif %}
+    - Tab bar: Standard height, icons above labels with small gap, evenly spaced
 
-    **NO inventing colors. Use {{ tabs.active_tab_color }} for active, {{ tabs.inactive_tab_color }} for inactive.**
+    **CRITICAL: These color codes ({{ tabs.active_tab_color }}, {{ tabs.inactive_tab_color }}) are for styling reference ONLY. DO NOT render them as visible text on the screen.**
     {% else %}
     This app does not use bottom navigation tabs.
     {% endif %}
@@ -517,6 +527,13 @@ function GenerateFirstScreenImagePrompt(
     {% if tabs.has_tabs %}- Tab bar at bottom edge{% endif %}
     - Paint OVER entire canvas. IGNORE any device frame you see. Fill EVERY pixel.
 
+    **CRITICAL: DO NOT RENDER TECHNICAL SPECS AS TEXT**
+    - DO NOT write color codes (like #7B68EE, #999999, etc.) as visible text on the screen
+    - DO NOT write pixel values (like 72px, 24px, etc.) as visible text
+    - DO NOT write hex codes, RGB values, or any technical specifications as text
+    - These are STYLING INSTRUCTIONS ONLY - not content to display to users
+    - Use the colors and sizes specified, but never show the codes/values themselves
+
     **GENERATE THE PROMPT:**
 
     **CRITICAL: Output MUST be under 4000 characters. Use extreme brevity.**
@@ -527,21 +544,21 @@ function GenerateFirstScreenImagePrompt(
     3. **BACKGROUND**: Extract bg color from common_layout. Fill entire canvas edge-to-edge with this color.
     4. **STATUS BAR** (y=0, top edge): Time left, wifi/battery/icons right, styling from common_layout
     {% if tabs.has_tabs %}
-    5. **TAB BAR** (bottom edge, {{ tabs.tab_bar_height }}px height):
+    5. **TAB BAR** (bottom edge, standard height):
     Tabs: {{ tabs.tab_names | join(', ') }}
     {% if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none %}
-    - Active "{{ tabs.tab_names[screen_detail.active_tab_index] }}": {{ tabs.active_icon_style }} {{ tabs.icon_size }}px icon + {{ tabs.active_tab_color }} {{ tabs.label_size }}px label{% if tabs.selection_indicator == 'underline_2px' %} + 2px underline below in {{ tabs.active_tab_color }}{% endif %}{% if tabs.selection_indicator == 'pill_background' %} + rounded pill bg in {{ tabs.active_tab_color }} at 15% opacity{% endif %}
-    - Others: {{ tabs.inactive_icon_style }} {{ tabs.icon_size }}px icon + {{ tabs.inactive_tab_color }} {{ tabs.label_size }}px label
+    - Active "{{ tabs.tab_names[screen_detail.active_tab_index] }}": {{ tabs.active_icon_style }} icon in accent color + label{% if tabs.selection_indicator == 'underline_2px' %} + thin underline below{% endif %}{% if tabs.selection_indicator == 'pill_background' %} + rounded pill background{% endif %}
+    - Others: {{ tabs.inactive_icon_style }} icon in light gray + label
     {% else %}
-    - Active "{{ tabs.tab_names[0] }}": {{ tabs.active_icon_style }} {{ tabs.icon_size }}px icon + {{ tabs.active_tab_color }} {{ tabs.label_size }}px label{% if tabs.selection_indicator == 'underline_2px' %} + 2px underline{% endif %}{% if tabs.selection_indicator == 'pill_background' %} + rounded pill bg{% endif %}
-    - Others: {{ tabs.inactive_icon_style }} {{ tabs.icon_size }}px icon + {{ tabs.inactive_tab_color }} {{ tabs.label_size }}px label
+    - Active "{{ tabs.tab_names[0] }}": {{ tabs.active_icon_style }} icon in accent color + label{% if tabs.selection_indicator == 'underline_2px' %} + thin underline{% endif %}{% if tabs.selection_indicator == 'pill_background' %} + rounded pill background{% endif %}
+    - Others: {{ tabs.inactive_icon_style }} icon in light gray + label
     {% endif %}
-    Evenly spaced. Icons above labels, 4px gap.
-    6. **CONTENT**: {{ screen_detail.unique_elements }}. All buttons/interactive elements must end at least 96px above tab bar.
+    Evenly spaced. Icons above labels, small gap.
+    6. **CONTENT**: {{ screen_detail.unique_elements }}. All buttons/interactive elements must end well above tab bar.
     {% else %}
-    5. **CONTENT**: {{ screen_detail.unique_elements }}. Buttons/CTAs near bottom should leave ~32px margin from bottom edge.
+    5. **CONTENT**: {{ screen_detail.unique_elements }}. Buttons/CTAs near bottom should leave margin from bottom edge.
     {% endif %}
-    7. Colors: Use hex from style_guide
+    7. Colors: Extract color names from style_guide, apply as visual styling (NOT as text)
 
     **BREVITY RULES:**
     - Use abbreviations: "y=" not "y-coordinate", "bg", "px"
@@ -551,9 +568,10 @@ function GenerateFirstScreenImagePrompt(
     **MUST INCLUDE:**
     - Paint entire canvas edge-to-edge. ZERO margins. Fill EVERY pixel to all 4 edges.
     - Status bar at top edge{% if tabs.has_tabs %}, tab bar at bottom edge{% endif %}
-    {% if tabs.has_tabs %}- All buttons/CTAs at least 96px above tab bar{% endif %}
+    {% if tabs.has_tabs %}- All buttons/CTAs must end well above tab bar{% endif %}
     - Background color fills entire canvas corner to corner
     - If you see white space or device frame, paint OVER it completely
+    - CRITICAL: Never render color codes, hex values, or pixel measurements as visible text
 
     {{ ctx.output_format }}
   "#
@@ -584,11 +602,14 @@ function GenerateScreenImagePromptWithReference(
     {% if tabs.has_tabs %}
     Tabs: {% for tab_name in tabs.tab_names %}"{{ tab_name }}"{% if not loop.last %}, {% endif %}{% endfor %}
 
-    **TAB STYLING (EXACT):**
-    - Active: {{ tabs.active_icon_style }} {{ tabs.icon_size }}px icon + {{ tabs.active_tab_color }} {{ tabs.label_size }}px label
-    - Inactive: {{ tabs.inactive_icon_style }} {{ tabs.icon_size }}px icon + {{ tabs.inactive_tab_color }} {{ tabs.label_size }}px label
-    - Selection: {{ tabs.selection_indicator }}
-    - Bar height: {{ tabs.tab_bar_height }}px
+    **TAB STYLING:**
+    - Active tab color: Use the primary accent color from style guide (based on {{ tabs.active_tab_color }})
+    - Active tab icons: {{ tabs.active_icon_style }} style
+    - Inactive tab color: Light gray (based on {{ tabs.inactive_tab_color }})
+    - Inactive tab icons: {{ tabs.inactive_icon_style }} style
+    - Selection indicator: {{ tabs.selection_indicator }}
+
+    **CRITICAL: These color codes ({{ tabs.active_tab_color }}, {{ tabs.inactive_tab_color }}) are for styling reference ONLY. DO NOT render them as visible text on the screen.**
     {% else %}
     No tabs.
     {% endif %}
@@ -614,9 +635,9 @@ function GenerateScreenImagePromptWithReference(
     {% if tabs.has_tabs and screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none %}
     **TAB ADAPTATION (CRITICAL):**
     Reference may show different active tab. For THIS screen, recreate tab bar from scratch using these specs:
-    - Active "{{ tabs.tab_names[screen_detail.active_tab_index] }}": {{ tabs.active_icon_style }} icon + {{ tabs.active_tab_color }} label
-    - Inactive (all others): {{ tabs.inactive_icon_style }} icon + {{ tabs.inactive_tab_color }} label
-    - Selection indicator: {{ tabs.selection_indicator }}{% if tabs.selection_indicator == 'underline_2px' %} (2px line under active in {{ tabs.active_tab_color }}){% endif %}{% if tabs.selection_indicator == 'pill_background' %} (rounded pill behind active in {{ tabs.active_tab_color }} at 15% opacity){% endif %}
+    - Active "{{ tabs.tab_names[screen_detail.active_tab_index] }}": {{ tabs.active_icon_style }} icon in accent color + label
+    - Inactive (all others): {{ tabs.inactive_icon_style }} icon in light gray + label
+    - Selection indicator: {{ tabs.selection_indicator }}{% if tabs.selection_indicator == 'underline_2px' %} (thin line under active){% endif %}{% if tabs.selection_indicator == 'pill_background' %} (rounded pill behind active){% endif %}
     - Match reference tab bar's exact sizing, spacing, and positioning - only change which tab is active
     {% endif %}
 
@@ -627,6 +648,13 @@ function GenerateScreenImagePromptWithReference(
     - Status bar at top edge{% if tabs.has_tabs %}, tab bar at bottom edge{% endif %}
     - Paint OVER entire canvas. IGNORE device frame. Fill EVERY pixel.
 
+    **CRITICAL: DO NOT RENDER TECHNICAL SPECS AS TEXT**
+    - DO NOT write color codes (like #7B68EE, #999999, etc.) as visible text on the screen
+    - DO NOT write pixel values (like 72px, 24px, etc.) as visible text
+    - DO NOT write hex codes, RGB values, or any technical specifications as text
+    - These are STYLING INSTRUCTIONS ONLY - not content to display to users
+    - Use the colors and sizes specified, but never show the codes/values themselves
+
     **GENERATE PROMPT:**
 
     **CRITICAL: Under 4000 chars. Extreme brevity.**
@@ -636,20 +664,20 @@ function GenerateScreenImagePromptWithReference(
     3. **BG**: Match reference gradient/color exactly. Fill entire canvas edge-to-edge.
     4. **STATUS BAR** (top edge): Match reference positioning exactly
     {% if tabs.has_tabs %}
-    5. **TAB BAR** (bottom edge, {{ tabs.tab_bar_height }}px): Recreate from specs. Match reference sizing/spacing. ONLY change which tab is active.
+    5. **TAB BAR** (bottom edge, standard height): Recreate from specs. Match reference sizing/spacing. ONLY change which tab is active.
     Tabs: {{ tabs.tab_names | join(', ') }}
     {% if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none %}
-    - Active "{{ tabs.tab_names[screen_detail.active_tab_index] }}": {{ tabs.active_icon_style }} {{ tabs.icon_size }}px icon + {{ tabs.active_tab_color }} {{ tabs.label_size }}px label{% if tabs.selection_indicator == 'underline_2px' %} + 2px underline in {{ tabs.active_tab_color }}{% endif %}{% if tabs.selection_indicator == 'pill_background' %} + rounded pill bg in {{ tabs.active_tab_color }} at 15% opacity (match reference pill sizing){% endif %}
-    - Others: {{ tabs.inactive_icon_style }} {{ tabs.icon_size }}px icon + {{ tabs.inactive_tab_color }} {{ tabs.label_size }}px label
+    - Active "{{ tabs.tab_names[screen_detail.active_tab_index] }}": {{ tabs.active_icon_style }} icon in accent color + label{% if tabs.selection_indicator == 'underline_2px' %} + thin underline{% endif %}{% if tabs.selection_indicator == 'pill_background' %} + rounded pill background (match reference pill sizing){% endif %}
+    - Others: {{ tabs.inactive_icon_style }} icon in light gray + label
     {% else %}
-    - Active "{{ tabs.tab_names[0] }}": {{ tabs.active_icon_style }} icon + {{ tabs.active_tab_color }} label{% if tabs.selection_indicator == 'underline_2px' %} + 2px underline{% endif %}{% if tabs.selection_indicator == 'pill_background' %} + pill bg{% endif %}
-    - Others: {{ tabs.inactive_icon_style }} icon + {{ tabs.inactive_tab_color }} label
+    - Active "{{ tabs.tab_names[0] }}": {{ tabs.active_icon_style }} icon in accent color + label{% if tabs.selection_indicator == 'underline_2px' %} + thin underline{% endif %}{% if tabs.selection_indicator == 'pill_background' %} + pill background{% endif %}
+    - Others: {{ tabs.inactive_icon_style }} icon in light gray + label
     {% endif %}
-    6. **CONTENT**: {{ screen_detail.unique_elements }}. All buttons/CTAs at least 96px above tab bar.
+    6. **CONTENT**: {{ screen_detail.unique_elements }}. All buttons/CTAs well above tab bar.
     {% else %}
-    5. **CONTENT**: {{ screen_detail.unique_elements }}. Buttons/CTAs near bottom leave ~32px margin from bottom edge.
+    5. **CONTENT**: {{ screen_detail.unique_elements }}. Buttons/CTAs near bottom leave margin from bottom edge.
     {% endif %}
-    7. Match reference: colors, fonts, shadows, spacing, corner radii
+    7. Match reference: colors, fonts, shadows, spacing, corner radii (NOT as text)
 
     **BREVITY:**
     - Abbreviations: y=, bg, px
@@ -659,8 +687,9 @@ function GenerateScreenImagePromptWithReference(
     **MUST INCLUDE:**
     - Match reference (image 1). Paint on canvas (image 2). Fill EVERY pixel edge-to-edge to all 4 corners. ZERO white space.
     - Background fills entire canvas corner to corner
-    {% if tabs.has_tabs %}- Tab bar: Recreate using specified colors/styles. Match reference sizing/spacing. ONLY change which tab is active: "{{ tabs.tab_names[screen_detail.active_tab_index] if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none else tabs.tab_names[0] }}" gets {{ tabs.active_tab_color }}{% if tabs.selection_indicator == 'underline_2px' %} + underline{% endif %}{% if tabs.selection_indicator == 'pill_background' %} + pill{% endif %}, others get {{ tabs.inactive_tab_color }}{% endif %}
+    {% if tabs.has_tabs %}- Tab bar: Recreate using specified color styling. Match reference sizing/spacing. ONLY change which tab is active: "{{ tabs.tab_names[screen_detail.active_tab_index] if screen_detail.active_tab_index is defined and screen_detail.active_tab_index is not none else tabs.tab_names[0] }}" gets accent color{% if tabs.selection_indicator == 'underline_2px' %} + underline{% endif %}{% if tabs.selection_indicator == 'pill_background' %} + pill{% endif %}, others get light gray{% endif %}
     - Status bar at top edge{% if tabs.has_tabs %}, tabs at bottom edge{% endif %}
+    - CRITICAL: Never render color codes, hex values, or pixel measurements as visible text
 
     {{ ctx.output_format }}
   "#
@@ -803,7 +832,8 @@ function GenerateAppCoverImagePrompt(
 function GenerateCoverVideoPrompt(
   cover_image_url: string @description("URL of the cover image to animate"),
   app_name: string @description("Name of the app"),
-  app_description: string @description("App description")
+  app_description: string @description("App description"),
+  user_motion_prompt: string? @description("Optional user guidance for specific motion/animation (e.g., 'focus on subtle parallax', 'emphasize breathing effect', 'minimal camera movement')")
 ) -> CoverVideoPrompt {
   client ScreenshotGeneratorMed
   prompt #"
@@ -816,6 +846,12 @@ function GenerateCoverVideoPrompt(
     - App Name: {{ app_name }}
     - Description: {{ app_description }}
     - Cover Image URL: {{ cover_image_url }}
+    
+    {% if user_motion_prompt %}
+    **USER MOTION GUIDANCE:**
+    {{ user_motion_prompt }}
+    (Incorporate this guidance while maintaining the seamless loop and smooth motion requirements)
+    {% endif %}
     
     **VIDEO REQUIREMENTS:**
     

@@ -1,15 +1,30 @@
 'use client';
 
 import { Id } from '@convex/_generated/dataModel';
-import { Star, StarOff, Eye, Trash2, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, CloudUpload, ExternalLink } from 'lucide-react';
-import { useState } from 'react';
+import { Star, StarOff, Eye, Trash2, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, CloudUpload, ExternalLink, Play, Plus } from 'lucide-react';
+import { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAction, useMutation } from 'convex/react';
+import { api } from '@convex/_generated/api';
 import ImageLightbox from '@/components/ImageLightbox';
+import GenerateVideoModal from '@/components/GenerateVideoModal';
+import Toast from '@/components/Toast';
+import Link from 'next/link';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogPortal,
+  DialogOverlay,
+} from '@/components/ui/dialog';
 
 // Helper function to format compact time ago
 const formatCompactTimeAgo = (timestamp: number): string => {
@@ -37,6 +52,7 @@ interface App {
   category?: string;
   iconUrl?: string;
   coverImageUrl?: string;
+  coverVideoUrl?: string;
   status?: 'draft' | 'published';
   isDemo?: boolean;
   isFeatured: boolean;
@@ -59,7 +75,7 @@ interface AppsTableProps {
   onPublishToProd?: (appId: Id<'apps'>) => Promise<void>; // Optional - only on dev
 }
 
-export default function AppsTable({
+function AppsTable({
   apps,
   onFeature,
   onUnfeature,
@@ -70,11 +86,47 @@ export default function AppsTable({
 }: AppsTableProps) {
   const [deleteConfirmId, setDeleteConfirmId] = useState<Id<'apps'> | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<Id<'apps'> | null>(null);
-  const [lightboxImage, setLightboxImage] = useState<{ url: string; alt: string } | null>(null);
+  const [lightboxMedia, setLightboxMedia] = useState<{ 
+    url: string; 
+    alt: string; 
+    type: 'image' | 'video';
+    imageUrl?: string;
+    videoUrl?: string;
+    appId?: Id<'apps'>;
+  } | null>(null);
   const [statusPopoverId, setStatusPopoverId] = useState<Id<'apps'> | null>(null);
   const [featuredPopoverId, setFeaturedPopoverId] = useState<Id<'apps'> | null>(null);
   const [sortField, setSortField] = useState<SortField>('featured');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [generatingVideoAppId, setGeneratingVideoAppId] = useState<Id<'apps'> | null>(null);
+  const [generatingImageAppId, setGeneratingImageAppId] = useState<Id<'apps'> | null>(null);
+  const [generateCoverDialogOpen, setGenerateCoverDialogOpen] = useState<Id<'apps'> | null>(null);
+  const [removeVideoDialogOpen, setRemoveVideoDialogOpen] = useState<Id<'apps'> | null>(null);
+  const [videoModalAppId, setVideoModalAppId] = useState<Id<'apps'> | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  
+  const generateCoverVideo = useAction(api.appGenerationActions.generateAppCoverVideo);
+  const generateCoverImage = useAction(api.appGenerationActions.generateAndSaveCoverImage);
+  const removeCoverVideo = useMutation(api.apps.removeCoverVideo);
+
+  // Update lightbox when video generation completes
+  useEffect(() => {
+    if (lightboxMedia && lightboxMedia.appId && generatingVideoAppId === null) {
+      // Find the app with updated video URL
+      const updatedApp = apps.find(app => app._id === lightboxMedia.appId);
+      if (updatedApp && updatedApp.coverVideoUrl && !lightboxMedia.videoUrl) {
+        // Video generation completed! Update lightbox with new video
+        setLightboxMedia({
+          ...lightboxMedia,
+          videoUrl: updatedApp.coverVideoUrl,
+          url: updatedApp.coverVideoUrl,
+          type: 'video',
+        });
+      }
+    }
+  }, [apps, lightboxMedia, generatingVideoAppId]);
 
   const handleFeatureToggle = async (app: App) => {
     setActionLoadingId(app._id);
@@ -107,6 +159,80 @@ export default function AppsTable({
       setStatusPopoverId(null);
     } finally {
       setActionLoadingId(null);
+    }
+  };
+
+  const handleGenerateVideo = async (appId: Id<'apps'>, customPrompt?: string) => {
+    setGeneratingVideoAppId(appId);
+    try {
+      const result = await generateCoverVideo({ 
+        appId,
+        customPrompt,
+      });
+      if (result.success && result.jobId) {
+        setToastMessage('Generating cover video...');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        setToastMessage(result.error || 'Failed to start cover video generation');
+        setToastType('error');
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Error generating cover video:', error);
+      setToastMessage('Failed to generate cover video');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setGeneratingVideoAppId(null);
+    }
+  };
+
+  const handleGenerateImage = async (appId: Id<'apps'>) => {
+    setGeneratingImageAppId(appId);
+    try {
+      const result = await generateCoverImage({ appId });
+      if (result.success && result.jobId) {
+        setToastMessage('Generating cover image...');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        setToastMessage(result.error || 'Failed to start cover image generation');
+        setToastType('error');
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Error generating cover image:', error);
+      setToastMessage('Failed to generate cover image');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setGeneratingImageAppId(null);
+    }
+  };
+
+  const handleRemoveVideo = async (appId: Id<'apps'>) => {
+    try {
+      await removeCoverVideo({ appId });
+      setToastMessage('Cover video removed');
+      setToastType('success');
+      setShowToast(true);
+      // Update lightbox to remove video but keep it open
+      if (lightboxMedia) {
+        setLightboxMedia({
+          ...lightboxMedia,
+          videoUrl: undefined,
+          url: lightboxMedia.imageUrl || '',
+          type: 'image',
+        });
+      }
+      // Close confirmation dialog
+      setRemoveVideoDialogOpen(null);
+    } catch (error) {
+      console.error('Error removing cover video:', error);
+      setToastMessage('Failed to remove cover video');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -235,19 +361,13 @@ export default function AppsTable({
                 <tr key={app._id} className="hover:bg-muted/30 transition-colors">
                   {/* App Icon + Name */}
                   <td className="px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() =>
-                          app.iconUrl &&
-                          setLightboxImage({ url: app.iconUrl, alt: `${app.name} icon` })
-                        }
-                        disabled={!app.iconUrl}
-                        className={`w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 transition-all ${
-                          app.iconUrl
-                            ? 'hover:ring-2 hover:ring-primary hover:scale-105 cursor-pointer'
-                            : ''
-                        }`}
-                      >
+                    <Link 
+                      href={`/appstore/${app._id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                    >
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                         {app.iconUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -262,39 +382,174 @@ export default function AppsTable({
                             </span>
                           </div>
                         )}
-                      </button>
+                      </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{app.name}</p>
                         {app.isDemo && (
                           <span className="text-xs text-muted-foreground">Demo App</span>
                         )}
                       </div>
-                    </div>
+                    </Link>
                   </td>
 
-                  {/* Cover Image */}
+                  {/* Cover Image/Video */}
                   <td className="px-4 py-4">
-                    {app.coverImageUrl ? (
+                    {app.coverVideoUrl || app.coverImageUrl ? (
                       <button
                         onClick={() =>
-                          setLightboxImage({
-                            url: app.coverImageUrl!,
-                            alt: `${app.name} cover image`,
+                          setLightboxMedia({
+                            url: app.coverVideoUrl || app.coverImageUrl!,
+                            alt: `${app.name} cover`,
+                            type: app.coverVideoUrl ? 'video' : 'image',
+                            imageUrl: app.coverImageUrl,
+                            videoUrl: app.coverVideoUrl,
+                            appId: app._id,
                           })
                         }
-                        className="w-20 h-14 rounded-lg overflow-hidden bg-muted border transition-all hover:ring-2 hover:ring-primary hover:scale-105 cursor-pointer"
+                        className="w-20 h-14 rounded-lg overflow-hidden bg-muted border transition-all hover:ring-2 hover:ring-primary hover:scale-105 cursor-pointer relative group"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={app.coverImageUrl}
-                          alt={`${app.name} cover`}
-                          className="w-full h-full object-cover"
-                        />
+                        {app.coverVideoUrl ? (
+                          <>
+                            <video
+                              src={app.coverVideoUrl}
+                              className="w-full h-full object-cover"
+                              muted
+                              loop
+                              playsInline
+                            />
+                            {/* Blur overlay */}
+                            <div className="absolute inset-0 bg-black/5 backdrop-blur-[0.5px]" />
+                            {/* Play icon overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Play className="w-5 h-5 text-white fill-white drop-shadow-lg" />
+                            </div>
+                          </>
+                        ) : (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={app.coverImageUrl!}
+                            alt={`${app.name} cover`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        
+                        {/* Video generation overlay */}
+                        {generatingVideoAppId === app._id && (
+                          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center gap-1 rounded-lg">
+                            <motion.div
+                              className="w-1.5 h-1.5 rounded-full bg-white"
+                              animate={{ opacity: [0.3, 1, 0.3] }}
+                              transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
+                            />
+                            <motion.div
+                              className="w-1.5 h-1.5 rounded-full bg-white"
+                              animate={{ opacity: [0.3, 1, 0.3] }}
+                              transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
+                            />
+                            <motion.div
+                              className="w-1.5 h-1.5 rounded-full bg-white"
+                              animate={{ opacity: [0.3, 1, 0.3] }}
+                              transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+                            />
+                          </div>
+                        )}
                       </button>
-                    ) : (
-                      <div className="w-20 h-14 rounded-lg bg-muted/30 border border-dashed flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">No cover</span>
+                    ) : generatingImageAppId === app._id ? (
+                      <div className="w-20 h-14 rounded-lg overflow-hidden bg-muted/30 border border-primary/50 relative">
+                        {/* Animated colorful gradient blur */}
+                        <motion.div
+                          className="absolute inset-0"
+                          animate={{
+                            background: [
+                              'radial-gradient(circle at 20% 50%, rgba(139, 92, 246, 0.6) 0%, rgba(59, 130, 246, 0.4) 50%, rgba(16, 185, 129, 0.3) 100%)',
+                              'radial-gradient(circle at 80% 50%, rgba(59, 130, 246, 0.6) 0%, rgba(16, 185, 129, 0.4) 50%, rgba(139, 92, 246, 0.3) 100%)',
+                              'radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.6) 0%, rgba(139, 92, 246, 0.4) 50%, rgba(59, 130, 246, 0.3) 100%)',
+                              'radial-gradient(circle at 50% 20%, rgba(139, 92, 246, 0.6) 0%, rgba(59, 130, 246, 0.4) 50%, rgba(16, 185, 129, 0.3) 100%)',
+                              'radial-gradient(circle at 20% 50%, rgba(139, 92, 246, 0.6) 0%, rgba(59, 130, 246, 0.4) 50%, rgba(16, 185, 129, 0.3) 100%)',
+                            ],
+                          }}
+                          transition={{
+                            duration: 4,
+                            repeat: Infinity,
+                            ease: 'linear',
+                          }}
+                          style={{ filter: 'blur(20px)' }}
+                        />
+                        {/* Animated dots on top */}
+                        <div className="absolute inset-0 flex items-center justify-center gap-1">
+                          <motion.div
+                            className="w-2 h-2 rounded-full bg-white/90"
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
+                          />
+                          <motion.div
+                            className="w-2 h-2 rounded-full bg-white/90"
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
+                          />
+                          <motion.div
+                            className="w-2 h-2 rounded-full bg-white/90"
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+                          />
+                        </div>
                       </div>
+                    ) : (
+                      <Dialog
+                        open={generateCoverDialogOpen === app._id}
+                        onOpenChange={(open) => setGenerateCoverDialogOpen(open ? app._id : null)}
+                      >
+                        <DialogTrigger asChild>
+                          <button
+                            className="w-20 h-14 rounded-lg bg-muted/30 border border-dashed flex items-center justify-center hover:bg-muted/50 hover:border-primary/50 transition-all cursor-pointer group"
+                          >
+                            <Plus className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                          </button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Generate Cover Image</DialogTitle>
+                            <DialogDescription>
+                              AI will create a professional cover image for <span className="font-semibold text-foreground">{app.name}</span>
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="flex flex-col gap-4 pt-4">
+                            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border">
+                              <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                              <div className="text-sm text-muted-foreground">
+                                AI will generate a professional cover image based on your app&apos;s description and style guide. Generation takes approximately 40 seconds.
+                              </div>
+                            </div>
+                            <div className="flex gap-2 justify-end">
+                              <button
+                                onClick={() => setGenerateCoverDialogOpen(null)}
+                                className="px-4 py-2 rounded-md border hover:bg-muted transition-colors text-sm font-medium"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleGenerateImage(app._id);
+                                  // Open lightbox in generation state
+                                  setLightboxMedia({
+                                    url: '',
+                                    alt: `${app.name} cover`,
+                                    type: 'image',
+                                    imageUrl: undefined,
+                                    videoUrl: undefined,
+                                    appId: app._id,
+                                  });
+                                  setGenerateCoverDialogOpen(null);
+                                }}
+                                disabled={actionLoadingId === app._id}
+                                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Generate Cover
+                              </button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     )}
                   </td>
 
@@ -532,12 +787,80 @@ export default function AppsTable({
 
       {/* Image Lightbox */}
       <ImageLightbox
-        imageUrl={lightboxImage?.url || ''}
-        alt={lightboxImage?.alt || ''}
-        isOpen={!!lightboxImage}
-        onClose={() => setLightboxImage(null)}
+        imageUrl={lightboxMedia?.url || ''}
+        alt={lightboxMedia?.alt || ''}
+        isOpen={!!lightboxMedia}
+        onClose={() => setLightboxMedia(null)}
+        type={lightboxMedia?.type}
+        videoUrl={lightboxMedia?.videoUrl}
+        coverImageUrl={lightboxMedia?.imageUrl}
+        appId={lightboxMedia?.appId}
+        onGenerateVideo={lightboxMedia?.appId ? () => setVideoModalAppId(lightboxMedia.appId!) : undefined}
+        isGeneratingVideo={lightboxMedia?.appId === generatingVideoAppId}
+        onGenerateImage={lightboxMedia?.appId ? () => handleGenerateImage(lightboxMedia.appId!) : undefined}
+        isGeneratingImage={lightboxMedia?.appId === generatingImageAppId}
+        onRemoveVideo={lightboxMedia?.appId ? () => setRemoveVideoDialogOpen(lightboxMedia.appId!) : undefined}
+      />
+      
+      {/* Toast */}
+      <Toast
+        message={toastMessage}
+        type={toastType}
+        isOpen={showToast}
+        onClose={() => setShowToast(false)}
+      />
+
+      {/* Remove Video Confirmation Dialog */}
+      <Dialog
+        open={!!removeVideoDialogOpen}
+        onOpenChange={(open) => !open && setRemoveVideoDialogOpen(null)}
+      >
+        <DialogPortal>
+          <DialogOverlay className="z-[110]" />
+          <div className="fixed top-[50%] left-[50%] z-[110] translate-x-[-50%] translate-y-[-50%] w-full max-w-[calc(100%-2rem)] sm:max-w-lg">
+            <div className="bg-background relative grid w-full gap-4 rounded-lg border p-6 shadow-lg">
+              <DialogHeader>
+                <DialogTitle>Remove Cover Video</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to remove this cover video? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex gap-2 justify-end pt-4">
+                <button
+                  onClick={() => setRemoveVideoDialogOpen(null)}
+                  className="px-4 py-2 rounded-md border hover:bg-muted transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => removeVideoDialogOpen && handleRemoveVideo(removeVideoDialogOpen)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
+                >
+                  Remove Video
+                </button>
+              </div>
+            </div>
+          </div>
+        </DialogPortal>
+      </Dialog>
+
+      {/* Generate Video Modal */}
+      <GenerateVideoModal
+        isOpen={!!videoModalAppId}
+        onClose={() => setVideoModalAppId(null)}
+        onGenerate={(prompt) => {
+          if (videoModalAppId) {
+            handleGenerateVideo(videoModalAppId, prompt);
+            setVideoModalAppId(null);
+          }
+        }}
+        isRegenerating={!!apps.find(a => a._id === videoModalAppId)?.coverVideoUrl}
+        isGenerating={generatingVideoAppId === videoModalAppId}
       />
     </>
   );
 }
 
+// Memoize the component to prevent re-renders when apps array reference changes
+// but the actual data hasn't changed
+export default memo(AppsTable);

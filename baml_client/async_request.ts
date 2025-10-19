@@ -217,7 +217,7 @@ env?: Record<string, string | undefined>
       }
       
   async GenerateCoverVideoPrompt(
-  cover_image_url: string,app_name: string,app_description: string,
+  cover_image_url: string,app_name: string,app_description: string,user_motion_prompt?: string | null,
   __baml_options__?: BamlCallOptions<never>
   ): Promise<HTTPRequest> {
     try {
@@ -228,7 +228,7 @@ env?: Record<string, string | undefined>
       return await this.runtime.buildRequest(
       "GenerateCoverVideoPrompt",
       {
-      "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description
+      "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description,"user_motion_prompt": user_motion_prompt?? null
       },
       this.ctxManager.cloneContext(),
       __baml_options__?.tb?.__tb(),
@@ -1148,7 +1148,7 @@ env?: Record<string, string | undefined>
           }
           
       async GenerateCoverVideoPrompt(
-      cover_image_url: string,app_name: string,app_description: string,
+      cover_image_url: string,app_name: string,app_description: string,user_motion_prompt?: string | null,
       __baml_options__?: BamlCallOptions<never>
       ): Promise<HTTPRequest> {
         try {
@@ -1159,7 +1159,7 @@ env?: Record<string, string | undefined>
           return await this.runtime.buildRequest(
           "GenerateCoverVideoPrompt",
           {
-          "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description
+          "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description,"user_motion_prompt": user_motion_prompt?? null
           },
           this.ctxManager.cloneContext(),
           __baml_options__?.tb?.__tb(),

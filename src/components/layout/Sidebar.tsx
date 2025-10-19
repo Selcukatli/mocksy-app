@@ -18,7 +18,6 @@ import {
   Monitor,
   Check,
   Compass,
-  Settings,
   Pencil,
   Search,
   ShieldCheck,
@@ -203,15 +202,6 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
             </Link>
           )}
           
-          {/* Settings */}
-          <Link
-            href="/settings"
-            className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground"
-          >
-            <Settings className="w-5 h-5 flex-shrink-0" />
-            <span className="text-sm">Settings</span>
-          </Link>
-
           {/* Theme Toggle */}
           <Popover>
             <PopoverTrigger asChild>
@@ -446,22 +436,12 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
-                  <ShieldCheck className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm">Admin</span>
-                </Link>
-              )}
-              
-              {/* Settings */}
-              <Link
-                href="/settings"
-                onClick={() => onExpandedChange?.(false)}
-                className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground"
-              >
-                <Settings className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">Settings</span>
+                <ShieldCheck className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">Admin</span>
               </Link>
-
-              {/* Theme Toggle */}
+            )}
+            
+            {/* Theme Toggle */}
               <Popover>
                 <PopoverTrigger asChild>
                   <button
@@ -759,21 +739,12 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 )}
               >
-                <ShieldCheck className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">Admin</span>
-              </Link>
-            )}
-            
-            {/* Settings */}
-            <Link
-              href="/settings"
-              className="w-full h-10 flex items-center gap-3 px-3 transition-colors text-muted-foreground hover:text-foreground"
-            >
-              <Settings className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm">Settings</span>
+              <ShieldCheck className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm">Admin</span>
             </Link>
-
-            {/* Theme Toggle */}
+          )}
+          
+          {/* Theme Toggle */}
             <Popover>
               <PopoverTrigger asChild>
                 <button

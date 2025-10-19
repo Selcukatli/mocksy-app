@@ -433,7 +433,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             
         async GenerateCoverVideoPrompt(
-        cover_image_url: string,app_name: string,app_description: string,
+        cover_image_url: string,app_name: string,app_description: string,user_motion_prompt?: string | null,
         __baml_options__?: BamlCallOptions<never>
         ): Promise<types.CoverVideoPrompt> {
           try {
@@ -447,7 +447,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
           // Check if onTick is provided - route through streaming if so
           if (options.onTick) {
           const stream = this.stream.GenerateCoverVideoPrompt(
-          cover_image_url,app_name,app_description,
+          cover_image_url,app_name,app_description,user_motion_prompt,
           __baml_options__
           );
 
@@ -463,7 +463,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             const raw = await this.runtime.callFunction(
             "GenerateCoverVideoPrompt",
             {
-            "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description
+            "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description,"user_motion_prompt": user_motion_prompt?? null
             },
             this.ctxManager.cloneContext(),
             options.tb?.__tb(),
@@ -2349,7 +2349,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   }
                   
             GenerateCoverVideoPrompt(
-            cover_image_url: string,app_name: string,app_description: string,
+            cover_image_url: string,app_name: string,app_description: string,user_motion_prompt?: string | null,
             __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.CoverVideoPrompt, types.CoverVideoPrompt>
               {
@@ -2390,7 +2390,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                 const raw = this.runtime.streamFunction(
                 "GenerateCoverVideoPrompt",
                 {
-                "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description
+                "cover_image_url": cover_image_url,"app_name": app_name,"app_description": app_description,"user_motion_prompt": user_motion_prompt ?? null
                 },
                 undefined,
                 this.ctxManager.cloneContext(),

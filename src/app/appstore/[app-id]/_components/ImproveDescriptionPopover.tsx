@@ -75,7 +75,7 @@ export default function ImproveDescriptionPopover({
               id="feedback-input"
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
-              placeholder="e.g., 'Make it more playful' or 'Emphasize productivity'"
+              placeholder="e.g., &apos;Make it more playful&apos; or &apos;Emphasize productivity&apos;"
               className="w-full text-sm resize-none"
               rows={3}
               disabled={isImproving}

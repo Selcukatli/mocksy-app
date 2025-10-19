@@ -6,7 +6,7 @@ import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Sparkles, Trash2, Settings, Eye, CheckCircle, Star, MoreVertical, FileText } from 'lucide-react';
+import { Sparkles, Trash2, Settings, Eye, CheckCircle, Star, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
@@ -14,7 +14,6 @@ import AppsInCategoryCarousel from '@/components/AppsInCategoryCarousel';
 import ReviewsSection from '@/components/ReviewsSection';
 import CoverImageSelectionModal from '@/components/CoverImageSelectionModal';
 import GenerateVideoModal from '@/components/GenerateVideoModal';
-import ImproveDescriptionModal from '@/components/ImproveDescriptionModal';
 import GenerationProgressBar from '@/components/GenerationProgressBar';
 import ImproveDescriptionPopover from './ImproveDescriptionPopover';
 import { motion } from 'framer-motion';
@@ -50,7 +49,6 @@ export default function AppStorePageClient({ params }: PageProps) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPublishSuccess, setShowPublishSuccess] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-  const [isImproveModalOpen, setIsImproveModalOpen] = useState(false);
   const [isImprovePopoverOpen, setIsImprovePopoverOpen] = useState(false);
 
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
@@ -320,15 +318,12 @@ export default function AppStorePageClient({ params }: PageProps) {
         setToastType('error');
         setShowToast(true);
       }
-      
-      setIsImproveModalOpen(false);
     } catch (error) {
       console.error('Error improving description:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to improve description';
       setToastMessage(errorMessage);
       setToastType('error');
       setShowToast(true);
-      setIsImproveModalOpen(false);
     }
   }, [appId, improveDescription]);
 
@@ -779,20 +774,6 @@ export default function AppStorePageClient({ params }: PageProps) {
                         </button>
                       )}
                       
-                      {/* Improve Description */}
-                      {isAdmin && (
-                        <button
-                          onClick={() => setIsImproveModalOpen(true)}
-                          disabled={isImprovingDescription}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted/50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <FileText className="h-4 w-4" />
-                          <span className="flex-1">
-                            {isImprovingDescription ? 'Improving...' : 'Improve Description'}
-                          </span>
-                        </button>
-                      )}
-                      
                       {/* Delete App */}
                       {isAdmin && <div className="h-px bg-border my-1" />}
                       <button
@@ -949,13 +930,6 @@ export default function AppStorePageClient({ params }: PageProps) {
       onGenerate={handleGenerateCoverVideo}
       isRegenerating={!!appPreview?.app.coverVideoUrl}
       isGenerating={isVideoGenerating}
-    />
-
-    <ImproveDescriptionModal
-      isOpen={isImproveModalOpen}
-      onClose={() => setIsImproveModalOpen(false)}
-      onImprove={handleImproveDescription}
-      isImproving={isImprovingDescription}
     />
     </>
   );

@@ -50,7 +50,8 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
 
   return (
     <div 
-      className="relative w-full rounded-3xl border shadow-xl overflow-hidden"
+      onClick={() => router.push(`/appstore/${currentApp._id}`)}
+      className="relative w-full rounded-3xl border shadow-xl overflow-hidden cursor-pointer md:cursor-default"
       style={{
         background: dominantColor || 'rgba(0, 0, 0, 0.85)',
       }}
@@ -131,8 +132,8 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
           {/* App info section on solid color */}
           <div className="relative px-6 py-4 md:px-8 md:py-5 -mt-6">
             <div className="flex flex-row items-end justify-between gap-4 md:gap-6 w-full">
-              {/* Left section: Icon + App Info */}
-              <div className="flex flex-row items-center gap-4 md:gap-6 flex-1 min-w-0">
+              {/* Left section: Icon + App Info + View Details Button */}
+              <div className="flex flex-row items-center gap-3 md:gap-4 flex-1 min-w-0">
                 {/* App Icon */}
                 <motion.div
                   key={currentApp._id}
@@ -165,7 +166,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  className="flex-1 min-w-0 space-y-1 text-left"
+                  className="max-w-xs space-y-1 text-left"
                 >
                   {/* App Name */}
                   <h2 className={`text-2xl md:text-3xl font-bold truncate ${isLightBackground ? 'text-gray-900' : 'text-white'}`}>
@@ -179,13 +180,14 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                     </p>
                   )}
                 </motion.div>
-              </div>
 
-              {/* Right section: Actions */}
-              <div className="flex items-center gap-3 flex-shrink-0">
+                {/* View Details Button - hidden on mobile */}
                 <button
-                  onClick={() => router.push(`/appstore/${currentApp._id}`)}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors shadow-lg hover:shadow-xl ${
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/appstore/${currentApp._id}`);
+                  }}
+                  className={`hidden md:block px-5 py-2 rounded-full text-sm font-semibold transition-colors shadow-lg hover:shadow-xl flex-shrink-0 ${
                     isLightBackground 
                       ? 'bg-gray-900 text-white hover:bg-gray-800' 
                       : 'bg-white text-black hover:bg-white/90'
@@ -193,13 +195,19 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                 >
                   View Details
                 </button>
+              </div>
 
+              {/* Right section: Pagination & Navigation */}
+              <div className="flex items-center gap-3 flex-shrink-0">
                 {/* Pagination dots */}
                 <div className="hidden md:flex items-center gap-2">
                   {apps.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentIndex(index)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentIndex(index);
+                      }}
                       className={`h-2 rounded-full transition-all ${
                         index === currentIndex
                           ? isLightBackground ? 'w-6 bg-gray-900' : 'w-6 bg-white'
@@ -214,7 +222,10 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                 {apps.length > 1 && (
                   <div className="flex gap-2">
                     <button
-                      onClick={handlePrevious}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePrevious();
+                      }}
                       className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
                         isLightBackground 
                           ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
@@ -225,7 +236,10 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={handleNext}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNext();
+                      }}
                       className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
                         isLightBackground 
                           ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
@@ -291,8 +305,8 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
           {/* App info section */}
           <div className="relative px-6 py-4 md:px-8 md:py-5 -mt-6">
             <div className="flex flex-row items-end justify-between gap-4 md:gap-6 w-full">
-              {/* Left section: Icon + App Info */}
-              <div className="flex flex-row items-center gap-4 md:gap-6 flex-1 min-w-0">
+              {/* Left section: Icon + App Info + View Details Button */}
+              <div className="flex flex-row items-center gap-3 md:gap-4 flex-1 min-w-0">
                 {/* App Icon */}
                 <motion.div
                   key={currentApp._id}
@@ -325,7 +339,7 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  className="flex-1 min-w-0 space-y-1 text-left"
+                  className="max-w-xs space-y-1 text-left"
                 >
                   {/* App Name */}
                   <h2 className={`text-2xl md:text-3xl font-bold truncate ${isLightBackground ? 'text-gray-900' : 'text-white'}`}>
@@ -339,13 +353,14 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                     </p>
                   )}
                 </motion.div>
-              </div>
 
-              {/* Right section: Actions */}
-              <div className="flex items-center gap-3 flex-shrink-0">
+                {/* View Details Button - hidden on mobile */}
                 <button
-                  onClick={() => router.push(`/appstore/${currentApp._id}`)}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors shadow-lg hover:shadow-xl ${
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/appstore/${currentApp._id}`);
+                  }}
+                  className={`hidden md:block px-5 py-2 rounded-full text-sm font-semibold transition-colors shadow-lg hover:shadow-xl flex-shrink-0 ${
                     isLightBackground 
                       ? 'bg-gray-900 text-white hover:bg-gray-800' 
                       : 'bg-white text-black hover:bg-white/90'
@@ -353,13 +368,19 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                 >
                   View Details
                 </button>
+              </div>
 
+              {/* Right section: Pagination & Navigation */}
+              <div className="flex items-center gap-3 flex-shrink-0">
                 {/* Pagination dots */}
                 <div className="hidden md:flex items-center gap-2">
                   {apps.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentIndex(index)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentIndex(index);
+                      }}
                       className={`h-2 rounded-full transition-all ${
                         index === currentIndex
                           ? isLightBackground ? 'w-6 bg-gray-900' : 'w-6 bg-white'
@@ -374,7 +395,10 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                 {apps.length > 1 && (
                   <div className="flex gap-2">
                     <button
-                      onClick={handlePrevious}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePrevious();
+                      }}
                       className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
                         isLightBackground 
                           ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 
@@ -385,7 +409,10 @@ export default function FeaturedAppsCarousel({ apps }: FeaturedAppsCarouselProps
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={handleNext}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNext();
+                      }}
                       className={`p-2 rounded-full backdrop-blur-sm border shadow-lg hover:scale-110 transition-all ${
                         isLightBackground 
                           ? 'bg-gray-900/90 hover:bg-gray-900 text-white' 

@@ -1346,9 +1346,9 @@ export const processImproveAppStoreDescriptionJob = internalAction({
       console.log(`🔄 Processing description improvement for app: "${app.name}"`);
 
       // Fetch app screenshots to provide visual context (if user opted in)
-      let screenshotUrls: string[] = [];
       const includeScreenshots = (job.metadata?.includeScreenshots as boolean | undefined) ?? true;
       
+      let screenshotUrls: string[] = [];
       if (includeScreenshots) {
         try {
           const screenshots = await ctx.runQuery(internal.appScreens.getScreensByAppId, { appId: job.appId });
@@ -1371,7 +1371,7 @@ export const processImproveAppStoreDescriptionJob = internalAction({
           } else {
             console.log(`⚠️ User opted to include screenshots, but none found`);
           }
-        } catch (error) {
+        } catch {
           console.log("⚠️ Could not fetch screenshots, continuing without visual context");
         }
       } else {
@@ -1393,6 +1393,8 @@ export const processImproveAppStoreDescriptionJob = internalAction({
         app.category ?? null,
         app.styleGuide ?? null,
         userFeedback ?? null,
+        // Type assertion needed due to BAML's complex union type for image arrays
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         screenshotImages as any
       );
 

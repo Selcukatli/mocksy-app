@@ -30,7 +30,7 @@ class StyleEffects {
 class AppConcept {
   app_name string @description("Short, catchy app name (1-3 words max, e.g., 'FitQuest', 'ZenJournal', 'ShadowVault')")
   app_subtitle string @description("App Store subtitle (30 characters MAX, including spaces). A single punchy phrase that captures the app's core value.")
-  app_description string @description("Full App Store description (150-250 words, 8-12 sentences). Structure like real App Store listings: (1) OPENING HOOK: Compelling first sentence that captures the core value proposition. (2) KEY FEATURES: 3-5 standout features with specific details about what users can do. (3) BENEFITS: How it improves users' lives or solves their problems. (4) USE CASES: Specific scenarios or moments when users would use this. (5) CLOSING: Engaging final sentence or call-to-action. Make it persuasive, professional, and detailed enough to understand the full app experience. Example: 'Transform your fitness journey into an epic adventure with FitQuest. Every workout becomes a quest, every rep earns you experience points, and every milestone unlocks new challenges and rewards. Track your workouts with intelligent logging that learns your routines and suggests progressive overload. Join guilds with friends to tackle group challenges, compete on leaderboards, and celebrate victories together. Earn achievements for consistency, personal records, and completing themed quest lines. Your avatar grows stronger as you do, unlocking new abilities and gear that reflect your real-world progress. Perfect for gym-goers who want accountability, gamers seeking active hobbies, or anyone who finds traditional fitness tracking boring. Whether you're lifting weights, running, or doing yoga, FitQuest turns every session into an adventure. Start your quest today and discover how fun fitness can be.'")
+  app_description string @description("Full App Store description (300-400 words, ~2,100 characters). MUST be formatted with bullet points for features and natural paragraph flow following this structure:\n\n[Opening Hook - 2-3 sentences capturing core value proposition]\n\nKEY FEATURES:\n* Feature 1: Detailed description of what users can do\n* Feature 2: Detailed description of what users can do\n* Feature 3: Detailed description of what users can do\n* Feature 4: Detailed description of what users can do\n* Feature 5: Detailed description of what users can do (optional)\n\n[Benefits paragraph - naturally explain how the app improves users' lives or solves their problems without a header]\n\n[Target audience paragraph - naturally describe who would love this app and when they'd use it, without saying 'perfect for' or using a header]\n\n[Closing call-to-action sentence]\n\nExample:\n'Transform your fitness journey into an epic adventure with FitQuest. Every workout becomes a quest, every rep earns experience points, and every milestone unlocks new challenges.\n\nKEY FEATURES:\n* Quest-based workouts: Turn any exercise routine into an exciting adventure with themed quest lines and progressive challenges\n* Intelligent workout logging: Track your sessions with AI that learns your routines and suggests optimal progressive overload\n* Guild system: Join forces with friends to tackle group challenges, compete on leaderboards, and celebrate victories together\n* Achievement system: Earn badges for consistency streaks, personal records, and completing special quest lines\n* Avatar progression: Watch your character grow stronger as you do, unlocking new abilities and gear that mirror your real-world gains\n\nStay motivated with gamification that makes fitness fun and addictive. Never miss a workout when you're part of a guild counting on you. Track your progress with insights that help you improve faster and avoid plateaus.\n\nWhether you're a gym regular looking for accountability, a gamer who wants an active hobby, or someone who finds traditional fitness apps boring, you'll discover a new way to stay motivated. From lifting weights to running to yoga, every session becomes an adventure worth completing.\n\nStart your quest today and discover how fun fitness can be!'")
   app_category string @description("App Store category. Choose the single most appropriate category from: Games, Productivity, Lifestyle, Education, Health & Fitness, Business, Social Networking, Entertainment, Photo & Video, Travel, Food & Drink, Finance, News, Sports, Weather, Music, Shopping, Utilities, Medical, Reference. If user provided category_hint, use that as guidance but adjust if another category fits better based on the app's actual functionality.")
   
   colors StyleColors
@@ -100,20 +100,51 @@ function GenerateAppConcepts(
     - Examples: "Fitness made fun" (18 chars), "Your mindful companion" (23 chars)
 
     ### 3. APP DESCRIPTION
-    - **CRITICAL: Full App Store description (150-250 words, 8-12 sentences)**
-    - Structure like real App Store listings:
-      * **OPENING HOOK**: Compelling first sentence capturing core value proposition
-      * **KEY FEATURES**: 3-5 standout features with specific details about what users can do
-      * **BENEFITS**: How it improves users' lives or solves their problems
-      * **USE CASES**: Specific scenarios or moments when users would use this
-      * **CLOSING**: Engaging final sentence or call-to-action
-    - Make it persuasive, professional, and detailed enough to understand the full app experience
-    - Match the style's mood and target audience
-    - Example structure:
-      * "Transform your [problem] with [AppName]. [Opening hook explaining main benefit]."
-      * "[Feature 1 with details]. [Feature 2 with details]. [Feature 3 with details]."
-      * "[Who it's perfect for]. [Use case scenarios]."
-      * "[Closing call-to-action or inspirational statement]."
+    - **CRITICAL: Full App Store description (300-400 words, ~2,100 characters)**
+    - **MUST use natural, conversational formatting with KEY FEATURES as the only header:**
+    
+    **FORMAT TEMPLATE:**
+    ```
+    [Opening Hook - 2-3 compelling sentences capturing core value proposition]
+
+    KEY FEATURES:
+    * Feature 1 name: Detailed description of what users can do and why it matters
+    * Feature 2 name: Detailed description of what users can do and why it matters
+    * Feature 3 name: Detailed description of what users can do and why it matters
+    * Feature 4 name: Detailed description of what users can do and why it matters
+    * Feature 5 name: Detailed description of what users can do and why it matters
+
+    [Benefits paragraph - naturally explain how the app improves lives without using "BENEFITS:" header]
+
+    [Target audience paragraph - naturally describe who would love this without using "PERFECT FOR:" header]
+
+    [Closing call-to-action sentence]
+    ```
+    
+    - **Include literal line breaks** between sections (use \n\n in output)
+    - Use asterisk bullets (*) for each feature
+    - Each feature should have both a name and detailed description
+    - Write benefits and target audience as NATURAL paragraphs without headers
+    - Make it persuasive, conversational, and match the style's mood
+    - Must feel like a real App Store description, not a formal document
+    
+    **EXAMPLE OF PROPERLY FORMATTED OUTPUT:**
+    ```
+    Transform your fitness journey into an epic adventure with FitQuest. Every workout becomes a quest, every rep earns experience points, and every milestone unlocks new challenges.
+
+    KEY FEATURES:
+    * Quest-based workouts: Turn any exercise routine into an exciting adventure with themed quest lines and progressive challenges
+    * Intelligent workout logging: Track your sessions with AI that learns your routines and suggests optimal progressive overload
+    * Guild system: Join forces with friends to tackle group challenges, compete on leaderboards, and celebrate victories together
+    * Achievement system: Earn badges for consistency streaks, personal records, and completing special quest lines
+    * Avatar progression: Watch your character grow stronger as you do, unlocking new abilities and gear that mirror your real-world gains
+
+    Stay motivated with gamification that makes fitness fun and addictive. Never miss a workout when you're part of a guild counting on you. Track your progress with insights that help you improve faster and avoid plateaus.
+
+    Whether you're a gym regular looking for accountability, a gamer who wants an active hobby, or someone who finds traditional fitness apps boring, you'll discover a new way to stay motivated. From lifting weights to running to yoga, every session becomes an adventure worth completing.
+
+    Start your quest today and discover how fun fitness can be!
+    ```
 
     ### 4. APP CATEGORY
     - Choose the single most appropriate App Store category from: Games, Productivity, Lifestyle, Education, Health & Fitness, Business, Social Networking, Entertainment, Photo & Video, Travel, Food & Drink, Finance, News, Sports, Weather, Music, Shopping, Utilities, Medical, Reference

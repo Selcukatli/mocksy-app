@@ -960,6 +960,54 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             }
             
+        async ReformatAppDescription(
+        app_name: string,current_description: string,app_category?: string | null,style_guide?: string | null,user_feedback?: string | null,app_screenshots?: Image[] | null,
+        __baml_options__?: BamlCallOptions<never>
+        ): Promise<string> {
+          try {
+          const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+          const signal = options.signal;
+
+          if (signal?.aborted) {
+          throw new BamlAbortError('Operation was aborted', signal.reason);
+          }
+
+          // Check if onTick is provided - route through streaming if so
+          if (options.onTick) {
+          const stream = this.stream.ReformatAppDescription(
+          app_name,current_description,app_category,style_guide,user_feedback,app_screenshots,
+          __baml_options__
+          );
+
+          return await stream.getFinalResponse();
+          }
+
+          const collector = options.collector ? (Array.isArray(options.collector) ? options.collector :
+          [options.collector]) : [];
+          const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+          const env: Record<string, string> = Object.fromEntries(
+            Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+            );
+            const raw = await this.runtime.callFunction(
+            "ReformatAppDescription",
+            {
+            "app_name": app_name,"current_description": current_description,"app_category": app_category?? null,"style_guide": style_guide?? null,"user_feedback": user_feedback?? null,"app_screenshots": app_screenshots?? null
+            },
+            this.ctxManager.cloneContext(),
+            options.tb?.__tb(),
+            options.clientRegistry,
+            collector,
+            options.tags || {},
+            env,
+            signal,
+            options.events,
+            )
+            return raw.parsed(false) as string
+            } catch (error) {
+            throw toBamlError(error);
+            }
+            }
+            
         async ReviseStyle(
         current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
         __baml_options__?: BamlCallOptions<never>
@@ -3066,6 +3114,72 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   raw,
                   (a): string[] => a,
                   (a): string[] => a,
+                  this.ctxManager.cloneContext(),
+                  options.signal,
+                  )
+                  } catch (error) {
+                  throw toBamlError(error);
+                  }
+                  }
+                  
+            ReformatAppDescription(
+            app_name: string,current_description: string,app_category?: string | null,style_guide?: string | null,user_feedback?: string | null,app_screenshots?: Image[] | null,
+            __baml_options__?: BamlCallOptions<never>
+            ): BamlStream<string, string>
+              {
+              try {
+              const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+              const signal = options.signal;
+
+              if (signal?.aborted) {
+              throw new BamlAbortError('Operation was aborted', signal.reason);
+              }
+
+              let collector = options.collector ? (Array.isArray(options.collector) ? options.collector :
+              [options.collector]) : [];
+
+              let onTickWrapper: (() => void) | undefined;
+
+              // Create collector and wrap onTick if provided
+              if (options.onTick) {
+              const tickCollector = new Collector("on-tick-collector");
+              collector = [...collector, tickCollector];
+
+              onTickWrapper = () => {
+              const log = tickCollector.last;
+              if (log) {
+              try {
+              options.onTick!("Unknown", log);
+              } catch (error) {
+              console.error("Error in onTick callback for ReformatAppDescription", error);
+              }
+              }
+              };
+              }
+
+              const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+              const env: Record<string, string> = Object.fromEntries(
+                Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+                );
+                const raw = this.runtime.streamFunction(
+                "ReformatAppDescription",
+                {
+                "app_name": app_name,"current_description": current_description,"app_category": app_category ?? null,"style_guide": style_guide ?? null,"user_feedback": user_feedback ?? null,"app_screenshots": app_screenshots ?? null
+                },
+                undefined,
+                this.ctxManager.cloneContext(),
+                options.tb?.__tb(),
+                options.clientRegistry,
+                collector,
+                options.tags || {},
+                env,
+                signal,
+                onTickWrapper,
+                )
+                return new BamlStream<string, string>(
+                  raw,
+                  (a): string => a,
+                  (a): string => a,
                   this.ctxManager.cloneContext(),
                   options.signal,
                   )

@@ -852,6 +852,48 @@ export class BamlSyncClient {
     }
   }
   
+  ReformatAppDescription(
+      app_name: string,current_description: string,app_category?: string | null,style_guide?: string | null,user_feedback?: string | null,app_screenshots?: Image[] | null,
+      __baml_options__?: BamlCallOptions<never>
+  ): string {
+    try {
+      const options = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+      const signal = options.signal;
+
+      if (signal?.aborted) {
+        throw new BamlAbortError('Operation was aborted', signal.reason);
+      }
+
+      // Check if onTick is provided and reject for sync operations
+      if (options.onTick) {
+        throw new Error("onTick is not supported for synchronous functions. Please use the async client instead.");
+      }
+
+      const collector = options.collector ? (Array.isArray(options.collector) ? options.collector : [options.collector]) : [];
+      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      const raw = this.runtime.callFunctionSync(
+        "ReformatAppDescription",
+        {
+          "app_name": app_name,"current_description": current_description,"app_category": app_category?? null,"style_guide": style_guide?? null,"user_feedback": user_feedback?? null,"app_screenshots": app_screenshots?? null
+        },
+        this.ctxManager.cloneContext(),
+        options.tb?.__tb(),
+        options.clientRegistry,
+        collector,
+        options.tags || {},
+        env,
+        signal,
+        options.events,
+      )
+      return raw.parsed(false) as string
+    } catch (error: any) {
+      throw toBamlError(error);
+    }
+  }
+  
   ReviseStyle(
       current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
       __baml_options__?: BamlCallOptions<never>

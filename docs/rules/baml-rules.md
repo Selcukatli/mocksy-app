@@ -439,6 +439,44 @@ export const analyzeImage = action({
 });
 ```
 
+#### Passing Multiple Images (Arrays)
+When passing an array of images to BAML functions from Convex actions:
+
+```typescript
+"use node";
+import { action } from "./_generated/server";
+import { v } from "convex/values";
+import { b } from "../baml_client";
+
+export const analyzeMultipleImages = action({
+  args: {
+    imageUrls: v.array(v.string()),
+  },
+  handler: async (ctx, { imageUrls }) => {
+    // IMPORTANT: Convert URLs to objects with 'url' property
+    // BAML expects: [{ url: "..." }, { url: "..." }]
+    // NOT: ["https://...", "https://..."]
+    const images = imageUrls.map(url => ({ url }));
+
+    // Call BAML function with image array
+    const result = await b.AnalyzeImages(images);
+
+    return result;
+  }
+});
+```
+
+**Critical Image Format Rules:**
+- ✅ **CORRECT**: `{ url: "https://..." }` - Object with url property
+- ❌ **WRONG**: `"https://..."` - Raw URL string
+- ✅ **Array**: `[{ url: "..." }, { url: "..." }]` - Array of objects
+- ❌ **Array**: `["https://...", "https://..."]` - Array of strings
+
+This applies to:
+- Single images: Use `Image.fromUrl()` or `{ url: "..." }`
+- Image arrays: Use `.map(url => ({ url }))`
+- Test cases: Use `image { url "..." }` syntax
+
 #### Why CommonJS Import for Image?
 When using the Image class from BAML in Convex:
 - ❌ WRONG: `import { Image } from "@boundaryml/baml"`

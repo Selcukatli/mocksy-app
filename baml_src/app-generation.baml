@@ -290,6 +290,98 @@ function ImproveAppDescription(
 }
 
 // ============================================
+// APP DESCRIPTION REFORMATTING
+// ============================================
+
+// Reformat existing app descriptions to use modern App Store formatting
+// with KEY FEATURES as the only header and natural conversational flow
+function ReformatAppDescription(
+  app_name: string @description("The app's name"),
+  current_description: string @description("The existing app description that needs reformatting"),
+  app_category: string? @description("Optional app category (e.g., 'Health & Fitness', 'Productivity')"),
+  style_guide: string? @description("Optional style guide describing the app's visual design"),
+  user_feedback: string? @description("Optional user feedback for customization (e.g., 'Make it more playful', 'Emphasize productivity features')"),
+  app_screenshots: image[]? @description("Optional screenshots showing the app's interface and features")
+) -> string {
+  client ScreenshotGeneratorMed
+  prompt #"
+    {{ _.role("user") }}
+
+    You are reformatting an existing app description to match modern App Store best practices with natural, conversational writing.
+
+    APP NAME: {{ app_name }}
+    {% if app_category %}
+    CATEGORY: {{ app_category }}
+    {% endif %}
+    {% if style_guide %}
+    STYLE GUIDE: {{ style_guide }}
+    {% endif %}
+    {% if user_feedback %}
+    USER FEEDBACK: {{ user_feedback }}
+    (Incorporate this feedback into the reformatted description - adjust tone, emphasis, or specific details as requested)
+    {% endif %}
+    
+    {% if app_screenshots %}
+    APP SCREENSHOTS:
+    The following screenshots show the actual app interface and features. Use these to understand what the app does and ensure your description accurately reflects the visible functionality:
+    {% for screenshot in app_screenshots %}
+    {{ _.role("user") }}
+    {{ screenshot }}
+    {% endfor %}
+    {% endif %}
+
+    CURRENT DESCRIPTION:
+    {{ current_description }}
+
+    TASK: Reformat this description to use natural App Store formatting with KEY FEATURES as the only header.
+
+    ## FORMATTING REQUIREMENTS
+
+    Your output MUST follow this natural, conversational structure:
+
+    ```
+    [Opening Hook - 2-3 compelling sentences capturing core value proposition]
+
+    KEY FEATURES:
+    * Feature 1 name: Detailed description of what users can do and why it matters
+    * Feature 2 name: Detailed description of what users can do and why it matters
+    * Feature 3 name: Detailed description of what users can do and why it matters
+    * Feature 4 name: Detailed description of what users can do and why it matters
+    * Feature 5 name: Detailed description of what users can do and why it matters (if applicable)
+
+    [Benefits paragraph - naturally explain how the app improves users' lives, NO "BENEFITS:" header]
+
+    [Target audience paragraph - naturally describe who would love this, NO "PERFECT FOR:" header]
+
+    [Closing call-to-action sentence]
+    ```
+
+    ## INSTRUCTIONS
+
+    1. **Preserve Core Content**: Keep all the key features, benefits, and selling points from the original description
+    2. **Extract Features**: Identify 4-5 main features from the current description and format them as bullet points
+    3. **Natural Benefits**: Write a conversational paragraph about benefits WITHOUT using "BENEFITS:" header
+    4. **Natural Target Audience**: Describe who would love this app naturally WITHOUT using "PERFECT FOR:" header
+    5. **Add Proper Formatting**: Include literal line breaks between sections (use \n\n)
+    6. **Maintain Tone**: Keep the same writing style and mood as the original
+    7. **Length**: Aim for 300-400 words (~2,100 characters)
+
+    ## CRITICAL RULES
+
+    - **Only use "KEY FEATURES:" as a header** - everything else should be natural paragraphs
+    - **Use asterisk bullets** (*) for features
+    - **Include line breaks** between sections
+    - **Each feature** should have a name followed by colon and description
+    - **Preserve the app's unique selling points** and personality
+    - **Don't invent new features** - only use what's in the original description (but expand on them)
+    - **Make it conversational** and feel like a real App Store page, not a formal document
+    - **Never say "This game is perfect for..."** - instead write naturally like "Whether you're X or Y, you'll love..."
+
+    Return ONLY the reformatted description. Do not include any explanations or meta-commentary.
+  "#
+}
+
+// ============================================
 // APP DESIGN PLANNING
 // ============================================
 

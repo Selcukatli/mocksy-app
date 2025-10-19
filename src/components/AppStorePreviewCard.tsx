@@ -35,6 +35,9 @@ interface AppStorePreviewCardProps {
   onGenerateVideo?: () => void;
   onRemoveVideo?: () => void;
   isGeneratingVideo?: boolean;
+  isImprovingDescription?: boolean;
+  improveDescriptionSlot?: React.ReactNode; // Slot for rendering the improve description popover
+  isImprovePopoverOpen?: boolean; // Track if popover is open to control hover state
   adminActionsSlot?: React.ReactNode; // Slot for rendering admin actions
 }
 
@@ -50,11 +53,15 @@ export default function AppStorePreviewCard({
   onGenerateVideo,
   onRemoveVideo,
   isGeneratingVideo = false,
+  isImprovingDescription = false,
+  improveDescriptionSlot,
+  isImprovePopoverOpen = false,
   adminActionsSlot,
 }: AppStorePreviewCardProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
   const [showCoverMenu, setShowCoverMenu] = useState(false);
+  const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
   const [currentScreenshotIndex, setCurrentScreenshotIndex] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -484,9 +491,32 @@ export default function AppStorePreviewCard({
               transition={{ duration: 0.3, delay: 0.15 }}
               className="space-y-2"
             >
-              <p className={`text-base leading-relaxed text-muted-foreground ${!isDescriptionExpanded ? 'line-clamp-3' : ''}`}>
-                {app.description}
-              </p>
+              <div 
+                className="relative group"
+                onMouseEnter={() => isAdmin && !isImprovePopoverOpen && setIsDescriptionHovered(true)}
+                onMouseLeave={() => !isImprovePopoverOpen && setIsDescriptionHovered(false)}
+              >
+                {/* Hover background + outline for admin - hide when popover is open */}
+                {isAdmin && isDescriptionHovered && !isImprovePopoverOpen && (
+                  <div className="absolute -inset-3 border border-primary/20 bg-primary/5 rounded-lg pointer-events-none" />
+                )}
+                
+                {/* Edit with AI button with popover - keep rendered but hide visually when popover is open */}
+                {isAdmin && improveDescriptionSlot && (
+                  <div className={`absolute -top-2 -right-2 z-20 ${!isDescriptionHovered || isImprovePopoverOpen ? 'opacity-0 pointer-events-none' : ''}`}>
+                    {improveDescriptionSlot}
+                  </div>
+                )}
+                
+                <p className={`text-base leading-relaxed text-muted-foreground whitespace-pre-line ${!isDescriptionExpanded ? 'line-clamp-3' : ''}`}>
+                  {app.description}
+                </p>
+                
+                {/* Shimmer overlay during processing - always show when improving, regardless of hover */}
+                {isImprovingDescription && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-shimmer pointer-events-none rounded-lg z-10" />
+                )}
+              </div>
               {app.description.length > 200 && (
                 <button
                   onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}

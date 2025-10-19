@@ -393,7 +393,8 @@ export default defineSchema({
     type: v.union(
       v.literal("coverImage"),
       v.literal("coverVideo"),
-      v.literal("icon")
+      v.literal("icon"),
+      v.literal("improveAppDescription")
     ),
     appId: v.id("apps"),
     profileId: v.id("profiles"),

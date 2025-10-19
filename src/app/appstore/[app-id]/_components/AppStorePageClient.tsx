@@ -5,9 +5,8 @@ import { useQuery, useAction, useMutation } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { Sparkles, Trash2, Settings, Eye, CheckCircle, Star, MoreVertical } from 'lucide-react';
+import { Sparkles, Trash2, Settings, Eye, CheckCircle, Star, MoreVertical, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
@@ -15,6 +14,9 @@ import AppsInCategoryCarousel from '@/components/AppsInCategoryCarousel';
 import ReviewsSection from '@/components/ReviewsSection';
 import CoverImageSelectionModal from '@/components/CoverImageSelectionModal';
 import GenerateVideoModal from '@/components/GenerateVideoModal';
+import ImproveDescriptionModal from '@/components/ImproveDescriptionModal';
+import GenerationProgressBar from '@/components/GenerationProgressBar';
+import ImproveDescriptionPopover from './ImproveDescriptionPopover';
 import { motion } from 'framer-motion';
 import { usePageHeader } from '@/components/RootLayoutContent';
 import Toast from '@/components/Toast';
@@ -47,15 +49,9 @@ export default function AppStorePageClient({ params }: PageProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPublishSuccess, setShowPublishSuccess] = useState(false);
-  const [isSafari, setIsSafari] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-
-  // Detect Safari
-  useEffect(() => {
-    const ua = navigator.userAgent;
-    const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
-    setIsSafari(isSafariBrowser);
-  }, []);
+  const [isImproveModalOpen, setIsImproveModalOpen] = useState(false);
+  const [isImprovePopoverOpen, setIsImprovePopoverOpen] = useState(false);
 
   const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
@@ -64,6 +60,7 @@ export default function AppStorePageClient({ params }: PageProps) {
   const generationJob = useQuery(api.appGenerationJobs.getAppGenerationJobByAppId, { appId: appId as Id<'apps'> });
   const coverGenerationJob = useQuery(api.generationJobs.getActiveGenerationJob, { appId: appId as Id<'apps'>, type: "coverImage" });
   const videoGenerationJob = useQuery(api.generationJobs.getActiveGenerationJob, { appId: appId as Id<'apps'>, type: "coverVideo" });
+  const descriptionJob = useQuery(api.generationJobs.getActiveGenerationJob, { appId: appId as Id<'apps'>, type: "improveAppDescription" });
   const generateCoverImage = useAction(api.appGenerationActions.generateAppCoverImage);
   const saveCoverImage = useAction(api.appGenerationActions.saveAppCoverImage);
   const generateCoverVideo = useAction(api.appGenerationActions.generateAppCoverVideo);
@@ -72,6 +69,7 @@ export default function AppStorePageClient({ params }: PageProps) {
   const updateAppMutation = useMutation(api.apps.updateApp);
   const featureAppMutation = useMutation(api.adminActions.featureApp);
   const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
+  const improveDescription = useAction(api.appGenerationActions.improveAppStoreDescription);
 
   // Fetch reviews for this app (Convex queries are reactive and auto-update)
   const reviewsData = useQuery(api.mockReviews.getAppReviews, { appId: appId as Id<'apps'>, limit: 5 });
@@ -303,6 +301,37 @@ export default function AppStorePageClient({ params }: PageProps) {
     }
   }, [appId, unfeatureAppMutation]);
 
+  const handleImproveDescription = useCallback(async (feedback?: string, includeScreenshots?: boolean) => {
+    if (!appId) return;
+    
+    try {
+      const result = await improveDescription({ 
+        appId: appId as Id<'apps'>,
+        userFeedback: feedback,
+        includeScreenshots: includeScreenshots ?? true
+      });
+      
+      if (result.success) {
+        setToastMessage('Improving description...');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        setToastMessage(result.error || 'Failed to start improvement');
+        setToastType('error');
+        setShowToast(true);
+      }
+      
+      setIsImproveModalOpen(false);
+    } catch (error) {
+      console.error('Error improving description:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to improve description';
+      setToastMessage(errorMessage);
+      setToastType('error');
+      setShowToast(true);
+      setIsImproveModalOpen(false);
+    }
+  }, [appId, improveDescription]);
+
   // Filter out current app from similar apps
   const filteredSimilarApps = useMemo(() => {
     if (!similarApps) return [];
@@ -327,6 +356,12 @@ export default function AppStorePageClient({ params }: PageProps) {
     if (!videoGenerationJob) return false;
     return ['pending', 'generating'].includes(videoGenerationJob.status);
   }, [videoGenerationJob]);
+
+  // Check if description improvement is active
+  const isImprovingDescription = useMemo(() => {
+    if (!descriptionJob) return false;
+    return ['pending', 'generating'].includes(descriptionJob.status);
+  }, [descriptionJob]);
 
   // Calculate smart progress for cover generation (different durations for image vs video)
   const [coverGenerationProgress, setCoverGenerationProgress] = useState(0);
@@ -362,6 +397,21 @@ export default function AppStorePageClient({ params }: PageProps) {
 
     return () => clearInterval(interval);
   }, [isCoverGenerating, isVideoGenerating, coverGenerationJob, videoGenerationJob]);
+
+  // Show toast when description improvement completes
+  useEffect(() => {
+    if (!descriptionJob) return;
+    
+    if (descriptionJob.status === 'completed') {
+      setToastMessage('Description improved successfully!');
+      setToastType('success');
+      setShowToast(true);
+    } else if (descriptionJob.status === 'failed') {
+      setToastMessage(descriptionJob.error || 'Failed to improve description');
+      setToastType('error');
+      setShowToast(true);
+    }
+  }, [descriptionJob]);
 
   // Get generation status message and progress
   const generationStatus = useMemo(() => {
@@ -571,130 +621,25 @@ export default function AppStorePageClient({ params }: PageProps) {
     <>
     {/* Sticky Generation Status Bar */}
     {isGenerating && generationStatus && (
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl"
-      >
-        <div className="mx-auto max-w-4xl px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-5 md:gap-6">
-            {/* Mocksybot generating animation - breaks out of container */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, type: "spring" }}
-              className="flex-shrink-0 relative -my-8 md:-my-12"
-            >
-              {isSafari ? (
-                <Image
-                  src="/mocksy-study.gif"
-                  alt="Mocksy studying"
-                  width={160}
-                  height={160}
-                  unoptimized
-                  className="w-32 h-32 md:w-40 md:h-40"
-                />
-              ) : (
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-32 h-32 md:w-40 md:h-40"
-                >
-                  <source src="/mocksy-study.webm" type="video/webm" />
-                </video>
-              )}
-            </motion.div>
-            
-            {/* Progress content */}
-            <div className="flex-1 min-w-0 space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm md:text-base font-medium text-primary">
-                  {generationStatus.message}
-                </p>
-                <span className="text-xs md:text-sm text-muted-foreground font-mono flex-shrink-0">
-                  {Math.round(generationStatus.progress)}%
-                </span>
-              </div>
-              {/* Progress Bar */}
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-primary rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${generationStatus.progress}%` }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      <GenerationProgressBar
+        message={generationStatus.message}
+        progress={generationStatus.progress}
+      />
     )}
 
     {/* Sticky Cover Generation Status Bar */}
     {(isCoverGenerating || isVideoGenerating) && (
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl"
-      >
-        <div className="mx-auto max-w-4xl px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-5 md:gap-6">
-            {/* Mocksybot generating animation - breaks out of container */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, type: "spring" }}
-              className="flex-shrink-0 relative -my-8 md:-my-12"
-            >
-              {isSafari ? (
-                <Image
-                  src="/mocksy-study.gif"
-                  alt="Mocksy studying"
-                  width={160}
-                  height={160}
-                  unoptimized
-                  className="w-32 h-32 md:w-40 md:h-40"
-                />
-              ) : (
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-32 h-32 md:w-40 md:h-40"
-                >
-                  <source src="/mocksy-study.webm" type="video/webm" />
-                </video>
-              )}
-            </motion.div>
-            
-            {/* Message content */}
-            <div className="flex-1 min-w-0 space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm md:text-base font-medium text-primary">
-                  {isVideoGenerating ? 'Generating cover video...' : 'Generating cover image...'}
-                </p>
-                <span className="text-xs md:text-sm text-muted-foreground font-mono flex-shrink-0">
-                  {Math.round(coverGenerationProgress)}%
-                </span>
-              </div>
-              {/* Smart Progress Bar */}
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-primary rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${coverGenerationProgress}%` }}
-                  transition={{ duration: 0.3, ease: 'easeOut' }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      <GenerationProgressBar
+        message={isVideoGenerating ? 'Generating cover video...' : 'Generating cover image...'}
+        progress={coverGenerationProgress}
+      />
+    )}
+
+    {/* Sticky Description Improvement Status Bar */}
+    {isImprovingDescription && (
+      <GenerationProgressBar
+        message="Improving description..."
+      />
     )}
 
     <div className="mx-auto max-w-4xl px-4 pt-4 pb-8 sm:px-6 min-w-0">
@@ -786,6 +731,29 @@ export default function AppStorePageClient({ params }: PageProps) {
             onGenerateVideo={() => setIsVideoModalOpen(true)}
             onRemoveVideo={handleRemoveCoverVideo}
             isGeneratingVideo={isVideoGenerating}
+            isImprovingDescription={isImprovingDescription}
+            isImprovePopoverOpen={isImprovePopoverOpen}
+            improveDescriptionSlot={
+              <ImproveDescriptionPopover
+                isOpen={isImprovePopoverOpen}
+                onOpenChange={setIsImprovePopoverOpen}
+                onImprove={(feedback, includeScreenshots) => {
+                  handleImproveDescription(feedback, includeScreenshots);
+                  setIsImprovePopoverOpen(false);
+                }}
+                isImproving={isImprovingDescription}
+                hasScreenshots={(appPreview?.totalScreens ?? 0) > 0}
+                trigger={
+                  <button
+                    disabled={isImprovingDescription}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg shadow-lg hover:bg-primary/90 transition-colors text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {isImprovingDescription ? 'Improving...' : 'Edit with AI'}
+                  </button>
+                }
+              />
+            }
             adminActionsSlot={
               deletePermissions?.canDelete ? (
                 <Popover>
@@ -808,6 +776,20 @@ export default function AppStorePageClient({ params }: PageProps) {
                         >
                           <Star className={cn("h-4 w-4", isFeatured && "fill-yellow-500 text-yellow-500")} />
                           <span className="flex-1">{isFeatured ? 'Remove from Featured' : 'Feature This App'}</span>
+                        </button>
+                      )}
+                      
+                      {/* Improve Description */}
+                      {isAdmin && (
+                        <button
+                          onClick={() => setIsImproveModalOpen(true)}
+                          disabled={isImprovingDescription}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted/50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <FileText className="h-4 w-4" />
+                          <span className="flex-1">
+                            {isImprovingDescription ? 'Improving...' : 'Improve Description'}
+                          </span>
                         </button>
                       )}
                       
@@ -967,6 +949,13 @@ export default function AppStorePageClient({ params }: PageProps) {
       onGenerate={handleGenerateCoverVideo}
       isRegenerating={!!appPreview?.app.coverVideoUrl}
       isGenerating={isVideoGenerating}
+    />
+
+    <ImproveDescriptionModal
+      isOpen={isImproveModalOpen}
+      onClose={() => setIsImproveModalOpen(false)}
+      onImprove={handleImproveDescription}
+      isImproving={isImprovingDescription}
     />
     </>
   );

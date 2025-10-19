@@ -1,17 +1,27 @@
-import { query, internalMutation } from "./_generated/server";
+import { query, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 // Query: Get active generation job for an app by type
 export const getActiveGenerationJob = query({
   args: {
     appId: v.id("apps"),
-    type: v.union(v.literal("coverImage"), v.literal("coverVideo"), v.literal("icon")),
+    type: v.union(
+      v.literal("coverImage"), 
+      v.literal("coverVideo"), 
+      v.literal("icon"),
+      v.literal("improveAppDescription")
+    ),
   },
   returns: v.union(
     v.object({
       _id: v.id("generationJobs"),
       _creationTime: v.number(),
-      type: v.union(v.literal("coverImage"), v.literal("coverVideo"), v.literal("icon")),
+      type: v.union(
+        v.literal("coverImage"), 
+        v.literal("coverVideo"), 
+        v.literal("icon"),
+        v.literal("improveAppDescription")
+      ),
       appId: v.id("apps"),
       profileId: v.id("profiles"),
       status: v.union(
@@ -65,10 +75,52 @@ export const getActiveGenerationJob = query({
   },
 });
 
+// Internal query: Get job by ID
+export const getJobById = internalQuery({
+  args: {
+    jobId: v.id("generationJobs"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("generationJobs"),
+      _creationTime: v.number(),
+      type: v.union(
+        v.literal("coverImage"),
+        v.literal("coverVideo"),
+        v.literal("icon"),
+        v.literal("improveAppDescription")
+      ),
+      appId: v.id("apps"),
+      profileId: v.id("profiles"),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("generating"),
+        v.literal("completed"),
+        v.literal("failed")
+      ),
+      metadata: v.any(),
+      result: v.optional(v.string()),
+      error: v.optional(v.string()),
+      createdAt: v.number(),
+      completedAt: v.optional(v.number()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const job = await ctx.db.get(args.jobId);
+    return job;
+  },
+});
+
 // Internal mutation: Create generation job
 export const createGenerationJob = internalMutation({
   args: {
-    type: v.union(v.literal("coverImage"), v.literal("coverVideo"), v.literal("icon")),
+    type: v.union(
+      v.literal("coverImage"), 
+      v.literal("coverVideo"), 
+      v.literal("icon"),
+      v.literal("improveAppDescription")
+    ),
     appId: v.id("apps"),
     profileId: v.id("profiles"),
     metadata: v.any(),

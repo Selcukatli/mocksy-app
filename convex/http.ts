@@ -82,6 +82,15 @@ http.route({
           last_name,
         } = evt.data;
 
+        console.log("📋 Extracted webhook data:", {
+          id,
+          username,
+          first_name,
+          last_name,
+          image_url: image_url ? "present" : "null",
+          profile_image_url: profile_image_url ? "present" : "null",
+        });
+
         // Build username from available data
         let displayUsername: string | undefined = username ?? undefined;
         if (!displayUsername && first_name && last_name) {
@@ -99,13 +108,27 @@ http.route({
         // Use profile_image_url if available, fallback to image_url
         const userImageUrl = profile_image_url ?? image_url ?? undefined;
 
-        await ctx.runMutation(internal.webhooks.upsertUserFromClerk, {
+        console.log("🔄 Calling upsertUserFromClerk with:", {
           userId: id,
           username: displayUsername,
           firstName: first_name ?? undefined,
           lastName: last_name ?? undefined,
-          imageUrl: userImageUrl,
+          imageUrl: userImageUrl ? "present" : undefined,
         });
+
+        try {
+          await ctx.runMutation(internal.webhooks.upsertUserFromClerk, {
+            userId: id,
+            username: displayUsername,
+            firstName: first_name ?? undefined,
+            lastName: last_name ?? undefined,
+            imageUrl: userImageUrl,
+          });
+          console.log("✅ Successfully called upsertUserFromClerk");
+        } catch (error) {
+          console.error("❌ Error calling upsertUserFromClerk:", error);
+          throw error;
+        }
         break;
       }
 

@@ -11,11 +11,21 @@ export const upsertUserFromClerk = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    console.log("🔵 upsertUserFromClerk called with args:", {
+      userId: args.userId,
+      username: args.username,
+      firstName: args.firstName,
+      lastName: args.lastName,
+      imageUrl: args.imageUrl ? "present" : undefined,
+    });
+
     // Check if profile already exists
     const existingProfile = await ctx.db
       .query("profiles")
       .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .first();
+
+    console.log("🔍 Existing profile found:", existingProfile ? "YES" : "NO");
 
     if (existingProfile) {
       // Update profile if data has changed
@@ -36,6 +46,13 @@ export const upsertUserFromClerk = internalMutation({
       const lastNameChanged = existingProfile.lastName !== args.lastName;
       const imageUrlChanged = existingProfile.imageUrl !== args.imageUrl;
 
+      console.log("🔄 Change detection:", {
+        usernameChanged,
+        firstNameChanged,
+        lastNameChanged,
+        imageUrlChanged,
+      });
+
       if (usernameChanged) {
         updates.username = args.username;
         updates.usernameUpdatedAt = Date.now();
@@ -55,12 +72,23 @@ export const upsertUserFromClerk = internalMutation({
       }
 
       if (usernameChanged || firstNameChanged || lastNameChanged || imageUrlChanged) {
+        console.log("📝 Applying updates:", updates);
         await ctx.db.patch(existingProfile._id, updates);
-        console.log(`Updated profile for user ${args.userId}`);
+        console.log(`✅ Updated profile for user ${args.userId}`);
+      } else {
+        console.log("⏭️  No changes needed for profile");
       }
     } else {
       // Create new profile
-      await ctx.db.insert("profiles", {
+      console.log("➕ Creating new profile with data:", {
+        userId: args.userId,
+        username: args.username,
+        firstName: args.firstName,
+        lastName: args.lastName,
+        imageUrl: args.imageUrl ? "present" : undefined,
+      });
+
+      const profileId = await ctx.db.insert("profiles", {
         userId: args.userId,
         username: args.username,
         usernameUpdatedAt: args.username ? Date.now() : undefined,
@@ -72,8 +100,10 @@ export const upsertUserFromClerk = internalMutation({
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
-      console.log(`Created profile for user ${args.userId}`);
+      console.log(`✅ Created profile for user ${args.userId} with ID ${profileId}`);
     }
+
+    return null;
   },
 });
 
@@ -95,5 +125,7 @@ export const deleteUserFromClerk = internalMutation({
     } else {
       console.log(`No profile found for user ${args.userId}`);
     }
+
+    return null;
   },
 });

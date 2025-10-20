@@ -6,7 +6,7 @@ import { api } from '@convex/_generated/api';
 import { Id } from '@convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Sparkles, Trash2, Settings, Eye, CheckCircle, Star, MoreVertical } from 'lucide-react';
+import { Sparkles, Trash2, Settings, Eye, CheckCircle, Star, MoreVertical, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import AppStorePreviewCard from '@/components/AppStorePreviewCard';
@@ -17,6 +17,7 @@ import GenerateVideoModal from '@/components/GenerateVideoModal';
 import GenerationProgressBar from '@/components/GenerationProgressBar';
 import ImproveDescriptionPopover from './ImproveDescriptionPopover';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { usePageHeader } from '@/components/RootLayoutContent';
 import Toast from '@/components/Toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -51,14 +52,39 @@ export default function AppStorePageClient({ params }: PageProps) {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [isImprovePopoverOpen, setIsImprovePopoverOpen] = useState(false);
 
-  const appPreview = useQuery(api.apps.getPublicAppPreview, { appId: appId as Id<'apps'> });
+  // Quick format check to avoid Convex validation errors being logged
+  // Convex IDs are exactly 32 characters, alphanumeric, starting with a letter
+  const isValidFormat = /^[a-z][a-z0-9]{31}$/i.test(appId);
+
+  const appPreview = useQuery(
+    api.apps.getPublicAppPreview,
+    isValidFormat ? { appId: appId as Id<'apps'> } : 'skip'
+  );
   const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
-  const deletePermissions = useQuery(api.adminActions.canDeleteApp, { appId: appId as Id<'apps'> });
-  const isFeatured = useQuery(api.adminActions.isFeatured, { appId: appId as Id<'apps'> });
-  const generationJob = useQuery(api.appGenerationJobs.getAppGenerationJobByAppId, { appId: appId as Id<'apps'> });
-  const coverGenerationJob = useQuery(api.generationJobs.getActiveGenerationJob, { appId: appId as Id<'apps'>, type: "coverImage" });
-  const videoGenerationJob = useQuery(api.generationJobs.getActiveGenerationJob, { appId: appId as Id<'apps'>, type: "coverVideo" });
-  const descriptionJob = useQuery(api.generationJobs.getActiveGenerationJob, { appId: appId as Id<'apps'>, type: "improveAppDescription" });
+  const deletePermissions = useQuery(
+    api.adminActions.canDeleteApp,
+    isValidFormat ? { appId: appId as Id<'apps'> } : 'skip'
+  );
+  const isFeatured = useQuery(
+    api.adminActions.isFeatured,
+    isValidFormat ? { appId: appId as Id<'apps'> } : 'skip'
+  );
+  const generationJob = useQuery(
+    api.appGenerationJobs.getAppGenerationJobByAppId,
+    isValidFormat ? { appId: appId as Id<'apps'> } : 'skip'
+  );
+  const coverGenerationJob = useQuery(
+    api.generationJobs.getActiveGenerationJob,
+    isValidFormat ? { appId: appId as Id<'apps'>, type: "coverImage" } : 'skip'
+  );
+  const videoGenerationJob = useQuery(
+    api.generationJobs.getActiveGenerationJob,
+    isValidFormat ? { appId: appId as Id<'apps'>, type: "coverVideo" } : 'skip'
+  );
+  const descriptionJob = useQuery(
+    api.generationJobs.getActiveGenerationJob,
+    isValidFormat ? { appId: appId as Id<'apps'>, type: "improveAppDescription" } : 'skip'
+  );
   const generateCoverImage = useAction(api.appGenerationActions.generateAppCoverImage);
   const saveCoverImage = useAction(api.appGenerationActions.saveAppCoverImage);
   const generateCoverVideo = useAction(api.appGenerationActions.generateAppCoverVideo);
@@ -70,7 +96,10 @@ export default function AppStorePageClient({ params }: PageProps) {
   const improveDescription = useAction(api.appGenerationActions.improveAppStoreDescription);
 
   // Fetch reviews for this app (Convex queries are reactive and auto-update)
-  const reviewsData = useQuery(api.mockReviews.getAppReviews, { appId: appId as Id<'apps'>, limit: 5 });
+  const reviewsData = useQuery(
+    api.mockReviews.getAppReviews,
+    isValidFormat ? { appId: appId as Id<'apps'>, limit: 5 } : 'skip'
+  );
 
   // Fetch similar apps from the same category
   const similarApps = useQuery(
@@ -254,7 +283,7 @@ export default function AppStorePageClient({ params }: PageProps) {
       await deleteAppMutation({ appId: appId as Id<'apps'> });
       
       // Redirect immediately to avoid "app not found" errors from reactive queries
-      router.push('/create');
+      router.push('/generate');
     } catch (error) {
       console.error('Error deleting app:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete app';
@@ -435,6 +464,69 @@ export default function AppStorePageClient({ params }: PageProps) {
     setTitle('Appstore');
   }, [setTitle]);
 
+  // Invalid ID format - show App Not Found immediately
+  if (!isValidFormat || appPreview === null) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12 px-6">
+        <div className="max-w-2xl w-full text-center space-y-6">
+          {/* Mocksy Buzzed Animation */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-4 flex justify-center"
+          >
+            <Image
+              src="/mocksy-buzzed.gif"
+              alt="Mocksy confused"
+              width={200}
+              height={200}
+              unoptimized
+              className="w-48 h-48 md:w-52 md:h-52"
+            />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <h1 className="text-4xl md:text-5xl font-bold mb-3">App Not Found</h1>
+            <p className="text-base md:text-lg text-muted-foreground mb-8">
+              This app doesn&apos;t exist or is no longer available. It might have been removed or the link is incorrect.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center"
+          >
+            <Button
+              onClick={() => router.push('/appstore')}
+              variant="outline"
+              size="lg"
+              className="gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Browse Apps
+            </Button>
+            
+            <Button
+              onClick={() => router.push('/generate')}
+              size="lg"
+              className="gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Generate Your Own
+            </Button>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   // Loading state
   if (appPreview === undefined) {
     return (
@@ -593,20 +685,6 @@ export default function AppStorePageClient({ params }: PageProps) {
             <Skeleton className="h-4 w-96 max-w-full" />
             <Skeleton className="h-11 w-48" />
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // App not found
-  if (appPreview === null) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.16))] py-12 px-6">
-        <div className="max-w-md w-full text-center space-y-4">
-          <h1 className="text-2xl font-semibold">App Not Found</h1>
-          <p className="text-sm text-muted-foreground">
-            This app doesn&apos;t exist or is no longer available.
-          </p>
         </div>
       </div>
     );

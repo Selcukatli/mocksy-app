@@ -14,7 +14,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const resolvedParams = await params;
   const appId = resolvedParams['app-id'];
 
+  // Quick format check to avoid Convex validation errors being logged
+  // Convex IDs are exactly 32 characters, alphanumeric, starting with a letter
+  const isValidFormat = /^[a-z][a-z0-9]{31}$/i.test(appId);
+  
+  if (!isValidFormat) {
+    // Invalid format - return early without calling Convex
+    return {
+      title: 'App Not Found | Mocksy',
+      description: 'This app doesn\'t exist or is no longer available.',
+    };
+  }
+
   try {
+    // Try to fetch the app - valid format but might not exist
     const appPreview = await fetchQuery(api.apps.getPublicAppPreview, {
       appId: appId as Id<'apps'>,
     });
@@ -56,10 +69,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     };
   } catch (error) {
+    // If Convex validation fails or any other error, show "App Not Found"
     console.error('Error generating metadata:', error);
     return {
-      title: 'Mocksy - Idea to concept in seconds',
-      description: 'Turn your app or game idea into visual concepts instantly.',
+      title: 'App Not Found | Mocksy',
+      description: 'This app doesn\'t exist or is no longer available.',
     };
   }
 }

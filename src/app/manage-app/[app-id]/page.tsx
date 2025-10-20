@@ -936,7 +936,7 @@ export default function AppDetailPage({ params }: PageProps) {
                     await deleteAppMutation({ appId: appId as Id<"apps"> });
                     setShowDeleteAppConfirm(false);
                     setIsDeletingApp(false);
-                    router.push('/create');
+                    router.push('/generate');
                   } catch (error) {
                     console.error('Failed to delete app:', error);
                     setIsDeletingApp(false);

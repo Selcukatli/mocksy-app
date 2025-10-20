@@ -1,6 +1,6 @@
 import { mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
-import { getCurrentUser } from "./profiles";
+import { getCurrentUser } from "./features/profiles";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
@@ -373,7 +373,7 @@ export const publishAppToProd = action({
     console.log("🚀 [PUBLISH] Starting publish to prod for app:", args.appId);
     
     // Check if user is authenticated and is admin
-    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
     if (!profile) {
       throw new Error("Not authenticated");
     }
@@ -641,14 +641,14 @@ export const createAppFromDev = action({
     console.log("🎯 [RECEIVE] Screens count:", args.appScreens?.length || 0);
     
     // Look up admin profile by userId first (to match the same user across deployments)
-    let profile = await ctx.runQuery(api.profiles.getAdminProfileByUserId, {
+    let profile = await ctx.runQuery(api.features.profiles.queries.getAdminProfileByUserId, {
       userId: args.adminUserId,
     });
 
     // If not found, fall back to any admin profile
     if (!profile) {
       console.log("⚠️ [RECEIVE] Admin with userId", args.adminUserId, "not found, using fallback admin");
-      profile = await ctx.runQuery(api.profiles.getAnyAdminProfile);
+      profile = await ctx.runQuery(api.features.profiles.queries.getAnyAdminProfile);
     }
 
     if (!profile) {

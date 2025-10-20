@@ -43,7 +43,7 @@ export default function TemplateDetailPage() {
     templateId,
     limit: 20
   });
-  const currentProfile = useQuery(api.profiles.getCurrentProfile);
+  const currentProfile = useQuery(api.features.profiles.queries.getCurrentProfile);
 
   // Mutations
   const updateTemplate = useMutation(api.templates.updateTemplate);

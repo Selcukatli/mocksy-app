@@ -39,8 +39,8 @@ export default function ProfilePage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
 
-  const syncProfile = useMutation(api.profiles.syncMyProfileFromClerk);
-  const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
+  const syncProfile = useMutation(api.features.profiles.mutations.syncMyProfileFromClerk);
+  const isAdmin = useQuery(api.features.profiles.queries.isCurrentUserAdmin);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {

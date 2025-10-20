@@ -44,7 +44,7 @@ export const generateStyleFromDescription = action({
     }
 
     // Get or ensure profile exists via the profiles mutation
-    const result = await ctx.runMutation(api.profiles.ensureCurrentUserProfile, {});
+    const result = await ctx.runMutation(api.features.profiles.mutations.ensureCurrentUserProfile, {});
     const profileId = result.profileId;
 
     const generationPayload = args.referenceImageStorageId

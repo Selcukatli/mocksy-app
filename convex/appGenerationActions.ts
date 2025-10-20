@@ -96,7 +96,7 @@ export const generateAppConcepts = action({
       throw new Error("Must be authenticated to generate concepts");
     }
 
-    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
     if (!profile) {
       throw new Error("Failed to get user profile");
     }
@@ -305,7 +305,7 @@ export const generateAppFromConcept = action({
       throw new Error("Must be authenticated to generate app");
     }
 
-    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
     if (!profile) {
       throw new Error("Failed to get user profile");
     }
@@ -773,7 +773,7 @@ export const scheduleAppGeneration = action({
       throw new Error("Must be authenticated to generate demo app");
     }
 
-    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
     if (!profile) {
       throw new Error("Failed to get user profile");
     }
@@ -1245,7 +1245,7 @@ export const improveAppStoreDescription = action({
       }
 
       // Get user profile
-      const profile = await ctx.runQuery(api.profiles.getCurrentProfile, {});
+      const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile, {});
 
       if (!profile) {
         throw new Error("Profile not found");
@@ -1465,7 +1465,7 @@ export const generateAppCoverImage = action({
       throw new Error("Not authenticated");
     }
 
-    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
     if (!profile) {
       throw new Error("Profile not found");
     }
@@ -1679,7 +1679,7 @@ export const generateAndSaveCoverImage = action({
       throw new Error("Not authenticated");
     }
 
-    const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
     if (!profile) {
       throw new Error("Profile not found");
     }
@@ -1835,7 +1835,7 @@ export const generateAppCoverVideo = action({
         throw new Error("Not authenticated");
       }
 
-      const profile = await ctx.runQuery(api.profiles.getCurrentProfile);
+      const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
       if (!profile) {
         throw new Error("Profile not found");
       }

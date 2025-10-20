@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { getCurrentUser } from "./profiles";
+import { getCurrentUser } from "./features/profiles";
 
 /**
  * Create a new variant for a template

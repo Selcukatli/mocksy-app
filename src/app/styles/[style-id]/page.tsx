@@ -49,7 +49,7 @@ export default function StyleDetailPage() {
   const previousStatusRef = useRef<'draft' | 'published' | undefined>(undefined);
 
   const style = useQuery(api.styles.getStyleById, { styleId });
-  const currentProfile = useQuery(api.profiles.getCurrentProfile);
+  const currentProfile = useQuery(api.features.profiles.queries.getCurrentProfile);
   const publishStyle = useMutation(api.styles.publishStyle);
   const unpublishStyle = useMutation(api.styles.unpublishStyle);
   const deleteStyle = useMutation(api.styles.deleteStyle);

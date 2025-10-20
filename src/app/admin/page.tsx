@@ -34,7 +34,7 @@ export default function AdminPage() {
   }, []); // Only run once on mount - setting static values
   
   // ALWAYS call all hooks - no conditional logic
-  const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
+  const isAdmin = useQuery(api.features.profiles.queries.isCurrentUserAdmin);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');

@@ -60,7 +60,7 @@ export default function AppStorePageClient({ params }: PageProps) {
     api.apps.getPublicAppPreview,
     isValidFormat ? { appId: appId as Id<'apps'> } : 'skip'
   );
-  const isAdmin = useQuery(api.profiles.isCurrentUserAdmin);
+  const isAdmin = useQuery(api.features.profiles.queries.isCurrentUserAdmin);
   const deletePermissions = useQuery(
     api.adminActions.canDeleteApp,
     isValidFormat ? { appId: appId as Id<'apps'> } : 'skip'

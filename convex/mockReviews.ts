@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
-import { getCurrentUser } from "./profiles";
+import { getCurrentUser } from "./features/profiles";
 
 export const getAppReviews = query({
   args: { appId: v.id("apps"), limit: v.optional(v.number()) },

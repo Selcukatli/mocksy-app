@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
-import { Doc } from "./_generated/dataModel";
-import { getCurrentUser } from "./profiles";
+import { getCurrentUser } from "./features/profiles";
 
 /**
  * Create a new screenshot style

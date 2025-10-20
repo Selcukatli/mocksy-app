@@ -19,7 +19,7 @@ export default function CategoryPage({ params }: PageProps) {
   const category = decodeURIComponent(resolvedParams.category);
   const { setBreadcrumbs, setSidebarMode } = usePageHeader();
 
-  const apps = useQuery(api.features.apps.queries.getPublicDemoApps, { category });
+  const apps = useQuery(api.data.apps.getPublicDemoApps, { category });
 
   // Filter apps that have cover images for the featured carousel
   const featuredApps = useMemo(() => {

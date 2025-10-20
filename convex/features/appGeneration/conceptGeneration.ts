@@ -89,12 +89,12 @@ export const generateAppConcepts = action({
       throw new Error("Must be authenticated to generate concepts");
     }
 
-    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
+    const profile = await ctx.runQuery(api.data.profiles.getCurrentProfile);
     if (!profile) {
       throw new Error("Failed to get user profile");
     }
 
-    console.log("🎨 Generating 4 app concepts...");
+    console.log("🎨 Generating 4 app concepts in parallel...");
 
     const jobId: Id<"conceptGenerationJobs"> = await ctx.runMutation(internal.features.appGeneration.jobs.createConceptGenerationJob, {
       profileId: profile._id,
@@ -102,27 +102,73 @@ export const generateAppConcepts = action({
     });
 
     const { b } = await import("../../../baml_client");
-    const result = await b.GenerateAppConcepts(
-      args.appDescriptionInput,
-      args.categoryHint ?? null
+    
+    // Generate 4 concepts in parallel using Haiku (faster & cheaper than 1 Sonnet call)
+    const conceptResults = await Promise.all([
+      b.GenerateAppConcepts(args.appDescriptionInput, args.categoryHint ?? null, 1),
+      b.GenerateAppConcepts(args.appDescriptionInput, args.categoryHint ?? null, 1),
+      b.GenerateAppConcepts(args.appDescriptionInput, args.categoryHint ?? null, 1),
+      b.GenerateAppConcepts(args.appDescriptionInput, args.categoryHint ?? null, 1),
+    ]);
+
+    // Extract the single concept from each result
+    const concepts = conceptResults.map(result => result.concepts[0]);
+
+    console.log(`  ✓ Generated ${concepts.length} concepts`);
+
+    // Create persistent appConcepts records for each concept
+    const conceptIds = await Promise.all(
+      concepts.map(async (concept) => {
+        return await ctx.runMutation(internal.data.appConcepts.createConcept, {
+          jobId,
+          profileId: profile._id,
+          name: concept.app_name,
+          subtitle: concept.app_subtitle,
+          description: concept.app_description,
+          category: concept.app_category,
+          styleDescription: concept.style_description,
+          colors: concept.colors ?? {
+            primary: "#000000",
+            background: "#FFFFFF",
+            text: "#000000",
+            accent: "#000000",
+          },
+          typography: concept.typography ?? {
+            headlineFont: "System",
+            headlineSize: "24px",
+            headlineWeight: "bold",
+            bodyFont: "System",
+            bodySize: "16px",
+            bodyWeight: "normal",
+          },
+          effects: concept.effects ?? {
+            cornerRadius: "8px",
+            shadowStyle: "none",
+            designPhilosophy: "Clean and simple",
+          },
+          iconPrompt: concept.app_icon_prompt,
+          coverPrompt: concept.cover_image_prompt,
+        });
+      })
     );
 
-    console.log(`  ✓ Generated ${result.concepts.length} concepts`);
+    console.log(`  ✓ Created ${conceptIds.length} persistent concept records`);
 
     await ctx.runMutation(internal.features.appGeneration.jobs.updateConceptsText, {
       jobId,
-      concepts: result.concepts,
+      concepts: concepts,
       status: "generating_images",
     });
 
     await ctx.scheduler.runAfter(0, internal.features.appGeneration.conceptGeneration.generateConceptImages, {
       jobId,
-      concepts: result.concepts,
+      conceptIds,
+      concepts: concepts,
     });
 
     return {
       jobId,
-      concepts: result.concepts,
+      concepts: concepts,
     };
   },
 });
@@ -133,6 +179,7 @@ export const generateAppConcepts = action({
 export const generateConceptImages = internalAction({
   args: {
     jobId: v.id("conceptGenerationJobs"),
+    conceptIds: v.array(v.id("appConcepts")),
     concepts: v.array(
       v.object({
         app_name: v.string(),
@@ -197,13 +244,31 @@ export const generateConceptImages = internalAction({
             const coverUrl = coverResult.images?.[0]?.url;
 
             if (iconUrl && coverUrl) {
+              // Download images to Convex storage using existing storeFromUrl
+              const [iconStorageId, coverStorageId] = await Promise.all([
+                ctx.runAction(internal.fileStorage.files.storeFromUrl, {
+                  sourceUrl: iconUrl,
+                }),
+                ctx.runAction(internal.fileStorage.files.storeFromUrl, {
+                  sourceUrl: coverUrl,
+                }),
+              ]);
+
+              // Update the appConcept with storage IDs
+              await ctx.runMutation(internal.data.appConcepts.updateConceptImages, {
+                conceptId: args.conceptIds[index],
+                iconStorageId,
+                coverImageStorageId: coverStorageId,
+              });
+
+              // Also update the job's concept array for backward compatibility
               await ctx.runMutation(internal.features.appGeneration.jobs.updateConceptImages, {
                 jobId: args.jobId,
                 conceptIndex: index,
                 iconUrl,
                 coverUrl,
               });
-              console.log(`  ✓ [Concept ${index + 1}] Images generated`);
+              console.log(`  ✓ [Concept ${index + 1}] Images generated and stored`);
             } else {
               console.log(`  ✗ [Concept ${index + 1}] Failed to generate images`);
             }

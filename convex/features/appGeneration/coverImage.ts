@@ -25,7 +25,7 @@ export const generateAppCoverImage = action({
     error?: string;
   }> => {
     // 1. Fetch app details
-    const app = await ctx.runQuery(api.features.apps.queries.getApp, {
+    const app = await ctx.runQuery(api.data.apps.getApp, {
       appId: args.appId,
     });
     if (!app) {
@@ -38,7 +38,7 @@ export const generateAppCoverImage = action({
       throw new Error("Not authenticated");
     }
 
-    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
+    const profile = await ctx.runQuery(api.data.profiles.getCurrentProfile);
     if (!profile) {
       throw new Error("Profile not found");
     }
@@ -69,7 +69,7 @@ export const generateAppCoverImage = action({
       });
 
       // 5. Fetch app screens
-      const screens = await ctx.runQuery(api.appScreens.getAppScreens, {
+      const screens = await ctx.runQuery(api.data.appScreens.getAppScreens, {
         appId: args.appId,
       });
 
@@ -172,7 +172,7 @@ export const saveAppCoverImage = action({
   }> => {
     try {
       // 1. Check ownership (getApp includes auth check)
-      const app = await ctx.runQuery(api.features.apps.queries.getApp, { appId: args.appId });
+      const app = await ctx.runQuery(api.data.apps.getApp, { appId: args.appId });
       if (!app) {
         throw new Error("App not found or access denied");
       }
@@ -191,7 +191,7 @@ export const saveAppCoverImage = action({
       console.log(`  ✓ Uploaded: ${storageId}`);
 
       // 4. Update app with cover image
-      await ctx.runMutation(internal.features.apps.internal.updateAIGeneratedApp, {
+      await ctx.runMutation(internal.data.apps.updateAIGeneratedApp, {
         appId: args.appId,
         coverImageStorageId: storageId,
       });
@@ -239,7 +239,7 @@ export const generateAndSaveCoverImage = action({
     error?: string;
   }> => {
     // 1. Fetch app details
-    const app = await ctx.runQuery(api.features.apps.queries.getApp, {
+    const app = await ctx.runQuery(api.data.apps.getApp, {
       appId: args.appId,
     });
     if (!app) {
@@ -252,7 +252,7 @@ export const generateAndSaveCoverImage = action({
       throw new Error("Not authenticated");
     }
 
-    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
+    const profile = await ctx.runQuery(api.data.profiles.getCurrentProfile);
     if (!profile) {
       throw new Error("Profile not found");
     }
@@ -280,7 +280,7 @@ export const generateAndSaveCoverImage = action({
       });
 
       // 5. Fetch app screens
-      const screens = await ctx.runQuery(api.appScreens.getAppScreens, {
+      const screens = await ctx.runQuery(api.data.appScreens.getAppScreens, {
         appId: args.appId,
       });
       const screenNames: string[] = screens.map((s: { name: string }) => s.name);
@@ -329,7 +329,7 @@ export const generateAndSaveCoverImage = action({
       console.log(`  ✅ Saved to storage: ${storageId}`);
 
       // 9. Update app with the new cover image
-      await ctx.runMutation(internal.features.apps.internal.updateAIGeneratedApp, {
+      await ctx.runMutation(internal.data.apps.updateAIGeneratedApp, {
         appId: args.appId,
         name: app.name,
         coverImageStorageId: storageId,

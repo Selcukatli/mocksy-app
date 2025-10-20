@@ -22,7 +22,7 @@ import type { BamlRuntime, BamlCtxManager, ClientRegistry, Image, Audio, Pdf, Vi
 import { toBamlError, HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {AppConcept, AppConceptsOutput, AppScreenPromptsOutput, AppStructure, Avatar, Background, BasicResponse, Character, CharacterInScene, Composition, CoverImagePrompt, CoverVideoPrompt, DemoAppOutput, DetailedResponse, DeviceImageScore, DeviceSpec, FontStyle, HeaderText, ImprovedDescriptionOutput, LayoutConfig, ModelTestResponse, Outfit, PromptStructure, PromptStyle, PromptTechnical, Scene, ScreenDetail, ScreenImagePrompt, ScreenshotConfig, ScreenshotPromptStructured, ScreenshotSetInput, ScreenshotTreatment, StyleColors, StyleConfig, StyleDemoOutput, StyleDemoScreenshotConfig, StyleEffects, StyleGenerationOutput, StyleRevisionOutput, StyleTypography, Subject, TabStructure, TextConfig, VisionTestResponse} from "./types"
+import type {AppConcept, AppConceptsOutput, AppScreenPromptsOutput, AppStructure, CoverImagePrompt, CoverVideoPrompt, DemoAppOutput, ImprovedDescriptionOutput, ModelTestResponse, ScreenDetail, ScreenImagePrompt, StyleColors, StyleEffects, StyleTypography, TabStructure, VisionTestResponse} from "./types"
 import type TypeBuilder from "./type_builder"
 import type * as events from "./events"
 
@@ -36,81 +36,6 @@ type BamlCallOptions<EventsT = never> = {
 export class HttpRequest {
   constructor(private runtime: BamlRuntime, private ctxManager: BamlCtxManager) {}
 
-  
-  AnalyzeAvatar(
-      image: Image,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "AnalyzeAvatar",
-        {
-          "image": image
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  DetailedAnalysisGPT5(
-      query: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "DetailedAnalysisGPT5",
-        {
-          "query": query
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  DetailedAnalysisGPT5Nano(
-      query: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "DetailedAnalysisGPT5Nano",
-        {
-          "query": query
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
   
   GenerateApp(
       app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
@@ -138,7 +63,7 @@ export class HttpRequest {
   }
   
   GenerateAppConcepts(
-      app_description_input: string,category_hint?: string | null,
+      app_description_input: string,category_hint?: string | null,num_concepts: number,
       __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
@@ -149,7 +74,7 @@ export class HttpRequest {
       return this.runtime.buildRequestSync(
         "GenerateAppConcepts",
         {
-          "app_description_input": app_description_input,"category_hint": category_hint?? null
+          "app_description_input": app_description_input,"category_hint": category_hint?? null,"num_concepts": num_concepts
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -262,31 +187,6 @@ export class HttpRequest {
     }
   }
   
-  GenerateScene(
-      scene_prompt: string,art_style: string,characters: types.Character[],
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateScene",
-        {
-          "scene_prompt": scene_prompt,"art_style": art_style,"characters": characters
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
   GenerateScreenImagePromptWithReference(
       app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
       __baml_options__?: BamlCallOptions<never>
@@ -300,106 +200,6 @@ export class HttpRequest {
         "GenerateScreenImagePromptWithReference",
         {
           "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  GenerateScreenshotPrompt(
-      text: types.TextConfig,layout: types.LayoutConfig,style: types.StyleConfig,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateScreenshotPrompt",
-        {
-          "text": text,"layout": layout,"style": style
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  GenerateScreenshotSet(
-      input: types.ScreenshotSetInput,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateScreenshotSet",
-        {
-          "input": input
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  GenerateStyleDemoScreenshots(
-      style_config: types.StyleConfig,style_name: string,screenshot_count?: number | null,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateStyleDemoScreenshots",
-        {
-          "style_config": style_config,"style_name": style_name,"screenshot_count": screenshot_count?? null
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  GenerateStyleFromDescription(
-      description: string,style_name?: string | null,reference_image?: Image | null,background_style?: string | null,text_style?: string | null,device_style?: string | null,decorative_elements?: string | null,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateStyleFromDescription",
-        {
-          "description": description,"style_name": style_name?? null,"reference_image": reference_image?? null,"background_style": background_style?? null,"text_style": text_style?? null,"device_style": device_style?? null,"decorative_elements": decorative_elements?? null
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -437,56 +237,6 @@ export class HttpRequest {
     }
   }
   
-  ListGeneratorGPT5(
-      topic: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "ListGeneratorGPT5",
-        {
-          "topic": topic
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  ListGeneratorGPT5Nano(
-      topic: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "ListGeneratorGPT5Nano",
-        {
-          "topic": topic
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
   ReformatAppDescription(
       app_name: string,current_description: string,app_category?: string | null,style_guide?: string | null,user_feedback?: string | null,app_screenshots?: Image[] | null,
       __baml_options__?: BamlCallOptions<never>
@@ -500,156 +250,6 @@ export class HttpRequest {
         "ReformatAppDescription",
         {
           "app_name": app_name,"current_description": current_description,"app_category": app_category?? null,"style_guide": style_guide?? null,"user_feedback": user_feedback?? null,"app_screenshots": app_screenshots?? null
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  ReviseStyle(
-      current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "ReviseStyle",
-        {
-          "current_style": current_style,"revision_prompt": revision_prompt,"new_style_name": new_style_name?? null,"reference_image": reference_image?? null
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  ScoreDeviceReferenceImage(
-      device_image: Image,expected_frame_style: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "ScoreDeviceReferenceImage",
-        {
-          "device_image": device_image,"expected_frame_style": expected_frame_style
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  SimpleStringGPT5(
-      input: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "SimpleStringGPT5",
-        {
-          "input": input
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  SimpleStringGPT5Nano(
-      input: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "SimpleStringGPT5Nano",
-        {
-          "input": input
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  StructuredResponseGPT5(
-      question: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "StructuredResponseGPT5",
-        {
-          "question": question
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        false,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  StructuredResponseGPT5Nano(
-      question: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "StructuredResponseGPT5Nano",
-        {
-          "question": question
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -993,81 +593,6 @@ export class HttpStreamRequest {
   constructor(private runtime: BamlRuntime, private ctxManager: BamlCtxManager) {}
 
   
-  AnalyzeAvatar(
-      image: Image,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "AnalyzeAvatar",
-        {
-          "image": image
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  DetailedAnalysisGPT5(
-      query: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "DetailedAnalysisGPT5",
-        {
-          "query": query
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  DetailedAnalysisGPT5Nano(
-      query: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "DetailedAnalysisGPT5Nano",
-        {
-          "query": query
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
   GenerateApp(
       app_description_input?: string | null,category_hint?: string | null,ui_style?: string | null,
       __baml_options__?: BamlCallOptions<never>
@@ -1094,7 +619,7 @@ export class HttpStreamRequest {
   }
   
   GenerateAppConcepts(
-      app_description_input: string,category_hint?: string | null,
+      app_description_input: string,category_hint?: string | null,num_concepts: number,
       __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
@@ -1105,7 +630,7 @@ export class HttpStreamRequest {
       return this.runtime.buildRequestSync(
         "GenerateAppConcepts",
         {
-          "app_description_input": app_description_input,"category_hint": category_hint?? null
+          "app_description_input": app_description_input,"category_hint": category_hint?? null,"num_concepts": num_concepts
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -1218,31 +743,6 @@ export class HttpStreamRequest {
     }
   }
   
-  GenerateScene(
-      scene_prompt: string,art_style: string,characters: types.Character[],
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateScene",
-        {
-          "scene_prompt": scene_prompt,"art_style": art_style,"characters": characters
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
   GenerateScreenImagePromptWithReference(
       app_name: string,style_guide: string,common_layout: string,tabs: types.TabStructure,screen_detail: types.ScreenDetail,
       __baml_options__?: BamlCallOptions<never>
@@ -1256,106 +756,6 @@ export class HttpStreamRequest {
         "GenerateScreenImagePromptWithReference",
         {
           "app_name": app_name,"style_guide": style_guide,"common_layout": common_layout,"tabs": tabs,"screen_detail": screen_detail
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  GenerateScreenshotPrompt(
-      text: types.TextConfig,layout: types.LayoutConfig,style: types.StyleConfig,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateScreenshotPrompt",
-        {
-          "text": text,"layout": layout,"style": style
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  GenerateScreenshotSet(
-      input: types.ScreenshotSetInput,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateScreenshotSet",
-        {
-          "input": input
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  GenerateStyleDemoScreenshots(
-      style_config: types.StyleConfig,style_name: string,screenshot_count?: number | null,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateStyleDemoScreenshots",
-        {
-          "style_config": style_config,"style_name": style_name,"screenshot_count": screenshot_count?? null
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  GenerateStyleFromDescription(
-      description: string,style_name?: string | null,reference_image?: Image | null,background_style?: string | null,text_style?: string | null,device_style?: string | null,decorative_elements?: string | null,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "GenerateStyleFromDescription",
-        {
-          "description": description,"style_name": style_name?? null,"reference_image": reference_image?? null,"background_style": background_style?? null,"text_style": text_style?? null,"device_style": device_style?? null,"decorative_elements": decorative_elements?? null
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -1393,56 +793,6 @@ export class HttpStreamRequest {
     }
   }
   
-  ListGeneratorGPT5(
-      topic: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "ListGeneratorGPT5",
-        {
-          "topic": topic
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  ListGeneratorGPT5Nano(
-      topic: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "ListGeneratorGPT5Nano",
-        {
-          "topic": topic
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
   ReformatAppDescription(
       app_name: string,current_description: string,app_category?: string | null,style_guide?: string | null,user_feedback?: string | null,app_screenshots?: Image[] | null,
       __baml_options__?: BamlCallOptions<never>
@@ -1456,156 +806,6 @@ export class HttpStreamRequest {
         "ReformatAppDescription",
         {
           "app_name": app_name,"current_description": current_description,"app_category": app_category?? null,"style_guide": style_guide?? null,"user_feedback": user_feedback?? null,"app_screenshots": app_screenshots?? null
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  ReviseStyle(
-      current_style: types.StyleGenerationOutput,revision_prompt: string,new_style_name?: string | null,reference_image?: Image | null,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "ReviseStyle",
-        {
-          "current_style": current_style,"revision_prompt": revision_prompt,"new_style_name": new_style_name?? null,"reference_image": reference_image?? null
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  ScoreDeviceReferenceImage(
-      device_image: Image,expected_frame_style: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "ScoreDeviceReferenceImage",
-        {
-          "device_image": device_image,"expected_frame_style": expected_frame_style
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  SimpleStringGPT5(
-      input: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "SimpleStringGPT5",
-        {
-          "input": input
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  SimpleStringGPT5Nano(
-      input: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "SimpleStringGPT5Nano",
-        {
-          "input": input
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  StructuredResponseGPT5(
-      question: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "StructuredResponseGPT5",
-        {
-          "question": question
-        },
-        this.ctxManager.cloneContext(),
-        __baml_options__?.tb?.__tb(),
-        __baml_options__?.clientRegistry,
-        true,
-        env,
-      )
-    } catch (error) {
-      throw toBamlError(error);
-    }
-  }
-  
-  StructuredResponseGPT5Nano(
-      question: string,
-      __baml_options__?: BamlCallOptions<never>
-  ): HTTPRequest {
-    try {
-      const rawEnv = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-      const env: Record<string, string> = Object.fromEntries(
-        Object.entries(rawEnv).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-      return this.runtime.buildRequestSync(
-        "StructuredResponseGPT5Nano",
-        {
-          "question": question
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),

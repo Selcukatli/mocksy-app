@@ -12,46 +12,11 @@ import { fetchWithRetry } from "./helpers";
 
 /**
  * Public: Generate full app from selected concept
- * Takes concept data (already has icon/cover URLs), downloads images,
- * generates app structure and screenshots
+ * Takes conceptId, fetches the concept data, and generates app
  */
 export const generateAppFromConcept = action({
   args: {
-    concept: v.object({
-      app_name: v.string(),
-      app_subtitle: v.string(),
-      app_description: v.string(),
-      app_category: v.string(),
-      style_description: v.string(),
-      icon_url: v.optional(v.string()),
-      cover_url: v.optional(v.string()),
-      // Structured design system fields
-      colors: v.optional(
-        v.object({
-          primary: v.string(),
-          background: v.string(),
-          text: v.string(),
-          accent: v.string(),
-        })
-      ),
-      typography: v.optional(
-        v.object({
-          headlineFont: v.string(),
-          headlineSize: v.string(),
-          headlineWeight: v.string(),
-          bodyFont: v.string(),
-          bodySize: v.string(),
-          bodyWeight: v.string(),
-        })
-      ),
-      effects: v.optional(
-        v.object({
-          cornerRadius: v.string(),
-          shadowStyle: v.string(),
-          designPhilosophy: v.string(),
-        })
-      ),
-    }),
+    conceptId: v.id("appConcepts"),
     skipScreenshots: v.optional(v.boolean()), // If true, only download images and create app, skip screenshot generation
     numScreens: v.optional(v.number()), // Default: 5
     screenshotSizeId: v.optional(v.id("screenshotSizes")),
@@ -67,22 +32,39 @@ export const generateAppFromConcept = action({
       throw new Error("Must be authenticated to generate app");
     }
 
-    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
+    const profile = await ctx.runQuery(api.data.profiles.getCurrentProfile);
     if (!profile) {
       throw new Error("Failed to get user profile");
     }
 
+    // Fetch the concept
+    const concept = await ctx.runQuery(internal.data.appConcepts.getConceptByIdInternal, {
+      conceptId: args.conceptId,
+    });
+
+    if (!concept) {
+      throw new Error("Concept not found");
+    }
+
+    // Verify ownership
+    if (concept.profileId !== profile._id) {
+      throw new Error("Unauthorized to use this concept");
+    }
+
     const numScreens = args.numScreens || 5;
 
-    console.log(`🚀 Generating full app from concept: ${args.concept.app_name}`);
+    console.log(`🚀 Generating full app from concept: ${concept.name}`);
 
     // Create placeholder app with concept data
-    const appId: Id<"apps"> = await ctx.runMutation(internal.features.apps.internal.createAIGeneratedApp, {
+    const appId: Id<"apps"> = await ctx.runMutation(internal.data.apps.createAIGeneratedApp, {
       profileId: profile._id,
-      name: args.concept.app_name,
-      description: `${args.concept.app_subtitle}. ${args.concept.app_description}`,
-      category: args.concept.app_category,
-      styleGuide: args.concept.style_description,
+      conceptId: args.conceptId,
+      name: concept.name,
+      description: `${concept.subtitle}. ${concept.description}`,
+      category: concept.category,
+      styleGuide: concept.styleDescription,
+      iconStorageId: concept.iconStorageId,
+      coverImageStorageId: concept.coverImageStorageId,
     });
 
     // Create job to track progress
@@ -101,7 +83,7 @@ export const generateAppFromConcept = action({
       profileId: profile._id,
       appId,
       jobId,
-      concept: args.concept,
+      conceptId: args.conceptId,
       skipScreenshots: args.skipScreenshots || false,
       numScreens,
       screenshotSizeId: args.screenshotSizeId,
@@ -116,7 +98,7 @@ export const generateAppFromConcept = action({
  * Downloads icon/cover, generates structure + screenshots
  * 
  * Progress allocation:
- * - 20%: Download + store icon/cover images
+ * - 20%: Download + store icon/cover images (SKIPPED if already in storage)
  * - 30%: Generate app structure plan
  * - 50%: Generate first screenshot
  * - 100%: Generate remaining screenshots (in parallel)
@@ -126,94 +108,52 @@ export const generateAppFromConceptInternal = internalAction({
     profileId: v.id("profiles"),
     appId: v.id("apps"),
     jobId: v.id("appGenerationJobs"),
-    concept: v.object({
-      app_name: v.string(),
-      app_subtitle: v.string(),
-      app_description: v.string(),
-      app_category: v.string(),
-      style_description: v.string(),
-      icon_url: v.optional(v.string()),
-      cover_url: v.optional(v.string()),
-      // Structured design system fields
-      colors: v.optional(
-        v.object({
-          primary: v.string(),
-          background: v.string(),
-          text: v.string(),
-          accent: v.string(),
-        })
-      ),
-      typography: v.optional(
-        v.object({
-          headlineFont: v.string(),
-          headlineSize: v.string(),
-          headlineWeight: v.string(),
-          bodyFont: v.string(),
-          bodySize: v.string(),
-          bodyWeight: v.string(),
-        })
-      ),
-      effects: v.optional(
-        v.object({
-          cornerRadius: v.string(),
-          shadowStyle: v.string(),
-          designPhilosophy: v.string(),
-        })
-      ),
-    }),
+    conceptId: v.id("appConcepts"),
     skipScreenshots: v.boolean(),
     numScreens: v.number(),
     screenshotSizeId: v.optional(v.id("screenshotSizes")),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    console.log(`🎬 Generating app from concept: ${args.concept.app_name}`);
+    // Fetch the concept
+    const concept = await ctx.runQuery(internal.data.appConcepts.getConceptByIdInternal, {
+      conceptId: args.conceptId,
+    });
+
+    if (!concept) {
+      throw new Error("Concept not found");
+    }
+
+    console.log(`🎬 Generating app from concept: ${concept.name}`);
 
     try {
-      // ===== PHASE 1: Download and store images (20% progress) =====
-      console.log("📥 Phase 1: Downloading icon and cover images...");
+      // ===== PHASE 1: Images already in storage (20% progress) =====
+      console.log("📥 Phase 1: Checking images in storage...");
       await ctx.runMutation(internal.features.appGeneration.jobs.updateAppGenerationJob, {
         jobId: args.jobId,
         status: "downloading_images",
-        currentStep: "Downloading icon and cover images...",
+        currentStep: "Verifying icon and cover images...",
         progressPercentage: 0,
       });
 
-      let iconStorageId: Id<"_storage"> | undefined;
-      let coverStorageId: Id<"_storage"> | undefined;
+      // Images are already in Convex storage from concept generation
+      const iconStorageId = concept.iconStorageId;
+      const coverStorageId = concept.coverImageStorageId;
 
-      // Download and store icon if available
-      if (args.concept.icon_url) {
-        console.log("  → Downloading icon...");
-        const iconResponse = await fetchWithRetry(args.concept.icon_url);
-        const iconBlob = await iconResponse.blob();
-        iconStorageId = await ctx.storage.store(iconBlob);
-        console.log(`  ✓ Icon stored: ${iconStorageId}`);
+      if (!iconStorageId || !coverStorageId) {
+        throw new Error("Concept images not found in storage");
       }
 
-      // Download and store cover if available
-      if (args.concept.cover_url) {
-        console.log("  → Downloading cover...");
-        const coverResponse = await fetchWithRetry(args.concept.cover_url);
-        const coverBlob = await coverResponse.blob();
-        coverStorageId = await ctx.storage.store(coverBlob);
-        console.log(`  ✓ Cover stored: ${coverStorageId}`);
-      }
-
-      // Update app with stored images
-      await ctx.runMutation(internal.features.apps.internal.updateAIGeneratedApp, {
-        appId: args.appId,
-        iconStorageId,
-        coverImageStorageId: coverStorageId,
-      });
+      console.log(`  ✓ Icon found: ${iconStorageId}`);
+      console.log(`  ✓ Cover found: ${coverStorageId}`);
 
       await ctx.runMutation(internal.features.appGeneration.jobs.updateAppGenerationJob, {
         jobId: args.jobId,
         progressPercentage: 20,
-        currentStep: "Images downloaded",
+        currentStep: "Images verified",
       });
 
-      console.log("✅ Phase 1 complete: Images downloaded and stored");
+      console.log("✅ Phase 1 complete: Images verified in storage");
 
       // If skipScreenshots is true, stop here and mark as preview_ready
       if (args.skipScreenshots) {
@@ -238,10 +178,10 @@ export const generateAppFromConceptInternal = internalAction({
 
       const { b } = await import("../../../baml_client");
       const appStructure = await b.GenerateAppDesignPlan(
-        args.concept.app_name,
-        args.concept.app_description,
-        args.concept.app_category,
-        args.concept.style_description,
+        concept.name,
+        concept.description,
+        concept.category ?? "Lifestyle",
+        concept.styleDescription,
         args.numScreens
       );
 
@@ -270,10 +210,10 @@ export const generateAppFromConceptInternal = internalAction({
       let size;
       if (args.screenshotSizeId) {
         // Use provided size ID
-        size = await ctx.runQuery(api.screenshotSizes.getSizeById, { sizeId: args.screenshotSizeId });
+        size = await ctx.runQuery(api.data.screenshotSizes.getSizeById, { sizeId: args.screenshotSizeId });
       } else {
         // Use default iPhone 16 Pro Max by slug (stable across environments)
-        size = await ctx.runQuery(api.screenshotSizes.getSizeBySlug, { slug: "iphone-6-9" });
+        size = await ctx.runQuery(api.data.screenshotSizes.getSizeBySlug, { slug: "iphone-6-9" });
       }
       
       if (!size?.canvasStorageId) {
@@ -292,8 +232,8 @@ export const generateAppFromConceptInternal = internalAction({
       const firstScreenDetail = appStructure.screens[0];
 
       const firstPromptResult = await b.GenerateFirstScreenImagePrompt(
-        args.concept.app_name,
-        args.concept.style_description,
+        concept.name,
+        concept.styleDescription,
         appStructure.common_layout_elements,
         appStructure.tabs,
         firstScreenDetail
@@ -322,7 +262,7 @@ export const generateAppFromConceptInternal = internalAction({
       const firstScreenBlob = await firstScreenResponse.blob();
       const firstScreenStorageId = await ctx.storage.store(firstScreenBlob);
 
-      await ctx.runMutation(internal.appScreens.createAIGeneratedAppScreen, {
+      await ctx.runMutation(internal.data.appScreens.createAIGeneratedAppScreen, {
         appId: args.appId,
         profileId: args.profileId,
         name: firstScreenDetail.screen_name,
@@ -356,8 +296,8 @@ export const generateAppFromConceptInternal = internalAction({
 
             try {
               const promptResult = await b.GenerateScreenImagePromptWithReference(
-                args.concept.app_name,
-                args.concept.style_description,
+                concept.name,
+                concept.styleDescription,
                 appStructure.common_layout_elements,
                 appStructure.tabs,
                 screenDetail
@@ -387,7 +327,7 @@ export const generateAppFromConceptInternal = internalAction({
               const screenBlob = await screenResponse.blob();
               const screenStorageId = await ctx.storage.store(screenBlob);
 
-              const screenId = await ctx.runMutation(internal.appScreens.createAIGeneratedAppScreen, {
+              const screenId = await ctx.runMutation(internal.data.appScreens.createAIGeneratedAppScreen, {
                 appId: args.appId,
                 profileId: args.profileId,
                 name: screenDetail.screen_name,

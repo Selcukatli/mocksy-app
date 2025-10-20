@@ -17,7 +17,7 @@ const SCREENSHOT_SIZES = [
     name: "iPhone 16 Pro Max",
     slug: "iphone-6-9",
     platform: "ios" as const,
-    deviceCategory: "phone",
+    deviceCategory: "phone" as const,
     width: 1290,
     height: 2796,
     aspectRatio: "9:19.5",
@@ -32,7 +32,7 @@ const SCREENSHOT_SIZES = [
     name: "iPhone 14 Plus / 13 Pro Max / 12 Pro Max",
     slug: "iphone-6-5",
     platform: "ios" as const,
-    deviceCategory: "phone",
+    deviceCategory: "phone" as const,
     width: 1284,
     height: 2778,
     aspectRatio: "9:19.5",
@@ -47,7 +47,7 @@ const SCREENSHOT_SIZES = [
     name: "iPhone 8 Plus / 7 Plus / 6s Plus",
     slug: "iphone-5-5",
     platform: "ios" as const,
-    deviceCategory: "phone",
+    deviceCategory: "phone" as const,
     width: 1242,
     height: 2208,
     aspectRatio: "9:16",
@@ -64,7 +64,7 @@ const SCREENSHOT_SIZES = [
     name: "Android Phone Portrait",
     slug: "android-phone-portrait",
     platform: "android" as const,
-    deviceCategory: "phone",
+    deviceCategory: "phone" as const,
     width: 1080,
     height: 1920,
     aspectRatio: "9:16",
@@ -79,7 +79,7 @@ const SCREENSHOT_SIZES = [
     name: "Android Phone Landscape",
     slug: "android-phone-landscape",
     platform: "android" as const,
-    deviceCategory: "phone",
+    deviceCategory: "phone" as const,
     width: 1920,
     height: 1080,
     aspectRatio: "16:9",
@@ -136,7 +136,7 @@ async function main() {
       console.log(`Processing: ${size.name} (${size.slug})`);
 
       // Check if size already exists
-      const existingSize = await client.query(api.screenshotSizes.getSizeBySlug, {
+      const existingSize = await client.query(api.data.screenshotSizes.getSizeBySlug, {
         slug: size.slug,
       });
 
@@ -182,7 +182,7 @@ async function main() {
 
       // Create new screenshot size record with canvas
       console.log(`  📝 Creating size record with canvas...`);
-      const sizeId = await client.mutation(api.screenshotSizes.createSize, {
+      const sizeId = await client.mutation(api.data.screenshotSizes.createSize, {
         name: size.name,
         slug: size.slug,
         platform: size.platform,

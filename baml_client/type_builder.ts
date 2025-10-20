@@ -35,83 +35,27 @@ export default class TypeBuilder {
     
     AppStructure: ClassViewer<'AppStructure', "tabs" | "common_layout_elements" | "screens">;
     
-    Avatar: ClassViewer<'Avatar', "summary" | "apparent_age" | "gender_presentation" | "ethnic_appearance" | "face_shape" | "jawline" | "body_build" | "skin_tone" | "complexion_details" | "hair_color" | "hair_length" | "hair_style" | "eye_color" | "eye_shape" | "eyebrows" | "nose_description" | "lip_description" | "facial_hair" | "glasses" | "glasses_style" | "distinctive_features" | "confidence" | "key_features">;
-    
-    Background: ClassViewer<'Background', "colors" | "effects" | "placement" | "seamless_to_bottom" | "forbidden">;
-    
-    BasicResponse: ClassViewer<'BasicResponse', "answer" | "confidence">;
-    
-    Character: ClassViewer<'Character', "name" | "avatar" | "outfit" | "expression" | "signature_colors">;
-    
-    CharacterInScene: ClassViewer<'CharacterInScene', "character_index" | "description" | "pose" | "placement" | "outfit_modifications" | "interaction">;
-    
-    Composition: ClassViewer<'Composition', "priority" | "rules">;
-    
     CoverImagePrompt: ClassViewer<'CoverImagePrompt', "image_prompt" | "style_notes">;
     
     CoverVideoPrompt: ClassViewer<'CoverVideoPrompt', "video_prompt">;
     
     DemoAppOutput: ClassViewer<'DemoAppOutput', "app_name" | "app_subtitle" | "app_description" | "app_category" | "app_icon_prompt" | "style_guide">;
     
-    DetailedResponse: ClassViewer<'DetailedResponse', "answer" | "confidence" | "explanation" | "sources">;
-    
-    DeviceImageScore: ClassViewer<'DeviceImageScore', "overall_score" | "is_front_facing" | "has_black_screen" | "has_black_background" | "no_notch_or_island" | "proper_size" | "all_corners_visible" | "is_vertical" | "no_text_or_labels" | "frame_matches_style" | "issues" | "reasoning">;
-    
-    DeviceSpec: ClassViewer<'DeviceSpec', "type" | "aspect_ratio" | "frame" | "angle" | "scale" | "position" | "screenshot">;
-    
-    FontStyle: ClassViewer<'FontStyle', "family" | "weight" | "color" | "effects">;
-    
-    HeaderText: ClassViewer<'HeaderText', "copy" | "placement" | "font" | "size">;
-    
     ImprovedDescriptionOutput: ClassViewer<'ImprovedDescriptionOutput', "improved_description" | "improved_style" | "inferred_category">;
     
-    LayoutConfig: ClassViewer<'LayoutConfig', "composition" | "device_orientation" | "device_type">;
-    
     ModelTestResponse: ClassViewer<'ModelTestResponse', "model_name" | "response_text" | "character_count" | "passed">;
-    
-    Outfit: ClassViewer<'Outfit', "top" | "bottom" | "footwear" | "outerwear" | "accessories" | "style" | "color_scheme" | "fabric_textures">;
-    
-    PromptStructure: ClassViewer<'PromptStructure', "subjects" | "group_action" | "environment" | "style" | "technical" | "quality">;
-    
-    PromptStyle: ClassViewer<'PromptStyle', "art_style" | "color_palette" | "mood" | "lighting" | "texture">;
-    
-    PromptTechnical: ClassViewer<'PromptTechnical', "camera_angle" | "shot_type" | "composition" | "depth_of_field">;
-    
-    Scene: ClassViewer<'Scene', "main_description" | "characters" | "character_arrangement" | "camera_angle" | "shot_type" | "setting" | "background" | "time_of_day" | "mood" | "color_palette" | "lighting_style" | "style_keywords" | "quality_markers" | "main_prompt" | "negative_prompt" | "structured_prompt" | "suggested_guidance" | "complexity_score" | "avatar_integration" | "character_count" | "key_elements">;
     
     ScreenDetail: ClassViewer<'ScreenDetail', "screen_name" | "purpose" | "layout_type" | "unique_elements" | "active_tab_index">;
     
     ScreenImagePrompt: ClassViewer<'ScreenImagePrompt', "canvas_edit_prompt">;
     
-    ScreenshotConfig: ClassViewer<'ScreenshotConfig', "text" | "layout">;
-    
-    ScreenshotPromptStructured: ClassViewer<'ScreenshotPromptStructured', "style" | "background" | "device" | "header_text" | "composition">;
-    
-    ScreenshotSetInput: ClassViewer<'ScreenshotSetInput', "app_description" | "screenshot_count">;
-    
-    ScreenshotTreatment: ClassViewer<'ScreenshotTreatment', "treatment" | "preserve" | "forbidden">;
-    
     StyleColors: ClassViewer<'StyleColors', "primary" | "background" | "text" | "accent">;
-    
-    StyleConfig: ClassViewer<'StyleConfig', "background_color" | "details" | "text_style" | "device_style">;
-    
-    StyleDemoOutput: ClassViewer<'StyleDemoOutput', "app_concept" | "app_icon_prompt" | "screenshots">;
-    
-    StyleDemoScreenshotConfig: ClassViewer<'StyleDemoScreenshotConfig', "header_copy" | "subheader_copy" | "header_position" | "device_orientation" | "device_position" | "app_screen_prompt">;
     
     StyleEffects: ClassViewer<'StyleEffects', "cornerRadius" | "shadowStyle" | "designPhilosophy">;
     
-    StyleGenerationOutput: ClassViewer<'StyleGenerationOutput', "style_name" | "style_config" | "device_reference_prompt" | "preview_image_prompt">;
-    
-    StyleRevisionOutput: ClassViewer<'StyleRevisionOutput', "revised_style" | "revision_summary">;
-    
     StyleTypography: ClassViewer<'StyleTypography', "headlineFont" | "headlineSize" | "headlineWeight" | "bodyFont" | "bodySize" | "bodyWeight">;
     
-    Subject: ClassViewer<'Subject', "description" | "action" | "position">;
-    
     TabStructure: ClassViewer<'TabStructure', "has_tabs" | "tab_names" | "tab_icon_descriptions" | "active_tab_color" | "inactive_tab_color" | "active_icon_style" | "inactive_icon_style" | "selection_indicator" | "tab_bar_height" | "icon_size" | "label_size">;
-    
-    TextConfig: ClassViewer<'TextConfig', "header" | "subheader">;
     
     VisionTestResponse: ClassViewer<'VisionTestResponse', "model_name" | "can_see_image" | "description" | "object_count">;
     
@@ -120,7 +64,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "AppConcept","AppConceptsOutput","AppScreenPromptsOutput","AppStructure","Avatar","Background","BasicResponse","Character","CharacterInScene","Composition","CoverImagePrompt","CoverVideoPrompt","DemoAppOutput","DetailedResponse","DeviceImageScore","DeviceSpec","FontStyle","HeaderText","ImprovedDescriptionOutput","LayoutConfig","ModelTestResponse","Outfit","PromptStructure","PromptStyle","PromptTechnical","Scene","ScreenDetail","ScreenImagePrompt","ScreenshotConfig","ScreenshotPromptStructured","ScreenshotSetInput","ScreenshotTreatment","StyleColors","StyleConfig","StyleDemoOutput","StyleDemoScreenshotConfig","StyleEffects","StyleGenerationOutput","StyleRevisionOutput","StyleTypography","Subject","TabStructure","TextConfig","VisionTestResponse",
+            "AppConcept","AppConceptsOutput","AppScreenPromptsOutput","AppStructure","CoverImagePrompt","CoverVideoPrompt","DemoAppOutput","ImprovedDescriptionOutput","ModelTestResponse","ScreenDetail","ScreenImagePrompt","StyleColors","StyleEffects","StyleTypography","TabStructure","VisionTestResponse",
           ]),
           enums: new Set([
             
@@ -144,30 +88,6 @@ export default class TypeBuilder {
           "tabs","common_layout_elements","screens",
         ]);
         
-        this.Avatar = this.tb.classViewer("Avatar", [
-          "summary","apparent_age","gender_presentation","ethnic_appearance","face_shape","jawline","body_build","skin_tone","complexion_details","hair_color","hair_length","hair_style","eye_color","eye_shape","eyebrows","nose_description","lip_description","facial_hair","glasses","glasses_style","distinctive_features","confidence","key_features",
-        ]);
-        
-        this.Background = this.tb.classViewer("Background", [
-          "colors","effects","placement","seamless_to_bottom","forbidden",
-        ]);
-        
-        this.BasicResponse = this.tb.classViewer("BasicResponse", [
-          "answer","confidence",
-        ]);
-        
-        this.Character = this.tb.classViewer("Character", [
-          "name","avatar","outfit","expression","signature_colors",
-        ]);
-        
-        this.CharacterInScene = this.tb.classViewer("CharacterInScene", [
-          "character_index","description","pose","placement","outfit_modifications","interaction",
-        ]);
-        
-        this.Composition = this.tb.classViewer("Composition", [
-          "priority","rules",
-        ]);
-        
         this.CoverImagePrompt = this.tb.classViewer("CoverImagePrompt", [
           "image_prompt","style_notes",
         ]);
@@ -180,56 +100,12 @@ export default class TypeBuilder {
           "app_name","app_subtitle","app_description","app_category","app_icon_prompt","style_guide",
         ]);
         
-        this.DetailedResponse = this.tb.classViewer("DetailedResponse", [
-          "answer","confidence","explanation","sources",
-        ]);
-        
-        this.DeviceImageScore = this.tb.classViewer("DeviceImageScore", [
-          "overall_score","is_front_facing","has_black_screen","has_black_background","no_notch_or_island","proper_size","all_corners_visible","is_vertical","no_text_or_labels","frame_matches_style","issues","reasoning",
-        ]);
-        
-        this.DeviceSpec = this.tb.classViewer("DeviceSpec", [
-          "type","aspect_ratio","frame","angle","scale","position","screenshot",
-        ]);
-        
-        this.FontStyle = this.tb.classViewer("FontStyle", [
-          "family","weight","color","effects",
-        ]);
-        
-        this.HeaderText = this.tb.classViewer("HeaderText", [
-          "copy","placement","font","size",
-        ]);
-        
         this.ImprovedDescriptionOutput = this.tb.classViewer("ImprovedDescriptionOutput", [
           "improved_description","improved_style","inferred_category",
         ]);
         
-        this.LayoutConfig = this.tb.classViewer("LayoutConfig", [
-          "composition","device_orientation","device_type",
-        ]);
-        
         this.ModelTestResponse = this.tb.classViewer("ModelTestResponse", [
           "model_name","response_text","character_count","passed",
-        ]);
-        
-        this.Outfit = this.tb.classViewer("Outfit", [
-          "top","bottom","footwear","outerwear","accessories","style","color_scheme","fabric_textures",
-        ]);
-        
-        this.PromptStructure = this.tb.classViewer("PromptStructure", [
-          "subjects","group_action","environment","style","technical","quality",
-        ]);
-        
-        this.PromptStyle = this.tb.classViewer("PromptStyle", [
-          "art_style","color_palette","mood","lighting","texture",
-        ]);
-        
-        this.PromptTechnical = this.tb.classViewer("PromptTechnical", [
-          "camera_angle","shot_type","composition","depth_of_field",
-        ]);
-        
-        this.Scene = this.tb.classViewer("Scene", [
-          "main_description","characters","character_arrangement","camera_angle","shot_type","setting","background","time_of_day","mood","color_palette","lighting_style","style_keywords","quality_markers","main_prompt","negative_prompt","structured_prompt","suggested_guidance","complexity_score","avatar_integration","character_count","key_elements",
         ]);
         
         this.ScreenDetail = this.tb.classViewer("ScreenDetail", [
@@ -240,64 +116,20 @@ export default class TypeBuilder {
           "canvas_edit_prompt",
         ]);
         
-        this.ScreenshotConfig = this.tb.classViewer("ScreenshotConfig", [
-          "text","layout",
-        ]);
-        
-        this.ScreenshotPromptStructured = this.tb.classViewer("ScreenshotPromptStructured", [
-          "style","background","device","header_text","composition",
-        ]);
-        
-        this.ScreenshotSetInput = this.tb.classViewer("ScreenshotSetInput", [
-          "app_description","screenshot_count",
-        ]);
-        
-        this.ScreenshotTreatment = this.tb.classViewer("ScreenshotTreatment", [
-          "treatment","preserve","forbidden",
-        ]);
-        
         this.StyleColors = this.tb.classViewer("StyleColors", [
           "primary","background","text","accent",
-        ]);
-        
-        this.StyleConfig = this.tb.classViewer("StyleConfig", [
-          "background_color","details","text_style","device_style",
-        ]);
-        
-        this.StyleDemoOutput = this.tb.classViewer("StyleDemoOutput", [
-          "app_concept","app_icon_prompt","screenshots",
-        ]);
-        
-        this.StyleDemoScreenshotConfig = this.tb.classViewer("StyleDemoScreenshotConfig", [
-          "header_copy","subheader_copy","header_position","device_orientation","device_position","app_screen_prompt",
         ]);
         
         this.StyleEffects = this.tb.classViewer("StyleEffects", [
           "cornerRadius","shadowStyle","designPhilosophy",
         ]);
         
-        this.StyleGenerationOutput = this.tb.classViewer("StyleGenerationOutput", [
-          "style_name","style_config","device_reference_prompt","preview_image_prompt",
-        ]);
-        
-        this.StyleRevisionOutput = this.tb.classViewer("StyleRevisionOutput", [
-          "revised_style","revision_summary",
-        ]);
-        
         this.StyleTypography = this.tb.classViewer("StyleTypography", [
           "headlineFont","headlineSize","headlineWeight","bodyFont","bodySize","bodyWeight",
         ]);
         
-        this.Subject = this.tb.classViewer("Subject", [
-          "description","action","position",
-        ]);
-        
         this.TabStructure = this.tb.classViewer("TabStructure", [
           "has_tabs","tab_names","tab_icon_descriptions","active_tab_color","inactive_tab_color","active_icon_style","inactive_icon_style","selection_indicator","tab_bar_height","icon_size","label_size",
-        ]);
-        
-        this.TextConfig = this.tb.classViewer("TextConfig", [
-          "header","subheader",
         ]);
         
         this.VisionTestResponse = this.tb.classViewer("VisionTestResponse", [

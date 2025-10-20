@@ -111,8 +111,8 @@ type AppConcept = {
 export default function GenerateNewAppPage() {
   const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
-  const generateConcepts = useAction(api.features.appGeneration.generateAppConcepts);
-  const generateAppFromConcept = useAction(api.features.appGeneration.generateAppFromConcept);
+  const generateConcepts = useAction(api.features.appGeneration.conceptGeneration.generateAppConcepts);
+  const generateAppFromConcept = useAction(api.features.appGeneration.conceptToApp.generateAppFromConcept);
   const { setShowLogo, setCenterInFullViewport } = usePageHeader();
 
   // Form state
@@ -154,9 +154,15 @@ export default function GenerateNewAppPage() {
     isOpen: false
   });
 
-  // Poll for concept images
+  // Poll for concept job status
   const conceptJob = useQuery(
     api.features.appGeneration.jobs.getConceptGenerationJob,
+    conceptJobId ? { jobId: conceptJobId } : 'skip'
+  );
+
+  // Query concepts from appConcepts table
+  const conceptsFromDb = useQuery(
+    api.data.appConcepts.getConceptsByJobId,
     conceptJobId ? { jobId: conceptJobId } : 'skip'
   );
 
@@ -286,12 +292,28 @@ export default function GenerateNewAppPage() {
     };
   }, []);
 
-  // Update concepts when job data changes
+  // Update concepts when DB data changes
   useEffect(() => {
-    if (conceptJob?.concepts) {
-      setConcepts(conceptJob.concepts);
+    if (conceptsFromDb && conceptsFromDb.length > 0) {
+      // Map appConcepts structure to the format expected by the UI
+      const mappedConcepts = conceptsFromDb.map((concept) => ({
+        app_name: concept.name,
+        app_subtitle: concept.subtitle,
+        app_description: concept.description,
+        app_category: concept.category,
+        style_description: concept.styleDescription,
+        app_icon_prompt: concept.iconPrompt,
+        cover_image_prompt: concept.coverPrompt,
+        icon_url: concept.iconUrl,
+        cover_url: concept.coverUrl,
+        colors: concept.colors,
+        typography: concept.typography,
+        effects: concept.effects,
+        _id: concept._id, // Add the concept ID for generating apps
+      }));
+      setConcepts(mappedConcepts as AppConcept[]);
     }
-  }, [conceptJob]);
+  }, [conceptsFromDb]);
 
   const handleReferenceSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -351,7 +373,7 @@ export default function GenerateNewAppPage() {
       });
 
       setConceptJobId(result.jobId);
-      setConcepts(result.concepts);
+      // Don't set concepts here - wait for DB query to populate them with IDs
     } catch (error) {
       console.error('Failed to generate concepts', error);
       setToast({
@@ -366,7 +388,7 @@ export default function GenerateNewAppPage() {
     }
   };
 
-  const handleSelectConcept = async (index: number, editedValues?: Partial<AppConcept>) => {
+  const handleSelectConcept = async (index: number) => {
     if (isGeneratingApp) return;
     
     setSelectedConceptIndex(index);
@@ -386,19 +408,17 @@ export default function GenerateNewAppPage() {
     setIsGeneratingApp(true);
 
     try {
-      // Use new action to generate app from concept
-      // Start full generation immediately - no preview step
-      // Use edited values if provided, otherwise use original concept values
+      // Use the index parameter directly (state hasn't updated yet)
+      const selectedConcept = concepts[index];
+      
+      // @ts-expect-error - _id is added in the mapping above
+      if (!selectedConcept._id) {
+        throw new Error("Concept ID not found");
+      }
+
       const { appId } = await generateAppFromConcept({
-        concept: {
-          app_name: editedValues?.app_name ?? selectedConcept.app_name,
-          app_subtitle: editedValues?.app_subtitle ?? selectedConcept.app_subtitle,
-          app_description: editedValues?.app_description ?? selectedConcept.app_description,
-          app_category: selectedConcept.app_category || 'Lifestyle', // Default category for backward compatibility
-          style_description: selectedConcept.style_description,
-          icon_url: selectedConcept.icon_url,
-          cover_url: selectedConcept.cover_url,
-        },
+        // @ts-expect-error - _id is added in the mapping above
+        conceptId: selectedConcept._id,
         // No skipScreenshots - start full generation
         numScreens: 5, // Generate 5 screenshots
       });
@@ -892,54 +912,168 @@ export default function GenerateNewAppPage() {
                     ))
                   ) : (
                     // Loading skeletons while concepts are being generated
-                    Array.from({ length: 4 }).map((_, index) => (
-                      <motion.div
-                        key={`skeleton-${index}`}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
-                        className="flex flex-col overflow-hidden rounded-2xl border-2 border-border bg-card shadow-sm"
-                      >
-                        {/* Cover skeleton with overlaid icon/text */}
-                        <div className="relative bg-muted-foreground/10">
-                          {/* Cover image skeleton with gradient mask */}
-                          <div 
-                            className="aspect-[2/1] w-full animate-pulse bg-muted-foreground/15"
-                            style={{
-                              maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-                              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-                            }}
-                          />
-                          
-                          {/* Icon + Title skeleton (overlapping) */}
-                          <div className="relative -mt-12 flex items-start gap-4 p-5">
-                            {/* Icon skeleton - larger */}
-                            <div className="h-20 w-20 flex-shrink-0 animate-pulse rounded-[18%] bg-gray-100 dark:bg-gray-800 shadow-xl ring-2 ring-border" />
+                    Array.from({ length: 4 }).map((_, index) => {
+                      // Fun gradient colors for each skeleton
+                      const gradients = [
+                        'from-purple-500/20 via-pink-500/20 to-rose-500/20',
+                        'from-blue-500/20 via-cyan-500/20 to-teal-500/20',
+                        'from-amber-500/20 via-orange-500/20 to-red-500/20',
+                        'from-green-500/20 via-emerald-500/20 to-cyan-500/20',
+                      ];
+                      const iconColors = [
+                        'from-purple-400 to-pink-400',
+                        'from-blue-400 to-cyan-400',
+                        'from-amber-400 to-orange-400',
+                        'from-green-400 to-emerald-400',
+                      ];
+                      const sparkleColors = [
+                        'text-purple-500',
+                        'text-blue-500',
+                        'text-amber-500',
+                        'text-green-500',
+                      ];
+                      
+                      return (
+                        <motion.div
+                          key={`skeleton-${index}`}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.3, delay: index * 0.1 }}
+                          className="flex flex-col overflow-hidden rounded-2xl border-2 border-border bg-card shadow-lg hover:shadow-xl transition-shadow"
+                        >
+                          {/* Cover skeleton with colorful animated gradient */}
+                          <div className="relative overflow-hidden">
+                            {/* Animated gradient background */}
+                            <motion.div 
+                              className={`aspect-[2/1] w-full bg-gradient-to-br ${gradients[index]}`}
+                              animate={{
+                                backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'],
+                              }}
+                              transition={{
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: 'linear',
+                              }}
+                              style={{
+                                backgroundSize: '200% 200%',
+                                maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+                              }}
+                            />
                             
-                            {/* Text content skeleton */}
-                            <div className="flex-1 space-y-2 pt-1">
-                              <div className="h-6 w-3/4 animate-pulse rounded bg-muted-foreground/20" />
-                              <div className="h-4 w-full animate-pulse rounded bg-muted-foreground/15" />
+                            {/* Shimmer effect overlay */}
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                              animate={{
+                                x: ['-100%', '100%'],
+                              }}
+                              transition={{
+                                duration: 1.5,
+                                repeat: Infinity,
+                                ease: 'linear',
+                                delay: index * 0.2,
+                              }}
+                            />
+                            
+                            {/* Icon + Title skeleton (overlapping) */}
+                            <div className="relative -mt-12 flex items-start gap-4 p-5">
+                              {/* Icon skeleton with colorful gradient */}
+                              <motion.div 
+                                className={`h-20 w-20 flex-shrink-0 rounded-[18%] bg-gradient-to-br ${iconColors[index]} shadow-xl ring-2 ring-white/20`}
+                                animate={{
+                                  scale: [1, 1.05, 1],
+                                  rotate: [0, 2, -2, 0],
+                                }}
+                                transition={{
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  ease: 'easeInOut',
+                                  delay: index * 0.1,
+                                }}
+                              />
+                              
+                              {/* Text content skeleton with staggered animation */}
+                              <div className="flex-1 space-y-2 pt-1">
+                                <motion.div 
+                                  className="h-6 w-3/4 rounded-lg bg-gradient-to-r from-muted via-muted-foreground/20 to-muted"
+                                  animate={{
+                                    opacity: [0.5, 1, 0.5],
+                                  }}
+                                  transition={{
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                  }}
+                                />
+                                <motion.div 
+                                  className="h-4 w-full rounded-lg bg-gradient-to-r from-muted via-muted-foreground/15 to-muted"
+                                  animate={{
+                                    opacity: [0.5, 1, 0.5],
+                                  }}
+                                  transition={{
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                    delay: 0.1,
+                                  }}
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        
-                        {/* Description skeleton */}
-                        <div className="flex flex-1 flex-col gap-3 bg-muted-foreground/5 p-5">
-                          <div className="space-y-2">
-                            <div className="h-3 w-full animate-pulse rounded bg-muted-foreground/20" />
-                            <div className="h-3 w-full animate-pulse rounded bg-muted-foreground/20" />
-                            <div className="h-3 w-2/3 animate-pulse rounded bg-muted-foreground/20" />
-                          </div>
                           
-                          <div className="mt-auto flex items-center justify-center gap-2 pt-2 text-sm text-muted-foreground">
-                            <Sparkles className="h-4 w-4 animate-pulse text-primary" />
-                            <span>Generating concept {index + 1}...</span>
+                          {/* Description skeleton with colorful accent */}
+                          <div className="flex flex-1 flex-col gap-3 bg-gradient-to-b from-transparent to-muted/30 p-5">
+                            <div className="space-y-2">
+                              {[100, 95, 66].map((width, i) => (
+                                <motion.div
+                                  key={i}
+                                  className="h-3 rounded-lg bg-gradient-to-r from-muted via-muted-foreground/15 to-muted"
+                                  style={{ width: `${width}%` }}
+                                  animate={{
+                                    opacity: [0.4, 0.8, 0.4],
+                                  }}
+                                  transition={{
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                    delay: i * 0.1,
+                                  }}
+                                />
+                              ))}
+                            </div>
+                            
+                            {/* Status indicator with colored sparkle */}
+                            <motion.div 
+                              className="mt-auto flex items-center justify-center gap-2 pt-2 text-sm font-medium"
+                              animate={{
+                                opacity: [0.6, 1, 0.6],
+                              }}
+                              transition={{
+                                duration: 1.5,
+                                repeat: Infinity,
+                                ease: 'easeInOut',
+                              }}
+                            >
+                              <motion.div
+                                animate={{
+                                  rotate: [0, 180, 360],
+                                  scale: [1, 1.2, 1],
+                                }}
+                                transition={{
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  ease: 'easeInOut',
+                                }}
+                              >
+                                <Sparkles className={`h-4 w-4 ${sparkleColors[index]}`} />
+                              </motion.div>
+                              <span className={sparkleColors[index]}>Generating concept {index + 1}...</span>
+                            </motion.div>
                           </div>
-                        </div>
-                      </motion.div>
-                    ))
+                        </motion.div>
+                      );
+                    })
                   )}
                 </AnimatePresence>
               </div>
@@ -961,8 +1095,8 @@ export default function GenerateNewAppPage() {
           <AppConceptDetailModal
             concept={concepts[viewingConceptIndex]}
             isSelected={selectedConceptIndex === viewingConceptIndex}
-            onSelect={(editedValues) => {
-              handleSelectConcept(viewingConceptIndex, editedValues);
+            onSelect={() => {
+              handleSelectConcept(viewingConceptIndex);
               setViewingConceptIndex(null);
             }}
             onClose={() => setViewingConceptIndex(null)}

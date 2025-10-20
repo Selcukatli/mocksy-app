@@ -34,7 +34,7 @@ export default function WriteReviewModal({
   const [shouldSubmitAfterAuth, setShouldSubmitAfterAuth] = useState(false);
 
   const { isSignedIn } = useUser();
-  const createReview = useMutation(api.mockReviews.createReview);
+  const createReview = useMutation(api.data.appReviews.createReview);
 
   // Auto-submit review after authentication if user tried to submit while not logged in
   useEffect(() => {

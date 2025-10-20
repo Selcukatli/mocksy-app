@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  AppConcept,  AppConceptsOutput,  AppScreenPromptsOutput,  AppStructure,  Avatar,  Background,  BasicResponse,  Character,  CharacterInScene,  Composition,  CoverImagePrompt,  CoverVideoPrompt,  DemoAppOutput,  DetailedResponse,  DeviceImageScore,  DeviceSpec,  FontStyle,  HeaderText,  ImprovedDescriptionOutput,  LayoutConfig,  ModelTestResponse,  Outfit,  PromptStructure,  PromptStyle,  PromptTechnical,  Scene,  ScreenDetail,  ScreenImagePrompt,  ScreenshotConfig,  ScreenshotPromptStructured,  ScreenshotSetInput,  ScreenshotTreatment,  StyleColors,  StyleConfig,  StyleDemoOutput,  StyleDemoScreenshotConfig,  StyleEffects,  StyleGenerationOutput,  StyleRevisionOutput,  StyleTypography,  Subject,  TabStructure,  TextConfig,  VisionTestResponse } from "./types"
+import type {  AppConcept,  AppConceptsOutput,  AppScreenPromptsOutput,  AppStructure,  CoverImagePrompt,  CoverVideoPrompt,  DemoAppOutput,  ImprovedDescriptionOutput,  ModelTestResponse,  ScreenDetail,  ScreenImagePrompt,  StyleColors,  StyleEffects,  StyleTypography,  TabStructure,  VisionTestResponse } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -59,61 +59,6 @@ export namespace partial_types {
       common_layout_elements?: string | null
       screens: ScreenDetail[]
     }
-    export interface Avatar {
-      summary?: string | null
-      apparent_age?: string | null
-      gender_presentation?: string | null
-      ethnic_appearance?: string | null
-      face_shape?: string | null
-      jawline?: string | null
-      body_build?: string | null
-      skin_tone?: string | null
-      complexion_details?: string | null
-      hair_color?: string | null
-      hair_length?: string | null
-      hair_style?: string | null
-      eye_color?: string | null
-      eye_shape?: string | null
-      eyebrows?: string | null
-      nose_description?: string | null
-      lip_description?: string | null
-      facial_hair?: string | null
-      glasses?: boolean | null
-      glasses_style?: string | null
-      distinctive_features?: string[] | null
-      confidence?: number | null
-      key_features: string[]
-    }
-    export interface Background {
-      colors: string[]
-      effects: string[]
-      placement?: string | null
-      seamless_to_bottom?: boolean | null
-      forbidden: string[]
-    }
-    export interface BasicResponse {
-      answer?: string | null
-      confidence?: number | null
-    }
-    export interface Character {
-      name?: string | null
-      avatar?: Avatar | null
-      outfit?: Outfit | null
-      expression?: string | null
-      signature_colors?: string[] | null
-    }
-    export interface CharacterInScene {
-      character_index?: number | null
-      description?: string | null
-      pose?: string | null
-      placement?: string | null
-      outfit_modifications?: string | null
-      interaction?: string | null
-    }
-    export interface Composition {
-      priority?: string | null
-      rules: string[]
-    }
     export interface CoverImagePrompt {
       image_prompt?: string | null
       style_notes?: string | null
@@ -129,116 +74,16 @@ export namespace partial_types {
       app_icon_prompt?: string | null
       style_guide?: string | null
     }
-    export interface DetailedResponse {
-      answer?: string | null
-      confidence?: number | null
-      explanation?: string | null
-      sources?: string[] | null
-    }
-    export interface DeviceImageScore {
-      overall_score?: number | null
-      is_front_facing?: boolean | null
-      has_black_screen?: boolean | null
-      has_black_background?: boolean | null
-      no_notch_or_island?: boolean | null
-      proper_size?: boolean | null
-      all_corners_visible?: boolean | null
-      is_vertical?: boolean | null
-      no_text_or_labels?: boolean | null
-      frame_matches_style?: boolean | null
-      issues: string[]
-      reasoning?: string | null
-    }
-    export interface DeviceSpec {
-      type?: string | null
-      aspect_ratio?: string | null
-      frame?: string | null
-      angle?: string | null
-      scale?: string | null
-      position?: string | null
-      screenshot?: ScreenshotTreatment | null
-    }
-    export interface FontStyle {
-      family?: string | null
-      weight?: number | null
-      color?: string | null
-      effects: string[]
-    }
-    export interface HeaderText {
-      copy?: string | null
-      placement?: string | null
-      font?: FontStyle | null
-      size?: string | null
-    }
     export interface ImprovedDescriptionOutput {
       improved_description?: string | null
       improved_style?: string | null
       inferred_category?: string | null
-    }
-    export interface LayoutConfig {
-      composition?: string | null
-      device_orientation?: string | null
-      device_type?: string | null
     }
     export interface ModelTestResponse {
       model_name?: string | null
       response_text?: string | null
       character_count?: number | null
       passed?: boolean | null
-    }
-    export interface Outfit {
-      top?: string | null
-      bottom?: string | null
-      footwear?: string | null
-      outerwear?: string | null
-      accessories?: string[] | null
-      style?: string | null
-      color_scheme?: string | null
-      fabric_textures?: string[] | null
-    }
-    export interface PromptStructure {
-      subjects: Subject[]
-      group_action?: string | null
-      environment?: string | null
-      style?: PromptStyle | null
-      technical?: PromptTechnical | null
-      quality: string[]
-    }
-    export interface PromptStyle {
-      art_style?: string | null
-      color_palette?: string | null
-      mood?: string | null
-      lighting?: string | null
-      texture?: string | null
-    }
-    export interface PromptTechnical {
-      camera_angle?: string | null
-      shot_type?: string | null
-      composition?: string | null
-      depth_of_field?: string | null
-    }
-    export interface Scene {
-      main_description?: string | null
-      characters: CharacterInScene[]
-      character_arrangement?: string | null
-      camera_angle?: string | null
-      shot_type?: string | null
-      setting?: string | null
-      background?: string | null
-      time_of_day?: string | null
-      mood?: string | null
-      color_palette?: string | null
-      lighting_style?: string | null
-      style_keywords: string[]
-      quality_markers: string[]
-      main_prompt?: string | null
-      negative_prompt?: string | null
-      structured_prompt?: PromptStructure | null
-      suggested_guidance?: number | null
-      complexity_score?: number | null
-      avatar_integration?: string | null
-      character_count?: number | null
-      key_elements: string[]
     }
     export interface ScreenDetail {
       screen_name?: string | null
@@ -250,65 +95,16 @@ export namespace partial_types {
     export interface ScreenImagePrompt {
       canvas_edit_prompt?: string | null
     }
-    export interface ScreenshotConfig {
-      text?: TextConfig | null
-      layout?: LayoutConfig | null
-    }
-    export interface ScreenshotPromptStructured {
-      style?: string | null
-      background?: Background | null
-      device?: DeviceSpec | null
-      header_text?: HeaderText | null
-      composition?: Composition | null
-    }
-    export interface ScreenshotSetInput {
-      app_description?: string | null
-      screenshot_count?: number | null
-    }
-    export interface ScreenshotTreatment {
-      treatment?: string | null
-      preserve?: boolean | null
-      forbidden: string[]
-    }
     export interface StyleColors {
       primary?: string | null
       background?: string | null
       text?: string | null
       accent?: string | null
     }
-    export interface StyleConfig {
-      background_color?: string | null
-      details?: string | null
-      text_style?: string | null
-      device_style?: string | null
-    }
-    export interface StyleDemoOutput {
-      app_concept?: string | null
-      app_icon_prompt?: string | null
-      screenshots: StyleDemoScreenshotConfig[]
-    }
-    export interface StyleDemoScreenshotConfig {
-      header_copy?: string | null
-      subheader_copy?: string | null
-      header_position?: string | null
-      device_orientation?: string | null
-      device_position?: string | null
-      app_screen_prompt?: string | null
-    }
     export interface StyleEffects {
       cornerRadius?: string | null
       shadowStyle?: string | null
       designPhilosophy?: string | null
-    }
-    export interface StyleGenerationOutput {
-      style_name?: string | null
-      style_config?: StyleConfig | null
-      device_reference_prompt?: string | null
-      preview_image_prompt?: string | null
-    }
-    export interface StyleRevisionOutput {
-      revised_style?: StyleGenerationOutput | null
-      revision_summary?: string | null
     }
     export interface StyleTypography {
       headlineFont?: string | null
@@ -317,11 +113,6 @@ export namespace partial_types {
       bodyFont?: string | null
       bodySize?: string | null
       bodyWeight?: string | null
-    }
-    export interface Subject {
-      description?: string | null
-      action?: string | null
-      position?: string | null
     }
     export interface TabStructure {
       has_tabs?: boolean | null
@@ -335,10 +126,6 @@ export namespace partial_types {
       tab_bar_height?: number | null
       icon_size?: number | null
       label_size?: number | null
-    }
-    export interface TextConfig {
-      header?: string | null
-      subheader?: string | null
     }
     export interface VisionTestResponse {
       model_name?: string | null

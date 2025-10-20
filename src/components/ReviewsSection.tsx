@@ -13,7 +13,7 @@ interface ReviewsSectionProps {
   appId: Id<'apps'>;
   appName: string;
   reviews: Array<{
-    _id: Id<'mockReviews'>;
+    _id: Id<'appReviews'>;
     rating: number;
     title?: string;
     reviewText: string;

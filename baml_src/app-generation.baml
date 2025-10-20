@@ -83,7 +83,7 @@ function GenerateApp(
   category_hint: string? @description("Optional category hint from user (e.g., 'Productivity', 'Health & Fitness'). Use this to inform the category choice, but you can adjust if another category fits better."),
   ui_style: string? @description("Optional UI style/aesthetic hint (e.g., 'Minimal & clean', 'Playful & vibrant', 'Dark mode with neon accents'). Use this to influence color palette, typography, and visual design.")
 ) -> DemoAppOutput {
-  client ScreenshotGeneratorMed
+  client ClaudeHaiku45
   prompt #"
     {{ _.role("user") }}
 
@@ -303,7 +303,7 @@ function ReformatAppDescription(
   user_feedback: string? @description("Optional user feedback for customization (e.g., 'Make it more playful', 'Emphasize productivity features')"),
   app_screenshots: image[]? @description("Optional screenshots showing the app's interface and features")
 ) -> string {
-  client ScreenshotGeneratorMed
+  client ClaudeHaiku45
   prompt #"
     {{ _.role("user") }}
 
@@ -394,7 +394,7 @@ function GenerateAppDesignPlan(
   style_guide: string @description("Complete visual style guide including colors, typography, mood, and design philosophy"),
   num_screens: int @description("Number of screens to plan (3-10)")
 ) -> AppStructure {
-  client ScreenshotGeneratorMed
+  client ClaudeHaiku45
   prompt #"
     {{ _.role("user") }}
 
@@ -564,7 +564,7 @@ function GenerateFirstScreenImagePrompt(
   tabs: TabStructure @description("Tab structure from AppStructure"),
   screen_detail: ScreenDetail @description("Details for this specific screen")
 ) -> ScreenImagePrompt {
-  client ScreenshotGeneratorMed
+  client ClaudeHaiku45
   prompt #"
     {{ _.role("user") }}
 
@@ -677,7 +677,7 @@ function GenerateScreenImagePromptWithReference(
   tabs: TabStructure @description("Tab structure from AppStructure"),
   screen_detail: ScreenDetail @description("Details for this specific screen")
 ) -> ScreenImagePrompt {
-  client ScreenshotGeneratorMed
+  client ClaudeHaiku45
   prompt #"
     {{ _.role("user") }}
 
@@ -808,7 +808,7 @@ function GenerateAppCoverImagePrompt(
   screen_names: string[] @description("Names of the app screens (e.g., 'Home Dashboard', 'Profile Settings', 'Chat View'). These names are often descriptive of the screen's purpose."),
   user_feedback: string? @description("Optional user guidance or feedback for the cover image generation (e.g., 'focus on gameplay', 'show the social features', 'make it minimal')")
 ) -> CoverImagePrompt {
-  client ScreenshotGeneratorMed
+  client ClaudeHaiku45
   prompt #"
     {{ _.role("user") }}
     
@@ -927,7 +927,7 @@ function GenerateCoverVideoPrompt(
   app_description: string @description("App description"),
   user_motion_prompt: string? @description("Optional user guidance for specific motion/animation (e.g., 'focus on subtle parallax', 'emphasize breathing effect', 'minimal camera movement')")
 ) -> CoverVideoPrompt {
-  client ScreenshotGeneratorMed
+  client ClaudeHaiku45
   prompt #"
     {{ _.role("user") }}
     

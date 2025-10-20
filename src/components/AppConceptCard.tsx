@@ -33,6 +33,20 @@ export default function AppConceptCard({ concept, isSelected, onClick }: AppConc
     setCoverLoaded(false);
   }, [concept.icon_url, concept.cover_url]);
 
+  // Generate a consistent gradient color based on the concept name for loading states
+  const getLoadingGradient = (text: string) => {
+    const hash = text.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const gradients = [
+      'from-purple-400/40 via-pink-400/40 to-rose-400/40',
+      'from-blue-400/40 via-cyan-400/40 to-teal-400/40',
+      'from-amber-400/40 via-orange-400/40 to-red-400/40',
+      'from-green-400/40 via-emerald-400/40 to-cyan-400/40',
+      'from-indigo-400/40 via-purple-400/40 to-pink-400/40',
+      'from-rose-400/40 via-orange-400/40 to-amber-400/40',
+    ];
+    return gradients[hash % gradients.length];
+  };
+
   return (
     <button
       type="button"
@@ -71,12 +85,18 @@ export default function AppConceptCard({ concept, isSelected, onClick }: AppConc
                 onLoad={() => setCoverLoaded(true)}
               />
               {!coverLoaded && (
-                <div className="absolute inset-0 bg-muted-foreground/15 animate-pulse" />
+                <div className={`absolute inset-0 bg-gradient-to-br ${getLoadingGradient(concept.app_name)} animate-pulse`}>
+                  {/* Shimmer effect overlay */}
+                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                </div>
               )}
             </div>
           ) : (
-            /* Cover loading placeholder */
-            <div className="absolute inset-0 bg-muted-foreground/15 animate-pulse" />
+            /* Cover loading placeholder with colorful gradient */
+            <div className={`absolute inset-0 bg-gradient-to-br ${getLoadingGradient(concept.app_name)} animate-pulse`}>
+              {/* Shimmer effect overlay */}
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            </div>
           )}
         </div>
 
@@ -96,11 +116,17 @@ export default function AppConceptCard({ concept, isSelected, onClick }: AppConc
                   onLoad={() => setIconLoaded(true)}
                 />
                 {!iconLoaded && (
-                  <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 animate-pulse" />
+                  <div className={`absolute inset-0 bg-gradient-to-br ${getLoadingGradient(concept.app_name + '-icon')} animate-pulse`}>
+                    {/* Shimmer effect overlay */}
+                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                  </div>
                 )}
               </>
             ) : (
-              <div className="h-full w-full bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div className={`h-full w-full bg-gradient-to-br ${getLoadingGradient(concept.app_name + '-icon')} animate-pulse`}>
+                {/* Shimmer effect overlay */}
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              </div>
             )}
           </div>
 

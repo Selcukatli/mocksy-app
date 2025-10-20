@@ -9,7 +9,7 @@ import { Plus, ArrowLeft, ArrowRight, Sparkles, PenSquare, Clock } from 'lucide-
 
 export default function MyAppsPage() {
   const { isSignedIn } = useUser();
-  const apps = useQuery(api.features.apps.queries.getApps) || [];
+  const apps = useQuery(api.data.apps.getApps) || [];
 
   const getAppIcon = (app: (typeof apps)[number]) => {
     if (!app) return null;

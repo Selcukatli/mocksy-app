@@ -23,7 +23,7 @@ export const generateAppCoverVideo = action({
   }> => {
     try {
       // 1. Check ownership and fetch app
-      const app = await ctx.runQuery(api.features.apps.queries.getApp, { appId: args.appId });
+      const app = await ctx.runQuery(api.data.apps.getApp, { appId: args.appId });
       if (!app) {
         throw new Error("App not found or access denied");
       }
@@ -42,7 +42,7 @@ export const generateAppCoverVideo = action({
         throw new Error("Not authenticated");
       }
 
-      const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
+      const profile = await ctx.runQuery(api.data.profiles.getCurrentProfile);
       if (!profile) {
         throw new Error("Profile not found");
       }
@@ -132,7 +132,7 @@ export const generateAppCoverVideo = action({
       console.log(`  ✓ Uploaded: ${storageId}`);
 
       // 11. Update app with cover video
-      await ctx.runMutation(internal.features.apps.internal.updateAIGeneratedApp, {
+      await ctx.runMutation(internal.data.apps.updateAIGeneratedApp, {
         appId: args.appId,
         coverVideoStorageId: storageId,
       });

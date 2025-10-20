@@ -69,14 +69,14 @@ export const improveAppStoreDescription = action({
       }
 
       // Get user profile
-      const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile, {});
+      const profile = await ctx.runQuery(api.data.profiles.getCurrentProfile, {});
 
       if (!profile) {
         throw new Error("Profile not found");
       }
 
       // Fetch app
-      const app = await ctx.runQuery(api.features.apps.queries.getApp, { appId: args.appId });
+      const app = await ctx.runQuery(api.data.apps.getApp, { appId: args.appId });
       if (!app) {
         throw new Error("App not found or access denied");
       }
@@ -148,7 +148,7 @@ export const processImproveAppStoreDescriptionJob = internalAction({
       });
 
       // Fetch app
-      const app = await ctx.runQuery(internal.features.apps.internal.getAppByIdInternal, { appId: job.appId });
+      const app = await ctx.runQuery(internal.data.apps.getAppByIdInternal, { appId: job.appId });
       if (!app) {
         await ctx.runMutation(internal.features.appGeneration.jobs.updateGenerationJobStatus, {
           jobId: args.jobId,
@@ -175,7 +175,7 @@ export const processImproveAppStoreDescriptionJob = internalAction({
       const screenshotUrls: string[] = [];
       if (includeScreenshots) {
         try {
-          const screenshots = await ctx.runQuery(internal.appScreens.getScreensByAppId, { appId: job.appId });
+          const screenshots = await ctx.runQuery(internal.data.appScreens.getScreensByAppId, { appId: job.appId });
           // Get up to 5 screenshots for context (to avoid token limits)
           const screenshotStorageIds = screenshots
             .filter(s => s.storageId)
@@ -225,7 +225,7 @@ export const processImproveAppStoreDescriptionJob = internalAction({
       console.log(`✅ Improved description (${improvedDescription.length} chars)`);
 
       // Update app with improved description
-      await ctx.runMutation(internal.features.apps.internal.updateAIGeneratedApp, {
+      await ctx.runMutation(internal.data.apps.updateAIGeneratedApp, {
         appId: job.appId,
         description: improvedDescription,
       });

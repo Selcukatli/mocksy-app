@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 interface ReviewCardProps {
   review: {
-    _id: Id<'mockReviews'>;
+    _id: Id<'appReviews'>;
     rating: number;
     title?: string;
     reviewText: string;

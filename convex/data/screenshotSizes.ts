@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "./_generated/server";
+import { mutation, query, internalMutation } from "../_generated/server";
 
 /**
  * Create a new screenshot size (internal - called by setup script)
@@ -9,7 +9,7 @@ export const createSize = mutation({
     name: v.string(),
     slug: v.string(),
     platform: v.union(v.literal("ios"), v.literal("android")),
-    deviceCategory: v.string(),
+    deviceCategory: v.union(v.literal("phone"), v.literal("tablet")),
     width: v.number(),
     height: v.number(),
     aspectRatio: v.string(),

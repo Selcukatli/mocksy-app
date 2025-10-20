@@ -1,5 +1,6 @@
 // Multi-Concept App Generation
-// Generates 4 diverse app concept variations from a single user description
+// Generates 1-4 diverse app concept variations from a single user description
+// Use num_concepts=1 for parallel generation (4x faster with Haiku)
 
 // ============================================
 // APP CONCEPT CLASSES
@@ -43,7 +44,7 @@ class AppConcept {
 }
 
 class AppConceptsOutput {
-  concepts AppConcept[] @description("Exactly 4 diverse app concepts, each with distinct visual style and approach")
+  concepts AppConcept[] @description("1-4 diverse app concepts based on num_concepts parameter, each with distinct visual style and approach")
 }
 
 // ============================================
@@ -52,38 +53,44 @@ class AppConceptsOutput {
 
 function GenerateAppConcepts(
   app_description_input: string @description("User-provided app description/concept to generate from"),
-  category_hint: string? @description("Optional category hint from user (e.g., 'Productivity', 'Health & Fitness')")
+  category_hint: string? @description("Optional category hint from user (e.g., 'Productivity', 'Health & Fitness')"),
+  num_concepts: int @description("Number of concepts to generate (1-4). Use 1 for parallel generation.")
 ) -> AppConceptsOutput {
-  client ScreenshotGeneratorMed
+  client ClaudeHaiku45
   prompt #"
     {{ _.role("user") }}
 
-    You are generating 4 DIVERSE app concept variations from a single user idea.
+    You are generating {{ num_concepts }} DIVERSE app concept variation(s) from a single user idea.
+    {% if num_concepts > 1 %}
     Each concept should explore a different visual style, mood, and design approach.
+    {% endif %}
 
     USER'S APP IDEA:
     {{ app_description_input }}
 
     {% if category_hint %}
     CATEGORY HINT: {{ category_hint }}
-    (Use this to inform your concepts, but you can vary it if appropriate)
+    (Use this to inform your concept{% if num_concepts > 1 %}s{% endif %}, but you can vary it if appropriate)
     {% endif %}
 
-    TASK: Create 4 distinct app concepts that interpret this idea in different ways.
+    TASK: Create {{ num_concepts }} distinct app concept{% if num_concepts > 1 %}s{% endif %} that interpret{% if num_concepts == 1 %}s{% endif %} this idea{% if num_concepts > 1 %} in different ways{% endif %}.
 
     ## DIVERSITY REQUIREMENTS
-
-    The 4 concepts should vary across these dimensions:
+    {% if num_concepts > 1 %}
+    The {{ num_concepts }} concepts should vary across these dimensions:
     - **Visual Style**: Minimal vs Bold, Light vs Dark, Flat vs 3D, Modern vs Classic
     - **Color Palette**: Different color schemes (e.g., pastels, neons, earth tones, monochrome)
     - **Mood**: Professional vs Playful, Calm vs Energetic, Serious vs Fun
     - **Design Philosophy**: Minimalist, Maximalist, Brutalist, Organic, Futuristic, etc.
 
     **CRITICAL**: Each concept should feel distinctly different. Users should be able to tell them apart at a glance.
+    {% else %}
+    Create a single well-defined concept with a clear visual style, color palette, mood, and design philosophy.
+    {% endif %}
 
     ## CONCEPT STRUCTURE
 
-    For each of the 4 concepts, provide:
+    For each of the {{ num_concepts }} concept{% if num_concepts > 1 %}s{% endif %}, provide:
 
     ### 1. APP NAME
     - Short, catchy app name (1-3 words max)
@@ -242,9 +249,11 @@ function GenerateAppConcepts(
 
     ## OUTPUT REQUIREMENTS
 
-    Return exactly 4 concepts in the `concepts` array.
+    Return exactly {{ num_concepts }} concept{% if num_concepts > 1 %}s{% endif %} in the `concepts` array.
     Each concept should be complete and self-contained.
-    Ensure clear visual diversity across all 4 concepts.
+    {% if num_concepts > 1 %}
+    Ensure clear visual diversity across all {{ num_concepts }} concepts.
+    {% endif %}
 
     {{ ctx.output_format }}
   "#
@@ -259,14 +268,16 @@ test GenerateMultipleConceptsForFitness {
   args {
     app_description_input "A fitness app that gamifies workouts with challenges, achievements, and social competition. Track progress, earn rewards, and stay motivated."
     category_hint "Health & Fitness"
+    num_concepts 4
   }
 }
 
-test GenerateMultipleConceptsForMeditation {
+test GenerateSingleConceptForMeditation {
   functions [GenerateAppConcepts]
   args {
     app_description_input "Mindfulness and meditation app for busy professionals. Quick 5-minute guided sessions, breathing exercises, and ambient soundscapes."
     category_hint null
+    num_concepts 1
   }
 }
 

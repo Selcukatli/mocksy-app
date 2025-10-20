@@ -23,8 +23,8 @@ export default function InlineStarRating({ appId }: InlineStarRatingProps) {
   const [pendingRating, setPendingRating] = useState<number | null>(null);
 
   const { isSignedIn } = useUser();
-  const createReview = useMutation(api.mockReviews.createReview);
-  const existingReview = useQuery(api.mockReviews.getUserReview, { appId });
+  const createReview = useMutation(api.data.appReviews.createReview);
+  const existingReview = useQuery(api.data.appReviews.getUserReview, { appId });
 
   // Set selectedRating when existingReview loads
   useEffect(() => {

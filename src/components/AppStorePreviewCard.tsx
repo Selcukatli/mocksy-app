@@ -351,8 +351,8 @@ export default function AppStorePreviewCard({
                 )}
               </div>
               
-              {/* App info positioned at card bottom - higher z-index to stay above loading overlay */}
-              <div className="relative p-4 md:p-6 flex items-center gap-4 -mt-12 z-50">
+              {/* App info positioned at card bottom - z-index below nav (z-40) but above content */}
+              <div className="relative p-4 md:p-6 flex items-center gap-4 -mt-12 z-30">
                 {/* App Icon - Smaller size with border and elevation */}
                 <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0 rounded-[22%] overflow-hidden bg-white shadow-2xl ring-2 ring-white/30">
                   {hasIcon && app.iconUrl ? (

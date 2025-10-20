@@ -48,13 +48,13 @@ export const scheduleAppGeneration = action({
       throw new Error("Must be authenticated to generate demo app");
     }
 
-    const profile = await ctx.runQuery(api.features.profiles.queries.getCurrentProfile);
+    const profile = await ctx.runQuery(api.data.profiles.getCurrentProfile);
     if (!profile) {
       throw new Error("Failed to get user profile");
     }
 
     // Create placeholder app
-    const appId: Id<"apps"> = await ctx.runMutation(internal.features.apps.internal.createAIGeneratedApp, {
+    const appId: Id<"apps"> = await ctx.runMutation(internal.data.apps.createAIGeneratedApp, {
       profileId: profile._id,
       name: "Generating...",
       description: "AI is generating your app. This will update in real-time.",
@@ -119,7 +119,7 @@ export const generateApp = internalAction({
         console.log(`✅ Using existing app: ${appId} (will update progressively)`);
       } else {
         console.log("💾 Creating app record with placeholder data...");
-        appId = await ctx.runMutation(internal.features.apps.internal.createAIGeneratedApp, {
+        appId = await ctx.runMutation(internal.data.apps.createAIGeneratedApp, {
           profileId: args.profileId,
           name: "Generating...",
           description: "AI is generating your app. This will update in real-time.",
@@ -163,7 +163,7 @@ export const generateApp = internalAction({
       // 3. UPDATE APP with generated concept
       console.log("💾 Updating app with generated name, description, and category...");
       const fullDescription = `${appConcept.app_subtitle}. ${appConcept.app_description}`;
-      await ctx.runMutation(internal.features.apps.internal.updateAIGeneratedApp, {
+      await ctx.runMutation(internal.data.apps.updateAIGeneratedApp, {
         appId,
         name: appConcept.app_name,
         description: fullDescription,
@@ -202,7 +202,7 @@ export const generateApp = internalAction({
           console.log(`  ✓ [ICON] Uploaded: ${storageId}`);
 
           // Update app with icon
-          await ctx.runMutation(internal.features.apps.internal.updateAIGeneratedApp, {
+          await ctx.runMutation(internal.data.apps.updateAIGeneratedApp, {
             appId,
             iconStorageId: storageId,
           });
@@ -247,10 +247,10 @@ export const generateApp = internalAction({
           let size;
           if (args.screenshotSizeId) {
             // Use provided size ID
-            size = await ctx.runQuery(api.screenshotSizes.getSizeById, { sizeId: args.screenshotSizeId });
+            size = await ctx.runQuery(api.data.screenshotSizes.getSizeById, { sizeId: args.screenshotSizeId });
           } else {
             // Use default iPhone 16 Pro Max by slug (stable across environments)
-            size = await ctx.runQuery(api.screenshotSizes.getSizeBySlug, { slug: "iphone-6-9" });
+            size = await ctx.runQuery(api.data.screenshotSizes.getSizeBySlug, { slug: "iphone-6-9" });
           }
           
           if (!size?.canvasStorageId) {
@@ -307,7 +307,7 @@ export const generateApp = internalAction({
           const firstScreenBlob = await firstScreenResponse.blob();
           const firstScreenStorageId = await ctx.storage.store(firstScreenBlob);
 
-          const firstScreenId = await ctx.runMutation(internal.appScreens.createAIGeneratedAppScreen, {
+          const firstScreenId = await ctx.runMutation(internal.data.appScreens.createAIGeneratedAppScreen, {
             appId,
             profileId: args.profileId!,
             name: firstScreenDetail.screen_name,
@@ -374,7 +374,7 @@ export const generateApp = internalAction({
                 const screenBlob = await screenResponse.blob();
                 const screenStorageId = await ctx.storage.store(screenBlob);
 
-                const screenId = await ctx.runMutation(internal.appScreens.createAIGeneratedAppScreen, {
+                const screenId = await ctx.runMutation(internal.data.appScreens.createAIGeneratedAppScreen, {
                   appId,
                   profileId: args.profileId!,
                   name: screenDetail.screen_name,

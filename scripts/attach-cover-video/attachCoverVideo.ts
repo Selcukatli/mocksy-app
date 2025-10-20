@@ -102,7 +102,7 @@ async function main() {
   try {
     // Check if app exists
     console.log("🔍 Verifying app exists...");
-    const appPreview = await client.query(api.apps.getPublicAppPreview, {
+    const appPreview = await client.query(api.data.apps.getPublicAppPreview, {
       appId: appId as Id<"apps">,
     });
 
@@ -150,7 +150,7 @@ async function main() {
 
     // Update app with cover video
     console.log("💾 Updating app with cover video...");
-    await client.mutation(api.apps.updateCoverVideo, {
+    await client.mutation(api.data.apps.updateCoverVideo, {
       appId: appId as Id<"apps">,
       coverVideoStorageId: storageId,
     });

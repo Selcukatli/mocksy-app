@@ -78,73 +78,6 @@ export interface AppStructure {
   
 }
 
-export interface Avatar {
-  summary: string
-  apparent_age: string
-  gender_presentation: string
-  ethnic_appearance?: string | null
-  face_shape: string
-  jawline: string
-  body_build?: string | null
-  skin_tone: string
-  complexion_details?: string | null
-  hair_color: string
-  hair_length: string
-  hair_style: string
-  eye_color: string
-  eye_shape: string
-  eyebrows: string
-  nose_description: string
-  lip_description: string
-  facial_hair?: string | null
-  glasses: boolean
-  glasses_style?: string | null
-  distinctive_features?: string[] | null
-  confidence: number
-  key_features: string[]
-  
-}
-
-export interface Background {
-  colors: string[]
-  effects: string[]
-  placement: string
-  seamless_to_bottom: boolean
-  forbidden: string[]
-  
-}
-
-export interface BasicResponse {
-  answer: string
-  confidence: number
-  
-}
-
-export interface Character {
-  name?: string | null
-  avatar: Avatar
-  outfit: Outfit
-  expression?: string | null
-  signature_colors?: string[] | null
-  
-}
-
-export interface CharacterInScene {
-  character_index: number
-  description: string
-  pose: string
-  placement: string
-  outfit_modifications?: string | null
-  interaction?: string | null
-  
-}
-
-export interface Composition {
-  priority: string
-  rules: string[]
-  
-}
-
 export interface CoverImagePrompt {
   image_prompt: string
   style_notes: string
@@ -166,68 +99,10 @@ export interface DemoAppOutput {
   
 }
 
-export interface DetailedResponse {
-  answer: string
-  confidence: number
-  explanation?: string | null
-  sources?: string[] | null
-  
-}
-
-export interface DeviceImageScore {
-  overall_score: number
-  is_front_facing: boolean
-  has_black_screen: boolean
-  has_black_background: boolean
-  no_notch_or_island: boolean
-  proper_size: boolean
-  all_corners_visible: boolean
-  is_vertical: boolean
-  no_text_or_labels: boolean
-  frame_matches_style: boolean
-  issues: string[]
-  reasoning: string
-  
-}
-
-export interface DeviceSpec {
-  type: string
-  aspect_ratio: string
-  frame: string
-  angle: string
-  scale: string
-  position: string
-  screenshot: ScreenshotTreatment
-  
-}
-
-export interface FontStyle {
-  family: string
-  weight: number
-  color: string
-  effects: string[]
-  
-}
-
-export interface HeaderText {
-  copy: string
-  placement: string
-  font: FontStyle
-  size: string
-  
-}
-
 export interface ImprovedDescriptionOutput {
   improved_description: string
   improved_style: string
   inferred_category: string
-  
-}
-
-export interface LayoutConfig {
-  composition: string
-  device_orientation: string
-  device_type: string
   
 }
 
@@ -236,70 +111,6 @@ export interface ModelTestResponse {
   response_text: string
   character_count: number
   passed: boolean
-  
-}
-
-export interface Outfit {
-  top?: string | null
-  bottom?: string | null
-  footwear?: string | null
-  outerwear?: string | null
-  accessories?: string[] | null
-  style: string
-  color_scheme?: string | null
-  fabric_textures?: string[] | null
-  
-}
-
-export interface PromptStructure {
-  subjects: Subject[]
-  group_action?: string | null
-  environment: string
-  style: PromptStyle
-  technical: PromptTechnical
-  quality: string[]
-  
-}
-
-export interface PromptStyle {
-  art_style: string
-  color_palette: string
-  mood: string
-  lighting: string
-  texture: string
-  
-}
-
-export interface PromptTechnical {
-  camera_angle: string
-  shot_type: string
-  composition: string
-  depth_of_field: string
-  
-}
-
-export interface Scene {
-  main_description: string
-  characters: CharacterInScene[]
-  character_arrangement: string
-  camera_angle: string
-  shot_type: string
-  setting: string
-  background: string
-  time_of_day: string
-  mood: string
-  color_palette: string
-  lighting_style: string
-  style_keywords: string[]
-  quality_markers: string[]
-  main_prompt: string
-  negative_prompt: string
-  structured_prompt: PromptStructure
-  suggested_guidance: number
-  complexity_score: number
-  avatar_integration: string
-  character_count: number
-  key_elements: string[]
   
 }
 
@@ -317,64 +128,11 @@ export interface ScreenImagePrompt {
   
 }
 
-export interface ScreenshotConfig {
-  text: TextConfig
-  layout: LayoutConfig
-  
-}
-
-export interface ScreenshotPromptStructured {
-  style: string
-  background: Background
-  device: DeviceSpec
-  header_text: HeaderText
-  composition: Composition
-  
-}
-
-export interface ScreenshotSetInput {
-  app_description: string
-  screenshot_count: number
-  
-}
-
-export interface ScreenshotTreatment {
-  treatment: string
-  preserve: boolean
-  forbidden: string[]
-  
-}
-
 export interface StyleColors {
   primary: string
   background: string
   text: string
   accent: string
-  
-}
-
-export interface StyleConfig {
-  background_color: string
-  details: string
-  text_style: string
-  device_style: string
-  
-}
-
-export interface StyleDemoOutput {
-  app_concept: string
-  app_icon_prompt: string
-  screenshots: StyleDemoScreenshotConfig[]
-  
-}
-
-export interface StyleDemoScreenshotConfig {
-  header_copy: string
-  subheader_copy?: string | null
-  header_position: string
-  device_orientation: string
-  device_position: string
-  app_screen_prompt: string
   
 }
 
@@ -385,20 +143,6 @@ export interface StyleEffects {
   
 }
 
-export interface StyleGenerationOutput {
-  style_name: string
-  style_config: StyleConfig
-  device_reference_prompt: string
-  preview_image_prompt: string
-  
-}
-
-export interface StyleRevisionOutput {
-  revised_style: StyleGenerationOutput
-  revision_summary: string
-  
-}
-
 export interface StyleTypography {
   headlineFont: string
   headlineSize: string
@@ -406,13 +150,6 @@ export interface StyleTypography {
   bodyFont: string
   bodySize: string
   bodyWeight: string
-  
-}
-
-export interface Subject {
-  description: string
-  action: string
-  position: string
   
 }
 
@@ -428,12 +165,6 @@ export interface TabStructure {
   tab_bar_height: number
   icon_size: number
   label_size: number
-  
-}
-
-export interface TextConfig {
-  header: string
-  subheader?: string | null
   
 }
 

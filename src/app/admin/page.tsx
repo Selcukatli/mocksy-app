@@ -34,7 +34,7 @@ export default function AdminPage() {
   }, []); // Only run once on mount - setting static values
   
   // ALWAYS call all hooks - no conditional logic
-  const isAdmin = useQuery(api.features.profiles.queries.isCurrentUserAdmin);
+  const isAdmin = useQuery(api.data.profiles.isCurrentUserAdmin);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -69,7 +69,7 @@ export default function AdminPage() {
     };
   }, [shouldQueryApps, debouncedSearchQuery, categoryFilter, statusFilter, featuredFilter]);
   
-  const apps = useQuery(api.adminActions.getAllAppsForAdmin, queryArgs);
+  const apps = useQuery(api.features.admin.crud.getAllAppsForAdmin, queryArgs);
   
   // Keep track of the last successful data to avoid showing skeleton on refetch
   const [lastApps, setLastApps] = useState<typeof apps>(undefined);
@@ -83,11 +83,11 @@ export default function AdminPage() {
   // Use lastApps to display while refetching to avoid flickering
   const displayApps = apps !== undefined ? apps : lastApps;
   
-  const featureAppMutation = useMutation(api.adminActions.featureApp);
-  const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
-  const deleteAppMutation = useMutation(api.features.apps.queries.deleteApp);
-  const updateAppStatusMutation = useMutation(api.adminActions.updateAppStatus);
-  const publishToProdAction = useAction(api.adminActions.publishAppToProd);
+  const featureAppMutation = useMutation(api.features.admin.crud.featureApp);
+  const unfeatureAppMutation = useMutation(api.features.admin.crud.unfeatureApp);
+  const deleteAppMutation = useMutation(api.data.apps.deleteApp);
+  const updateAppStatusMutation = useMutation(api.features.admin.crud.updateAppStatus);
+  const publishToProdAction = useAction(api.features.admin.actions.publishAppToProd);
 
   // Get unique categories including from all apps (not just published)
   const allCategories = useMemo(() => {

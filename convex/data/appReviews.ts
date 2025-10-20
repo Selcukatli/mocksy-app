@@ -1,13 +1,13 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
-import { getCurrentUser } from "./features/profiles";
+import { query, mutation } from "../_generated/server";
+import { getCurrentUser } from "./profiles";
 
 export const getAppReviews = query({
   args: { appId: v.id("apps"), limit: v.optional(v.number()) },
   returns: v.object({
     reviews: v.array(
       v.object({
-        _id: v.id("mockReviews"),
+        _id: v.id("appReviews"),
         rating: v.number(),
         title: v.optional(v.string()),
         reviewText: v.string(),
@@ -35,7 +35,7 @@ export const getAppReviews = query({
 
     // Get all reviews for the app
     const allReviews = await ctx.db
-      .query("mockReviews")
+      .query("appReviews")
       .withIndex("by_app", (q) => q.eq("appId", args.appId))
       .collect();
 
@@ -56,7 +56,7 @@ export const getAppReviews = query({
 
     // Get most recent reviews with limit
     const recentReviews = await ctx.db
-      .query("mockReviews")
+      .query("appReviews")
       .withIndex("by_app_and_created", (q) => q.eq("appId", args.appId))
       .order("desc")
       .take(limit);
@@ -95,7 +95,7 @@ export const getUserReview = query({
   returns: v.union(
     v.null(),
     v.object({
-      _id: v.id("mockReviews"),
+      _id: v.id("appReviews"),
       rating: v.number(),
     })
   ),
@@ -106,7 +106,7 @@ export const getUserReview = query({
     }
 
     const existingReview = await ctx.db
-      .query("mockReviews")
+      .query("appReviews")
       .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
       .filter((q) => q.eq(q.field("appId"), args.appId))
       .first();
@@ -131,7 +131,7 @@ export const createReview = mutation({
   },
   returns: v.object({
     success: v.boolean(),
-    reviewId: v.optional(v.id("mockReviews")),
+    reviewId: v.optional(v.id("appReviews")),
     message: v.string(),
   }),
   handler: async (ctx, args) => {
@@ -151,7 +151,7 @@ export const createReview = mutation({
 
     // Check if user already reviewed this app
     const existingReview = await ctx.db
-      .query("mockReviews")
+      .query("appReviews")
       .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
       .filter((q) => q.eq(q.field("appId"), args.appId))
       .first();
@@ -169,7 +169,7 @@ export const createReview = mutation({
       reviewId = existingReview._id;
     } else {
       // Create new review
-      reviewId = await ctx.db.insert("mockReviews", {
+      reviewId = await ctx.db.insert("appReviews", {
         appId: args.appId,
         profileId: profile._id,
         rating: args.rating,

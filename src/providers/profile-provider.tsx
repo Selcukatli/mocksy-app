@@ -12,8 +12,8 @@ interface ProfileProviderProps {
 export function ProfileProvider({ children }: ProfileProviderProps) {
   const { isSignedIn } = useAuth();
   const { user } = useUser();
-  const profile = useQuery(api.features.profiles.queries.getCurrentProfile);
-  const ensureProfile = useMutation(api.features.profiles.mutations.ensureCurrentUserProfile);
+  const profile = useQuery(api.data.profiles.getCurrentProfile);
+  const ensureProfile = useMutation(api.data.profiles.ensureCurrentUserProfile);
 
   // Track if we're currently updating to prevent multiple simultaneous calls
   const isUpdating = useRef(false);

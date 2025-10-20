@@ -24,6 +24,7 @@ export default defineSchema({
 
   apps: defineTable({
     profileId: v.id("profiles"), // Owner of the app
+    conceptId: v.optional(v.id("appConcepts")), // Which concept was used to create this app
     name: v.string(),
     subtitle: v.optional(v.string()), // Short promotional text (App Store subtitle)
     description: v.optional(v.string()),
@@ -79,7 +80,55 @@ export default defineSchema({
     .index("by_app", ["appId"])
     .index("by_profile", ["profileId"]),
 
-  mockReviews: defineTable({
+  appConcepts: defineTable({
+    jobId: v.id("conceptGenerationJobs"), // Which generation job created this
+    profileId: v.id("profiles"), // Owner of the concept
+    
+    // Core concept data
+    name: v.string(), // App name
+    subtitle: v.string(), // App Store subtitle
+    description: v.string(), // Full App Store description
+    category: v.optional(v.string()), // App category
+    styleDescription: v.string(), // Complete visual style guide
+    
+    // Structured design system
+    colors: v.object({
+      primary: v.string(),
+      background: v.string(),
+      text: v.string(),
+      accent: v.string(),
+    }),
+    typography: v.object({
+      headlineFont: v.string(),
+      headlineSize: v.string(),
+      headlineWeight: v.string(),
+      bodyFont: v.string(),
+      bodySize: v.string(),
+      bodyWeight: v.string(),
+    }),
+    effects: v.object({
+      cornerRadius: v.string(),
+      shadowStyle: v.string(),
+      designPhilosophy: v.string(),
+    }),
+    
+    // Images stored in Convex storage (downloaded from fal.ai)
+    iconStorageId: v.optional(v.id("_storage")),
+    coverImageStorageId: v.optional(v.id("_storage")),
+    
+    // Original generation prompts (for regeneration capability)
+    iconPrompt: v.string(),
+    coverPrompt: v.string(),
+    
+    // Metadata
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_job", ["jobId"])
+    .index("by_profile", ["profileId"])
+    .index("by_profile_and_created", ["profileId", "createdAt"]),
+
+  appReviews: defineTable({
     appId: v.id("apps"), // App being reviewed
     profileId: v.id("profiles"), // Reviewer
     rating: v.number(), // 1-5 stars
@@ -93,206 +142,6 @@ export default defineSchema({
     .index("by_profile", ["profileId"])
     .index("by_app_and_created", ["appId", "createdAt"])
     .index("by_rating", ["appId", "rating"]),
-
-  screenshotSets: defineTable({
-    appId: v.id("apps"), // Which app this set belongs to
-    createdBy: v.id("profiles"), // User who created the set
-    name: v.string(), // Set name (e.g., "iOS Screenshots - English")
-    deviceType: v.optional(v.string()), // e.g. "iPhone 15 Pro", "iPad Pro", "Pixel 8"
-    language: v.optional(v.string()), // e.g. "en", "es", "fr"
-    status: v.optional(v.string()), // "draft", "ready", "exported"
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_app", ["appId"])
-    .index("by_creator", ["createdBy"])
-    .index("by_app_and_created", ["appId", "createdAt"]),
-
-  screenshots: defineTable({
-    setId: v.id("screenshotSets"), // Which set this screenshot belongs to
-    appId: v.id("apps"), // Denormalized for easier queries
-    createdBy: v.id("profiles"), // User who created the screenshot
-    slotNumber: v.number(), // Position in the set (1-10)
-    title: v.optional(v.string()), // Screenshot title/heading
-    subtitle: v.optional(v.string()), // Screenshot subtitle/description
-    imageStorageId: v.optional(v.id("_storage")), // Generated image in storage
-    appScreenId: v.optional(v.id("appScreens")), // Optional reference to source app screen
-    themeId: v.optional(v.string()), // Theme/vibe used for generation
-    layoutId: v.optional(v.string()), // Layout template used
-    isEmpty: v.boolean(), // Whether this slot is empty
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_set", ["setId", "slotNumber"])
-    .index("by_app", ["appId"])
-    .index("by_creator", ["createdBy"]),
-
-  // Templates system - replaces vibes
-  templates: defineTable({
-    profileId: v.id("profiles"), // Template owner
-    name: v.string(), // Template name
-    description: v.optional(v.string()), // Template description
-    imageStorageId: v.optional(v.id("_storage")), // Representative preview image
-    referenceImageStorageId: v.optional(v.id("_storage")), // Reference/inspiration image for generating prompts
-    isPublic: v.boolean(), // Whether template is public/shareable
-    currentVariantId: v.optional(v.id("templateVariants")), // Points to active variant
-    usageCount: v.optional(v.number()), // Track how many times used
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_profile", ["profileId"])
-    .index("by_public", ["isPublic"])
-    .index("by_profile_and_created", ["profileId", "createdAt"]),
-
-  templateVariants: defineTable({
-    templateId: v.id("templates"), // Parent template
-    version: v.number(), // Version number (1, 2, 3...)
-    basePrompt: v.string(), // Core image-to-image prompt
-    styleSettings: v.object({
-      colorScheme: v.optional(v.string()), // Color palette/theme
-      artStyle: v.optional(v.string()), // Art direction
-      mood: v.optional(v.string()), // Mood/feeling
-      effects: v.optional(v.array(v.string())), // Special effects/filters
-    }),
-    deviceFrameSettings: v.optional(
-      v.object({
-        showFrame: v.boolean(),
-        frameColor: v.string(),
-        frameThickness: v.number(),
-        showDynamicIsland: v.optional(v.boolean()),
-      }),
-    ),
-    isActive: v.boolean(), // Whether this is the active variant
-    notes: v.optional(v.string()), // Version notes/changelog
-    createdAt: v.number(),
-  })
-    .index("by_template", ["templateId"])
-    .index("by_template_and_active", ["templateId", "isActive"])
-    .index("by_template_and_version", ["templateId", "version"]),
-
-  templateScreenshots: defineTable({
-    templateVariantId: v.id("templateVariants"), // Links to specific variant
-    templateId: v.id("templates"), // Denormalized for queries
-    appId: v.optional(v.id("apps")), // Optional app association
-
-    // Content
-    headerText: v.string(),
-    subheaderText: v.optional(v.string()),
-
-    // Layout configuration
-    layoutSettings: v.object({
-      textPosition: v.union(
-        v.literal("top"),
-        v.literal("bottom"),
-        v.literal("overlay-top"),
-        v.literal("overlay-bottom"),
-      ),
-      textAlignment: v.union(
-        v.literal("left"),
-        v.literal("center"),
-        v.literal("right"),
-      ),
-      headerStyle: v.optional(
-        v.object({
-          fontSize: v.optional(v.string()),
-          fontWeight: v.optional(v.string()),
-          color: v.optional(v.string()),
-        }),
-      ),
-      subheaderStyle: v.optional(
-        v.object({
-          fontSize: v.optional(v.string()),
-          fontWeight: v.optional(v.string()),
-          color: v.optional(v.string()),
-        }),
-      ),
-    }),
-
-    // Generated assets
-    imageStorageId: v.optional(v.id("_storage")), // Generated screenshot
-    sourceScreenId: v.optional(v.id("appScreens")), // Source app screen used
-
-    // Metadata
-    slotNumber: v.optional(v.number()), // If part of a set
-    tags: v.optional(v.array(v.string())), // For searching/filtering
-    generationSettings: v.optional(v.string()), // JSON string of generation params
-
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_template_variant", ["templateVariantId"])
-    .index("by_template", ["templateId"])
-    .index("by_app", ["appId"]),
-
-  screenshotSizes: defineTable({
-    // Identity
-    name: v.string(), // e.g., "iPhone 16 Pro Max", "Google Play Phone Portrait"
-    slug: v.string(), // URL-friendly identifier (e.g., "iphone-6-9", "android-phone-portrait")
-    platform: v.union(v.literal("ios"), v.literal("android")), // Platform
-    deviceCategory: v.string(), // "phone", "tablet", "watch"
-
-    // Dimensions
-    width: v.number(), // Width in pixels
-    height: v.number(), // Height in pixels
-    aspectRatio: v.string(), // e.g., "9:16", "16:9"
-
-    // Canvas template
-    canvasStorageId: v.optional(v.id("_storage")), // Blank canvas image at exact dimensions
-
-    // Metadata
-    displaySize: v.optional(v.string()), // e.g., "6.9 inch", "10 inch tablet"
-    isRequired: v.boolean(), // Whether this size is required by the store
-    isPrimary: v.boolean(), // Whether this is a primary/recommended size
-    minScreenshots: v.optional(v.number()), // Min required screenshots for this size
-    maxScreenshots: v.optional(v.number()), // Max allowed screenshots
-
-    // Store requirements
-    notes: v.optional(v.string()), // Special requirements or notes
-
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_platform", ["platform"])
-    .index("by_platform_and_primary", ["platform", "isPrimary"])
-    .index("by_slug", ["slug"])
-    .index("by_aspect_ratio", ["aspectRatio"]),
-
-  jobs: defineTable({
-    profileId: v.id("profiles"), // Owner initiating the generation
-    type: v.union(
-      v.literal("style"),
-      v.literal("screenshot"),
-      v.literal("template")
-    ),
-    status: v.union(
-      v.literal("queued"),
-      v.literal("running"),
-      v.literal("succeeded"),
-      v.literal("failed")
-    ),
-    message: v.optional(v.string()), // Human-readable status update
-    progress: v.optional(v.number()), // 0-1 progress indicator
-    result: v.optional(
-      v.union(
-        v.object({
-          table: v.literal("styles"),
-          id: v.id("styles"),
-        })
-      )
-    ),
-    error: v.optional(v.string()), // Failure reason snapshot
-    payload: v.optional(
-      v.object({
-        description: v.optional(v.string()),
-        referenceImageStorageId: v.optional(v.id("_storage"))
-      })
-    ),
-    createdAt: v.number(),
-    updatedAt: v.number()
-  })
-    .index("by_profile", ["profileId"])
-    .index("by_type", ["type"])
-    .index("by_status", ["status"]),
 
   appGenerationJobs: defineTable({
     profileId: v.id("profiles"), // Owner initiating the generation
@@ -415,56 +264,40 @@ export default defineSchema({
     .index("by_app_and_type", ["appId", "type"])
     .index("by_status", ["status"]),
 
-  styles: defineTable({
-    // Identity
-    name: v.string(), // e.g., "Snap Style", "Spooky Halloween", "Watercolor Zen"
-    slug: v.string(), // URL-friendly identifier (e.g., "snap-style", "spooky-halloween")
-    description: v.optional(v.string()), // Brief description of the style
-
-    // Ownership & visibility
-    createdBy: v.optional(v.id("profiles")), // Creator (optional for backward compatibility)
-    isPublic: v.boolean(), // Whether style is publicly available
-    status: v.union(v.literal("draft"), v.literal("published")), // Publishing status
-
-    // BAML StyleConfig - Only visual styling, no content or layout
-    backgroundColor: v.string(), // Background color description (e.g., "bright yellow solid color")
-    details: v.string(), // Decorative elements description (emojis, shapes, placement)
-    textStyle: v.string(), // Text styling only (font, weight, color, effects)
-    deviceStyle: v.string(), // Device frame styling (colors, materials, effects)
-
-    // Preview & metadata
-    referenceImageStorageId: v.optional(v.id("_storage")), // Reference/inspiration image
-    previewImageStorageId: v.optional(v.id("_storage")), // Example screenshot
-    deviceReferenceImageStorageId: v.optional(v.id("_storage")), // Device frame reference image for consistent styling
-    tags: v.optional(v.array(v.string())), // Categorization (e.g., ["playful", "pop-art", "bright"])
-    category: v.optional(v.string()), // Style category (e.g., "Pop Art", "Minimalist", "Seasonal")
-
-    // Demo links
-    demoAppId: v.optional(v.id("apps")), // Demo app showcasing this style
-    demoSetId: v.optional(v.id("screenshotSets")), // Demo screenshot set
-
-    // Usage tracking
-    usageCount: v.optional(v.number()), // How many times used
-    isFeatured: v.optional(v.boolean()), // Highlight in UI
-
-    // Timestamps
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_creator", ["createdBy"])
-    .index("by_public", ["isPublic"])
-    .index("by_slug", ["slug"])
-    .index("by_category", ["category"])
-    .index("by_featured", ["isFeatured"])
-    .index("by_status", ["status"])
-    .index("by_public_and_status", ["isPublic", "status"]),
-
+  // Featured apps on the appstore homepage
   featuredApps: defineTable({
-    appId: v.id("apps"), // App being featured
-    featuredBy: v.id("profiles"), // Admin who featured it
-    order: v.optional(v.number()), // For future manual ordering
-    featuredAt: v.number(), // Timestamp when featured
+    appId: v.id("apps"),
+    featuredBy: v.optional(v.id("profiles")), // Admin who featured the app (optional for backward compatibility)
+    featuredAt: v.number(), // When the app was featured (for ordering)
   })
     .index("by_app", ["appId"])
     .index("by_featured_at", ["featuredAt"]),
+
+  // Screenshot sizes for app generation (device specifications)
+  screenshotSizes: defineTable({
+    name: v.string(), // e.g., "iPhone 15 Pro", "iPad Pro 12.9\""
+    slug: v.string(), // URL-friendly identifier (e.g., "iphone-15-pro")
+    platform: v.union(v.literal("ios"), v.literal("android")),
+    deviceCategory: v.union(v.literal("phone"), v.literal("tablet")),
+    // Dimensions
+    width: v.number(), // Device width in pixels
+    height: v.number(), // Device height in pixels
+    aspectRatio: v.string(), // e.g., "19.5:9"
+    // Canvas template (optional)
+    canvasStorageId: v.optional(v.id("_storage")), // Pre-made device frame template
+    // Display info
+    displaySize: v.optional(v.string()), // e.g., "6.1 inches"
+    // Generation settings
+    isRequired: v.boolean(), // Whether this size is required for app submission
+    isPrimary: v.boolean(), // Whether this is the primary/default size for this platform
+    minScreenshots: v.optional(v.number()), // Min required screenshots for this device
+    maxScreenshots: v.optional(v.number()), // Max allowed screenshots for this device
+    notes: v.optional(v.string()), // Additional notes about this size
+    // Metadata
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_platform", ["platform"])
+    .index("by_slug", ["slug"])
+    .index("by_platform_and_primary", ["platform", "isPrimary"]),
 });

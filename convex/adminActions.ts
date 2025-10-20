@@ -392,7 +392,7 @@ export const publishAppToProd = action({
 
     try {
       // Step 1: Read app data from CURRENT (dev) deployment
-      const app = await ctx.runQuery(internal.apps.getAppByIdInternal, {
+      const app = await ctx.runQuery(internal.features.apps.internal.getAppByIdInternal, {
         appId: args.appId,
       });
       
@@ -548,7 +548,7 @@ export const publishAppToProd = action({
       // Update dev app with prod tracking info
       if (actionResult.success && actionResult.appId) {
         console.log("📝 [PUBLISH] Updating dev app with prod tracking info...");
-        await ctx.runMutation(internal.apps.updateProdPublishStatus, {
+        await ctx.runMutation(internal.features.apps.internal.updateProdPublishStatus, {
           appId: args.appId,
           prodAppId: actionResult.appId,
           publishedAt: Date.now(),
@@ -676,7 +676,7 @@ export const createAppFromDev = action({
 
       // Create the app using internal mutation
       console.log("📝 [RECEIVE] Creating app via internal mutation...");
-      const appId: Id<"apps"> = await ctx.runMutation(internal.apps.createAppForMigration, {
+      const appId: Id<"apps"> = await ctx.runMutation(internal.features.apps.internal.createAppForMigration, {
         profileId: profile._id as Id<"profiles">,
         name: args.name,
         subtitle: args.subtitle,

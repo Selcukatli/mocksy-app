@@ -107,9 +107,9 @@ function AppsTable({
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   
-  const generateCoverVideo = useAction(api.appGenerationActions.generateAppCoverVideo);
-  const generateCoverImage = useAction(api.appGenerationActions.generateAndSaveCoverImage);
-  const removeCoverVideo = useMutation(api.apps.removeCoverVideo);
+  const generateCoverVideo = useAction(api.features.appGeneration.generateAppCoverVideo);
+  const generateCoverImage = useAction(api.features.appGeneration.generateAndSaveCoverImage);
+  const removeCoverVideo = useMutation(api.features.apps.queries.removeCoverVideo);
 
   // Update lightbox when video generation completes
   useEffect(() => {

@@ -17,7 +17,7 @@ export default async function Image({ params }: { params: Promise<{ 'app-id': st
 
   try {
     // Fetch app data from Convex
-    const appPreview = await fetchQuery(api.apps.getPublicAppPreview, {
+    const appPreview = await fetchQuery(api.features.apps.queries.getPublicAppPreview, {
       appId: appId as Id<'apps'>,
     });
 

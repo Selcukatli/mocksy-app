@@ -57,7 +57,7 @@ export default function AppStorePageClient({ params }: PageProps) {
   const isValidFormat = /^[a-z][a-z0-9]{31}$/i.test(appId);
 
   const appPreview = useQuery(
-    api.apps.getPublicAppPreview,
+    api.features.apps.queries.getPublicAppPreview,
     isValidFormat ? { appId: appId as Id<'apps'> } : 'skip'
   );
   const isAdmin = useQuery(api.features.profiles.queries.isCurrentUserAdmin);
@@ -70,30 +70,30 @@ export default function AppStorePageClient({ params }: PageProps) {
     isValidFormat ? { appId: appId as Id<'apps'> } : 'skip'
   );
   const generationJob = useQuery(
-    api.appGenerationJobs.getAppGenerationJobByAppId,
+    api.features.appGeneration.jobs.getAppGenerationJobByAppId,
     isValidFormat ? { appId: appId as Id<'apps'> } : 'skip'
   );
   const coverGenerationJob = useQuery(
-    api.generationJobs.getActiveGenerationJob,
+    api.features.appGeneration.jobs.getActiveGenerationJob,
     isValidFormat ? { appId: appId as Id<'apps'>, type: "coverImage" } : 'skip'
   );
   const videoGenerationJob = useQuery(
-    api.generationJobs.getActiveGenerationJob,
+    api.features.appGeneration.jobs.getActiveGenerationJob,
     isValidFormat ? { appId: appId as Id<'apps'>, type: "coverVideo" } : 'skip'
   );
   const descriptionJob = useQuery(
-    api.generationJobs.getActiveGenerationJob,
+    api.features.appGeneration.jobs.getActiveGenerationJob,
     isValidFormat ? { appId: appId as Id<'apps'>, type: "improveAppDescription" } : 'skip'
   );
-  const generateCoverImage = useAction(api.appGenerationActions.generateAppCoverImage);
-  const saveCoverImage = useAction(api.appGenerationActions.saveAppCoverImage);
-  const generateCoverVideo = useAction(api.appGenerationActions.generateAppCoverVideo);
-  const removeCoverVideoMutation = useMutation(api.apps.removeCoverVideo);
-  const deleteAppMutation = useMutation(api.apps.deleteApp);
-  const updateAppMutation = useMutation(api.apps.updateApp);
+  const generateCoverImage = useAction(api.features.appGeneration.generateAppCoverImage);
+  const saveCoverImage = useAction(api.features.appGeneration.saveAppCoverImage);
+  const generateCoverVideo = useAction(api.features.appGeneration.generateAppCoverVideo);
+  const removeCoverVideoMutation = useMutation(api.features.apps.queries.removeCoverVideo);
+  const deleteAppMutation = useMutation(api.features.apps.queries.deleteApp);
+  const updateAppMutation = useMutation(api.features.apps.queries.updateApp);
   const featureAppMutation = useMutation(api.adminActions.featureApp);
   const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
-  const improveDescription = useAction(api.appGenerationActions.improveAppStoreDescription);
+  const improveDescription = useAction(api.features.appGeneration.improveAppStoreDescription);
 
   // Fetch reviews for this app (Convex queries are reactive and auto-update)
   const reviewsData = useQuery(
@@ -103,7 +103,7 @@ export default function AppStorePageClient({ params }: PageProps) {
 
   // Fetch similar apps from the same category
   const similarApps = useQuery(
-    api.apps.getPublicDemoApps,
+    api.features.apps.queries.getPublicDemoApps,
     appPreview?.app.category
       ? { category: appPreview.app.category, limit: 7 }
       : 'skip'

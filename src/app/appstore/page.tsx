@@ -15,9 +15,9 @@ export default function AppStorePage() {
   const [minLoadTime, setMinLoadTime] = useState(true);
   const router = useRouter();
 
-  const featuredApps = useQuery(api.apps.getFeaturedApps, { limit: 5 });
-  const categories = useQuery(api.apps.getAppCategories);
-  const allApps = useQuery(api.apps.getPublicDemoApps, { limit: 100 });
+  const featuredApps = useQuery(api.features.apps.queries.getFeaturedApps, { limit: 5 });
+  const categories = useQuery(api.features.apps.queries.getAppCategories);
+  const allApps = useQuery(api.features.apps.queries.getPublicDemoApps, { limit: 100 });
 
   // Force minimum loading time so skeleton is visible
   useEffect(() => {

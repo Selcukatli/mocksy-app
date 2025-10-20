@@ -17,7 +17,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
-  const allApps = useQuery(api.apps.getPublicDemoApps, { limit: 100 });
+  const allApps = useQuery(api.features.apps.queries.getPublicDemoApps, { limit: 100 });
 
   // Filter apps by search query
   const searchResults = useMemo(() => {

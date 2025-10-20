@@ -88,7 +88,7 @@ export default function Home() {
   const isSignedIn = !!user;
   const { setTitle } = usePageHeader();
 
-  const apps = useQuery(api.apps.getApps) || [];
+  const apps = useQuery(api.features.apps.queries.getApps) || [];
   const recentSets = useQuery(api.screenshotSets.getRecentSets) || [];
   const createSetMutation = useMutation(api.screenshotSets.createSet);
 

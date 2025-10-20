@@ -38,7 +38,7 @@ export default function Sidebar({ mode, isExpanded, onExpandedChange }: SidebarP
   const { theme, setTheme } = useTheme();
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
-  const apps = useQuery(api.apps.getApps) || [];
+  const apps = useQuery(api.features.apps.queries.getApps) || [];
   const isAdmin = useQuery(api.features.profiles.queries.isCurrentUserAdmin);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 

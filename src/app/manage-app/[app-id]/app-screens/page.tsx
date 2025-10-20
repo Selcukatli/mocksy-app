@@ -69,7 +69,7 @@ export default function SourceImagesPage({ params }: PageProps) {
   const returnTo = searchParams.get('returnTo');
 
   // Convex hooks
-  const app = useQuery(api.apps.getApp, { appId });
+  const app = useQuery(api.features.apps.queries.getApp, { appId });
   const appScreensQuery = useQuery(api.appScreens.getAppScreens, { appId });
   const uploadAppScreen = useMutation(api.appScreens.uploadAppScreen);
   const deleteAppScreen = useMutation(api.appScreens.deleteAppScreen);

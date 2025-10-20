@@ -85,7 +85,7 @@ export default function AdminPage() {
   
   const featureAppMutation = useMutation(api.adminActions.featureApp);
   const unfeatureAppMutation = useMutation(api.adminActions.unfeatureApp);
-  const deleteAppMutation = useMutation(api.apps.deleteApp);
+  const deleteAppMutation = useMutation(api.features.apps.queries.deleteApp);
   const updateAppStatusMutation = useMutation(api.adminActions.updateAppStatus);
   const publishToProdAction = useAction(api.adminActions.publishAppToProd);
 

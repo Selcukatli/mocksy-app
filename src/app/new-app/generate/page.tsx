@@ -102,8 +102,8 @@ type AppConcept = {
 export default function GenerateNewAppPage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
-  const generateConcepts = useAction(api.appGenerationActions.generateAppConcepts);
-  const generateAppFromConcept = useAction(api.appGenerationActions.generateAppFromConcept);
+  const generateConcepts = useAction(api.features.appGeneration.generateAppConcepts);
+  const generateAppFromConcept = useAction(api.features.appGeneration.generateAppFromConcept);
   
   const firstName = user?.firstName || 'there';
 
@@ -137,7 +137,7 @@ export default function GenerateNewAppPage() {
 
   // Poll for concept images
   const conceptJob = useQuery(
-    api.conceptGenerationJobs.getConceptGenerationJob,
+    api.features.appGeneration.jobs.getConceptGenerationJob,
     conceptJobId ? { jobId: conceptJobId } : 'skip'
   );
 

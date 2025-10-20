@@ -54,7 +54,7 @@ export default function SetPage({ params }: PageProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Get current app and set data from Convex
-  const convexApp = useQuery(api.apps.getApp, { appId: appId as Id<"apps"> });
+  const convexApp = useQuery(api.features.apps.queries.getApp, { appId: appId as Id<"apps"> });
   const convexSet = useQuery(
     api.screenshotSets.getSet,
     setId !== 'new' ? { setId: setId as Id<"screenshotSets"> } : "skip"

@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     // Try to fetch the app - valid format but might not exist
-    const appPreview = await fetchQuery(api.apps.getPublicAppPreview, {
+    const appPreview = await fetchQuery(api.features.apps.queries.getPublicAppPreview, {
       appId: appId as Id<'apps'>,
     });
 

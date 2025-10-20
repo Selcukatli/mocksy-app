@@ -63,9 +63,9 @@ export default function ManageAppPage({ params }: PageProps) {
   } | null>(null);
 
   // Convex queries and mutations
-  const app = useQuery(api.apps.getApp, { appId });
-  const updateApp = useMutation(api.apps.updateApp);
-  const deleteApp = useMutation(api.apps.deleteApp);
+  const app = useQuery(api.features.apps.queries.getApp, { appId });
+  const updateApp = useMutation(api.features.apps.queries.updateApp);
+  const deleteApp = useMutation(api.features.apps.queries.deleteApp);
   const storeFromBase64 = useAction(api.fileStorage.base64Files.storeBase64File);
 
   // Initialize form with app data

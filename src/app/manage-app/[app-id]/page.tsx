@@ -89,11 +89,11 @@ export default function AppDetailPage({ params }: PageProps) {
 
   // Convex mutations
   const deleteSetMutation = useMutation(api.screenshotSets.deleteSet);
-  const deleteAppMutation = useMutation(api.apps.deleteApp);
-  const updateAppMutation = useMutation(api.apps.updateApp);
+  const deleteAppMutation = useMutation(api.features.apps.queries.deleteApp);
+  const updateAppMutation = useMutation(api.features.apps.queries.updateApp);
 
   // Get app from Convex
-  const app = useQuery(api.apps.getApp, { appId: appId as Id<"apps"> });
+  const app = useQuery(api.features.apps.queries.getApp, { appId: appId as Id<"apps"> });
 
   // Fetch sets from Convex
   const convexSets = useQuery(api.screenshotSets.getSetsForApp, app ? { appId: appId as Id<"apps"> } : "skip") ?? [];

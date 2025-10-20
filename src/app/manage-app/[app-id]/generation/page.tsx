@@ -13,8 +13,8 @@ export default function GenerationPage() {
   const router = useRouter();
   const appId = params['app-id'] as Id<'apps'>;
 
-  const appStatus = useQuery(api.apps.getAppGenerationStatus, { appId });
-  const jobStatus = useQuery(api.appGenerationJobs.getAppGenerationJobByAppId, { appId });
+  const appStatus = useQuery(api.features.apps.queries.getAppGenerationStatus, { appId });
+  const jobStatus = useQuery(api.features.appGeneration.jobs.getAppGenerationJobByAppId, { appId });
 
   // If app doesn't exist or user doesn't have access, redirect
   useEffect(() => {

@@ -22,7 +22,7 @@ export default function SetupExistingAppPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { isLoaded, isSignedIn } = useUser();
-  const createAppMutation = useMutation(api.apps.createApp);
+  const createAppMutation = useMutation(api.features.apps.queries.createApp);
   const storeFromBase64 = useAction(api.fileStorage.base64Files.storeBase64File);
 
   useEffect(() => {

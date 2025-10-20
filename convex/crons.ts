@@ -22,7 +22,7 @@ const crons = cronJobs();
 crons.interval(
   "fail stuck generation jobs",
   { minutes: 5 },
-  internal.generationJobs.failStuckJobs
+  internal.features.appGeneration.jobs.failStuckJobs
 );
 
 /**
@@ -37,7 +37,7 @@ crons.interval(
 crons.cron(
   "cleanup old generation jobs",
   "0 3 * * *", // 3:00 AM daily
-  internal.generationJobs.cleanupCompletedJobs
+  internal.features.appGeneration.jobs.cleanupCompletedJobs
 );
 
 export default crons;

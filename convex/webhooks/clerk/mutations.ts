@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation } from "./_generated/server";
+import { internalMutation } from "../../_generated/server";
 
 export const upsertUserFromClerk = internalMutation({
   args: {
@@ -113,6 +113,8 @@ export const deleteUserFromClerk = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    console.log(`🗑️  Attempting to delete profile for Clerk user: ${args.userId}`);
+    
     // Find and delete the profile
     const profile = await ctx.db
       .query("profiles")
@@ -120,12 +122,19 @@ export const deleteUserFromClerk = internalMutation({
       .first();
 
     if (profile) {
+      console.log(`📋 Found profile: ${profile._id}`, {
+        username: profile.username,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+      });
+      
       await ctx.db.delete(profile._id);
-      console.log(`Deleted profile for user ${args.userId}`);
+      console.log(`✅ Profile deleted successfully for user ${args.userId}`);
     } else {
-      console.log(`No profile found for user ${args.userId}`);
+      console.log(`⚠️  No profile found for user ${args.userId} - may have been already deleted or never created`);
     }
 
     return null;
   },
 });
+

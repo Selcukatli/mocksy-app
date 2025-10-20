@@ -469,32 +469,235 @@ npx convex run apps:getApp '{"appId":"j97..."}' --watch
 ```
 
 ## Scheduling guidelines
-### Cron guidelines
-- Only use the `crons.interval` or `crons.cron` methods to schedule cron jobs. Do NOT use the `crons.hourly`, `crons.daily`, or `crons.weekly` helpers.
-- Both cron methods take in a FunctionReference. Do NOT try to pass the function directly into one of these methods.
-- Define crons by declaring the top-level `crons` object, calling some methods on it, and then exporting it as default. For example,
-                            ```ts
-                            import { cronJobs } from "convex/server";
-                            import { internal } from "./_generated/api";
-                            import { internalAction } from "./_generated/server";
+### Cron Jobs (Scheduled Functions)
 
-                            const empty = internalAction({
-                              args: {},
-                              returns: v.null(),
-                              handler: async (ctx, args) => {
-                                console.log("empty");
-                              },
-                            });
+Convex provides built-in **scheduled functions** (cron jobs) that run automatically on Convex's infrastructure without requiring additional deployment or server management.
 
-                            const crons = cronJobs();
+#### **How Cron Jobs Work**
+- **Defined in `convex/crons.ts`** - A special file that exports cron configurations
+- **Run on Convex servers** - Automatically executed by Convex's infrastructure
+- **No deployment needed** - Just push your code and crons are registered
+- **Monitor in dashboard** - View and track execution in Convex Dashboard → Scheduled Functions
+- **Two scheduling methods**:
+  - `crons.interval()` - Run every X minutes/hours/days
+  - `crons.cron()` - Use cron syntax (e.g., "0 0 * * *" for daily at midnight)
 
-                            // Run `internal.crons.empty` every two hours.
-                            crons.interval("delete inactive users", { hours: 2 }, internal.crons.empty, {});
+#### **Basic Structure**
+```typescript
+// convex/crons.ts
+import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
 
-                            export default crons;
-                            ```
-- You can register Convex functions within `crons.ts` just like any other file.
-- If a cron calls an internal function, always import the `internal` object from '_generated/api`, even if the internal function is registered in the same file.
+const crons = cronJobs();
+
+// Define your cron schedules here...
+
+export default crons;
+```
+
+#### **Using `crons.interval()` - Time-based scheduling**
+```typescript
+import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
+
+const crons = cronJobs();
+
+// Run every 5 minutes
+crons.interval(
+  "cleanup old sessions",
+  { minutes: 5 },
+  internal.sessions.cleanupExpired
+);
+
+// Run every 2 hours
+crons.interval(
+  "sync external data",
+  { hours: 2 },
+  internal.sync.syncData
+);
+
+// Run every day (24 hours)
+crons.interval(
+  "daily report",
+  { hours: 24 },
+  internal.reports.generateDaily
+);
+
+export default crons;
+```
+
+#### **Using `crons.cron()` - Cron syntax for precise timing**
+```typescript
+import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
+
+const crons = cronJobs();
+
+// Daily at 3:00 AM
+crons.cron(
+  "daily cleanup",
+  "0 3 * * *",
+  internal.cleanup.runDaily
+);
+
+// Every Monday at 9:00 AM
+crons.cron(
+  "weekly report",
+  "0 9 * * 1",
+  internal.reports.generateWeekly
+);
+
+// First day of month at midnight
+crons.cron(
+  "monthly billing",
+  "0 0 1 * *",
+  internal.billing.processMonthly
+);
+
+// Every 15 minutes
+crons.cron(
+  "health check",
+  "*/15 * * * *",
+  internal.monitoring.healthCheck
+);
+
+export default crons;
+```
+
+#### **Cron Syntax Reference**
+```
+┌───────────── minute (0 - 59)
+│ ┌───────────── hour (0 - 23)
+│ │ ┌───────────── day of month (1 - 31)
+│ │ │ ┌───────────── month (1 - 12)
+│ │ │ │ ┌───────────── day of week (0 - 6) (Sunday to Saturday)
+│ │ │ │ │
+* * * * *
+
+Examples:
+"0 0 * * *"   - Daily at midnight
+"0 9 * * 1"   - Every Monday at 9 AM
+"*/30 * * * *" - Every 30 minutes
+"0 0 1 * *"   - First day of month at midnight
+"0 */6 * * *" - Every 6 hours
+```
+
+#### **Complete Example with Documentation**
+```typescript
+// convex/crons.ts
+import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
+
+/**
+ * Convex Cron Jobs
+ * 
+ * Scheduled functions that run automatically on Convex's infrastructure.
+ * View and monitor in Convex Dashboard → Scheduled Functions
+ */
+
+const crons = cronJobs();
+
+/**
+ * Fail stuck generation jobs (every 5 minutes)
+ * 
+ * Automatically marks jobs as "failed" if they've been generating for >6 minutes.
+ * Prevents UI from showing perpetual "generating" state when external APIs hang.
+ */
+crons.interval(
+  "fail stuck generation jobs",
+  { minutes: 5 },
+  internal.generationJobs.failStuckJobs
+);
+
+/**
+ * Clean up old completed jobs (daily at 3 AM)
+ * 
+ * Deletes completed/failed jobs older than 24 hours to prevent
+ * table bloat and maintain query performance.
+ */
+crons.cron(
+  "cleanup old generation jobs",
+  "0 3 * * *",
+  internal.generationJobs.cleanupCompletedJobs
+);
+
+/**
+ * Send weekly digest emails (every Monday at 9 AM)
+ */
+crons.cron(
+  "weekly digest emails",
+  "0 9 * * 1",
+  internal.emails.sendWeeklyDigest
+);
+
+export default crons;
+```
+
+#### **Important Rules**
+- **Only use `crons.interval()` or `crons.cron()`** - Do NOT use deprecated helpers like `crons.hourly()`, `crons.daily()`, or `crons.weekly()`
+- **Pass function references, not functions** - Use `internal.module.function`, NOT the function itself
+- **Only call internal functions** - Crons can only call `internalMutation`, `internalAction`, or `internalQuery`
+- **Always export default** - The crons object must be the default export
+- **Functions in same file need `internal`** - Even if registering functions in `crons.ts`, import them via `internal.crons.functionName`
+
+#### **Example: Functions in Same File**
+```typescript
+// convex/crons.ts
+import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
+import { internalMutation } from "./_generated/server";
+import { v } from "convex/values";
+
+// Define internal function in same file
+export const cleanupOldData = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const oldDate = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 days ago
+    const oldItems = await ctx.db
+      .query("items")
+      .filter((q) => q.lt(q.field("createdAt"), oldDate))
+      .collect();
+    
+    for (const item of oldItems) {
+      await ctx.db.delete(item._id);
+    }
+    console.log(`Cleaned up ${oldItems.length} old items`);
+    return null;
+  },
+});
+
+const crons = cronJobs();
+
+// Reference function from same file using internal
+crons.interval(
+  "cleanup old data",
+  { hours: 24 },
+  internal.crons.cleanupOldData
+);
+
+export default crons;
+```
+
+#### **Use Cases**
+- **Cleanup tasks**: Remove old/expired data, fail stuck jobs
+- **Scheduled reports**: Generate daily/weekly analytics
+- **Data synchronization**: Sync with external services
+- **Batch processing**: Process queued items periodically
+- **Health monitoring**: Check system status regularly
+- **Billing operations**: Monthly subscription processing
+- **Email campaigns**: Send scheduled newsletters
+- **Cache invalidation**: Clear expired cache entries
+
+#### **Best Practices**
+1. **Add descriptive names** - Use clear, action-oriented names like "cleanup old sessions" not "cleanup"
+2. **Document purpose** - Add comments explaining what each cron does and why
+3. **Use appropriate intervals** - Don't run expensive operations too frequently
+4. **Monitor execution** - Check Convex Dashboard for failures or performance issues
+5. **Handle errors gracefully** - Log errors and don't throw if failures are acceptable
+6. **Keep operations idempotent** - Crons may occasionally run twice
+7. **Use internal functions** - Never expose cron functions as public APIs
+8. **Test with `npx convex run`** - Test internal functions manually before scheduling
 
 
 ## Client-side React guidelines

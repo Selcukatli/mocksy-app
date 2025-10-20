@@ -1348,7 +1348,7 @@ export const processImproveAppStoreDescriptionJob = internalAction({
       // Fetch app screenshots to provide visual context (if user opted in)
       const includeScreenshots = (job.metadata?.includeScreenshots as boolean | undefined) ?? true;
       
-      let screenshotUrls: string[] = [];
+      const screenshotUrls: string[] = [];
       if (includeScreenshots) {
         try {
           const screenshots = await ctx.runQuery(internal.appScreens.getScreensByAppId, { appId: job.appId });

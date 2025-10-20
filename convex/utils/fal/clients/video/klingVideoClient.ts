@@ -9,7 +9,7 @@ import {
   FalResponse,
   FalContentPolicyError,
 } from "../../types";
-import { FAL_VIDEO_MODELS } from "./videoModels";
+import { FAL_VIDEO_MODELS, VIDEO_SPEEDS } from "./videoModels";
 
 /**
  * Generate a video from text using Kling Video v2.5 Turbo Pro
@@ -55,11 +55,16 @@ export async function generateKlingTextToVideo(
       `💸 Estimated cost: $${input.duration === 5 ? "0.35" : "0.70"}`,
     );
 
-    // Call the FAL model
+    // Calculate model-specific timeout: Kling max 60s → (60 * 2 + 60) * 1000 = 180s
+    const timeoutMs = (VIDEO_SPEEDS.kling.max * 2 + 60) * 1000;
+    console.log(`⏰ Timeout: ${timeoutMs / 1000}s`);
+
+    // Call the FAL model with timeout
     const result = await callFalModel<typeof input, { video: FalVideo }>(
       FAL_VIDEO_MODELS.KLING_TEXT_TO_VIDEO,
       input,
       apiKey,
+      timeoutMs
     );
 
     if (!result) {
@@ -155,11 +160,16 @@ export async function generateKlingImageToVideo(
       `💸 Estimated cost: $${input.duration === 5 ? "0.35" : "0.70"}`,
     );
 
-    // Call the FAL model
+    // Calculate model-specific timeout: Kling max 60s → (60 * 2 + 60) * 1000 = 180s
+    const timeoutMs = (VIDEO_SPEEDS.kling.max * 2 + 60) * 1000;
+    console.log(`⏰ Timeout: ${timeoutMs / 1000}s`);
+
+    // Call the FAL model with timeout
     const result = await callFalModel<typeof input, { video: FalVideo }>(
       FAL_VIDEO_MODELS.KLING_IMAGE_TO_VIDEO,
       input,
       apiKey,
+      timeoutMs
     );
 
     if (!result) {

@@ -37,7 +37,12 @@ function configureFalClient(apiKey?: string): void {
 export async function callFalModel<
   TInput extends Record<string, unknown> = Record<string, unknown>,
   TOutput = unknown,
->(modelId: string, input: TInput, apiKey?: string): Promise<TOutput | null> {
+>(
+  modelId: string,
+  input: TInput,
+  apiKey?: string,
+  timeoutMs: number = 5 * 60 * 1000 // Default 5 minutes
+): Promise<TOutput | null> {
   try {
     // Configure the client
     configureFalClient(apiKey);
@@ -45,23 +50,41 @@ export async function callFalModel<
     console.log(`Calling fal.ai model: ${modelId}`);
     console.log(`Input:`, input);
 
-    // Use the official client's subscribe method
-    const result = await fal.subscribe(modelId, {
-      input,
-      logs: true,
-      onQueueUpdate: (update: FalQueueUpdate) => {
-        if (update.status === "IN_PROGRESS") {
-          console.log(`Queue status: ${update.status}`);
-          if (update.logs) {
-            update.logs.forEach((log) => {
-              console.log(`Log: ${log.message}`);
-            });
-          }
-        } else {
-          console.log(`Queue status: ${update.status}`);
-        }
-      },
+    // Create timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`FAL API call timed out after ${timeoutMs / 1000} seconds`));
+      }, timeoutMs);
     });
+
+    // Throttle IN_PROGRESS logs to avoid overflow
+    let lastLogTime = 0;
+
+    // Use the official client's subscribe method with timeout
+    const result = await Promise.race([
+      fal.subscribe(modelId, {
+        input,
+        logs: true,
+        onQueueUpdate: (update: FalQueueUpdate) => {
+          const now = Date.now();
+          if (update.status === "IN_PROGRESS") {
+            // Only log every 10 seconds to avoid overflow
+            if (now - lastLogTime > 10000) {
+              console.log(`Queue status: ${update.status}`);
+              lastLogTime = now;
+            }
+            if (update.logs) {
+              update.logs.forEach((log) => {
+                console.log(`Log: ${log.message}`);
+              });
+            }
+          } else {
+            console.log(`Queue status: ${update.status}`);
+          }
+        },
+      }),
+      timeoutPromise
+    ]);
 
     console.log(`✅ Success! Got result from ${modelId}`);
     return result.data as TOutput;

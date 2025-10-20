@@ -7,7 +7,7 @@ import {
   FalResponse,
   FalContentPolicyError,
 } from "../../types";
-import { FAL_VIDEO_MODELS } from "./videoModels";
+import { FAL_VIDEO_MODELS, VIDEO_SPEEDS } from "./videoModels";
 
 /**
  * Parameters for Hailuo-02 Fast Image-to-Video generation
@@ -71,11 +71,16 @@ export async function generateHailuoImageToVideo(
     console.log(`⏱️  Duration: ${durationNum}s`);
     console.log(`💸 Estimated cost: $${estimatedCost}`);
 
-    // Call the FAL model
+    // Calculate model-specific timeout: Hailuo max 30s → (30 * 2 + 60) * 1000 = 120s
+    const timeoutMs = (VIDEO_SPEEDS.hailuo.max * 2 + 60) * 1000;
+    console.log(`⏰ Timeout: ${timeoutMs / 1000}s`);
+
+    // Call the FAL model with timeout
     const result = await callFalModel<typeof input, { video: FalVideo }>(
       FAL_VIDEO_MODELS.HAILUO_IMAGE_TO_VIDEO,
       input,
       apiKey,
+      timeoutMs
     );
 
     if (!result) {

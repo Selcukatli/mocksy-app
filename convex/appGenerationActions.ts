@@ -1897,7 +1897,18 @@ export const generateAppCoverVideo = action({
       );
 
       if (!videoResult.success || !videoResult.videoUrl) {
-        throw new Error(videoResult.error || "Failed to generate video");
+        const errorMsg = videoResult.error || "Failed to generate video - no URL returned";
+        console.error("❌ Video generation failed:", errorMsg);
+        console.error("Full video result:", JSON.stringify(videoResult));
+        
+        // Update job to failed BEFORE throwing
+        await ctx.runMutation(internal.generationJobs.updateGenerationJobStatus, {
+          jobId,
+          status: "failed",
+          error: errorMsg,
+        });
+        
+        throw new Error(errorMsg);
       }
 
       console.log(`  ✓ Video generated: ${videoResult.videoUrl.substring(0, 60)}...`);

@@ -245,3 +245,34 @@ export const cleanupCompletedJobs = internalMutation({
   },
 });
 
+// Internal mutation: Fail stuck jobs that have been generating for too long
+export const failStuckJobs = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const sixMinutesAgo = Date.now() - (6 * 60 * 1000);
+    
+    const stuckJobs = await ctx.db
+      .query("generationJobs")
+      .withIndex("by_status")
+      .filter((q) => 
+        q.and(
+          q.eq(q.field("status"), "generating"),
+          q.lt(q.field("createdAt"), sixMinutesAgo)
+        )
+      )
+      .collect();
+    
+    for (const job of stuckJobs) {
+      await ctx.db.patch(job._id, {
+        status: "failed",
+        error: "Job timed out after 6 minutes",
+        completedAt: Date.now(),
+      });
+    }
+    
+    console.log(`Failed ${stuckJobs.length} stuck jobs`);
+    return null;
+  },
+});
+

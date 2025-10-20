@@ -9,7 +9,7 @@ import {
   FalResponse,
   FalContentPolicyError,
 } from "../../types";
-import { FAL_VIDEO_MODELS } from "./videoModels";
+import { FAL_VIDEO_MODELS, VIDEO_SPEEDS } from "./videoModels";
 
 /**
  * Generate a video from text using SeeDance v1 Lite
@@ -58,11 +58,16 @@ export async function generateSeeDanceTextToVideo(
       `⏱️  Duration: ${input.duration}s, Resolution: ${input.resolution}`,
     );
 
-    // Call the FAL model
+    // Calculate model-specific timeout: SeeDance max 30s → (30 * 2 + 60) * 1000 = 120s
+    const timeoutMs = (VIDEO_SPEEDS.seedance.max * 2 + 60) * 1000;
+    console.log(`⏰ Timeout: ${timeoutMs / 1000}s`);
+
+    // Call the FAL model with timeout
     const result = await callFalModel<typeof input, { video: FalVideo }>(
       FAL_VIDEO_MODELS.SEEDANCE_TEXT_TO_VIDEO,
       input,
       apiKey,
+      timeoutMs
     );
 
     if (!result) {
@@ -163,11 +168,16 @@ export async function generateSeeDanceImageToVideo(
       `💸 Estimated cost: $${input.resolution === "720p" && input.duration === 5 ? "0.18" : "varies"}`,
     );
 
-    // Call the FAL model
+    // Calculate model-specific timeout: SeeDance max 30s → (30 * 2 + 60) * 1000 = 120s
+    const timeoutMs = (VIDEO_SPEEDS.seedance.max * 2 + 60) * 1000;
+    console.log(`⏰ Timeout: ${timeoutMs / 1000}s`);
+
+    // Call the FAL model with timeout
     const result = await callFalModel<typeof input, { video: FalVideo }>(
       FAL_VIDEO_MODELS.SEEDANCE_IMAGE_TO_VIDEO,
       input,
       apiKey,
+      timeoutMs
     );
 
     if (!result) {
